@@ -13,4 +13,5 @@ export const TYPE_EXAMPLES: readonly TypeExample[] = [
   { label: 'Nullable array union', type: '(array<string|null,mixed>)|null' },
   { label: 'Callable', type: 'callable' },
   { label: 'Integer', type: 'int' },
+  { label: 'Nested string array', type: 'array<string, array<string, array<string, array<string, array<string, array<string, array<string, array<string, string>>>>>>>>'}
 ];
