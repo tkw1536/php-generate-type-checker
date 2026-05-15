@@ -2,10 +2,8 @@
 input: "int|string"
 output: function
 ---
-<?php
-
 /** @phpstan-assert-if-true int|string $value */
-function check(mixed $value): bool
+function isIntOrString(mixed $value): bool
 {
     return (is_int($value) || is_string($value));
 }

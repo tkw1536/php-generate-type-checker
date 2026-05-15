@@ -2,17 +2,15 @@
 input: "array<string>|array<int>"
 output: function
 ---
-<?php
-
 /** @phpstan-assert-if-true array<int>|array<string> $value */
-function check(mixed $value): bool
+function isArrayIntOrArrayString(mixed $value): bool
 {
-    return check_1($value) || check_2($value);
+    return isArrayInt($value) || isArrayString($value);
 }
 
 
 /** @phpstan-assert-if-true array<int> $value */
-function check_1(mixed $value): bool
+function isArrayInt(mixed $value): bool
 {
     if (!is_array($value)) {
         return false;
@@ -26,7 +24,7 @@ function check_1(mixed $value): bool
 }
 
 /** @phpstan-assert-if-true array<string> $value */
-function check_2(mixed $value): bool
+function isArrayString(mixed $value): bool
 {
     if (!is_array($value)) {
         return false;

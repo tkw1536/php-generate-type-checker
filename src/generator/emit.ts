@@ -6,7 +6,8 @@
  * Unions validated **inside** a `foreach` (element type) use **per-element** disjunction:
  * each item must match at least one member — never “first matching arm wins the whole checker.”
  *
- * Helpers `check_N` are deduped by {@link typeDedupeKey}; emit at most one per distinct type.
+ * Helpers are deduped by {@link typeDedupeKey} (surface name `is{Type}` or legacy `check_N`);
+ * emit at most one helper per distinct type.
  * Union members that reduce to a compact predicate (e.g. `array<never>` → `$var === []`) are inlined
  * in `return … || …` instead of calling a helper.
  */
@@ -24,18 +25,25 @@ import {
   isExpressible,
   isNeverPrimitive,
   isNoOpValueCheck,
+  needsStatementBlock,
   requireExpression,
 } from './simpleTypes.ts';
 import { typeDedupeKey } from './typeKey.ts';
 import { formatTypeForPhpstanDoc } from './typeDoc.ts';
 import { DEFAULT_CHECKER_OUTPUT, type CheckerOutputMode, type GenerateCheckerOptions } from './php.ts';
+import {
+  IsFunctionNameRegistry,
+  toIsFunctionIdentifier,
+  typeToPascalSlug,
+} from './helperFunctionNames.ts';
+import { flattenUnion, sortUnionMembers } from './unionOrder.ts';
 
-/** Parameter name for `check_N(mixed …)` helper bodies (aligned with main `check(mixed $value)`). */
+/** Parameter name for helper bodies (same as the main entry `mixed $value`). */
 const HELPER_VALUE_PARAM = '$value';
 
 /** Helpers string (after `check`) plus inner body lines for `check`. */
 export interface EmittedCheckerBody {
-  /** One-line PHPDoc + `function check_N…` per helper, or empty. */
+  /** One-line PHPDoc + helper `function` per helper, or empty. */
   helpers: string;
   /** Formatted body inside `check` only. */
   body: string;
@@ -109,22 +117,7 @@ function negateExpressionForIf(inner: string): string {
   return `!${e}`;
 }
 
-export function needsStatementBlock(node: TypeNode): boolean {
-  const n = normalizeNode(node);
-  switch (n.kind) {
-    case 'array':
-    case 'list':
-      return true;
-    case 'shape':
-      return true;
-    case 'union':
-      return n.types.some(needsStatementBlock);
-    case 'intersection':
-      return n.types.some(needsStatementBlock);
-    default:
-      return false;
-  }
-}
+export { needsStatementBlock } from './simpleTypes.ts';
 
 export function emitExpression(node: TypeNode, varName: string): string {
   const n = normalizeNode(node);
@@ -153,10 +146,16 @@ export function emitExpression(node: TypeNode, varName: string): string {
 
 export function emitStatementBlock(node: TypeNode, varName: string): PhpLine[] {
   const n = normalizeNode(node);
-  return emitValidationLines(n, varName, { includeArrayGuard: true }, 0, new EmitContext());
+  return emitValidationLines(
+    n,
+    varName,
+    { includeArrayGuard: true },
+    0,
+    new EmitContext(),
+  );
 }
 
-/** Returns the main `check` body lines only; helpers are discarded (use {@link emitBody}). */
+/** Returns the main checker body lines only; helpers are discarded (use {@link emitBody}). */
 export function emitFunctionBody(node: TypeNode, varName: string): PhpLine[] {
   return emitFunctionBodyWithContext(node, varName, new EmitContext());
 }
@@ -164,7 +163,7 @@ export function emitFunctionBody(node: TypeNode, varName: string): PhpLine[] {
 /**
  * Boolean PHP expression for “value satisfies T” when T matches the same compact paths as a
  * one-line `return …` body (including `array<never>` → `$var === []`). Used for unions to **inline**
- * those members instead of emitting an extra `check_N`.
+ * those members instead of emitting an extra helper call.
  */
 function compactTypeCheckExpression(n: TypeNode, varName: string): string | null {
   const node = normalizeNode(n);
@@ -198,7 +197,7 @@ function compactTypeCheckExpression(n: TypeNode, varName: string): string | null
 }
 
 /**
- * Single `return …;` bodies used by both top-level `check` and `check_N` helpers (non-structural
+ * Single `return …;` bodies used by both the entry function and helpers (non-structural
  * types); keeps e.g. `array<never>` as `return $v === []` instead of an if/return pair.
  */
 function tryEmitCompactReturnLines(n: TypeNode, varName: string): PhpLine[] | null {
@@ -246,7 +245,17 @@ export function emitBody(
   varName: string,
   options?: GenerateCheckerOptions,
 ): EmittedCheckerBody {
-  const ctx = new EmitContext(options?.output ?? DEFAULT_CHECKER_OUTPUT);
+  const outputMode = options?.output ?? DEFAULT_CHECKER_OUTPUT;
+  const nameFunctionsByType = options?.nameFunctionsByType !== false;
+  const mainFunctionName =
+    options?.mainFunctionName ??
+    (nameFunctionsByType
+      ? toIsFunctionIdentifier(typeToPascalSlug(node))
+      : 'check');
+  const registry = nameFunctionsByType
+    ? new IsFunctionNameRegistry([mainFunctionName])
+    : null;
+  const ctx = new EmitContext(outputMode, nameFunctionsByType, registry);
   const mainLines = emitFunctionBodyWithContext(node, varName, ctx);
   const body = formatBody(mainLines);
   const helpers =
@@ -255,13 +264,13 @@ export function emitBody(
       : ctx.helperFns
           .map((h) => {
             const doc = `/** @phpstan-assert-if-true ${h.docType} ${HELPER_VALUE_PARAM} */`;
-            return `${doc}\nfunction check_${h.id}(mixed ${HELPER_VALUE_PARAM}): bool\n{\n${formatBody(h.lines)}\n}`;
+            return `${doc}\nfunction ${h.functionName}(mixed ${HELPER_VALUE_PARAM}): bool\n{\n${formatBody(h.lines)}\n}`;
           })
           .join('\n\n');
   return { helpers, body };
 }
 
-/** Top-level union: `return p1 || p2 || check_N($var);` (disjunctive; overlapping guards OK). */
+/** Top-level union: `return p1 || p2 || helper($var);` (disjunctive; overlapping guards OK). */
 function emitRootUnionDisjunctive(
   node: Extract<TypeNode, { kind: 'union' }>,
   varName: string,
@@ -330,7 +339,7 @@ function buildHelperLines(n: TypeNode, ctx: EmitContext): PhpLine[] {
   return emitMatcherTail(node, v, ctx);
 }
 
-/** Body for `check_N` validating a single non-union (or already-split) type. */
+/** Body for a helper validating a single non-union (or already-split) type. */
 function emitMatcherTail(node: TypeNode, varName: string, ctx: EmitContext): PhpLine[] {
   const n = normalizeNode(node);
   const compact = tryEmitCompactReturnLines(n, varName);
@@ -353,14 +362,27 @@ class VarNaming {
 }
 
 class EmitContext {
-  private readonly byKey = new Map<string, number>();
-  readonly helperFns: Array<{ id: number; lines: PhpLine[]; docType: string }> = [];
-  private nextId = 1;
+  private readonly byKey = new Map<string, string>();
+  readonly helperFns: Array<{
+    functionName: string;
+    lines: PhpLine[];
+    docType: string;
+  }> = [];
+  private nextLegacyId = 1;
   private readonly useSelfHelperCalls: boolean;
   private namingStack: VarNaming[] = [new VarNaming()];
+  private readonly nameFunctionsByType: boolean;
+  private readonly registry: IsFunctionNameRegistry | null;
 
-  constructor(mode: CheckerOutputMode = DEFAULT_CHECKER_OUTPUT) {
+  constructor(
+    mode: CheckerOutputMode = DEFAULT_CHECKER_OUTPUT,
+    nameFunctionsByType = true,
+    registry: IsFunctionNameRegistry | null = null,
+  ) {
     this.useSelfHelperCalls = mode !== 'function';
+    this.nameFunctionsByType = nameFunctionsByType;
+    this.registry =
+      nameFunctionsByType ? registry ?? new IsFunctionNameRegistry() : null;
   }
 
   private topNaming(): VarNaming {
@@ -383,9 +405,8 @@ class EmitContext {
     return this.topNaming().allocateLoopPair();
   }
 
-  private helperCallRef(id: number): string {
-    const base = `check_${id}`;
-    return this.useSelfHelperCalls ? `self::${base}` : base;
+  private helperCallRef(fnName: string): string {
+    return this.useSelfHelperCalls ? `self::${fnName}` : fnName;
   }
 
   ensureHelper(type: TypeNode): string {
@@ -395,8 +416,15 @@ class EmitContext {
     if (existing !== undefined) {
       return this.helperCallRef(existing);
     }
-    const id = this.nextId++;
-    this.byKey.set(key, id);
+
+    let fnName: string;
+    if (this.nameFunctionsByType && this.registry) {
+      fnName = this.registry.allocate(key, n);
+    } else {
+      fnName = `check_${this.nextLegacyId++}`;
+    }
+
+    this.byKey.set(key, fnName);
     this.pushNamingScope();
     let lines: PhpLine[];
     try {
@@ -405,8 +433,8 @@ class EmitContext {
       this.popNamingScope();
     }
     const docType = formatTypeForPhpstanDoc(n);
-    this.helperFns.push({ id, lines, docType });
-    return this.helperCallRef(id);
+    this.helperFns.push({ functionName: fnName, lines, docType });
+    return this.helperCallRef(fnName);
   }
 }
 
@@ -758,33 +786,6 @@ function unionEveryMemberExpressibleWithoutBlock(
   return flattenUnion(node).every(
     (m) => isExpressible(m) && !needsStatementBlock(m),
   );
-}
-
-function flattenUnion(node: TypeNode): TypeNode[] {
-  if (node.kind === 'union') {
-    return node.types.flatMap(flattenUnion);
-  }
-  return [node];
-}
-
-function sortUnionMembers(members: TypeNode[]): TypeNode[] {
-  return [...members].sort((a, b) => {
-    const d = unionSortKey(a) - unionSortKey(b);
-    if (d !== 0) {
-      return d;
-    }
-    return typeDedupeKey(a).localeCompare(typeDedupeKey(b));
-  });
-}
-
-function unionSortKey(node: TypeNode): number {
-  if (node.kind === 'primitive' && node.name === 'null') {
-    return 0;
-  }
-  if (isExpressible(node) && !needsStatementBlock(node)) {
-    return 1;
-  }
-  return 2;
 }
 
 /** Key/value checks are no-ops (e.g. array<mixed>); only array / iterable top guard applies. */

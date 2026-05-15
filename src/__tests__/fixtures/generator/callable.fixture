@@ -2,10 +2,8 @@
 input: "callable"
 output: function
 ---
-<?php
-
 /** @phpstan-assert-if-true callable $value */
-function check(mixed $value): bool
+function isCallableType(mixed $value): bool
 {
     return is_callable($value);
 }

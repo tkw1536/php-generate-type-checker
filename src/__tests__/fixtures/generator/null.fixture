@@ -2,10 +2,8 @@
 input: "null"
 output: function
 ---
-<?php
-
 /** @phpstan-assert-if-true null $value */
-function check(mixed $value): bool
+function isNullType(mixed $value): bool
 {
     return $value === null;
 }

@@ -1,5 +1,6 @@
 import type { TypeNode } from '../parser/ast.ts';
 import { GenerationError } from './errors.ts';
+import { normalizeNode } from './normalize.ts';
 
 /**
  * Extension point: PHP boolean expressions for leaf types.
@@ -133,6 +134,24 @@ export function isExpressible(node: TypeNode): boolean {
     return node.types.every(isExpressible);
   }
   return false;
+}
+
+/** True when validating this type requires statements (not a single boolean expression check). */
+export function needsStatementBlock(node: TypeNode): boolean {
+  const n = normalizeNode(node);
+  switch (n.kind) {
+    case 'array':
+    case 'list':
+      return true;
+    case 'shape':
+      return true;
+    case 'union':
+      return n.types.some(needsStatementBlock);
+    case 'intersection':
+      return n.types.some(needsStatementBlock);
+    default:
+      return false;
+  }
 }
 
 export function describeNode(node: TypeNode): string {

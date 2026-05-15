@@ -11,7 +11,8 @@ import { TYPE_EXAMPLES } from './ui/examples.ts';
 
 initTheme();
 
-const DEFAULT_TYPE = 'array<string, string>';
+const DEFAULT_TYPE =
+  'array{id: int, email: non-empty-string, name?: string}';
 const INPUT_DEBOUNCE_MS = 300;
 const TYPE_INPUT_STORAGE_KEY = 'php-generate-type-checker:type-input';
 const PERSIST_TYPE_INPUT_IN_DEV = import.meta.env.DEV;
@@ -142,9 +143,15 @@ function getTypeInput(): string {
   return input.value.trim() || DEFAULT_TYPE;
 }
 
+function getNameFunctionsByType(): boolean {
+  const el = document.querySelector<HTMLInputElement>('#generate-name-by-type');
+  return el?.checked !== false;
+}
+
 interface GenerationSnapshot {
   type: string;
   outputMode: CheckerOutputMode;
+  nameFunctionsByType: boolean;
 }
 
 let lastGenerated: GenerationSnapshot | null = null;
@@ -153,6 +160,7 @@ function getGenerationSnapshot(): GenerationSnapshot {
   return {
     type: getTypeInput(),
     outputMode: getGenerateOutputMode(),
+    nameFunctionsByType: getNameFunctionsByType(),
   };
 }
 
@@ -162,7 +170,9 @@ function isOutputUpToDate(): boolean {
   }
   const current = getGenerationSnapshot();
   return (
-    current.type === lastGenerated.type && current.outputMode === lastGenerated.outputMode
+    current.type === lastGenerated.type &&
+    current.outputMode === lastGenerated.outputMode &&
+    current.nameFunctionsByType === lastGenerated.nameFunctionsByType
   );
 }
 
@@ -182,7 +192,10 @@ function runGenerate(phpPanel: OutputPanel, astPanel: OutputPanel): void {
   try {
     setSuccessOutput(
       phpPanel,
-      generateChecker(typeString, { output: getGenerateOutputMode() }),
+      generateChecker(typeString, {
+        output: getGenerateOutputMode(),
+        nameFunctionsByType: getNameFunctionsByType(),
+      }),
     );
   } catch (err) {
     setErrorOutput(phpPanel, err, typeString);
@@ -248,6 +261,8 @@ const scheduleGenerate = debounce(() => runGenerate(phpPanel, astPanel), INPUT_D
 const generateBtn = document.querySelector<HTMLButtonElement>('#generate-run')!;
 const typeInput = document.querySelector<HTMLTextAreaElement>('#type-input')!;
 const outputModeSelect = document.querySelector<HTMLSelectElement>('#generate-output-mode')!;
+const nameByTypeCheckbox =
+  document.querySelector<HTMLInputElement>('#generate-name-by-type')!;
 
 copyBtn.addEventListener('click', async () => {
   const panel = getActiveOutputPanel();
@@ -272,6 +287,7 @@ typeInput.addEventListener('input', () => {
   onGenerateInputChanged();
 });
 outputModeSelect.addEventListener('change', onGenerateInputChanged);
+nameByTypeCheckbox.addEventListener('change', onGenerateInputChanged);
 
 document.querySelector<HTMLButtonElement>('#theme-toggle')!.addEventListener('click', () => {
   toggleTheme();

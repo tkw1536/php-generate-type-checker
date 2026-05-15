@@ -2,10 +2,8 @@
 input: "list<int>"
 output: function
 ---
-<?php
-
 /** @phpstan-assert-if-true list<int> $value */
-function check(mixed $value): bool
+function isListInt(mixed $value): bool
 {
     if (!is_array($value) || !array_is_list($value)) {
         return false;

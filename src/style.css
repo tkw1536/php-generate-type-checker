@@ -356,6 +356,18 @@ body {
   border-radius: 6px;
 }
 
+.panel-footer-naming {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.panel-footer-naming input {
+  margin: 0;
+}
+
 .panel-footer--actions .btn-primary {
   margin-left: auto;
 }

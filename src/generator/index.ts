@@ -1,11 +1,15 @@
-import { parseType } from '../parser/index.ts';
 import { assertCheckable } from './checkability.ts';
 import { emitBody } from './emit.ts';
+import {
+  toIsFunctionIdentifier,
+  typeToPascalSlug,
+} from './helperFunctionNames.ts';
+import { normalizeNode } from './normalize.ts';
 import {
   type GenerateCheckerOptions,
   generateCheckerFromAst,
 } from './php.ts';
-import { normalizeNode } from './normalize.ts';
+import { parseType } from '../parser/index.ts';
 import { formatTypeForPhpstanDoc } from './typeDoc.ts';
 
 export function generateChecker(
@@ -14,9 +18,14 @@ export function generateChecker(
 ): string {
   const ast = normalizeNode(parseType(typeString));
   assertCheckable(ast, 'function');
-  const { helpers, body } = emitBody(ast, '$value', options);
+  const nameByType = options?.nameFunctionsByType !== false;
+  const mainFunctionName =
+    options?.mainFunctionName ??
+    (nameByType ? toIsFunctionIdentifier(typeToPascalSlug(ast)) : 'check');
+  const merged: GenerateCheckerOptions = { ...options, mainFunctionName };
+  const { helpers, body } = emitBody(ast, '$value', merged);
   const docType = formatTypeForPhpstanDoc(ast);
-  return generateCheckerFromAst(docType, body, options, helpers || undefined);
+  return generateCheckerFromAst(docType, body, merged, helpers || undefined);
 }
 
 export { GenerationError } from './errors.ts';

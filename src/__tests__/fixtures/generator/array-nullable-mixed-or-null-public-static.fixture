@@ -2,18 +2,16 @@
 input: "(array<string|null,mixed>)|null"
 output: public_static
 ---
-<?php
-
 class TypeChecker
 {
     /** @phpstan-assert-if-true array<null|string, mixed>|null $value */
-    public static function check(mixed $value): bool
+    public static function isNullTypeOrArrayNullTypeOrStringToMixedType(mixed $value): bool
     {
-        return $value === null || self::check_1($value);
+        return $value === null || self::isArrayNullTypeOrStringToMixedType($value);
     }
 
     /** @phpstan-assert-if-true array<null|string, mixed> $value */
-    private static function check_1(mixed $value): bool
+    private static function isArrayNullTypeOrStringToMixedType(mixed $value): bool
     {
         if (!is_array($value)) {
             return false;

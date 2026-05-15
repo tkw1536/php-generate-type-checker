@@ -2,17 +2,15 @@
 input: "(array<string|null,mixed>)|null"
 output: function
 ---
-<?php
-
 /** @phpstan-assert-if-true array<null|string, mixed>|null $value */
-function check(mixed $value): bool
+function isNullTypeOrArrayNullTypeOrStringToMixedType(mixed $value): bool
 {
-    return $value === null || check_1($value);
+    return $value === null || isArrayNullTypeOrStringToMixedType($value);
 }
 
 
 /** @phpstan-assert-if-true array<null|string, mixed> $value */
-function check_1(mixed $value): bool
+function isArrayNullTypeOrStringToMixedType(mixed $value): bool
 {
     if (!is_array($value)) {
         return false;

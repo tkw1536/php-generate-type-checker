@@ -14,7 +14,7 @@ input: int
 <?php
 
 /** @phpstan-assert-if-true int $value */
-function check(mixed $value): bool
+function isInt(mixed $value): bool
 {
     return true;
 }
@@ -25,7 +25,7 @@ function check(mixed $value): bool
     expect(fixture.input).toBe('int');
     expect(fixture.output).toBe('function');
     expect(fixture.expected).toBe(`/** @phpstan-assert-if-true int $value */
-function check(mixed $value): bool
+function isInt(mixed $value): bool
 {
     return true;
 }
@@ -57,7 +57,7 @@ output: function
 <?php
 
 /** @phpstan-assert-if-true foo $value */
-function check(mixed $value): bool
+function isFoo(mixed $value): bool
 {
     return false;
 }
@@ -66,7 +66,7 @@ function check(mixed $value): bool
       'blank.fixture',
     );
     expect(fixture.expected).toBe(`/** @phpstan-assert-if-true foo $value */
-function check(mixed $value): bool
+function isFoo(mixed $value): bool
 {
     return false;
 }

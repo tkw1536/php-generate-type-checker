@@ -2,10 +2,8 @@
 input: 'array{"hello:world": string, "hello.world": string}'
 output: function
 ---
-<?php
-
 /** @phpstan-assert-if-true array{'hello:world': string, 'hello.world': string} $value */
-function check(mixed $value): bool
+function isShapeFldhello_worldReqStringFldhello_worldReqString(mixed $value): bool
 {
     if (!is_array($value)) {
         return false;

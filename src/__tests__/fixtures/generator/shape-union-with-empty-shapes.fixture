@@ -2,17 +2,15 @@
 input: "array{left: array{}, right: never[]}|array{}"
 output: function
 ---
-<?php
-
 /** @phpstan-assert-if-true array{'left': array<never>, 'right': array<never>}|array<never> $value */
-function check(mixed $value): bool
+function isArrayNeverOrShapeFldleftReqArrayNeverFldrightReqArrayNever(mixed $value): bool
 {
-    return $value === [] || check_1($value);
+    return $value === [] || isShapeFldleftReqArrayNeverFldrightReqArrayNever($value);
 }
 
 
 /** @phpstan-assert-if-true array{'left': array<never>, 'right': array<never>} $value */
-function check_1(mixed $value): bool
+function isShapeFldleftReqArrayNeverFldrightReqArrayNever(mixed $value): bool
 {
     if (!is_array($value)) {
         return false;

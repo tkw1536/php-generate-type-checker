@@ -2,10 +2,8 @@
 input: "array<string, string>"
 output: function
 ---
-<?php
-
 /** @phpstan-assert-if-true array<string, string> $value */
-function check(mixed $value): bool
+function isArrayStringToString(mixed $value): bool
 {
     if (!is_array($value)) {
         return false;

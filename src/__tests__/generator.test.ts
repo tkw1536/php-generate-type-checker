@@ -33,3 +33,17 @@ describe('generateChecker fixtures', () => {
     });
   }
 });
+
+describe('legacy function naming (nameFunctionsByType: false)', () => {
+  it('emits check and numbered helpers', () => {
+    const php = generateChecker('array<int>|array<string>', {
+      output: 'function',
+      nameFunctionsByType: false,
+    });
+    expect(php).toContain('function check(mixed $value): bool');
+    expect(php).toContain('function check_1(');
+    expect(php).toContain('function check_2(');
+    expect(php).toContain('check_1($value)');
+    expect(php).toContain('check_2($value)');
+  });
+});

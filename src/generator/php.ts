@@ -6,6 +6,16 @@ export type CheckerOutputMode =
 
 export interface GenerateCheckerOptions {
   output?: CheckerOutputMode;
+  /**
+   * When `true` (default), emit `is{Type}` helper names and a type-based entry function.
+   * When `false`, use legacy `check` / `check_N`.
+   */
+  nameFunctionsByType?: boolean;
+  /**
+   * Name of the emitted entry function or static method. Usually set together with
+   * {@link emitBody}; defaults to `check` when using legacy naming.
+   */
+  mainFunctionName?: string;
 }
 
 export const DEFAULT_CHECKER_OUTPUT: CheckerOutputMode = 'function';
@@ -34,14 +44,15 @@ function visibilityForMode(mode: CheckerOutputMode): 'public' | 'protected' | 'p
 }
 
 /**
- * Builds `class TypeChecker` with `check`, optional numbered helpers as `private static function check_N`,
- * and helpers placed after `check` inside the class body.
+ * Builds `class TypeChecker` with the entry method, optional helpers as `private static function …`,
+ * and helpers placed after the entry method inside the class body.
  */
 export function formatClassCheckerOutput(
   typeString: string,
   mainBody: string,
   helpersBlock: string,
   mode: CheckerOutputMode,
+  mainFunctionName = 'check',
 ): string {
   const escapedType = typeString.trim();
   const doc = indentEachLine(phpDocBlock(escapedType), CLASS_INDENT);
@@ -54,14 +65,14 @@ export function formatClassCheckerOutput(
         .map((block) => {
           const withStatic = block
             .trim()
-            .replace(/^function check_/m, 'private static function check_');
+            .replace(/^function /m, 'private static function ');
           return indentEachLine(withStatic, CLASS_INDENT);
         })
         .join('\n\n')
     : '';
 
   const checkMethod = `${doc}
-    ${visibility} static function check(mixed $value): bool
+    ${visibility} static function ${mainFunctionName}(mixed $value): bool
     {
 ${indentedMain}
     }`;
@@ -76,27 +87,28 @@ ${inner}
 }
 
 /**
- * Wraps emitted checker body with PHPDoc and a `check` function or static method.
+ * Wraps emitted checker body with PHPDoc and a top-level function or static method.
  * Method modes wrap with `class TypeChecker { … }` (helpers are assembled in {@link wrapChecker}).
  */
 export function formatCheckerOutput(
   typeString: string,
   body: string,
   mode: CheckerOutputMode = DEFAULT_CHECKER_OUTPUT,
+  mainFunctionName = 'check',
 ): string {
   const escapedType = typeString.trim();
   const doc = phpDocBlock(escapedType);
 
   if (mode === 'function') {
     return `${doc}
-function check(mixed $value): bool
+function ${mainFunctionName}(mixed $value): bool
 {
 ${body}
 }
 `;
   }
 
-  return formatClassCheckerOutput(typeString, body, '', mode);
+  return formatClassCheckerOutput(typeString, body, '', mode, mainFunctionName);
 }
 
 export function wrapChecker(
@@ -106,13 +118,25 @@ export function wrapChecker(
   helpersPrelude?: string,
 ): string {
   const mode = options?.output ?? DEFAULT_CHECKER_OUTPUT;
+  const mainFunctionName = options?.mainFunctionName ?? 'check';
   if (mode === 'function') {
-    const core = formatCheckerOutput(typeString, body, 'function');
+    const core = formatCheckerOutput(
+      typeString,
+      body,
+      'function',
+      mainFunctionName,
+    );
     const combined = helpersPrelude ? `${core}\n\n${helpersPrelude}` : core;
     return normalizeEndingNewline(combined);
   }
   return normalizeEndingNewline(
-    formatClassCheckerOutput(typeString, body, helpersPrelude ?? '', mode),
+    formatClassCheckerOutput(
+      typeString,
+      body,
+      helpersPrelude ?? '',
+      mode,
+      mainFunctionName,
+    ),
   );
 }
 

@@ -2,12 +2,10 @@
 input: "int"
 output: public_static
 ---
-<?php
-
 class TypeChecker
 {
     /** @phpstan-assert-if-true int $value */
-    public static function check(mixed $value): bool
+    public static function isInt(mixed $value): bool
     {
         return is_int($value);
     }
