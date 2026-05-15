@@ -6,19 +6,19 @@ output: public_static
 
 class TypeChecker
 {
-    /** @phpstan-assert-if-true (array<string|null,mixed>)|null $value */
+    /** @phpstan-assert-if-true array<null|string, mixed>|null $value */
     public static function check(mixed $value): bool
     {
         return $value === null || self::check_1($value);
     }
 
-    /** @phpstan-assert-if-true array<null|string, mixed> $x */
-    private static function check_1(mixed $x): bool
+    /** @phpstan-assert-if-true array<null|string, mixed> $value */
+    private static function check_1(mixed $value): bool
     {
-        if (!is_array($x)) {
+        if (!is_array($value)) {
             return false;
         }
-        foreach ($x as $key1 => $value1) {
+        foreach ($value as $key1 => $value1) {
             if (!(is_string($key1) || $key1 === null)) {
                 return false;
             }

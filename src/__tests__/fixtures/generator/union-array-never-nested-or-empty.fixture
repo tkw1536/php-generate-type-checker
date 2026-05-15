@@ -1,0 +1,26 @@
+---
+input: "array<array<never>>|array<never>"
+output: function
+---
+<?php
+
+/** @phpstan-assert-if-true array<array<never>>|array<never> $value */
+function check(mixed $value): bool
+{
+    return check_1($value) || $value === [];
+}
+
+
+/** @phpstan-assert-if-true array<array<never>> $value */
+function check_1(mixed $value): bool
+{
+    if (!is_array($value)) {
+        return false;
+    }
+    foreach ($value as $value1) {
+        if ($value1 !== []) {
+            return false;
+        }
+    }
+    return true;
+}

@@ -104,7 +104,7 @@ function formatTypeForPhpstanDocInner(node: TypeNode): string {
 }
 
 /**
- * Format normalized type for `@phpstan-assert-if-true … $x` (single line, no comment delimiters).
+ * Format normalized type for `@phpstan-assert-if-true … $value` (single line, no comment delimiters).
  */
 export function formatTypeForPhpstanDoc(node: TypeNode): string {
   return escapePhpdocTypeLine(formatTypeForPhpstanDocRaw(normalizeNode(node)));

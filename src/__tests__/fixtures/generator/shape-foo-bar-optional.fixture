@@ -4,7 +4,7 @@ output: function
 ---
 <?php
 
-/** @phpstan-assert-if-true array{foo: int, bar?: string} $value */
+/** @phpstan-assert-if-true array{'foo': int, 'bar'?: string} $value */
 function check(mixed $value): bool
 {
     if (!is_array($value)) {

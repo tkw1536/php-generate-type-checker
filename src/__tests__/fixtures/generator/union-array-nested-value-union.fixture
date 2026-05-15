@@ -4,7 +4,7 @@ output: function
 ---
 <?php
 
-/** @phpstan-assert-if-true array<int|array<int>|array<string>> $value */
+/** @phpstan-assert-if-true array<array<int>|array<string>|int> $value */
 function check(mixed $value): bool
 {
     if (!is_array($value)) {
@@ -19,13 +19,13 @@ function check(mixed $value): bool
 }
 
 
-/** @phpstan-assert-if-true array<int> $x */
-function check_1(mixed $x): bool
+/** @phpstan-assert-if-true array<int> $value */
+function check_1(mixed $value): bool
 {
-    if (!is_array($x)) {
+    if (!is_array($value)) {
         return false;
     }
-    foreach ($x as $value1) {
+    foreach ($value as $value1) {
         if (!is_int($value1)) {
             return false;
         }
@@ -33,13 +33,13 @@ function check_1(mixed $x): bool
     return true;
 }
 
-/** @phpstan-assert-if-true array<string> $x */
-function check_2(mixed $x): bool
+/** @phpstan-assert-if-true array<string> $value */
+function check_2(mixed $value): bool
 {
-    if (!is_array($x)) {
+    if (!is_array($value)) {
         return false;
     }
-    foreach ($x as $value1) {
+    foreach ($value as $value1) {
         if (!is_string($value1)) {
             return false;
         }

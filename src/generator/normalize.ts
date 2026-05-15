@@ -95,12 +95,19 @@ export function normalizeNode(node: TypeNode): TypeNode {
     return { kind: 'list', element: normalizeNode(node.element) };
   }
   if (node.kind === 'shape') {
+    const fields = node.fields.map((f) => ({
+      ...f,
+      type: normalizeNode(f.type),
+    }));
+    if (fields.length === 0) {
+      return normalizeNode({
+        kind: 'array',
+        value: { kind: 'primitive', name: 'never' },
+      });
+    }
     return {
       kind: 'shape',
-      fields: node.fields.map((f) => ({
-        ...f,
-        type: normalizeNode(f.type),
-      })),
+      fields,
       sealed: node.sealed,
     };
   }

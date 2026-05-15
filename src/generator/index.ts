@@ -6,6 +6,7 @@ import {
   generateCheckerFromAst,
 } from './php.ts';
 import { normalizeNode } from './normalize.ts';
+import { formatTypeForPhpstanDoc } from './typeDoc.ts';
 
 export function generateChecker(
   typeString: string,
@@ -14,7 +15,8 @@ export function generateChecker(
   const ast = normalizeNode(parseType(typeString));
   assertCheckable(ast, 'function');
   const { helpers, body } = emitBody(ast, '$value', options);
-  return generateCheckerFromAst(typeString, body, options, helpers || undefined);
+  const docType = formatTypeForPhpstanDoc(ast);
+  return generateCheckerFromAst(docType, body, options, helpers || undefined);
 }
 
 export { GenerationError } from './errors.ts';

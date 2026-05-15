@@ -1,0 +1,35 @@
+---
+input: "array{left: array{}, right: never[]}|array{}"
+output: function
+---
+<?php
+
+/** @phpstan-assert-if-true array{'left': array<never>, 'right': array<never>}|array<never> $value */
+function check(mixed $value): bool
+{
+    return $value === [] || check_1($value);
+}
+
+
+/** @phpstan-assert-if-true array{'left': array<never>, 'right': array<never>} $value */
+function check_1(mixed $value): bool
+{
+    if (!is_array($value)) {
+        return false;
+    }
+    if (!array_key_exists('left', $value)) {
+        return false;
+    }
+    $value_left = $value['left'];
+    if ($value_left !== []) {
+        return false;
+    }
+    if (!array_key_exists('right', $value)) {
+        return false;
+    }
+    $value_right = $value['right'];
+    if ($value_right !== []) {
+        return false;
+    }
+    return true;
+}

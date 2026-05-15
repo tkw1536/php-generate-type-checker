@@ -7,6 +7,8 @@
  * each item must match at least one member — never “first matching arm wins the whole checker.”
  *
  * Helpers `check_N` are deduped by {@link typeDedupeKey}; emit at most one per distinct type.
+ * Union members that reduce to a compact predicate (e.g. `array<never>` → `$var === []`) are inlined
+ * in `return … || …` instead of calling a helper.
  */
 import type { TypeNode } from '../parser/ast.ts';
 import {
@@ -27,6 +29,9 @@ import {
 import { typeDedupeKey } from './typeKey.ts';
 import { formatTypeForPhpstanDoc } from './typeDoc.ts';
 import { DEFAULT_CHECKER_OUTPUT, type CheckerOutputMode, type GenerateCheckerOptions } from './php.ts';
+
+/** Parameter name for `check_N(mixed …)` helper bodies (aligned with main `check(mixed $value)`). */
+const HELPER_VALUE_PARAM = '$value';
 
 /** Helpers string (after `check`) plus inner body lines for `check`. */
 export interface EmittedCheckerBody {
@@ -109,6 +114,7 @@ export function needsStatementBlock(node: TypeNode): boolean {
   switch (n.kind) {
     case 'array':
     case 'list':
+      return true;
     case 'shape':
       return true;
     case 'union':
@@ -155,6 +161,54 @@ export function emitFunctionBody(node: TypeNode, varName: string): PhpLine[] {
   return emitFunctionBodyWithContext(node, varName, new EmitContext());
 }
 
+/**
+ * Boolean PHP expression for “value satisfies T” when T matches the same compact paths as a
+ * one-line `return …` body (including `array<never>` → `$var === []`). Used for unions to **inline**
+ * those members instead of emitting an extra `check_N`.
+ */
+function compactTypeCheckExpression(n: TypeNode, varName: string): string | null {
+  const node = normalizeNode(n);
+
+  if (isNoOpValueCheck(node)) {
+    return 'true';
+  }
+
+  if (isExpressible(node) && !needsStatementBlock(node)) {
+    return emitExpression(node, varName);
+  }
+
+  if (node.kind === 'array' && isUnconstrainedArray(node as ArrayNode)) {
+    return arrayLikePositiveCheck(node as ArrayNode, varName);
+  }
+
+  if (node.kind === 'array') {
+    const an = node as ArrayNode;
+    if (isNeverPrimitive(an.value) && !an.iterable) {
+      if (an.nonEmpty) {
+        return 'false';
+      }
+      return `${varName} === []`;
+    }
+  }
+  if (node.kind === 'list' && isNeverPrimitive(node.element)) {
+    return `${varName} === []`;
+  }
+
+  return null;
+}
+
+/**
+ * Single `return …;` bodies used by both top-level `check` and `check_N` helpers (non-structural
+ * types); keeps e.g. `array<never>` as `return $v === []` instead of an if/return pair.
+ */
+function tryEmitCompactReturnLines(n: TypeNode, varName: string): PhpLine[] | null {
+  const expr = compactTypeCheckExpression(n, varName);
+  if (expr !== null) {
+    return [line(0, `return ${expr};`)];
+  }
+  return null;
+}
+
 function emitFunctionBodyWithContext(
   node: TypeNode,
   varName: string,
@@ -177,29 +231,9 @@ function emitFunctionBodyWithContext(
     return block;
   }
 
-  if (isNoOpValueCheck(n)) {
-    return [line(0, 'return true;')];
-  }
-
-  if (isExpressible(n) && !needsStatementBlock(n)) {
-    return [line(0, `return ${emitExpression(n, varName)};`)];
-  }
-
-  if (n.kind === 'array' && isUnconstrainedArray(n as ArrayNode)) {
-    return [line(0, `return ${arrayLikePositiveCheck(n as ArrayNode, varName)};`)];
-  }
-
-  if (n.kind === 'array') {
-    const an = n as ArrayNode;
-    if (isNeverPrimitive(an.value) && !an.iterable) {
-      if (an.nonEmpty) {
-        return [line(0, 'return false;')];
-      }
-      return [line(0, `return ${varName} === [];`)];
-    }
-  }
-  if (n.kind === 'list' && isNeverPrimitive(n.element)) {
-    return [line(0, `return ${varName} === [];`)];
+  const compact = tryEmitCompactReturnLines(n, varName);
+  if (compact) {
+    return compact;
   }
 
   const block = emitValidationLines(n, varName, { includeArrayGuard: true }, 0, ctx);
@@ -220,8 +254,8 @@ export function emitBody(
       ? ''
       : ctx.helperFns
           .map((h) => {
-            const doc = `/** @phpstan-assert-if-true ${h.docType} $x */`;
-            return `${doc}\nfunction check_${h.id}(mixed $x): bool\n{\n${formatBody(h.lines)}\n}`;
+            const doc = `/** @phpstan-assert-if-true ${h.docType} ${HELPER_VALUE_PARAM} */`;
+            return `${doc}\nfunction check_${h.id}(mixed ${HELPER_VALUE_PARAM}): bool\n{\n${formatBody(h.lines)}\n}`;
           })
           .join('\n\n');
   return { helpers, body };
@@ -236,10 +270,10 @@ function emitRootUnionDisjunctive(
   const members = sortUnionMembers(flattenUnion(node));
   const parts: string[] = [];
   for (const m of members) {
-    if (m.kind === 'primitive' && m.name === 'null') {
-      parts.push(`${varName} === null`);
-    } else if (isExpressible(m) && !needsStatementBlock(m)) {
-      parts.push(emitExpression(m, varName));
+    const nm = normalizeNode(m);
+    const inline = compactTypeCheckExpression(nm, varName);
+    if (inline !== null) {
+      parts.push(inline);
     } else {
       parts.push(`${ctx.ensureHelper(m)}(${varName})`);
     }
@@ -263,8 +297,10 @@ function emitNestedUnionValidation(
   const members = sortUnionMembers(flattenUnion(node));
   const parts: string[] = [];
   for (const m of members) {
-    if (isExpressible(m) && !needsStatementBlock(m)) {
-      parts.push(emitExpression(m, varName));
+    const nm = normalizeNode(m);
+    const inline = compactTypeCheckExpression(nm, varName);
+    if (inline !== null) {
+      parts.push(inline);
     } else {
       parts.push(`${ctx.ensureHelper(m)}(${varName})`);
     }
@@ -284,27 +320,24 @@ function emitUnionExpressionValidation(
 
 function buildHelperLines(n: TypeNode, ctx: EmitContext): PhpLine[] {
   const node = normalizeNode(n);
+  const v = HELPER_VALUE_PARAM;
   if (node.kind === 'union') {
     if (unionEveryMemberExpressibleWithoutBlock(node)) {
-      return [line(0, `return ${emitExpression(node, '$x')};`)];
+      return [line(0, `return ${emitExpression(node, v)};`)];
     }
-    return emitRootUnionDisjunctive(node, '$x', ctx);
+    return emitRootUnionDisjunctive(node, v, ctx);
   }
-  return emitMatcherTail(node, '$x', ctx);
+  return emitMatcherTail(node, v, ctx);
 }
 
 /** Body for `check_N` validating a single non-union (or already-split) type. */
 function emitMatcherTail(node: TypeNode, varName: string, ctx: EmitContext): PhpLine[] {
-  if (isNoOpValueCheck(node)) {
-    return [line(0, 'return true;')];
+  const n = normalizeNode(node);
+  const compact = tryEmitCompactReturnLines(n, varName);
+  if (compact) {
+    return compact;
   }
-  if (isExpressible(node) && !needsStatementBlock(node)) {
-    return [line(0, `return ${emitExpression(node, varName)};`)];
-  }
-  if (node.kind === 'array' && isUnconstrainedArray(node)) {
-    return [line(0, `return ${arrayLikePositiveCheck(node, varName)};`)];
-  }
-  const block = emitValidationLines(node, varName, { includeArrayGuard: true }, 0, ctx);
+  const block = emitValidationLines(n, varName, { includeArrayGuard: true }, 0, ctx);
   block.push(line(0, 'return true;'));
   return block;
 }
