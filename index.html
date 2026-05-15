@@ -14,115 +14,106 @@
       </button>
     </header>
 
-    <div class="tabs" role="tablist" aria-label="Tool mode">
-      <button
-        type="button"
-        role="tab"
-        id="tab-btn-generate"
-        class="tab active"
-        aria-selected="true"
-        aria-controls="tab-panel-generate"
-        data-tab="generate"
-      >
-        Generate PHP
-      </button>
-      <button
-        type="button"
-        role="tab"
-        id="tab-btn-parse"
-        class="tab"
-        aria-selected="false"
-        aria-controls="tab-panel-parse"
-        data-tab="parse"
-      >
-        Parse AST
-      </button>
-    </div>
-
-    <div class="tab-panels">
-      <section
-        id="tab-panel-generate"
-        class="tab-panel active"
-        role="tabpanel"
-        aria-labelledby="tab-btn-generate"
-      >
-        <div class="panel-grid">
-          <div class="panel panel-input">
-            <div class="panel-header">
-              <label for="generate-input">PHPStan type</label>
-            </div>
-            <div class="panel-body">
-              <textarea id="generate-input" spellcheck="false"></textarea>
-            </div>
-            <div class="panel-footer panel-footer--actions">
-              <label class="panel-footer-label" for="generate-output-mode">Emit as</label>
-              <select id="generate-output-mode" class="panel-footer-select" aria-label="Emitted PHP shape">
-                <option value="function" selected>Function</option>
-                <option value="public_static">Public static method</option>
-                <option value="protected_static">Protected static method</option>
-                <option value="private_static">Private static method</option>
+    <main class="workspace">
+      <div class="panel-grid">
+        <div class="panel panel-input">
+          <div class="panel-header panel-header--with-actions">
+            <label for="type-input">PHPStan type</label>
+            <div class="panel-header-actions">
+              <select id="type-example" class="panel-header-select" aria-label="Load example type">
+                <option value="">Load example…</option>
               </select>
-              <button id="generate-run" type="button" class="btn btn-primary">Generate PHP</button>
             </div>
           </div>
-          <div class="panel panel-output">
-            <div class="panel-header output-toolbar">
-              <span class="panel-header-title">Output</span>
-              <button id="generate-copy" type="button" class="btn btn-copy" disabled>Copy</button>
-            </div>
-            <div class="panel-body panel-body--output" id="generate-output-body">
-              <pre class="output-pre" id="generate-output"><code class="output-empty">Run generate to see output</code></pre>
-            </div>
-            <div class="panel-footer panel-footer--spacer" aria-hidden="true"></div>
+          <div class="panel-body">
+            <textarea id="type-input" spellcheck="false"></textarea>
           </div>
-        </div>
-      </section>
-
-      <section
-        id="tab-panel-parse"
-        class="tab-panel"
-        role="tabpanel"
-        aria-labelledby="tab-btn-parse"
-        hidden
-      >
-        <div class="panel-grid">
-          <div class="panel panel-input">
-            <div class="panel-header">
-              <label for="parse-input">PHPStan type</label>
-            </div>
-            <div class="panel-body">
-              <textarea id="parse-input" spellcheck="false"></textarea>
-            </div>
-            <div class="panel-footer">
-              <button id="parse-run" type="button" class="btn btn-primary">Parse</button>
-            </div>
-          </div>
-          <div class="panel panel-output">
-            <div class="panel-header output-toolbar">
-              <span class="panel-header-title">Output</span>
-              <button id="parse-copy" type="button" class="btn btn-copy" disabled>Copy</button>
-            </div>
-            <div class="panel-body panel-body--output" id="parse-output-body">
-              <pre class="output-pre" id="parse-output"><code class="output-empty">Run parse to see output</code></pre>
-            </div>
-            <div class="panel-footer panel-footer--spacer" aria-hidden="true"></div>
+          <div class="panel-footer panel-footer--actions">
+            <label class="panel-footer-label" for="generate-output-mode">Emit as</label>
+            <select id="generate-output-mode" class="panel-footer-select" aria-label="Emitted PHP shape">
+              <option value="function" selected>Function</option>
+              <option value="public_static">Public static method</option>
+              <option value="protected_static">Protected static method</option>
+              <option value="private_static">Private static method</option>
+            </select>
+            <button id="generate-run" type="button" class="btn btn-primary">Generate</button>
           </div>
         </div>
-      </section>
-    </div>
+        <div class="panel panel-output">
+          <div class="panel-header output-toolbar">
+            <div class="output-tabs" role="tablist" aria-label="Output: PHP code and type AST">
+              <button
+                type="button"
+                role="tab"
+                id="output-tab-php"
+                class="output-tab active"
+                aria-selected="true"
+                aria-controls="output-panel-php"
+                data-output-tab="php"
+              >
+                PHP Code
+              </button>
+              <button
+                type="button"
+                role="tab"
+                id="output-tab-ast"
+                class="output-tab"
+                aria-selected="false"
+                aria-controls="output-panel-ast"
+                data-output-tab="ast"
+              >
+                Type AST
+              </button>
+            </div>
+            <button id="output-copy" type="button" class="btn btn-copy" disabled>Copy</button>
+          </div>
+          <div class="panel-body panel-body--output panel-body--tabbed">
+            <div
+              id="output-panel-php"
+              class="output-tab-panel active"
+              role="tabpanel"
+              aria-labelledby="output-tab-php"
+              data-output-panel="php"
+            >
+              <div class="output-tab-panel-inner" id="php-output-body">
+                <pre class="output-pre" id="php-output"><code class="output-empty">Run generate to see output</code></pre>
+              </div>
+            </div>
+            <div
+              id="output-panel-ast"
+              class="output-tab-panel"
+              role="tabpanel"
+              aria-labelledby="output-tab-ast"
+              data-output-panel="ast"
+              hidden
+            >
+              <div class="output-tab-panel-inner" id="ast-output-body">
+                <pre class="output-pre" id="ast-output"><code class="output-empty">Run generate to see output</code></pre>
+              </div>
+            </div>
+          </div>
+          <div class="panel-footer panel-footer--spacer" aria-hidden="true"></div>
+        </div>
+      </div>
+    </main>
 
     <footer class="site-footer">
       <p>
-        Parse
-        <a href="https://phpstan.org/writing-php-code/phpdoc-types" target="_blank" rel="noopener noreferrer">PHPStan PHPDoc types</a>
-        and generate PHP 8+ runtime checker methods with
-        <code>@phpstan-assert-if-true</code>.
+        Generate PHP 8+ type checking code for 
+        <a href="https://phpstan.org/writing-php-code/phpdoc-types" target="_blank" rel="noopener noreferrer">PHPStan PHPDoc types</a> with <code>@phpstan-assert-if-true</code>.
+        Source on
+        <a href="https://github.com/tkw1536/php-generate-type-checker" target="_blank" rel="noopener noreferrer">GitHub</a>.
       </p>
       <p>
-        Use <strong>Generate PHP</strong> to emit a <code>checkType(mixed $data): bool</code> function or a static method inside <code>TypeChecker</code>.
-        Use <strong>Parse AST</strong> to inspect the parsed type tree as JSON.
-        Types that cannot be validated at runtime (for example <code>callable(int): void</code> or unhandled generics) report a generation error.
+        Enter a type and click <strong>Generate</strong> to produce PHP code.
+        Use the output tabs to switch between the generated <strong>PHP Code</strong> and internally used <strong>Type AST</strong>.
+        Some types cannot be validated at runtime (for example <code>callable(int): void</code> or unhandled generics) report a generation error.
       </p>
+      <p class="site-footer-warning" role="note">
+        <strong>Warning:</strong> Always review generated PHP before using it in production.
+        Output may be incorrect or incomplete for edge cases.
+      </p>
+      
     </footer>
 
     <script type="module" src="/src/main.ts"></script>

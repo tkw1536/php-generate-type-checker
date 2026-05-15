@@ -7,20 +7,27 @@ import {
 } from './highlight.ts';
 import { initTheme, toggleTheme } from './theme.ts';
 import { describeError, renderErrorHtml } from './ui/errorDisplay.ts';
+import { TYPE_EXAMPLES } from './ui/examples.ts';
 
 initTheme();
 
 const DEFAULT_TYPE = 'array<string, string>';
+const INPUT_DEBOUNCE_MS = 300;
+
+type OutputTabId = 'php' | 'ast';
 
 interface OutputPanel {
+  tabId: OutputTabId;
   bodyEl: HTMLElement;
   preId: string;
-  copyBtn: HTMLButtonElement;
   defaultLanguage: HighlightLanguage;
   rawText: string;
 }
 
 const outputPanels: OutputPanel[] = [];
+let activeOutputTab: OutputTabId = 'php';
+
+const copyBtn = document.querySelector<HTMLButtonElement>('#output-copy')!;
 
 function getPreAndCode(bodyEl: HTMLElement, preId: string): {
   pre: HTMLPreElement;
@@ -35,35 +42,30 @@ function getPreAndCode(bodyEl: HTMLElement, preId: string): {
   return { pre, code };
 }
 
+function getActiveOutputPanel(): OutputPanel {
+  return outputPanels.find((p) => p.tabId === activeOutputTab) ?? outputPanels[0]!;
+}
+
+function syncCopyButton(): void {
+  const panel = getActiveOutputPanel();
+  copyBtn.disabled = panel.rawText.length === 0;
+}
+
 function setupOutputPanel(
+  tabId: OutputTabId,
   bodyId: string,
   preId: string,
-  copyBtnId: string,
   defaultLanguage: HighlightLanguage,
 ): OutputPanel {
   const bodyEl = document.querySelector<HTMLElement>(`#${bodyId}`)!;
-  const copyBtn = document.querySelector<HTMLButtonElement>(`#${copyBtnId}`)!;
 
   const panel: OutputPanel = {
+    tabId,
     bodyEl,
     preId,
-    copyBtn,
     defaultLanguage,
     rawText: '',
   };
-
-  copyBtn.addEventListener('click', async () => {
-    if (!panel.rawText) {
-      return;
-    }
-    await navigator.clipboard.writeText(panel.rawText);
-    copyBtn.textContent = 'Copied!';
-    copyBtn.classList.add('copied');
-    window.setTimeout(() => {
-      copyBtn.textContent = 'Copy';
-      copyBtn.classList.remove('copied');
-    }, 1500);
-  });
 
   outputPanels.push(panel);
   return panel;
@@ -71,7 +73,6 @@ function setupOutputPanel(
 
 function setSuccessOutput(panel: OutputPanel, text: string): void {
   panel.rawText = text;
-  panel.copyBtn.disabled = text.length === 0;
   panel.bodyEl.classList.remove('panel-body--error');
 
   const { code } = getPreAndCode(panel.bodyEl, panel.preId);
@@ -79,14 +80,15 @@ function setSuccessOutput(panel: OutputPanel, text: string): void {
   const language = detectOutputLanguage(text, panel.defaultLanguage);
   code.className = `hljs language-${language}`;
   code.innerHTML = highlightCode(text, language);
+  syncCopyButton();
 }
 
 function setErrorOutput(panel: OutputPanel, err: unknown, sourceText: string): void {
   const described = describeError(err);
   panel.rawText = described.message;
-  panel.copyBtn.disabled = false;
   panel.bodyEl.classList.add('panel-body--error');
   panel.bodyEl.innerHTML = renderErrorHtml(described, sourceText);
+  syncCopyButton();
 }
 
 function refreshAllHighlights(): void {
@@ -111,41 +113,91 @@ function getGenerateOutputMode(): CheckerOutputMode {
   }
 }
 
-function runGenerate(panel: OutputPanel): void {
-  const input = document.querySelector<HTMLTextAreaElement>('#generate-input')!;
-  const typeString = input.value.trim() || DEFAULT_TYPE;
+function getTypeInput(): string {
+  const input = document.querySelector<HTMLTextAreaElement>('#type-input')!;
+  return input.value.trim() || DEFAULT_TYPE;
+}
+
+interface GenerationSnapshot {
+  type: string;
+  outputMode: CheckerOutputMode;
+}
+
+let lastGenerated: GenerationSnapshot | null = null;
+
+function getGenerationSnapshot(): GenerationSnapshot {
+  return {
+    type: getTypeInput(),
+    outputMode: getGenerateOutputMode(),
+  };
+}
+
+function isOutputUpToDate(): boolean {
+  if (lastGenerated === null) {
+    return false;
+  }
+  const current = getGenerationSnapshot();
+  return (
+    current.type === lastGenerated.type && current.outputMode === lastGenerated.outputMode
+  );
+}
+
+function syncGenerateButton(): void {
+  generateBtn.disabled = isOutputUpToDate();
+}
+
+function runGenerate(phpPanel: OutputPanel, astPanel: OutputPanel): void {
+  const typeString = getTypeInput();
+
+  try {
+    setSuccessOutput(astPanel, JSON.stringify(parseType(typeString), null, 2));
+  } catch (err) {
+    setErrorOutput(astPanel, err, typeString);
+  }
 
   try {
     setSuccessOutput(
-      panel,
+      phpPanel,
       generateChecker(typeString, { output: getGenerateOutputMode() }),
     );
   } catch (err) {
-    setErrorOutput(panel, err, typeString);
+    setErrorOutput(phpPanel, err, typeString);
   }
+
+  lastGenerated = getGenerationSnapshot();
+  syncGenerateButton();
 }
 
-function runParse(panel: OutputPanel): void {
-  const input = document.querySelector<HTMLTextAreaElement>('#parse-input')!;
-  const typeString = input.value.trim() || DEFAULT_TYPE;
-
-  try {
-    setSuccessOutput(panel, JSON.stringify(parseType(typeString), null, 2));
-  } catch (err) {
-    setErrorOutput(panel, err, typeString);
-  }
+function onGenerateInputChanged(): void {
+  syncGenerateButton();
+  scheduleGenerate();
 }
 
-function setupTabs(): void {
-  const tabButtons = document.querySelectorAll<HTMLButtonElement>('.tab[data-tab]');
-  const tabPanels = document.querySelectorAll<HTMLElement>('.tab-panel');
+function debounce(fn: () => void, ms: number): () => void {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  return () => {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+    }
+    timeoutId = setTimeout(() => {
+      timeoutId = undefined;
+      fn();
+    }, ms);
+  };
+}
+
+function setupOutputTabs(): void {
+  const tabButtons = document.querySelectorAll<HTMLButtonElement>('.output-tab[data-output-tab]');
+  const tabPanels = document.querySelectorAll<HTMLElement>('.output-tab-panel[data-output-panel]');
 
   tabButtons.forEach((button) => {
     button.addEventListener('click', () => {
-      const tabId = button.dataset.tab;
+      const tabId = button.dataset.outputTab as OutputTabId | undefined;
       if (!tabId) {
         return;
       }
+
+      activeOutputTab = tabId;
 
       tabButtons.forEach((btn) => {
         const active = btn === button;
@@ -153,30 +205,46 @@ function setupTabs(): void {
         btn.setAttribute('aria-selected', active ? 'true' : 'false');
       });
 
-      tabPanels.forEach((p) => {
-        const active = p.id === `tab-panel-${tabId}`;
-        p.classList.toggle('active', active);
-        p.hidden = !active;
+      tabPanels.forEach((panel) => {
+        const active = panel.dataset.outputPanel === tabId;
+        panel.classList.toggle('active', active);
+        panel.hidden = !active;
       });
+
+      syncCopyButton();
     });
   });
 }
 
-const generatePanel = setupOutputPanel(
-  'generate-output-body',
-  'generate-output',
-  'generate-copy',
-  'php',
-);
-const parsePanel = setupOutputPanel('parse-output-body', 'parse-output', 'parse-copy', 'json');
+const phpPanel = setupOutputPanel('php', 'php-output-body', 'php-output', 'php');
+const astPanel = setupOutputPanel('ast', 'ast-output-body', 'ast-output', 'json');
 
-document.querySelector<HTMLButtonElement>('#generate-run')!.addEventListener('click', () => {
-  runGenerate(generatePanel);
+const scheduleGenerate = debounce(() => runGenerate(phpPanel, astPanel), INPUT_DEBOUNCE_MS);
+
+const generateBtn = document.querySelector<HTMLButtonElement>('#generate-run')!;
+const typeInput = document.querySelector<HTMLTextAreaElement>('#type-input')!;
+const outputModeSelect = document.querySelector<HTMLSelectElement>('#generate-output-mode')!;
+
+copyBtn.addEventListener('click', async () => {
+  const panel = getActiveOutputPanel();
+  if (!panel.rawText) {
+    return;
+  }
+  await navigator.clipboard.writeText(panel.rawText);
+  copyBtn.textContent = 'Copied!';
+  copyBtn.classList.add('copied');
+  window.setTimeout(() => {
+    copyBtn.textContent = 'Copy';
+    copyBtn.classList.remove('copied');
+  }, 1500);
 });
 
-document.querySelector<HTMLButtonElement>('#parse-run')!.addEventListener('click', () => {
-  runParse(parsePanel);
+generateBtn.addEventListener('click', () => {
+  runGenerate(phpPanel, astPanel);
 });
+
+typeInput.addEventListener('input', onGenerateInputChanged);
+outputModeSelect.addEventListener('change', onGenerateInputChanged);
 
 document.querySelector<HTMLButtonElement>('#theme-toggle')!.addEventListener('click', () => {
   toggleTheme();
@@ -186,7 +254,30 @@ document.addEventListener('themechange', () => {
   refreshAllHighlights();
 });
 
-setupTabs();
+function setupExamples(): void {
+  const select = document.querySelector<HTMLSelectElement>('#type-example')!;
+  const input = document.querySelector<HTMLTextAreaElement>('#type-input')!;
 
-document.querySelector<HTMLTextAreaElement>('#generate-input')!.value = DEFAULT_TYPE;
-document.querySelector<HTMLTextAreaElement>('#parse-input')!.value = DEFAULT_TYPE;
+  for (const example of TYPE_EXAMPLES) {
+    const option = document.createElement('option');
+    option.value = example.type;
+    option.textContent = example.label;
+    select.appendChild(option);
+  }
+
+  select.addEventListener('change', () => {
+    const type = select.value;
+    if (!type) {
+      return;
+    }
+    input.value = type;
+    select.value = '';
+    onGenerateInputChanged();
+  });
+}
+
+setupOutputTabs();
+setupExamples();
+
+typeInput.value = DEFAULT_TYPE;
+runGenerate(phpPanel, astPanel);
