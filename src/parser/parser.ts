@@ -195,25 +195,58 @@ class Parser {
     return { kind: 'callable', signature };
   }
 
+  private isParamByRefAmp(): boolean {
+    if (!this.check('amp')) {
+      return false;
+    }
+    const next = this.tokens[this.index + 1];
+    return next?.type === 'identifier' && next.value.startsWith('$');
+  }
+
+  private parseCallableParamIntersection(): TypeNode {
+    let left = this.parsePostfix();
+    while (this.check('amp') && !this.isParamByRefAmp()) {
+      this.advance();
+      const right = this.parsePostfix();
+      left = this.mergeIntersection(left, right);
+    }
+    return left;
+  }
+
+  private parseCallableParamType(): TypeNode {
+    let left = this.parseCallableParamIntersection();
+    while (this.match('pipe')) {
+      const right = this.parseCallableParamIntersection();
+      left = this.mergeUnion(left, right);
+    }
+    return left;
+  }
+
   private parseCallableParam(): CallableParam {
     let variadic = false;
     if (this.match('ellipsis')) {
       variadic = true;
     }
 
-    const type = this.parseUnion();
+    const type = this.parseCallableParamType();
     let name: string | undefined;
     let byRef = false;
     let optional = false;
 
-    if (this.check('identifier')) {
-      name = this.advance().value;
-      if (this.match('amp')) {
-        byRef = true;
-      }
+    if (!variadic && this.match('ellipsis')) {
+      variadic = true;
     }
 
-    if (this.match('question')) {
+    if (this.match('amp')) {
+      byRef = true;
+      if (this.check('identifier')) {
+        name = this.advance().value;
+      }
+    } else if (this.check('identifier')) {
+      name = this.advance().value;
+    }
+
+    if (this.match('equals') || this.match('question')) {
       optional = true;
     }
 

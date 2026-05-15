@@ -1,0 +1,33 @@
+---
+input: "callable(int, int=): string"
+---
+// json
+{
+  "kind": "callable",
+  "signature": {
+    "params": [
+      {
+        "type": {
+          "kind": "primitive",
+          "name": "int"
+        },
+        "byRef": false,
+        "optional": false,
+        "variadic": false
+      },
+      {
+        "type": {
+          "kind": "primitive",
+          "name": "int"
+        },
+        "byRef": false,
+        "optional": true,
+        "variadic": false
+      }
+    ],
+    "returnType": {
+      "kind": "primitive",
+      "name": "string"
+    }
+  }
+}

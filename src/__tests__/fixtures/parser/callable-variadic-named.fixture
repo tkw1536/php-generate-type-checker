@@ -1,0 +1,34 @@
+---
+input: "callable(float ...$floats): (int|null)"
+---
+// json
+{
+  "kind": "callable",
+  "signature": {
+    "params": [
+      {
+        "type": {
+          "kind": "primitive",
+          "name": "float"
+        },
+        "name": "$floats",
+        "byRef": false,
+        "optional": false,
+        "variadic": true
+      }
+    ],
+    "returnType": {
+      "kind": "union",
+      "types": [
+        {
+          "kind": "primitive",
+          "name": "int"
+        },
+        {
+          "kind": "primitive",
+          "name": "null"
+        }
+      ]
+    }
+  }
+}

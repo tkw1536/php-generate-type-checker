@@ -1,5 +1,5 @@
 ---
-input: "callable(string &$x): void"
+input: "callable(string &$bar): mixed"
 ---
 // json
 {
@@ -11,7 +11,7 @@ input: "callable(string &$x): void"
           "kind": "primitive",
           "name": "string"
         },
-        "name": "$x",
+        "name": "$bar",
         "byRef": true,
         "optional": false,
         "variadic": false
@@ -19,7 +19,7 @@ input: "callable(string &$x): void"
     ],
     "returnType": {
       "kind": "primitive",
-      "name": "void"
+      "name": "mixed"
     }
   }
 }

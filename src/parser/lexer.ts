@@ -13,6 +13,7 @@ export type TokenType =
   | 'comma'
   | 'colon'
   | 'question'
+  | 'equals'
   | 'lparen'
   | 'rparen'
   | 'dot'
@@ -103,6 +104,11 @@ export function tokenize(input: string): Token[] {
     }
     if (ch === '?') {
       tokens.push({ type: 'question', value: '?', pos: start });
+      i++;
+      continue;
+    }
+    if (ch === '=') {
+      tokens.push({ type: 'equals', value: '=', pos: start });
       i++;
       continue;
     }
