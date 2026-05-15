@@ -1,7 +1,15 @@
 ---
 input: "array{foo: int, bar?: string}"
+output: function
 ---
 <?php
+
+/**
+ * @param mixed $data
+ * @phpstan-assert-if-true array{foo: int, bar?: string} $data
+ */
+function checkType(mixed $data): bool
+{
     if (!is_array($data)) {
         return false;
     }
@@ -19,3 +27,4 @@ input: "array{foo: int, bar?: string}"
         }
     }
     return true;
+}

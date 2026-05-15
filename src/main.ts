@@ -1,5 +1,5 @@
 import './style.css';
-import { generateChecker, parseType } from './index.ts';
+import { generateChecker, parseType, type CheckerOutputMode } from './index.ts';
 import {
   detectOutputLanguage,
   highlightCode,
@@ -97,12 +97,29 @@ function refreshAllHighlights(): void {
   }
 }
 
+function getGenerateOutputMode(): CheckerOutputMode {
+  const el = document.querySelector<HTMLSelectElement>('#generate-output-mode');
+  const v = el?.value;
+  switch (v) {
+    case 'function':
+    case 'public_static':
+    case 'protected_static':
+    case 'private_static':
+      return v;
+    default:
+      return 'function';
+  }
+}
+
 function runGenerate(panel: OutputPanel): void {
   const input = document.querySelector<HTMLTextAreaElement>('#generate-input')!;
   const typeString = input.value.trim() || DEFAULT_TYPE;
 
   try {
-    setSuccessOutput(panel, generateChecker(typeString));
+    setSuccessOutput(
+      panel,
+      generateChecker(typeString, { output: getGenerateOutputMode() }),
+    );
   } catch (err) {
     setErrorOutput(panel, err, typeString);
   }

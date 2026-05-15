@@ -1,7 +1,15 @@
 ---
 input: "array<string, string>"
+output: function
 ---
 <?php
+
+/**
+ * @param mixed $data
+ * @phpstan-assert-if-true array<string, string> $data
+ */
+function checkType(mixed $data): bool
+{
     if (!is_array($data)) {
         return false;
     }
@@ -14,3 +22,4 @@ input: "array<string, string>"
         }
     }
     return true;
+}

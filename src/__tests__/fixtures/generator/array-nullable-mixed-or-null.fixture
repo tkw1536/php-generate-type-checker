@@ -1,7 +1,15 @@
 ---
 input: "(array<string|null,mixed>)|null"
+output: function
 ---
 <?php
+
+/**
+ * @param mixed $data
+ * @phpstan-assert-if-true (array<string|null,mixed>)|null $data
+ */
+function checkType(mixed $data): bool
+{
     if ($data === null) {
         return true;
     }
@@ -14,3 +22,4 @@ input: "(array<string|null,mixed>)|null"
         return true;
     }
     return false;
+}

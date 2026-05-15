@@ -1,8 +1,17 @@
 ---
 input: null
+output: function
 ---
 <?php
+
+/**
+ * @param mixed $data
+ * @phpstan-assert-if-true null $data
+ */
+function checkType(mixed $data): bool
+{
     if (!($data === null)) {
         return false;
     }
     return true;
+}

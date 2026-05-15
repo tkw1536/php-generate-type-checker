@@ -1,8 +1,17 @@
 ---
 input: int
+output: function
 ---
 <?php
+
+/**
+ * @param mixed $data
+ * @phpstan-assert-if-true int $data
+ */
+function checkType(mixed $data): bool
+{
     if (!(is_int($data))) {
         return false;
     }
     return true;
+}

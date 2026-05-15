@@ -6,36 +6,83 @@ import {
 } from './loadGeneratorFixture.ts';
 
 describe('parseGeneratorFixture', () => {
-  it('parses input and body, ignoring <?php marker', () => {
+  it('parses input and expected output, ignoring <?php marker', () => {
     const fixture = parseGeneratorFixture(
       `---
 input: int
 ---
 <?php
+
+/**
+ * @param mixed $data
+ * @phpstan-assert-if-true int $data
+ */
+function checkType(mixed $data): bool
+{
     return true;
+}
 
 `,
       'test.fixture',
     );
     expect(fixture.input).toBe('int');
-    expect(fixture.expectedBody).toBe('    return true;');
+    expect(fixture.output).toBe('function');
+    expect(fixture.expected).toBe(`/**
+ * @param mixed $data
+ * @phpstan-assert-if-true int $data
+ */
+function checkType(mixed $data): bool
+{
+    return true;
+}
+`);
     expect(fixture.expectsError).toBe(false);
   });
 
-  it('trims leading and trailing blank lines from body', () => {
+  it('reads output mode from frontmatter', () => {
+    const fixture = parseGeneratorFixture(
+      `---
+input: int
+output: public_static
+---
+<?php
+class X {}
+`,
+      'mode.fixture',
+    );
+    expect(fixture.output).toBe('public_static');
+  });
+
+  it('trims leading and trailing blank lines from expected', () => {
     const fixture = parseGeneratorFixture(
       `---
 input: "foo"
+output: function
 ---
 
 <?php
 
+/**
+ * @param mixed $data
+ * @phpstan-assert-if-true foo $data
+ */
+function checkType(mixed $data): bool
+{
     return false;
+}
 
 `,
       'blank.fixture',
     );
-    expect(fixture.expectedBody).toBe('    return false;');
+    expect(fixture.expected).toBe(`/**
+ * @param mixed $data
+ * @phpstan-assert-if-true foo $data
+ */
+function checkType(mixed $data): bool
+{
+    return false;
+}
+`);
   });
 
   it('detects error fixtures from frontmatter', () => {
@@ -49,6 +96,7 @@ error: generation
       'err.fixture',
     );
     expect(fixture.expectsError).toBe(true);
+    expect(fixture.output).toBe('function');
   });
 });
 

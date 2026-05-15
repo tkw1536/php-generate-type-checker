@@ -1,7 +1,15 @@
 ---
 input: "list<int>"
+output: function
 ---
 <?php
+
+/**
+ * @param mixed $data
+ * @phpstan-assert-if-true list<int> $data
+ */
+function checkType(mixed $data): bool
+{
     if (!is_array($data)) {
         return false;
     }
@@ -14,3 +22,4 @@ input: "list<int>"
         }
     }
     return true;
+}

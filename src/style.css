@@ -264,6 +264,34 @@ body {
   background: var(--bg);
 }
 
+.panel-footer--actions {
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.panel-footer-label {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.panel-footer-select {
+  flex: 1;
+  min-width: 10rem;
+  max-width: 18rem;
+  font: inherit;
+  font-size: 0.8125rem;
+  padding: 0.25rem 0.5rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.panel-footer--actions .btn-primary {
+  margin-left: auto;
+}
+
 .panel-footer--spacer {
   visibility: hidden;
 }

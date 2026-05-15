@@ -54,7 +54,14 @@
             <div class="panel-body">
               <textarea id="generate-input" spellcheck="false"></textarea>
             </div>
-            <div class="panel-footer">
+            <div class="panel-footer panel-footer--actions">
+              <label class="panel-footer-label" for="generate-output-mode">Emit as</label>
+              <select id="generate-output-mode" class="panel-footer-select" aria-label="Emitted PHP shape">
+                <option value="function" selected>Function</option>
+                <option value="public_static">Public static method</option>
+                <option value="protected_static">Protected static method</option>
+                <option value="private_static">Private static method</option>
+              </select>
               <button id="generate-run" type="button" class="btn btn-primary">Generate PHP</button>
             </div>
           </div>
@@ -112,7 +119,7 @@
         <code>@phpstan-assert-if-true</code>.
       </p>
       <p>
-        Use <strong>Generate PHP</strong> to emit a <code>checkType(mixed $data): bool</code> method.
+        Use <strong>Generate PHP</strong> to emit a <code>checkType(mixed $data): bool</code> function or a static method inside <code>TypeChecker</code>.
         Use <strong>Parse AST</strong> to inspect the parsed type tree as JSON.
         Types that cannot be validated at runtime (for example <code>callable(int): void</code> or unhandled generics) report a generation error.
       </p>
