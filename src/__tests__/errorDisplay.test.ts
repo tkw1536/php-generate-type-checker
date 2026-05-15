@@ -1,0 +1,50 @@
+import { describe, expect, it } from 'vitest';
+import { ParseError } from '../parser/parser.ts';
+import { renderErrorHtml } from '../ui/errorDisplay.ts';
+
+describe('renderErrorHtml', () => {
+  it('shows caret at parse error position', () => {
+    const html = renderErrorHtml(
+      {
+        kind: 'parse',
+        title: 'Parse error',
+        message: 'Unexpected token ">"',
+        pos: 17,
+      },
+      'array<string, int>>',
+    );
+    expect(html).toContain('error-display');
+    expect(html).toContain('error-char');
+    expect(html).toContain('error-caret');
+    expect(html).toContain('Position 18');
+  });
+
+  it('uses plain input block for generation errors', () => {
+    const html = renderErrorHtml(
+      {
+        kind: 'generation',
+        title: 'Generation error',
+        message: 'Cannot generate runtime check for generic type: Collection',
+        detail: 'Collection<...>',
+      },
+      'Collection<int>',
+    );
+    expect(html).toContain('error-source-plain');
+    expect(html).not.toContain('error-caret');
+  });
+
+  it('integrates with ParseError', () => {
+    const err = new ParseError('Expected )', 5);
+    const html = renderErrorHtml(
+      {
+        kind: 'parse',
+        title: 'Parse error',
+        message: err.message,
+        pos: err.pos,
+      },
+      '(int|string',
+    );
+    expect(html).toContain('Expected )');
+    expect(html).toContain('^');
+  });
+});

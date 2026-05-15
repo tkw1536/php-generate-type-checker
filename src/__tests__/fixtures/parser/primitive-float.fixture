@@ -1,0 +1,8 @@
+---
+input: "float"
+---
+// json
+{
+  "kind": "primitive",
+  "name": "float"
+}

@@ -1,0 +1,14 @@
+---
+input: "non-empty-array<string>"
+---
+// json
+{
+  "kind": "generic",
+  "name": "non-empty-array",
+  "typeArgs": [
+    {
+      "kind": "primitive",
+      "name": "string"
+    }
+  ]
+}

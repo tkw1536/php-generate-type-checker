@@ -1,0 +1,8 @@
+---
+input: "string"
+---
+// json
+{
+  "kind": "primitive",
+  "name": "string"
+}

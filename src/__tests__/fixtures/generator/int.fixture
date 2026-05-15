@@ -1,0 +1,8 @@
+---
+input: int
+---
+<?php
+    if (!(is_int($data))) {
+        return false;
+    }
+    return true;

@@ -1,0 +1,14 @@
+---
+input: "callable(): void"
+---
+// json
+{
+  "kind": "callable",
+  "signature": {
+    "params": [],
+    "returnType": {
+      "kind": "primitive",
+      "name": "void"
+    }
+  }
+}

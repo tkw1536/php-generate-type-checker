@@ -1,0 +1,16 @@
+---
+input: "array{count: positive-int}"
+---
+// json
+{
+  "kind": "shape",
+  "fields": [
+    {
+      "key": "count",
+      "type": {
+        "kind": "primitive",
+        "name": "positive-int"
+      }
+    }
+  ]
+}

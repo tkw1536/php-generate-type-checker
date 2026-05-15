@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHPStan Type Checker Generator</title>
+    <link rel="stylesheet" href="/src/style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>PHPStan Type Checker Generator</h1>
+      <button id="theme-toggle" type="button" class="btn btn-theme" aria-label="Toggle color theme">
+        Dark mode
+      </button>
+    </header>
+
+    <div class="tabs" role="tablist" aria-label="Tool mode">
+      <button
+        type="button"
+        role="tab"
+        id="tab-btn-generate"
+        class="tab active"
+        aria-selected="true"
+        aria-controls="tab-panel-generate"
+        data-tab="generate"
+      >
+        Generate PHP
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="tab-btn-parse"
+        class="tab"
+        aria-selected="false"
+        aria-controls="tab-panel-parse"
+        data-tab="parse"
+      >
+        Parse AST
+      </button>
+    </div>
+
+    <div class="tab-panels">
+      <section
+        id="tab-panel-generate"
+        class="tab-panel active"
+        role="tabpanel"
+        aria-labelledby="tab-btn-generate"
+      >
+        <div class="panel-grid">
+          <div class="panel panel-input">
+            <div class="panel-header">
+              <label for="generate-input">PHPStan type</label>
+            </div>
+            <div class="panel-body">
+              <textarea id="generate-input" spellcheck="false"></textarea>
+            </div>
+            <div class="panel-footer">
+              <button id="generate-run" type="button" class="btn btn-primary">Generate PHP</button>
+            </div>
+          </div>
+          <div class="panel panel-output">
+            <div class="panel-header output-toolbar">
+              <span class="panel-header-title">Output</span>
+              <button id="generate-copy" type="button" class="btn btn-copy" disabled>Copy</button>
+            </div>
+            <div class="panel-body panel-body--output" id="generate-output-body">
+              <pre class="output-pre" id="generate-output"><code class="output-empty">Run generate to see output</code></pre>
+            </div>
+            <div class="panel-footer panel-footer--spacer" aria-hidden="true"></div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="tab-panel-parse"
+        class="tab-panel"
+        role="tabpanel"
+        aria-labelledby="tab-btn-parse"
+        hidden
+      >
+        <div class="panel-grid">
+          <div class="panel panel-input">
+            <div class="panel-header">
+              <label for="parse-input">PHPStan type</label>
+            </div>
+            <div class="panel-body">
+              <textarea id="parse-input" spellcheck="false"></textarea>
+            </div>
+            <div class="panel-footer">
+              <button id="parse-run" type="button" class="btn btn-primary">Parse</button>
+            </div>
+          </div>
+          <div class="panel panel-output">
+            <div class="panel-header output-toolbar">
+              <span class="panel-header-title">Output</span>
+              <button id="parse-copy" type="button" class="btn btn-copy" disabled>Copy</button>
+            </div>
+            <div class="panel-body panel-body--output" id="parse-output-body">
+              <pre class="output-pre" id="parse-output"><code class="output-empty">Run parse to see output</code></pre>
+            </div>
+            <div class="panel-footer panel-footer--spacer" aria-hidden="true"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="site-footer">
+      <p>
+        Parse
+        <a href="https://phpstan.org/writing-php-code/phpdoc-types" target="_blank" rel="noopener noreferrer">PHPStan PHPDoc types</a>
+        and generate PHP 8+ runtime checker methods with
+        <code>@phpstan-assert-if-true</code>.
+      </p>
+      <p>
+        Use <strong>Generate PHP</strong> to emit a <code>checkType(mixed $data): bool</code> method.
+        Use <strong>Parse AST</strong> to inspect the parsed type tree as JSON.
+        Types that cannot be validated at runtime (for example <code>callable(int): void</code> or unhandled generics) report a generation error.
+      </p>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

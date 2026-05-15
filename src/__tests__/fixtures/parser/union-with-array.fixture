@@ -1,0 +1,24 @@
+---
+input: "int|array<string, bool>"
+---
+// json
+{
+  "kind": "union",
+  "types": [
+    {
+      "kind": "primitive",
+      "name": "int"
+    },
+    {
+      "kind": "array",
+      "key": {
+        "kind": "primitive",
+        "name": "string"
+      },
+      "value": {
+        "kind": "primitive",
+        "name": "bool"
+      }
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+---
+input: "string[][]"
+---
+// json
+{
+  "kind": "array",
+  "value": {
+    "kind": "array",
+    "value": {
+      "kind": "primitive",
+      "name": "string"
+    }
+  }
+}

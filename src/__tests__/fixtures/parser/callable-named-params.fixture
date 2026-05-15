@@ -1,0 +1,35 @@
+---
+input: "callable(int $a, string $b): bool"
+---
+// json
+{
+  "kind": "callable",
+  "signature": {
+    "params": [
+      {
+        "type": {
+          "kind": "primitive",
+          "name": "int"
+        },
+        "name": "$a",
+        "byRef": false,
+        "optional": false,
+        "variadic": false
+      },
+      {
+        "type": {
+          "kind": "primitive",
+          "name": "string"
+        },
+        "name": "$b",
+        "byRef": false,
+        "optional": false,
+        "variadic": false
+      }
+    ],
+    "returnType": {
+      "kind": "primitive",
+      "name": "bool"
+    }
+  }
+}

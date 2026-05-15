@@ -1,0 +1,8 @@
+---
+input: null
+---
+<?php
+    if (!($data === null)) {
+        return false;
+    }
+    return true;

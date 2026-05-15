@@ -1,0 +1,8 @@
+---
+input: "callable"
+---
+// json
+{
+  "kind": "primitive",
+  "name": "callable"
+}

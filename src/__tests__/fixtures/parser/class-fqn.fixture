@@ -1,0 +1,8 @@
+---
+input: '\Foo\Bar'
+---
+// json
+{
+  "kind": "class",
+  "name": "\\Foo\\Bar"
+}

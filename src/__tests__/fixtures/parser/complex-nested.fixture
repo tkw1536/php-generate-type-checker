@@ -1,0 +1,42 @@
+---
+input: "(array<string, int|null>|null)&Foo"
+---
+// json
+{
+  "kind": "intersection",
+  "types": [
+    {
+      "kind": "union",
+      "types": [
+        {
+          "kind": "array",
+          "key": {
+            "kind": "primitive",
+            "name": "string"
+          },
+          "value": {
+            "kind": "union",
+            "types": [
+              {
+                "kind": "primitive",
+                "name": "int"
+              },
+              {
+                "kind": "primitive",
+                "name": "null"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "primitive",
+          "name": "null"
+        }
+      ]
+    },
+    {
+      "kind": "class",
+      "name": "Foo"
+    }
+  ]
+}

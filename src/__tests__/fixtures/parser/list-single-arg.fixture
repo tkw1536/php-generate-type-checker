@@ -1,0 +1,11 @@
+---
+input: "non-empty-list<string>"
+---
+// json
+{
+  "kind": "list",
+  "element": {
+    "kind": "primitive",
+    "name": "string"
+  }
+}

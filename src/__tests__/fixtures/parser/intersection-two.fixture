@@ -1,0 +1,17 @@
+---
+input: "Foo&Bar"
+---
+// json
+{
+  "kind": "intersection",
+  "types": [
+    {
+      "kind": "class",
+      "name": "Foo"
+    },
+    {
+      "kind": "class",
+      "name": "Bar"
+    }
+  ]
+}

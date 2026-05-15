@@ -1,0 +1,5 @@
+---
+input: "Collection<int>"
+error: generation
+---
+<?php

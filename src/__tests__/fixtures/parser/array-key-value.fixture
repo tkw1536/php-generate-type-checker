@@ -1,0 +1,15 @@
+---
+input: "array<string, int>"
+---
+// json
+{
+  "kind": "array",
+  "key": {
+    "kind": "primitive",
+    "name": "string"
+  },
+  "value": {
+    "kind": "primitive",
+    "name": "int"
+  }
+}

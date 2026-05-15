@@ -1,0 +1,16 @@
+---
+input: "list<int>"
+---
+<?php
+    if (!is_array($data)) {
+        return false;
+    }
+    if (!array_is_list($data)) {
+        return false;
+    }
+    foreach ($data as $value) {
+        if (!(is_int($value))) {
+            return false;
+        }
+    }
+    return true;

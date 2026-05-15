@@ -1,0 +1,8 @@
+---
+input: "array"
+---
+// json
+{
+  "kind": "primitive",
+  "name": "array"
+}

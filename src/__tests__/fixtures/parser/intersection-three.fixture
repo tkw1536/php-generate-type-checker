@@ -1,0 +1,21 @@
+---
+input: "A&B&C"
+---
+// json
+{
+  "kind": "intersection",
+  "types": [
+    {
+      "kind": "class",
+      "name": "A"
+    },
+    {
+      "kind": "class",
+      "name": "B"
+    },
+    {
+      "kind": "class",
+      "name": "C"
+    }
+  ]
+}

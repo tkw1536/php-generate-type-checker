@@ -1,0 +1,22 @@
+---
+input: "array<string, array<int, bool>>"
+---
+// json
+{
+  "kind": "array",
+  "key": {
+    "kind": "primitive",
+    "name": "string"
+  },
+  "value": {
+    "kind": "array",
+    "key": {
+      "kind": "primitive",
+      "name": "int"
+    },
+    "value": {
+      "kind": "primitive",
+      "name": "bool"
+    }
+  }
+}

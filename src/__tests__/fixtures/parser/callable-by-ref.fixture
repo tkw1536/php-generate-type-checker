@@ -1,0 +1,33 @@
+---
+input: "callable(string &$x): void"
+---
+// json
+{
+  "kind": "callable",
+  "signature": {
+    "params": [
+      {
+        "type": {
+          "kind": "intersection",
+          "types": [
+            {
+              "kind": "primitive",
+              "name": "string"
+            },
+            {
+              "kind": "class",
+              "name": "$x"
+            }
+          ]
+        },
+        "byRef": false,
+        "optional": false,
+        "variadic": false
+      }
+    ],
+    "returnType": {
+      "kind": "primitive",
+      "name": "void"
+    }
+  }
+}

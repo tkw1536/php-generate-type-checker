@@ -1,0 +1,8 @@
+---
+input: "bool"
+---
+// json
+{
+  "kind": "primitive",
+  "name": "bool"
+}

@@ -1,0 +1,21 @@
+---
+input: "int|string|null"
+---
+// json
+{
+  "kind": "union",
+  "types": [
+    {
+      "kind": "primitive",
+      "name": "int"
+    },
+    {
+      "kind": "primitive",
+      "name": "string"
+    },
+    {
+      "kind": "primitive",
+      "name": "null"
+    }
+  ]
+}

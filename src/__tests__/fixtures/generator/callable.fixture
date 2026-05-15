@@ -1,0 +1,8 @@
+---
+input: callable
+---
+<?php
+    if (!(is_callable($data))) {
+        return false;
+    }
+    return true;

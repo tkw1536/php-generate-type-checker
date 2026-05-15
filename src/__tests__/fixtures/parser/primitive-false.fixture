@@ -1,0 +1,8 @@
+---
+input: "false"
+---
+// json
+{
+  "kind": "literal",
+  "value": false
+}

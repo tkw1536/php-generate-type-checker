@@ -1,0 +1,18 @@
+---
+input: "iterable<int, string>"
+---
+// json
+{
+  "kind": "generic",
+  "name": "iterable",
+  "typeArgs": [
+    {
+      "kind": "primitive",
+      "name": "int"
+    },
+    {
+      "kind": "primitive",
+      "name": "string"
+    }
+  ]
+}

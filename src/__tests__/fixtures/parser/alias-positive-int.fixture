@@ -1,0 +1,8 @@
+---
+input: "positive-int"
+---
+// json
+{
+  "kind": "primitive",
+  "name": "positive-int"
+}

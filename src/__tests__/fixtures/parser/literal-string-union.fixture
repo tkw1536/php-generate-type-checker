@@ -1,0 +1,17 @@
+---
+input: "'foo'|'bar'"
+---
+// json
+{
+  "kind": "union",
+  "types": [
+    {
+      "kind": "literal",
+      "value": "foo"
+    },
+    {
+      "kind": "literal",
+      "value": "bar"
+    }
+  ]
+}

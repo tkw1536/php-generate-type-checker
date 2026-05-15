@@ -1,0 +1,21 @@
+---
+input: "array{foo: int, bar?: string}"
+---
+<?php
+    if (!is_array($data)) {
+        return false;
+    }
+    if (!array_key_exists('foo', $data)) {
+        return false;
+    }
+    $field_foo = $data['foo'];
+    if (!(is_int($field_foo))) {
+        return false;
+    }
+    if (array_key_exists('bar', $data)) {
+        $field_bar = $data['bar'];
+        if (!(is_string($field_bar))) {
+            return false;
+        }
+    }
+    return true;

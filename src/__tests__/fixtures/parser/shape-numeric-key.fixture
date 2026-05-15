@@ -1,0 +1,24 @@
+---
+input: "array{0: int, 1?: string}"
+---
+// json
+{
+  "kind": "shape",
+  "fields": [
+    {
+      "key": 0,
+      "type": {
+        "kind": "primitive",
+        "name": "int"
+      }
+    },
+    {
+      "key": 1,
+      "optional": true,
+      "type": {
+        "kind": "primitive",
+        "name": "string"
+      }
+    }
+  ]
+}

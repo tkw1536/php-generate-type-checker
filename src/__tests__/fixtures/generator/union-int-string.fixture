@@ -1,0 +1,11 @@
+---
+input: "int|string"
+---
+<?php
+    if (is_int($data)) {
+        return true;
+    }
+    if (is_string($data)) {
+        return true;
+    }
+    return false;

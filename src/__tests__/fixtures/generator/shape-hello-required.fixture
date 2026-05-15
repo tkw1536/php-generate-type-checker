@@ -1,0 +1,15 @@
+---
+input: "array{hello: string}"
+---
+<?php
+    if (!is_array($data)) {
+        return false;
+    }
+    if (!array_key_exists('hello', $data)) {
+        return false;
+    }
+    $field_hello = $data['hello'];
+    if (!(is_string($field_hello))) {
+        return false;
+    }
+    return true;
