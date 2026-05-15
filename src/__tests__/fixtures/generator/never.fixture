@@ -1,14 +1,11 @@
 ---
-input: never
+input: "never"
 output: function
 ---
 <?php
 
-/**
- * @param mixed $data
- * @phpstan-assert-if-true never $data
- */
-function checkType(mixed $data): bool
+/** @phpstan-assert-if-true never $value */
+function check(mixed $value): bool
 {
     return false;
 }

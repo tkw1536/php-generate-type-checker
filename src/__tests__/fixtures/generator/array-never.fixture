@@ -1,0 +1,11 @@
+---
+input: "array<never>"
+output: function
+---
+<?php
+
+/** @phpstan-assert-if-true array<never> $value */
+function check(mixed $value): bool
+{
+    return $value === [];
+}

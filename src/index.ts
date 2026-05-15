@@ -2,8 +2,10 @@ export { parseType, ParseError, LexerError, tokenize } from './parser/index.ts';
 export {
   type CheckerOutputMode,
   type GenerateCheckerOptions,
+  type EmittedCheckerBody,
   DEFAULT_CHECKER_OUTPUT,
   formatCheckerOutput,
+  formatClassCheckerOutput,
   generateChecker,
   GenerationError,
   emitBody,

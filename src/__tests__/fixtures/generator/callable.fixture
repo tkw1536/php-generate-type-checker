@@ -1,14 +1,11 @@
 ---
-input: callable
+input: "callable"
 output: function
 ---
 <?php
 
-/**
- * @param mixed $data
- * @phpstan-assert-if-true callable $data
- */
-function checkType(mixed $data): bool
+/** @phpstan-assert-if-true callable $value */
+function check(mixed $value): bool
 {
-    return is_callable($data);
+    return is_callable($value);
 }

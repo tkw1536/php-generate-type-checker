@@ -4,17 +4,14 @@ output: function
 ---
 <?php
 
-/**
- * @param mixed $data
- * @phpstan-assert-if-true array<string, string> $data
- */
-function checkType(mixed $data): bool
+/** @phpstan-assert-if-true array<string, string> $value */
+function check(mixed $value): bool
 {
-    if (!is_array($data)) {
+    if (!is_array($value)) {
         return false;
     }
-    foreach ($data as $key => $value) {
-        if (!(is_string($key)) || !(is_string($value))) {
+    foreach ($value as $key1 => $value1) {
+        if (!is_string($key1) || !is_string($value1)) {
             return false;
         }
     }

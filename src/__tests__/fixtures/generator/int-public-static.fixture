@@ -1,16 +1,14 @@
 ---
-input: int
+input: "int"
 output: public_static
 ---
 <?php
+
 class TypeChecker
 {
-    /**
-     * @param mixed $data
-     * @phpstan-assert-if-true int $data
-     */
-    public static function checkType(mixed $data): bool
+    /** @phpstan-assert-if-true int $value */
+    public static function check(mixed $value): bool
     {
-        return is_int($data);
+        return is_int($value);
     }
 }

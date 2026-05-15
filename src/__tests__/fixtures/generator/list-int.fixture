@@ -4,17 +4,14 @@ output: function
 ---
 <?php
 
-/**
- * @param mixed $data
- * @phpstan-assert-if-true list<int> $data
- */
-function checkType(mixed $data): bool
+/** @phpstan-assert-if-true list<int> $value */
+function check(mixed $value): bool
 {
-    if (!is_array($data) || !array_is_list($data)) {
+    if (!is_array($value) || !array_is_list($value)) {
         return false;
     }
-    foreach ($data as $value) {
-        if (!(is_int($value))) {
+    foreach ($value as $value1) {
+        if (!is_int($value1)) {
             return false;
         }
     }

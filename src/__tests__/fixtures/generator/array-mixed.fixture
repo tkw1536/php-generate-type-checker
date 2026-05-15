@@ -4,11 +4,8 @@ output: function
 ---
 <?php
 
-/**
- * @param mixed $data
- * @phpstan-assert-if-true array<mixed> $data
- */
-function checkType(mixed $data): bool
+/** @phpstan-assert-if-true array<mixed> $value */
+function check(mixed $value): bool
 {
-    return is_array($data);
+    return is_array($value);
 }

@@ -23,7 +23,7 @@ The UI uses **tabs** (Generate PHP / Parse AST) with input on the left and highl
 - **Simple types** (primitives, aliases, classes): [`src/generator/simpleTypes.ts`](src/generator/simpleTypes.ts) — adjust `emitExpression()`.
 - **Recursive / composite types** (arrays, shapes, unions): [`src/generator/emit.ts`](src/generator/emit.ts) — `emitFunctionBody()`, `emitExpression()`, `emitStatementBlock()`.
 - **Checkability rules** (what cannot be generated): [`src/generator/checkability.ts`](src/generator/checkability.ts).
-- **Method wrapper** (`checkType`, docblock): [`src/generator/php.ts`](src/generator/php.ts).
+- **Method wrapper** (`check`, docblock): [`src/generator/php.ts`](src/generator/php.ts).
 
 Types that cannot be checked at runtime (e.g. `callable(int): string`, `Collection<T>`) throw `GenerationError`.
 

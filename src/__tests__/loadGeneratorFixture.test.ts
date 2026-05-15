@@ -13,11 +13,8 @@ input: int
 ---
 <?php
 
-/**
- * @param mixed $data
- * @phpstan-assert-if-true int $data
- */
-function checkType(mixed $data): bool
+/** @phpstan-assert-if-true int $value */
+function check(mixed $value): bool
 {
     return true;
 }
@@ -27,11 +24,8 @@ function checkType(mixed $data): bool
     );
     expect(fixture.input).toBe('int');
     expect(fixture.output).toBe('function');
-    expect(fixture.expected).toBe(`/**
- * @param mixed $data
- * @phpstan-assert-if-true int $data
- */
-function checkType(mixed $data): bool
+    expect(fixture.expected).toBe(`/** @phpstan-assert-if-true int $value */
+function check(mixed $value): bool
 {
     return true;
 }
@@ -62,11 +56,8 @@ output: function
 
 <?php
 
-/**
- * @param mixed $data
- * @phpstan-assert-if-true foo $data
- */
-function checkType(mixed $data): bool
+/** @phpstan-assert-if-true foo $value */
+function check(mixed $value): bool
 {
     return false;
 }
@@ -74,11 +65,8 @@ function checkType(mixed $data): bool
 `,
       'blank.fixture',
     );
-    expect(fixture.expected).toBe(`/**
- * @param mixed $data
- * @phpstan-assert-if-true foo $data
- */
-function checkType(mixed $data): bool
+    expect(fixture.expected).toBe(`/** @phpstan-assert-if-true foo $value */
+function check(mixed $value): bool
 {
     return false;
 }

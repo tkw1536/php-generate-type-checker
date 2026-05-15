@@ -20,7 +20,7 @@ export function emitExpression(node: TypeNode, varName: string): string | null {
   }
 
   if (node.kind === 'class') {
-    return `is_a(${varName}, ${phpString(node.name)}, true)`;
+    return `${varName} instanceof ${node.name}`;
   }
 
   if (node.kind === 'primitive') {
@@ -108,6 +108,11 @@ export function requireExpression(node: TypeNode, varName: string): string {
 
 export function isNoOpValueCheck(node: TypeNode): boolean {
   return node.kind === 'primitive' && node.name === 'mixed';
+}
+
+/** Value type `never` (e.g. `array<never>` / `list<never>`): only empty containers satisfy. */
+export function isNeverPrimitive(node: TypeNode): boolean {
+  return node.kind === 'primitive' && node.name === 'never';
 }
 
 export function isExpressible(node: TypeNode): boolean {

@@ -1,0 +1,28 @@
+---
+input: 'array{"hello:world": string, "hello.world": string}'
+output: function
+---
+<?php
+
+/** @phpstan-assert-if-true array{"hello:world": string, "hello.world": string} $value */
+function check(mixed $value): bool
+{
+    if (!is_array($value)) {
+        return false;
+    }
+    if (!array_key_exists('hello:world', $value)) {
+        return false;
+    }
+    $value_hello_world = $value['hello:world'];
+    if (!is_string($value_hello_world)) {
+        return false;
+    }
+    if (!array_key_exists('hello.world', $value)) {
+        return false;
+    }
+    $value_hello_world_2 = $value['hello.world'];
+    if (!is_string($value_hello_world_2)) {
+        return false;
+    }
+    return true;
+}

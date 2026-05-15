@@ -13,18 +13,26 @@ export function generateChecker(
 ): string {
   const ast = normalizeNode(parseType(typeString));
   assertCheckable(ast, 'function');
-  const body = emitBody(ast, '$data');
-  return generateCheckerFromAst(typeString, body, options);
+  const { helpers, body } = emitBody(ast, '$value', options);
+  return generateCheckerFromAst(typeString, body, options, helpers || undefined);
 }
 
 export { GenerationError } from './errors.ts';
-export { emitBody, emitExpression, emitFunctionBody, emitStatementBlock, needsStatementBlock } from './emit.ts';
+export {
+  emitBody,
+  type EmittedCheckerBody,
+  emitExpression,
+  emitFunctionBody,
+  emitStatementBlock,
+  needsStatementBlock,
+} from './emit.ts';
 export { assertCheckable } from './checkability.ts';
 export { emitExpression as emitSimpleExpression, isExpressible, isNoOpValueCheck } from './simpleTypes.ts';
 export {
   type CheckerOutputMode,
   DEFAULT_CHECKER_OUTPUT,
   formatCheckerOutput,
+  formatClassCheckerOutput,
   type GenerateCheckerOptions,
   generateCheckerFromAst,
   wrapChecker,

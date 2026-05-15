@@ -1,0 +1,28 @@
+---
+input: "(array<string|null,mixed>)|null"
+output: public_static
+---
+<?php
+
+class TypeChecker
+{
+    /** @phpstan-assert-if-true (array<string|null,mixed>)|null $value */
+    public static function check(mixed $value): bool
+    {
+        return $value === null || self::check_1($value);
+    }
+
+    /** @phpstan-assert-if-true array<null|string, mixed> $x */
+    private static function check_1(mixed $x): bool
+    {
+        if (!is_array($x)) {
+            return false;
+        }
+        foreach ($x as $key1 => $value1) {
+            if (!(is_string($key1) || $key1 === null)) {
+                return false;
+            }
+        }
+        return true;
+    }
+}

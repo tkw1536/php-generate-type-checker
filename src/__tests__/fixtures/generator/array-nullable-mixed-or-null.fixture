@@ -4,22 +4,23 @@ output: function
 ---
 <?php
 
-/**
- * @param mixed $data
- * @phpstan-assert-if-true (array<string|null,mixed>)|null $data
- */
-function checkType(mixed $data): bool
+/** @phpstan-assert-if-true (array<string|null,mixed>)|null $value */
+function check(mixed $value): bool
 {
-    if ($data === null) {
-        return true;
+    return $value === null || check_1($value);
+}
+
+
+/** @phpstan-assert-if-true array<null|string, mixed> $x */
+function check_1(mixed $x): bool
+{
+    if (!is_array($x)) {
+        return false;
     }
-    if (is_array($data)) {
-        foreach ($data as $key => $value) {
-            if (!((is_string($key) || $key === null))) {
-                return false;
-            }
+    foreach ($x as $key1 => $value1) {
+        if (!(is_string($key1) || $key1 === null)) {
+            return false;
         }
-        return true;
     }
-    return false;
+    return true;
 }

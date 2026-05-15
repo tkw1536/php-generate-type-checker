@@ -20,15 +20,64 @@ function indentEachLine(text: string, prefix: string): string {
 }
 
 function phpDocBlock(escapedType: string): string {
-  return `/**
- * @param mixed $data
- * @phpstan-assert-if-true ${escapedType} $data
- */`;
+  return `/** @phpstan-assert-if-true ${escapedType} $value */`;
+}
+
+function normalizeEndingNewline(s: string): string {
+  return s.endsWith('\n') ? s : `${s}\n`;
+}
+
+function visibilityForMode(mode: CheckerOutputMode): 'public' | 'protected' | 'private' {
+  if (mode === 'public_static') return 'public';
+  if (mode === 'protected_static') return 'protected';
+  return 'private';
 }
 
 /**
- * Wraps emitted checker body with PHPDoc and a `checkType` function or static method.
- * Method modes wrap with `class TypeChecker { … }`.
+ * Builds `class TypeChecker` with `check`, optional numbered helpers as `private static function check_N`,
+ * and helpers placed after `check` inside the class body.
+ */
+export function formatClassCheckerOutput(
+  typeString: string,
+  mainBody: string,
+  helpersBlock: string,
+  mode: CheckerOutputMode,
+): string {
+  const escapedType = typeString.trim();
+  const doc = indentEachLine(phpDocBlock(escapedType), CLASS_INDENT);
+  const visibility = visibilityForMode(mode);
+  const indentedMain = indentEachLine(mainBody, CLASS_INDENT);
+
+  const helperBlocks = helpersBlock.trim()
+    ? helpersBlock
+        .split(/\n\n+/)
+        .map((block) => {
+          const withStatic = block
+            .trim()
+            .replace(/^function check_/m, 'private static function check_');
+          return indentEachLine(withStatic, CLASS_INDENT);
+        })
+        .join('\n\n')
+    : '';
+
+  const checkMethod = `${doc}
+    ${visibility} static function check(mixed $value): bool
+    {
+${indentedMain}
+    }`;
+
+  const inner = helperBlocks ? `${checkMethod}\n\n${helperBlocks}` : checkMethod;
+
+  return `class TypeChecker
+{
+${inner}
+}
+`;
+}
+
+/**
+ * Wraps emitted checker body with PHPDoc and a `check` function or static method.
+ * Method modes wrap with `class TypeChecker { … }` (helpers are assembled in {@link wrapChecker}).
  */
 export function formatCheckerOutput(
   typeString: string,
@@ -40,46 +89,38 @@ export function formatCheckerOutput(
 
   if (mode === 'function') {
     return `${doc}
-function checkType(mixed $data): bool
+function check(mixed $value): bool
 {
 ${body}
 }
 `;
   }
 
-  const visibility =
-    mode === 'public_static'
-      ? 'public'
-      : mode === 'protected_static'
-        ? 'protected'
-        : 'private';
-
-  const indentedDoc = indentEachLine(doc, CLASS_INDENT);
-  const indentedBody = indentEachLine(body, CLASS_INDENT);
-
-  return `class TypeChecker
-{
-${indentedDoc}
-    ${visibility} static function checkType(mixed $data): bool
-    {
-${indentedBody}
-    }
-}
-`;
+  return formatClassCheckerOutput(typeString, body, '', mode);
 }
 
 export function wrapChecker(
   typeString: string,
   body: string,
   options?: GenerateCheckerOptions,
+  helpersPrelude?: string,
 ): string {
-  return formatCheckerOutput(typeString, body, options?.output ?? DEFAULT_CHECKER_OUTPUT);
+  const mode = options?.output ?? DEFAULT_CHECKER_OUTPUT;
+  if (mode === 'function') {
+    const core = formatCheckerOutput(typeString, body, 'function');
+    const combined = helpersPrelude ? `${core}\n\n${helpersPrelude}` : core;
+    return normalizeEndingNewline(combined);
+  }
+  return normalizeEndingNewline(
+    formatClassCheckerOutput(typeString, body, helpersPrelude ?? '', mode),
+  );
 }
 
 export function generateCheckerFromAst(
   typeString: string,
   body: string,
   options?: GenerateCheckerOptions,
+  helpersPrelude?: string,
 ): string {
-  return wrapChecker(typeString, body, options);
+  return wrapChecker(typeString, body, options, helpersPrelude);
 }

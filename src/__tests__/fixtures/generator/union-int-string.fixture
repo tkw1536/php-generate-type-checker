@@ -4,11 +4,8 @@ output: function
 ---
 <?php
 
-/**
- * @param mixed $data
- * @phpstan-assert-if-true int|string $data
- */
-function checkType(mixed $data): bool
+/** @phpstan-assert-if-true int|string $value */
+function check(mixed $value): bool
 {
-    return (is_int($data) || is_string($data));
+    return (is_int($value) || is_string($value));
 }

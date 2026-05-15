@@ -1,0 +1,40 @@
+---
+input: "array<string>|array<int>"
+output: function
+---
+<?php
+
+/** @phpstan-assert-if-true array<string>|array<int> $value */
+function check(mixed $value): bool
+{
+    return check_1($value) || check_2($value);
+}
+
+
+/** @phpstan-assert-if-true array<int> $x */
+function check_1(mixed $x): bool
+{
+    if (!is_array($x)) {
+        return false;
+    }
+    foreach ($x as $value1) {
+        if (!is_int($value1)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/** @phpstan-assert-if-true array<string> $x */
+function check_2(mixed $x): bool
+{
+    if (!is_array($x)) {
+        return false;
+    }
+    foreach ($x as $value1) {
+        if (!is_string($value1)) {
+            return false;
+        }
+    }
+    return true;
+}
