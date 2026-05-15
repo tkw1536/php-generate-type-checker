@@ -3,14 +3,14 @@ input: "(array<string|null,mixed>)|null"
 output: function
 ---
 /** @phpstan-assert-if-true array<null|string, mixed>|null $value */
-function isNullTypeOrArrayNullTypeOrStringToMixedType(mixed $value): bool
+function isNullTypeOrArrayNullTypeOrStringToMixed(mixed $value): bool
 {
-    return $value === null || isArrayNullTypeOrStringToMixedType($value);
+    return $value === null || isArrayNullTypeOrStringToMixed($value);
 }
 
 
 /** @phpstan-assert-if-true array<null|string, mixed> $value */
-function isArrayNullTypeOrStringToMixedType(mixed $value): bool
+function isArrayNullTypeOrStringToMixed(mixed $value): bool
 {
     if (!is_array($value)) {
         return false;

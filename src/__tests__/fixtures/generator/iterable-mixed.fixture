@@ -3,7 +3,7 @@ input: "iterable<mixed>"
 output: function
 ---
 /** @phpstan-assert-if-true iterable<mixed> $value */
-function isArrayMixedType(mixed $value): bool
+function isIterableMixed(mixed $value): bool
 {
     return is_iterable($value);
 }

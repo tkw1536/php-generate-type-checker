@@ -180,8 +180,22 @@ function compactTypeCheckExpression(n: TypeNode, varName: string): string | null
     return arrayLikePositiveCheck(node as ArrayNode, varName);
   }
 
+  if (node.kind === 'list' && isNoOpValueCheck(node.element)) {
+    const listNode = node as Extract<TypeNode, { kind: 'list' }>;
+    const listOk = `is_array(${varName}) && array_is_list(${varName})`;
+    return listNode.nonEmpty ? `${listOk} && ${varName} !== []` : listOk;
+  }
+
   if (node.kind === 'array') {
     const an = node as ArrayNode;
+    if (
+      !an.key &&
+      !an.iterable &&
+      an.nonEmpty &&
+      isNoOpValueCheck(an.value)
+    ) {
+      return `is_array(${varName}) && ${varName} !== []`;
+    }
     if (isNeverPrimitive(an.value) && !an.iterable) {
       if (an.nonEmpty) {
         return 'false';
@@ -190,6 +204,9 @@ function compactTypeCheckExpression(n: TypeNode, varName: string): string | null
     }
   }
   if (node.kind === 'list' && isNeverPrimitive(node.element)) {
+    if (node.nonEmpty) {
+      return 'false';
+    }
     return `${varName} === []`;
   }
 
@@ -532,6 +549,13 @@ function emitArrayValidation(
     }
   }
 
+  if (!arrayLoopNeedsElementIteration(node)) {
+    const compact = tryEmitCompactReturnLines(node as TypeNode, varName);
+    if (compact) {
+      return shiftLines(depth, compact);
+    }
+  }
+
   const block: PhpLine[] = [];
   const includeGuard = opts.includeArrayGuard;
   const av = Boolean(opts.assumeVarIsArray);
@@ -697,6 +721,9 @@ function emitListValidation(
   opts: ValidationEmitOptions,
 ): PhpLine[] {
   if (isNeverPrimitive(node.element)) {
+    if (node.nonEmpty) {
+      return [line(depth, 'return false;')];
+    }
     return [
       ...ifBlock(
         depth,
@@ -706,14 +733,24 @@ function emitListValidation(
     ];
   }
 
+  if (isNoOpValueCheck(node.element)) {
+    const compact = tryEmitCompactReturnLines(node, varName);
+    if (compact) {
+      return shiftLines(depth, compact);
+    }
+  }
+
   const block: PhpLine[] = [];
   if (opts.includeArrayGuard) {
-    const guard = opts.assumeVarIsArray
+    const baseGuard = opts.assumeVarIsArray
       ? `!array_is_list(${varName})`
       : `!is_array(${varName}) || !array_is_list(${varName})`;
-    block.push(
-      ...ifBlock(depth, guard, [line(0, 'return false;')]),
-    );
+    const guard = node.nonEmpty
+      ? `${baseGuard} || ${varName} === []`
+      : baseGuard;
+    block.push(...ifBlock(depth, guard, [line(0, 'return false;')]));
+  } else if (node.nonEmpty) {
+    block.push(...ifBlock(depth, `${varName} === []`, [line(0, 'return false;')]));
   }
   const loopPair = ctx.allocateLoopPair();
   const loopBody = emitValueValidation(node.element, loopPair.value, 0, ctx);

@@ -3,7 +3,7 @@ input: "iterable<string>"
 output: function
 ---
 /** @phpstan-assert-if-true iterable<string> $value */
-function isArrayString(mixed $value): bool
+function isIterableString(mixed $value): bool
 {
     if (!is_iterable($value)) {
         return false;

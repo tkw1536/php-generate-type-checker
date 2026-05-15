@@ -268,6 +268,16 @@ class Parser {
     if (name === 'array') {
       return this.genericArrayToNode(typeArgs);
     }
+    if (name === 'non-empty-list') {
+      if (typeArgs.length !== 1) {
+        return {
+          kind: 'unsupported',
+          raw: `non-empty-list<${typeArgs.length} args>`,
+          reason: 'non-empty-list expects one type argument',
+        };
+      }
+      return { kind: 'list', element: typeArgs[0], nonEmpty: true };
+    }
     if (name === 'list') {
       if (typeArgs.length !== 1) {
         return {
@@ -276,9 +286,6 @@ class Parser {
           reason: 'list expects one type argument',
         };
       }
-      return { kind: 'list', element: typeArgs[0] };
-    }
-    if (name === 'non-empty-list' && typeArgs.length === 1) {
       return { kind: 'list', element: typeArgs[0] };
     }
 

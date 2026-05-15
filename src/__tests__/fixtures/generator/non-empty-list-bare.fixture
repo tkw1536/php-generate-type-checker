@@ -1,0 +1,9 @@
+---
+input: "non-empty-list"
+output: function
+---
+/** @phpstan-assert-if-true non-empty-list<mixed> $value */
+function isNonEmptyListMixed(mixed $value): bool
+{
+    return is_array($value) && array_is_list($value) && $value !== [];
+}

@@ -38,7 +38,7 @@ function canonicalTypeKeyNormalized(n: TypeNode): string {
       return `a:${flags}:${k}:${canonicalTypeKeyNormalized(an.value)}`;
     }
     case 'list':
-      return `ls:${canonicalTypeKeyNormalized(n.element)}`;
+      return `ls:${n.nonEmpty ? '1' : '0'}:${canonicalTypeKeyNormalized(n.element)}`;
     case 'shape': {
       const parts = n.fields
         .map((f) => shapeFieldKey(f))

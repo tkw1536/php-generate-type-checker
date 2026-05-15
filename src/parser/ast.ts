@@ -20,7 +20,7 @@ export interface CallableSig {
 export type TypeNode =
   | { kind: 'primitive'; name: string }
   | { kind: 'array'; key?: TypeNode; value: TypeNode }
-  | { kind: 'list'; element: TypeNode }
+  | { kind: 'list'; element: TypeNode; nonEmpty?: boolean }
   | { kind: 'shape'; fields: ShapeField[]; sealed?: boolean }
   | { kind: 'union'; types: TypeNode[] }
   | { kind: 'intersection'; types: TypeNode[] }

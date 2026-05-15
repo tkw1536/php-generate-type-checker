@@ -7,5 +7,6 @@ input: "non-empty-list<string>"
   "element": {
     "kind": "primitive",
     "name": "string"
-  }
+  },
+  "nonEmpty": true
 }

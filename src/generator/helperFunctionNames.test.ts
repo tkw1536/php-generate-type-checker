@@ -26,6 +26,29 @@ describe('typeToPascalSlug', () => {
     const slugParts = members.map(typeToPascalSlug);
     expect(typeToPascalSlug(u)).toBe(slugParts.join('Or'));
   });
+  it('uses Iterable prefix for lowered iterable<T> (not array<T>)', () => {
+    expect(
+      typeToPascalSlug(normalizeNode(parseType('iterable<string>'))),
+    ).toBe('IterableString');
+    expect(typeToPascalSlug(normalizeNode(parseType('array<string>')))).toBe(
+      'ArrayString',
+    );
+  });
+
+  it('prefixes NonEmpty for non-empty-array and non-empty-list', () => {
+    expect(
+      typeToPascalSlug(normalizeNode(parseType('non-empty-array<string>'))),
+    ).toBe('NonEmptyArrayString');
+    expect(
+      typeToPascalSlug(normalizeNode(parseType('non-empty-list<int>'))),
+    ).toBe('NonEmptyListInt');
+  });
+
+  it('uses Mixed in slugs without a Type suffix', () => {
+    expect(
+      typeToPascalSlug(normalizeNode(parseType('array<string, mixed>'))),
+    ).toBe('ArrayStringToMixed');
+  });
 });
 
 describe('toIsFunctionIdentifier', () => {

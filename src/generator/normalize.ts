@@ -17,7 +17,13 @@ export function normalizeGeneric(
   if (name === 'array') {
     return genericArrayToNode(typeArgs);
   }
-  if (name === 'list' || name === 'non-empty-list') {
+  if (name === 'non-empty-list') {
+    if (typeArgs.length !== 1) {
+      return null;
+    }
+    return { kind: 'list', element: typeArgs[0], nonEmpty: true };
+  }
+  if (name === 'list') {
     if (typeArgs.length !== 1) {
       return null;
     }
@@ -62,6 +68,26 @@ function genericArrayToNode(typeArgs: TypeNode[]): TypeNode | null {
 }
 
 export function normalizeNode(node: TypeNode): TypeNode {
+  /**
+   * Hyphenated built-ins (`non-empty-list`, …) parse as primitives; bare `non-empty-list`
+   * means the same as `non-empty-list<mixed>` (like PHPStan’s list modifier without element type).
+   */
+  if (node.kind === 'primitive') {
+    if (node.name === 'non-empty-list') {
+      return normalizeNode({
+        kind: 'list',
+        element: { kind: 'primitive', name: 'mixed' },
+        nonEmpty: true,
+      });
+    }
+    if (node.name === 'non-empty-array') {
+      return normalizeNode({
+        kind: 'array',
+        value: { kind: 'primitive', name: 'mixed' },
+        nonEmpty: true,
+      } as ArrayNode);
+    }
+  }
   if (node.kind === 'generic') {
     const normalized = normalizeGeneric(node);
     if (normalized) {
@@ -92,7 +118,11 @@ export function normalizeNode(node: TypeNode): TypeNode {
     return result;
   }
   if (node.kind === 'list') {
-    return { kind: 'list', element: normalizeNode(node.element) };
+    return {
+      kind: 'list',
+      element: normalizeNode(node.element),
+      nonEmpty: node.nonEmpty,
+    };
   }
   if (node.kind === 'shape') {
     const fields = node.fields.map((f) => ({

@@ -141,8 +141,9 @@ export function needsStatementBlock(node: TypeNode): boolean {
   const n = normalizeNode(node);
   switch (n.kind) {
     case 'array':
-    case 'list':
       return true;
+    case 'list':
+      return !isNoOpValueCheck(n.element);
     case 'shape':
       return true;
     case 'union':

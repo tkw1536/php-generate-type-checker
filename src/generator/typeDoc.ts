@@ -79,6 +79,9 @@ function formatTypeForPhpstanDocInner(node: TypeNode): string {
       return `array<${v}>`;
     }
     case 'list':
+      if (node.nonEmpty) {
+        return `non-empty-list<${formatTypeForPhpstanDocRaw(node.element)}>`;
+      }
       return `list<${formatTypeForPhpstanDocRaw(node.element)}>`;
     case 'shape': {
       const inner = node.fields.map((f) => shapeFieldDoc(f)).join(', ');

@@ -17,7 +17,6 @@ const RESERVED_WHOLE_SLUG = new Set(
     'true',
     'null',
     'void',
-    'mixed',
     'static',
     'object',
     'iterable',
@@ -102,14 +101,18 @@ export function typeToPascalSlug(node: TypeNode): string {
       return escapeReservedWholeSlug(classNameToSlug(n.name));
     case 'array': {
       const an = n as ArrayNode;
+      const family = an.iterable ? 'Iterable' : 'Array';
+      const ne = an.nonEmpty ? 'NonEmpty' : '';
       const vs = typeToPascalSlug(an.value);
       if (an.key) {
-        return `Array${typeToPascalSlug(an.key)}To${vs}`;
+        return `${ne}${family}${typeToPascalSlug(an.key)}To${vs}`;
       }
-      return `Array${vs}`;
+      return `${ne}${family}${vs}`;
     }
-    case 'list':
-      return `List${typeToPascalSlug(n.element)}`;
+    case 'list': {
+      const inner = typeToPascalSlug(n.element);
+      return n.nonEmpty ? `NonEmptyList${inner}` : `List${inner}`;
+    }
     case 'shape': {
       const fields = [...n.fields].sort((a, b) =>
         shapeFieldSortKey(a).localeCompare(shapeFieldSortKey(b)),
