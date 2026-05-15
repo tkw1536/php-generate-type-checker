@@ -13,6 +13,30 @@ initTheme();
 
 const DEFAULT_TYPE = 'array<string, string>';
 const INPUT_DEBOUNCE_MS = 300;
+const TYPE_INPUT_STORAGE_KEY = 'php-generate-type-checker:type-input';
+const PERSIST_TYPE_INPUT_IN_DEV = import.meta.env.DEV;
+
+function readStoredTypeInput(): string | null {
+  if (!PERSIST_TYPE_INPUT_IN_DEV) {
+    return null;
+  }
+  try {
+    return sessionStorage.getItem(TYPE_INPUT_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredTypeInput(value: string): void {
+  if (!PERSIST_TYPE_INPUT_IN_DEV) {
+    return;
+  }
+  try {
+    sessionStorage.setItem(TYPE_INPUT_STORAGE_KEY, value);
+  } catch {
+    /* ignore (private mode, quota, etc.) */
+  }
+}
 
 type OutputTabId = 'php' | 'ast';
 
@@ -243,7 +267,10 @@ generateBtn.addEventListener('click', () => {
   runGenerate(phpPanel, astPanel);
 });
 
-typeInput.addEventListener('input', onGenerateInputChanged);
+typeInput.addEventListener('input', () => {
+  writeStoredTypeInput(typeInput.value);
+  onGenerateInputChanged();
+});
 outputModeSelect.addEventListener('change', onGenerateInputChanged);
 
 document.querySelector<HTMLButtonElement>('#theme-toggle')!.addEventListener('click', () => {
@@ -272,6 +299,7 @@ function setupExamples(): void {
     }
     input.value = type;
     select.value = '';
+    writeStoredTypeInput(type);
     onGenerateInputChanged();
   });
 }
@@ -279,5 +307,8 @@ function setupExamples(): void {
 setupOutputTabs();
 setupExamples();
 
-typeInput.value = DEFAULT_TYPE;
+{
+  const stored = readStoredTypeInput();
+  typeInput.value = stored !== null ? stored : DEFAULT_TYPE;
+}
 runGenerate(phpPanel, astPanel);
