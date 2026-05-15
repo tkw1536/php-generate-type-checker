@@ -1,14 +1,14 @@
 ---
-input: int
+input: "array<mixed>"
 output: function
 ---
 <?php
 
 /**
  * @param mixed $data
- * @phpstan-assert-if-true int $data
+ * @phpstan-assert-if-true array<mixed> $data
  */
 function checkType(mixed $data): bool
 {
-    return is_int($data);
+    return is_array($data);
 }

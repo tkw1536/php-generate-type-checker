@@ -10,8 +10,5 @@ output: function
  */
 function checkType(mixed $data): bool
 {
-    if (!(is_callable($data))) {
-        return false;
-    }
-    return true;
+    return is_callable($data);
 }

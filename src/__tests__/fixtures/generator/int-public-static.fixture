@@ -11,9 +11,6 @@ class TypeChecker
      */
     public static function checkType(mixed $data): bool
     {
-        if (!(is_int($data))) {
-            return false;
-        }
-        return true;
+        return is_int($data);
     }
 }

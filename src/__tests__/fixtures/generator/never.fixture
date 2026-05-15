@@ -1,14 +1,14 @@
 ---
-input: int
+input: never
 output: function
 ---
 <?php
 
 /**
  * @param mixed $data
- * @phpstan-assert-if-true int $data
+ * @phpstan-assert-if-true never $data
  */
 function checkType(mixed $data): bool
 {
-    return is_int($data);
+    return false;
 }

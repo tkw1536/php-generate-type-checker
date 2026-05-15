@@ -14,10 +14,7 @@ function checkType(mixed $data): bool
         return false;
     }
     foreach ($data as $key => $value) {
-        if (!(is_string($key))) {
-            return false;
-        }
-        if (!(is_string($value))) {
+        if (!(is_string($key)) || !(is_string($value))) {
             return false;
         }
     }

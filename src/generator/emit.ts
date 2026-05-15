@@ -64,6 +64,9 @@ export function emitFunctionBody(node: TypeNode, varName: string): PhpLine[] {
   const n = normalizeNode(node);
 
   if (n.kind === 'union') {
+    if (unionEveryMemberExpressibleWithoutBlock(n)) {
+      return [line(0, `return ${emitExpression(n, varName)};`)];
+    }
     return emitUnionFunctionBody(n, varName, 0);
   }
 
@@ -81,10 +84,11 @@ export function emitFunctionBody(node: TypeNode, varName: string): PhpLine[] {
   }
 
   if (isExpressible(n) && !needsStatementBlock(n)) {
-    return [
-      ...ifBlock(0, `!(${emitExpression(n, varName)})`, [line(0, 'return false;')]),
-      line(0, 'return true;'),
-    ];
+    return [line(0, `return ${emitExpression(n, varName)};`)];
+  }
+
+  if (n.kind === 'array' && isUnconstrainedArray(n)) {
+    return [line(0, `return ${arrayLikePositiveCheck(n, varName)};`)];
   }
 
   const block = emitValidationLines(n, varName, { includeArrayGuard: true }, 0);
@@ -178,19 +182,60 @@ function emitArrayValidation(
 ): PhpLine[] {
   const block: PhpLine[] = [];
   if (includeGuard) {
-    block.push(...ifBlock(depth, `!is_array(${varName})`, [line(0, 'return false;')]));
+    if (node.nonEmpty) {
+      block.push(
+        ...ifBlock(
+          depth,
+          `${arrayLikeNegatedGuard(node, varName)} || ${varName} === []`,
+          [line(0, 'return false;')],
+        ),
+      );
+    } else {
+      block.push(
+        ...ifBlock(depth, arrayLikeNegatedGuard(node, varName), [line(0, 'return false;')]),
+      );
+    }
+  } else if (node.nonEmpty) {
+    block.push(...ifBlock(depth, `${varName} === []`, [line(0, 'return false;')]));
   }
   const loopBody = emitArrayLoopBody(node);
-  block.push(line(depth, `foreach (${varName} as $key => $value) {`));
-  block.push(...shiftLines(1, loopBody));
-  block.push(line(depth, '}'));
-  if (node.nonEmpty) {
-    block.push(...ifBlock(depth, `${varName} === []`, [line(0, 'return false;')]));
+  if (loopBody.length > 0) {
+    const bindKey = arrayLoopBindsKey(node);
+    block.push(
+      line(
+        depth,
+        bindKey
+          ? `foreach (${varName} as $key => $value) {`
+          : `foreach (${varName} as $value) {`,
+      ),
+    );
+    block.push(...shiftLines(1, loopBody));
+    block.push(line(depth, '}'));
   }
   return block;
 }
 
+/** True when iteration must expose `$key` (key type is not a no-op check). */
+function arrayLoopBindsKey(node: ArrayNode): boolean {
+  return Boolean(node.key && !isNoOpValueCheck(node.key));
+}
+
 function emitArrayLoopBody(node: ArrayNode): PhpLine[] {
+  const keyNeedsCheck = arrayLoopBindsKey(node);
+  const valueNeedsCheck = !isNoOpValueCheck(node.value);
+  const keyMergeable =
+    Boolean(node.key) && isExpressible(node.key!) && !needsStatementBlock(node.key!);
+  const valueMergeable =
+    isExpressible(node.value) && !needsStatementBlock(node.value);
+
+  if (keyNeedsCheck && keyMergeable && valueNeedsCheck && valueMergeable) {
+    return ifBlock(
+      0,
+      `!(${emitExpression(node.key!, '$key')}) || !(${emitExpression(node.value, '$value')})`,
+      [line(0, 'return false;')],
+    );
+  }
+
   const block: PhpLine[] = [];
   if (node.key && !isNoOpValueCheck(node.key)) {
     block.push(
@@ -209,15 +254,18 @@ function emitListValidation(
 ): PhpLine[] {
   const block: PhpLine[] = [];
   if (includeGuard) {
-    block.push(...ifBlock(depth, `!is_array(${varName})`, [line(0, 'return false;')]));
     block.push(
-      ...ifBlock(depth, `!array_is_list(${varName})`, [line(0, 'return false;')]),
+      ...ifBlock(depth, `!is_array(${varName}) || !array_is_list(${varName})`, [
+        line(0, 'return false;'),
+      ]),
     );
   }
   const loopBody = emitValueValidation(node.element, '$value', 0);
-  block.push(line(depth, `foreach (${varName} as $value) {`));
-  block.push(...shiftLines(1, loopBody));
-  block.push(line(depth, '}'));
+  if (loopBody.length > 0) {
+    block.push(line(depth, `foreach (${varName} as $value) {`));
+    block.push(...shiftLines(1, loopBody));
+    block.push(line(depth, '}'));
+  }
   return block;
 }
 
@@ -275,7 +323,7 @@ function compoundGuard(node: TypeNode, varName: string): string {
   const n = normalizeNode(node);
   switch (n.kind) {
     case 'array':
-      return `is_array(${varName})`;
+      return arrayLikePositiveCheck(n as ArrayNode, varName);
     case 'list':
       return `is_array(${varName}) && array_is_list(${varName})`;
     case 'shape':
@@ -297,6 +345,14 @@ function compoundGuard(node: TypeNode, varName: string): string {
   }
 }
 
+function unionEveryMemberExpressibleWithoutBlock(
+  node: Extract<TypeNode, { kind: 'union' }>,
+): boolean {
+  return flattenUnion(node).every(
+    (m) => isExpressible(m) && !needsStatementBlock(m),
+  );
+}
+
 function flattenUnion(node: TypeNode): TypeNode[] {
   if (node.kind === 'union') {
     return node.types.flatMap(flattenUnion);
@@ -316,6 +372,28 @@ function unionSortKey(node: TypeNode): number {
     return 1;
   }
   return 2;
+}
+
+/** Key/value checks are no-ops (e.g. array<mixed>); only array / iterable top check applies. */
+function isUnconstrainedArray(node: ArrayNode): boolean {
+  if (node.nonEmpty) {
+    return false;
+  }
+  if (node.key && !isNoOpValueCheck(node.key)) {
+    return false;
+  }
+  if (!isNoOpValueCheck(node.value)) {
+    return false;
+  }
+  return true;
+}
+
+function arrayLikePositiveCheck(node: ArrayNode, varName: string): string {
+  return node.iterable ? `is_iterable(${varName})` : `is_array(${varName})`;
+}
+
+function arrayLikeNegatedGuard(node: ArrayNode, varName: string): string {
+  return node.iterable ? `!is_iterable(${varName})` : `!is_array(${varName})`;
 }
 
 function safeFieldVar(key: string | number): string {

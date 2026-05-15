@@ -1,20 +1,20 @@
 ---
-input: "list<int>"
+input: "non-empty-array<string>"
 output: function
 ---
 <?php
 
 /**
  * @param mixed $data
- * @phpstan-assert-if-true list<int> $data
+ * @phpstan-assert-if-true non-empty-array<string> $data
  */
 function checkType(mixed $data): bool
 {
-    if (!is_array($data) || !array_is_list($data)) {
+    if (!is_array($data) || $data === []) {
         return false;
     }
     foreach ($data as $value) {
-        if (!(is_int($value))) {
+        if (!(is_string($value))) {
             return false;
         }
     }

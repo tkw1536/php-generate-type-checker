@@ -2,6 +2,8 @@ import type { TypeNode } from '../parser/ast.ts';
 
 export type ArrayNode = Extract<TypeNode, { kind: 'array' }> & {
   nonEmpty?: boolean;
+  /** True when this node was lowered from `iterable<...>` (use `is_iterable`, not `is_array`). */
+  iterable?: boolean;
 };
 
 /**
@@ -33,10 +35,15 @@ export function normalizeGeneric(
   }
   if (name === 'iterable') {
     if (typeArgs.length === 1) {
-      return { kind: 'array', value: typeArgs[0] };
+      return { kind: 'array', value: typeArgs[0], iterable: true } as ArrayNode;
     }
     if (typeArgs.length === 2) {
-      return { kind: 'array', key: typeArgs[0], value: typeArgs[1] };
+      return {
+        kind: 'array',
+        key: typeArgs[0],
+        value: typeArgs[1],
+        iterable: true,
+      } as ArrayNode;
     }
     return null;
   }
@@ -80,6 +87,7 @@ export function normalizeNode(node: TypeNode): TypeNode {
       key: node.key ? normalizeNode(node.key) : undefined,
       value: normalizeNode(node.value),
       nonEmpty: (node as ArrayNode).nonEmpty,
+      iterable: (node as ArrayNode).iterable,
     };
     return result;
   }

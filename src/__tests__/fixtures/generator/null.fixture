@@ -10,8 +10,5 @@ output: function
  */
 function checkType(mixed $data): bool
 {
-    if (!($data === null)) {
-        return false;
-    }
-    return true;
+    return $data === null;
 }

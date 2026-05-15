@@ -12,7 +12,6 @@ export type CheckContext = 'expression' | 'value' | 'function';
 
 const UNCHECKABLE_PRIMITIVES = new Set([
   'void',
-  'never',
   'noreturn',
   'never-return',
   'never-returns',

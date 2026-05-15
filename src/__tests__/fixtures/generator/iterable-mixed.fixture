@@ -1,0 +1,14 @@
+---
+input: "iterable<mixed>"
+output: function
+---
+<?php
+
+/**
+ * @param mixed $data
+ * @phpstan-assert-if-true iterable<mixed> $data
+ */
+function checkType(mixed $data): bool
+{
+    return is_iterable($data);
+}

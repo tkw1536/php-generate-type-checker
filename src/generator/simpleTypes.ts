@@ -54,6 +54,8 @@ export function emitPrimitiveExpression(name: string, varName: string): string |
       return `is_object(${varName})`;
     case 'mixed':
       return null;
+    case 'never':
+      return 'false';
     case 'true':
       return `${varName} === true`;
     case 'false':

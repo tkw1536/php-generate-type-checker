@@ -10,11 +10,5 @@ output: function
  */
 function checkType(mixed $data): bool
 {
-    if (is_int($data)) {
-        return true;
-    }
-    if (is_string($data)) {
-        return true;
-    }
-    return false;
+    return (is_int($data) || is_string($data));
 }
