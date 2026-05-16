@@ -21,11 +21,20 @@ function unionDocParts(node: TypeNode): string[] {
   return [...parts].sort((a, b) => a.localeCompare(b));
 }
 
-function shapeFieldDoc(f: ShapeField): string {
+function shapeFieldDoc(f: ShapeField, objectShape: boolean): string {
   const opt = f.optional ? '?' : '';
-  const key =
-    typeof f.key === 'number' ? String(f.key) : `'${String(f.key).replace(/'/g, "\\'")}'`;
-  return `${key}${opt}: ${formatTypeForPhpstanDocRaw(f.type)}`;
+  let keyDoc: string;
+  if (typeof f.key === 'number') {
+    keyDoc = String(f.key);
+  } else {
+    const s = String(f.key);
+    if (objectShape && /^[a-zA-Z_]\w*$/.test(s)) {
+      keyDoc = s;
+    } else {
+      keyDoc = `'${s.replace(/'/g, "\\'")}'`;
+    }
+  }
+  return `${keyDoc}${opt}: ${formatTypeForPhpstanDocRaw(f.type)}`;
 }
 
 function callableParamsDoc(params: CallableParam[]): string {
@@ -41,15 +50,27 @@ function callableParamsDoc(params: CallableParam[]): string {
     .join(', ');
 }
 
-function formatTypeForPhpstanDocRaw(n: TypeNode): string {
+/** Single-line PHPStan type (normalized). */
+export function formatTypeForPhpstanDocRaw(n: TypeNode): string {
   const node = normalizeNode(n);
   return formatTypeForPhpstanDocInner(node);
+}
+
+function formatIntRangeDoc(node: { min?: number; max?: number }): string {
+  if (node.min === undefined && node.max === undefined) {
+    return 'int';
+  }
+  const lo = node.min === undefined ? 'min' : String(node.min);
+  const hi = node.max === undefined ? 'max' : String(node.max);
+  return `int<${lo}, ${hi}>`;
 }
 
 function formatTypeForPhpstanDocInner(node: TypeNode): string {
   switch (node.kind) {
     case 'primitive':
       return node.name;
+    case 'int_range':
+      return formatIntRangeDoc(node);
     case 'literal': {
       const v = node.value;
       if (typeof v === 'string') {
@@ -84,8 +105,9 @@ function formatTypeForPhpstanDocInner(node: TypeNode): string {
       }
       return `list<${formatTypeForPhpstanDocRaw(node.element)}>`;
     case 'shape': {
-      const inner = node.fields.map((f) => shapeFieldDoc(f)).join(', ');
-      return `array{${inner}}`;
+      const objectShape = Boolean(node.object);
+      const inner = node.fields.map((f) => shapeFieldDoc(f, objectShape)).join(', ');
+      return objectShape ? `object{${inner}}` : `array{${inner}}`;
     }
     case 'union':
       return unionDocParts(node).join('|');

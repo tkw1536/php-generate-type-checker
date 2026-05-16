@@ -94,6 +94,10 @@ class Parser {
       return this.parseArrayShape();
     }
 
+    if (name === 'object' && this.check('lbrace')) {
+      return this.parseObjectShape();
+    }
+
     if (name === 'list' && this.check('lbrace')) {
       return this.parseListShape();
     }
@@ -109,11 +113,60 @@ class Parser {
     return this.identifierToNode(name);
   }
 
+  /** `int<lower, upper>` / `integer<…>`: bounds are integer literals or `min` / `max` for open sides. */
+  private parseIntRangeGenericBody(): TypeNode {
+    const lo = this.parseIntRangeEndpoint('lower');
+    this.expect('comma');
+    const hi = this.parseIntRangeEndpoint('upper');
+    const min = lo.kind === 'open' ? undefined : lo.value;
+    const max = hi.kind === 'open' ? undefined : hi.value;
+    if (min !== undefined && max !== undefined && min > max) {
+      throw new ParseError(`Invalid int range: ${min} > ${max}`, this.peek().pos);
+    }
+    return { kind: 'int_range', min, max };
+  }
+
+  private parseIntRangeEndpoint(
+    side: 'lower' | 'upper',
+  ): { kind: 'open' } | { kind: 'value'; value: number } {
+    if (this.match('number')) {
+      const prev = this.previous();
+      const num = prev.value.includes('.')
+        ? parseFloat(prev.value)
+        : parseInt(prev.value, 10);
+      if (!Number.isInteger(num)) {
+        throw new ParseError('int range bounds must be integers', this.peek().pos);
+      }
+      return { kind: 'value', value: num };
+    }
+    if (!this.check('identifier')) {
+      throw new ParseError('Expected integer literal or min/max', this.peek().pos);
+    }
+    const id = this.advance().value;
+    if (side === 'lower' && id === 'min') {
+      return { kind: 'open' };
+    }
+    if (side === 'upper' && id === 'max') {
+      return { kind: 'open' };
+    }
+    throw new ParseError(
+      `Expected ${side === 'lower' ? 'integer or min' : 'integer or max'}, got "${id}"`,
+      this.peek().pos,
+    );
+  }
+
   private parseArrayShape(): TypeNode {
     this.expect('lbrace');
     const fields = this.parseShapeFields();
     this.expect('rbrace');
     return { kind: 'shape', fields };
+  }
+
+  private parseObjectShape(): TypeNode {
+    this.expect('lbrace');
+    const fields = this.parseShapeFields();
+    this.expect('rbrace');
+    return { kind: 'shape', fields, object: true };
   }
 
   private parseListShape(): TypeNode {
@@ -255,6 +308,13 @@ class Parser {
 
   private parseGeneric(name: string): TypeNode {
     this.expect('lt');
+
+    if (name === 'int' || name === 'integer') {
+      const node = this.parseIntRangeGenericBody();
+      this.expect('gt');
+      return node;
+    }
+
     const typeArgs: TypeNode[] = [];
 
     if (!this.check('gt')) {

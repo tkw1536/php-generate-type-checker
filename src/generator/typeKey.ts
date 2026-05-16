@@ -25,6 +25,11 @@ function canonicalTypeKeyNormalized(n: TypeNode): string {
   switch (n.kind) {
     case 'primitive':
       return `p:${n.name}`;
+    case 'int_range': {
+      const lo = n.min === undefined ? 'o' : String(n.min);
+      const hi = n.max === undefined ? 'o' : String(n.max);
+      return `ir:${lo}:${hi}`;
+    }
     case 'literal':
       return `l:${JSON.stringify(n.value)}`;
     case 'class':
@@ -43,7 +48,8 @@ function canonicalTypeKeyNormalized(n: TypeNode): string {
       const parts = n.fields
         .map((f) => shapeFieldKey(f))
         .sort();
-      return `sh:${n.sealed ? '1' : '0'}:${parts.join(',')}`;
+      const base = `sh:${n.sealed ? '1' : '0'}:${parts.join(',')}`;
+      return n.object ? `${base}:object` : base;
     }
     case 'union': {
       const parts = flattenUnionTypes(n)

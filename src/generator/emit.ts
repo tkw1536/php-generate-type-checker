@@ -57,6 +57,17 @@ export type ValidationEmitOptions = {
    * so a redundant `!is_array` / shape top guard can be omitted.
    */
   assumeVarIsArray?: boolean;
+  /**
+   * After a prior intersection member, `$varName` is known to satisfy `is_object` so a redundant
+   * `!is_object` guard on an object shape can be omitted.
+   */
+  assumeVarIsObject?: boolean;
+  /**
+   * When set, {@link emitShapeValidation} sets `value` to true if the shape body ends with a
+   * terminal `return <predicate>;` (required last field, expressible type) so the caller can omit
+   * a trailing `return true;`.
+   */
+  shapeTailReturnEmitted?: { value: boolean };
 };
 
 /** Strip matching outer parentheses, e.g. `(is_string($x))` → `is_string($x)`. */
@@ -252,8 +263,14 @@ function emitFunctionBodyWithContext(
     return compact;
   }
 
-  const block = emitValidationLines(n, varName, { includeArrayGuard: true }, 0, ctx);
-  block.push(line(0, 'return true;'));
+  const tailMeta = { value: false };
+  const block = emitValidationLines(n, varName, {
+    includeArrayGuard: true,
+    shapeTailReturnEmitted: tailMeta,
+  }, 0, ctx);
+  if (!tailMeta.value) {
+    block.push(line(0, 'return true;'));
+  }
   return block;
 }
 
@@ -363,8 +380,14 @@ function emitMatcherTail(node: TypeNode, varName: string, ctx: EmitContext): Php
   if (compact) {
     return compact;
   }
-  const block = emitValidationLines(n, varName, { includeArrayGuard: true }, 0, ctx);
-  block.push(line(0, 'return true;'));
+  const tailMeta = { value: false };
+  const block = emitValidationLines(n, varName, {
+    includeArrayGuard: true,
+    shapeTailReturnEmitted: tailMeta,
+  }, 0, ctx);
+  if (!tailMeta.value) {
+    block.push(line(0, 'return true;'));
+  }
   return block;
 }
 
@@ -455,9 +478,18 @@ class EmitContext {
   }
 }
 
+/** After this intersection member succeeds, `$varName` at this level is known `is_object`. */
+function intersectionMemberEstablishesPhpObject(member: TypeNode): boolean {
+  const m = normalizeNode(member);
+  return m.kind === 'shape' && Boolean(m.object);
+}
+
 /** After this intersection member succeeds, `$varName` at this level is known `is_array`. */
 function intersectionMemberEstablishesPhpArray(member: TypeNode): boolean {
   const m = normalizeNode(member);
+  if (m.kind === 'shape' && m.object) {
+    return false;
+  }
   if (m.kind === 'shape' || m.kind === 'list') {
     return true;
   }
@@ -476,19 +508,23 @@ function emitIntersectionMembers(
 ): PhpLine[] {
   const out: PhpLine[] = [];
   let assumeVarIsArray = Boolean(base.assumeVarIsArray);
+  let assumeVarIsObject = Boolean(base.assumeVarIsObject);
   for (const raw of node.types) {
     const member = normalizeNode(raw);
     out.push(
       ...emitValidationLines(
         member,
         varName,
-        { ...base, assumeVarIsArray },
+        { ...base, assumeVarIsArray, assumeVarIsObject },
         depth,
         ctx,
       ),
     );
     if (intersectionMemberEstablishesPhpArray(member)) {
       assumeVarIsArray = true;
+    }
+    if (intersectionMemberEstablishesPhpObject(member)) {
+      assumeVarIsObject = true;
     }
   }
   return out;
@@ -762,6 +798,25 @@ function emitListValidation(
   return block;
 }
 
+/**
+ * For the last required field of a shape: emit `return <pred>;` instead of
+ * `if (!<pred>) { return false; }` plus a trailing `return true;`.
+ */
+function tryEmitTailReturnCheckLines(
+  type: TypeNode,
+  varName: string,
+  depth: number,
+): PhpLine[] | null {
+  const n = normalizeNode(type);
+  if (isNoOpValueCheck(n)) {
+    return null;
+  }
+  if (needsStatementBlock(n) || !isExpressible(n)) {
+    return null;
+  }
+  return [line(depth, `return ${emitExpression(n, varName)};`)];
+}
+
 function emitShapeValidation(
   node: Extract<TypeNode, { kind: 'shape' }>,
   varName: string,
@@ -770,31 +825,79 @@ function emitShapeValidation(
   opts: ValidationEmitOptions,
 ): PhpLine[] {
   const block: PhpLine[] = [];
-  if (opts.includeArrayGuard && !opts.assumeVarIsArray) {
-    block.push(...ifBlock(depth, `!is_array(${varName})`, [line(0, 'return false;')]));
+  const objectShape = Boolean(node.object);
+
+  if (opts.includeArrayGuard) {
+    if (objectShape) {
+      if (!opts.assumeVarIsObject) {
+        block.push(...ifBlock(depth, `!is_object(${varName})`, [line(0, 'return false;')]));
+      }
+    } else if (!opts.assumeVarIsArray) {
+      block.push(...ifBlock(depth, `!is_array(${varName})`, [line(0, 'return false;')]));
+    }
   }
+
   const usedFieldVarNames = new Set<string>();
-  for (const field of node.fields) {
-    const keyExpr =
-      typeof field.key === 'number' ? String(field.key) : phpString(String(field.key));
+  const tailSlot = opts.shapeTailReturnEmitted;
+  const fields = node.fields;
+
+  for (let i = 0; i < fields.length; i++) {
+    const field = fields[i]!;
+    const isLast = i === fields.length - 1;
+    const keyStr = String(field.key);
+    const arrayKeyExpr =
+      typeof field.key === 'number' ? String(field.key) : phpString(keyStr);
+    const propNameLit = phpString(keyStr);
+
     if (!field.optional) {
       block.push(
-        ...ifBlock(depth, `!array_key_exists(${keyExpr}, ${varName})`, [
-          line(0, 'return false;'),
-        ]),
+        ...ifBlock(
+          depth,
+          objectShape
+            ? `!property_exists(${varName}, ${propNameLit})`
+            : `!array_key_exists(${arrayKeyExpr}, ${varName})`,
+          [line(0, 'return false;')],
+        ),
       );
     }
     const fieldVar = uniqueShapeFieldVar(varName, field.key, usedFieldVarNames);
-    const fieldBody: PhpLine[] = [
-      line(0, `${fieldVar} = ${varName}[${keyExpr}];`),
-      ...emitValueValidation(field.type, fieldVar, 0, ctx),
-    ];
+    const readExpr = objectShape
+      ? phpObjectPropertyRead(varName, field.key)
+      : `${varName}[${arrayKeyExpr}]`;
+    const assignment = line(0, `${fieldVar} = ${readExpr};`);
+
+    const tailLines = isLast
+      ? tryEmitTailReturnCheckLines(field.type, fieldVar, 0)
+      : null;
+
     if (field.optional) {
-      block.push(
-        ...ifBlock(depth, `array_key_exists(${keyExpr}, ${varName})`, fieldBody),
-      );
+      const cond = objectShape
+        ? `property_exists(${varName}, ${propNameLit})`
+        : `array_key_exists(${arrayKeyExpr}, ${varName})`;
+      if (tailLines !== null) {
+        block.push(
+          ...ifBlock(depth, cond, shiftLines(1, [assignment, ...tailLines])),
+        );
+      } else {
+        block.push(
+          ...ifBlock(depth, cond, shiftLines(1, [
+            assignment,
+            ...emitValueValidation(field.type, fieldVar, 0, ctx),
+          ])),
+        );
+      }
+    } else if (tailLines !== null) {
+      block.push(...shiftLines(depth, [assignment, ...tailLines]));
+      if (tailSlot) {
+        tailSlot.value = true;
+      }
     } else {
-      block.push(...shiftLines(depth, fieldBody));
+      block.push(
+        ...shiftLines(depth, [
+          assignment,
+          ...emitValueValidation(field.type, fieldVar, 0, ctx),
+        ]),
+      );
     }
   }
   return block;
@@ -869,6 +972,11 @@ function uniqueShapeFieldVar(
   }
   used.add(candidate);
   return candidate;
+}
+
+/** Dynamic `->` read for object shapes (avoids reserved words like `default`). */
+function phpObjectPropertyRead(varName: string, key: string | number): string {
+  return `${varName}->{${phpString(String(key))}}`;
 }
 
 function phpString(value: string): string {

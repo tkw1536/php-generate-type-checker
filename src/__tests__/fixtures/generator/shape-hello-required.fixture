@@ -12,8 +12,5 @@ function isShapeFldhelloReqString(mixed $value): bool
         return false;
     }
     $value_hello = $value['hello'];
-    if (!is_string($value_hello)) {
-        return false;
-    }
-    return true;
+    return is_string($value_hello);
 }

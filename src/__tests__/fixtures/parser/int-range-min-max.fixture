@@ -1,0 +1,7 @@
+---
+input: "int<min, max>"
+---
+// json
+{
+  "kind": "int_range"
+}

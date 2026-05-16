@@ -1,0 +1,9 @@
+---
+input: "never-returns"
+output: function
+---
+/** @phpstan-assert-if-true never-returns $value */
+function isNeverReturns(mixed $value): bool
+{
+    return false;
+}

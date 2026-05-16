@@ -1,5 +1,5 @@
 ---
-input: "iterable<mixed>"
+input: "literal-string"
 error: generation
 ---
 <?php

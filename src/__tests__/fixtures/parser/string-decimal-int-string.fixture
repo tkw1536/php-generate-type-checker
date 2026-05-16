@@ -1,0 +1,8 @@
+---
+input: "decimal-int-string"
+---
+// json
+{
+  "kind": "primitive",
+  "name": "decimal-int-string"
+}

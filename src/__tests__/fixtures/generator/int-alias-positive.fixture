@@ -1,0 +1,9 @@
+---
+input: "positive-int"
+output: function
+---
+/** @phpstan-assert-if-true int<1, max> $value */
+function isIntGe1(mixed $value): bool
+{
+    return (is_int($value) && $value >= 1);
+}

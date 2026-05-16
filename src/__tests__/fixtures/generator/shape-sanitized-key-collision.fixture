@@ -19,8 +19,5 @@ function isShapeFldhello_worldReqStringFldhello_worldReqString(mixed $value): bo
         return false;
     }
     $value_hello_world_2 = $value['hello.world'];
-    if (!is_string($value_hello_world_2)) {
-        return false;
-    }
-    return true;
+    return is_string($value_hello_world_2);
 }

@@ -16,10 +16,8 @@ function isShapeFldbarOptStringFldfooReqInt(mixed $value): bool
         return false;
     }
     if (array_key_exists('bar', $value)) {
-        $value_bar = $value['bar'];
-        if (!is_string($value_bar)) {
-            return false;
-        }
+            $value_bar = $value['bar'];
+            return is_string($value_bar);
     }
     return true;
 }

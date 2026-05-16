@@ -30,6 +30,7 @@ const successCases = {
   'postfix-string-array': 'string[]',
   'postfix-nested': 'string[][]',
   'shape-required-optional': 'array{foo: int, bar?: string}',
+  'object-shape-required-optional': 'object{foo: int, bar?: string}',
   'shape-quoted-key': 'array{"field-one": int}',
   'shape-numeric-key': 'array{0: int, 1?: string}',
   'union-three': 'int|string|null',

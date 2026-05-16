@@ -1,17 +1,5 @@
 ---
 input: "iterable<string>"
-output: function
+error: generation
 ---
-/** @phpstan-assert-if-true iterable<string> $value */
-function isIterableString(mixed $value): bool
-{
-    if (!is_iterable($value)) {
-        return false;
-    }
-    foreach ($value as $value1) {
-        if (!is_string($value1)) {
-            return false;
-        }
-    }
-    return true;
-}
+<?php

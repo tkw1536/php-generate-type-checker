@@ -24,7 +24,8 @@ describe('renderErrorHtml', () => {
       {
         kind: 'generation',
         title: 'Generation error',
-        message: 'Cannot generate runtime check for generic type: Collection',
+        message:
+          'Cannot generate a runtime check for the generic type Collection: not a supported generic for codegen',
         detail: 'Collection<...>',
       },
       'Collection<int>',

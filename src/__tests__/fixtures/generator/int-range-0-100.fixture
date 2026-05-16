@@ -1,0 +1,9 @@
+---
+input: "int<0, 100>"
+output: function
+---
+/** @phpstan-assert-if-true int<0, 100> $value */
+function isIntGe0Le100(mixed $value): bool
+{
+    return (is_int($value) && $value >= 0 && $value <= 100);
+}

@@ -1,0 +1,8 @@
+---
+input: "int<min, 100>"
+---
+// json
+{
+  "kind": "int_range",
+  "max": 100
+}

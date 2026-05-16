@@ -1,0 +1,25 @@
+---
+input: "object{foo: int, bar?: string}"
+---
+// json
+{
+  "kind": "shape",
+  "object": true,
+  "fields": [
+    {
+      "key": "foo",
+      "type": {
+        "kind": "primitive",
+        "name": "int"
+      }
+    },
+    {
+      "key": "bar",
+      "optional": true,
+      "type": {
+        "kind": "primitive",
+        "name": "string"
+      }
+    }
+  ]
+}

@@ -40,6 +40,9 @@ export function normalizeGeneric(
     return null;
   }
   if (name === 'iterable') {
+    if (typeArgs.length === 0) {
+      return { kind: 'primitive', name: 'iterable' };
+    }
     if (typeArgs.length === 1) {
       return { kind: 'array', value: typeArgs[0], iterable: true } as ArrayNode;
     }
@@ -87,6 +90,30 @@ export function normalizeNode(node: TypeNode): TypeNode {
         nonEmpty: true,
       } as ArrayNode);
     }
+    if (node.name === 'int' || node.name === 'integer') {
+      return { kind: 'int_range' };
+    }
+    if (node.name === 'positive-int') {
+      return { kind: 'int_range', min: 1 };
+    }
+    if (node.name === 'negative-int') {
+      return { kind: 'int_range', max: -1 };
+    }
+    if (node.name === 'non-positive-int') {
+      return { kind: 'int_range', max: 0 };
+    }
+    if (node.name === 'non-negative-int') {
+      return { kind: 'int_range', min: 0 };
+    }
+    if (node.name === 'non-zero-int') {
+      return normalizeNode({
+        kind: 'union',
+        types: [
+          { kind: 'int_range', min: 1, max: undefined },
+          { kind: 'int_range', min: undefined, max: -1 },
+        ],
+      });
+    }
   }
   if (node.kind === 'generic') {
     const normalized = normalizeGeneric(node);
@@ -130,6 +157,9 @@ export function normalizeNode(node: TypeNode): TypeNode {
       type: normalizeNode(f.type),
     }));
     if (fields.length === 0) {
+      if (node.object) {
+        return { kind: 'primitive', name: 'object' };
+      }
       return normalizeNode({
         kind: 'array',
         value: { kind: 'primitive', name: 'never' },
@@ -139,6 +169,7 @@ export function normalizeNode(node: TypeNode): TypeNode {
       kind: 'shape',
       fields,
       sealed: node.sealed,
+      object: node.object,
     };
   }
   return node;

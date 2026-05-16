@@ -1,5 +1,5 @@
 ---
-input: "iterable<mixed>"
+input: "open-resource"
 error: generation
 ---
 <?php

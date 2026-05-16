@@ -1,0 +1,9 @@
+---
+input: "int<50, max>"
+output: function
+---
+/** @phpstan-assert-if-true int<50, max> $value */
+function isIntGe50(mixed $value): bool
+{
+    return (is_int($value) && $value >= 50);
+}

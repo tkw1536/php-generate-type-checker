@@ -1,6 +1,6 @@
 import type { TypeNode } from '../parser/ast.ts';
 import { GenerationError } from './errors.ts';
-import { normalizeGeneric } from './normalize.ts';
+import { normalizeGeneric, type ArrayNode } from './normalize.ts';
 import {
   describeNode,
   emitExpression,
@@ -12,57 +12,54 @@ export type CheckContext = 'expression' | 'value' | 'function';
 
 const UNCHECKABLE_PRIMITIVES = new Set([
   'void',
-  'noreturn',
-  'never-return',
-  'never-returns',
-  'no-return',
-  'resource',
-  'closed-resource',
-  'open-resource',
   'static',
   '$this',
   'self',
   'parent',
-  'empty',
-  'array-key',
-  'scalar',
-  'empty-scalar',
-  'non-empty-scalar',
-  'iterable',
   'pure-callable',
   'pure-Closure',
-  'callable-object',
-  'callable-array',
 ]);
 
 export function assertCheckable(node: TypeNode, context: CheckContext = 'function'): void {
   switch (node.kind) {
     case 'unsupported':
       throw new GenerationError(
-        `Cannot generate runtime check for unsupported type: ${node.raw}`,
+        `Cannot generate a runtime check for unsupported type: ${node.raw}`,
         node.raw,
       );
     case 'callable':
       throw new GenerationError(
-        'Cannot generate runtime check for callable with parameter/return types; use bare `callable` instead',
+        'Cannot generate a runtime check for callable with parameter or return types: parameter and return types cannot be verified without invoking the callable',
         'callable(...)',
       );
     case 'primitive':
+      if (node.name === 'literal-string' || node.name === 'non-empty-literal-string') {
+        throw new GenerationError(
+          'Cannot generate a runtime check for literal-string types: PHP cannot verify PHPStan literal-string semantics at runtime',
+          node.name,
+        );
+      }
+      if (node.name === 'open-resource' || node.name === 'closed-resource') {
+        throw new GenerationError(
+          'Cannot generate a runtime check for open-resource or closed-resource: PHP has no side-effect-free predicate that matches PHPStan open vs closed resource semantics',
+          node.name,
+        );
+      }
       if (UNCHECKABLE_PRIMITIVES.has(node.name)) {
         throw new GenerationError(
-          `Cannot generate runtime check for primitive type: ${node.name}`,
+          `Cannot generate a runtime check for the primitive type ${node.name}: this built-in is not supported for codegen`,
           node.name,
         );
       }
       if (context === 'expression' && !isExpressible(node) && !isNoOpValueCheck(node)) {
         throw new GenerationError(
-          `Cannot use ${node.name} in expression context`,
+          `Cannot generate a runtime check for the primitive type ${node.name} in expression context: not representable as a single boolean PHP expression (for example as an array key type)`,
           node.name,
         );
       }
       if (context !== 'expression' && !isNoOpValueCheck(node) && emitExpression(node, '$_') === null) {
         throw new GenerationError(
-          `Cannot generate runtime check for primitive type: ${node.name}`,
+          `Cannot generate a runtime check for the primitive type ${node.name}: not representable as a supported boolean assertion in this generator`,
           node.name,
         );
       }
@@ -70,7 +67,15 @@ export function assertCheckable(node: TypeNode, context: CheckContext = 'functio
     case 'literal':
     case 'class':
       return;
+    case 'int_range':
+      return;
     case 'array':
+      if ((node as ArrayNode).iterable) {
+        throw new GenerationError(
+          'Cannot generate a runtime check for parameterized iterable: validating keys or elements would require foreach iteration and is not side-effect-free',
+          'iterable<...>',
+        );
+      }
       if (node.key) {
         assertCheckable(node.key, 'expression');
       }
@@ -89,7 +94,7 @@ export function assertCheckable(node: TypeNode, context: CheckContext = 'functio
         for (const member of node.types) {
           if (!isExpressible(member)) {
             throw new GenerationError(
-              `Union member ${describeNode(member)} cannot be used as a boolean expression (e.g. array keys)`,
+              `Cannot generate a runtime check for union member ${describeNode(member)} in expression context: not representable as a single boolean PHP expression (for example as an array key type)`,
               describeNode(member),
             );
           }
@@ -108,7 +113,7 @@ export function assertCheckable(node: TypeNode, context: CheckContext = 'functio
         for (const member of node.types) {
           if (!isExpressible(member)) {
             throw new GenerationError(
-              `Intersection member ${describeNode(member)} cannot be used as a boolean expression`,
+              `Cannot generate a runtime check for intersection member ${describeNode(member)} in expression context: not representable as a single boolean PHP expression`,
               describeNode(member),
             );
           }
@@ -122,13 +127,13 @@ export function assertCheckable(node: TypeNode, context: CheckContext = 'functio
         return;
       }
       throw new GenerationError(
-        `Cannot generate runtime check for generic type: ${node.name}`,
+        `Cannot generate a runtime check for the generic type ${node.name}: not a supported generic for codegen`,
         `${node.name}<...>`,
       );
     }
     default:
       throw new GenerationError(
-        `Cannot generate runtime check for: ${describeNode(node)}`,
+        `Cannot generate a runtime check for ${describeNode(node)}: this type is not supported for codegen`,
         describeNode(node),
       );
   }

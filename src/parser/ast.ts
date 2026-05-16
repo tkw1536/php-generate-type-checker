@@ -19,9 +19,11 @@ export interface CallableSig {
 
 export type TypeNode =
   | { kind: 'primitive'; name: string }
+  /** Bounded integer: optional `min` / `max` omit open sides (`int<min, 100>` → no min, max 100). */
+  | { kind: 'int_range'; min?: number; max?: number }
   | { kind: 'array'; key?: TypeNode; value: TypeNode }
   | { kind: 'list'; element: TypeNode; nonEmpty?: boolean }
-  | { kind: 'shape'; fields: ShapeField[]; sealed?: boolean }
+  | { kind: 'shape'; fields: ShapeField[]; sealed?: boolean; object?: boolean }
   | { kind: 'union'; types: TypeNode[] }
   | { kind: 'intersection'; types: TypeNode[] }
   | { kind: 'generic'; name: string; typeArgs: TypeNode[] }
@@ -52,6 +54,7 @@ export function isPrimitiveName(name: string): boolean {
     'object',
     'resource',
     'never',
+    'noreturn',
     'array-key',
     'scalar',
     'empty',
@@ -71,6 +74,13 @@ export function isPrimitiveName(name: string): boolean {
     'callable-string',
     'lowercase-string',
     'uppercase-string',
+    'non-falsy-string',
+    'truthy-string',
+    'decimal-int-string',
+    'non-decimal-int-string',
+    'non-empty-lowercase-string',
+    'non-empty-uppercase-string',
+    'non-empty-literal-string',
     'static',
     '$this',
     'self',

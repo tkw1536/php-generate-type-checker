@@ -49,6 +49,15 @@ describe('typeToPascalSlug', () => {
       typeToPascalSlug(normalizeNode(parseType('array<string, mixed>'))),
     ).toBe('ArrayStringToMixed');
   });
+
+  it('slugs int_range with Ge/Le and Neg for negative bounds', () => {
+    expect(typeToPascalSlug(normalizeNode(parseType('negative-int')))).toBe(
+      'IntLeNeg1',
+    );
+    expect(typeToPascalSlug(normalizeNode(parseType('int<-3, -1>')))).toBe(
+      'IntGeNeg3LeNeg1',
+    );
+  });
 });
 
 describe('toIsFunctionIdentifier', () => {
@@ -82,5 +91,14 @@ describe('IsFunctionNameRegistry', () => {
     const slug = typeToPascalSlug(a);
     expect(slug).toBe('ArrayType');
     expect(toIsFunctionIdentifier(slug)).toBe('isArrayType');
+  });
+
+  it('prefixes object shapes with ObjectShape (distinct from array shapes)', () => {
+    expect(
+      typeToPascalSlug(normalizeNode(parseType('object{foo: int}'))),
+    ).toBe('ObjectShapeFldfooReqInt');
+    expect(
+      typeToPascalSlug(normalizeNode(parseType('array{foo: int}'))),
+    ).toBe('ShapeFldfooReqInt');
   });
 });

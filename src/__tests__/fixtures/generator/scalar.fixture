@@ -1,0 +1,9 @@
+---
+input: "scalar"
+output: function
+---
+/** @phpstan-assert-if-true scalar $value */
+function isScalar(mixed $value): bool
+{
+    return is_scalar($value);
+}

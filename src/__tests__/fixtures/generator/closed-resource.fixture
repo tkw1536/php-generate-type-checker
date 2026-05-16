@@ -1,5 +1,5 @@
 ---
-input: "iterable<mixed>"
+input: "closed-resource"
 error: generation
 ---
 <?php

@@ -95,6 +95,16 @@ export function typeToPascalSlug(node: TypeNode): string {
   switch (n.kind) {
     case 'primitive':
       return escapeReservedWholeSlug(primitiveToPascal(n.name));
+    case 'int_range': {
+      let s = 'Int';
+      if (n.min !== undefined) {
+        s += n.min >= 0 ? `Ge${n.min}` : `GeNeg${-n.min}`;
+      }
+      if (n.max !== undefined) {
+        s += n.max >= 0 ? `Le${n.max}` : `LeNeg${-n.max}`;
+      }
+      return s;
+    }
     case 'literal':
       return literalSlug(n);
     case 'class':
@@ -125,7 +135,8 @@ export function typeToPascalSlug(node: TypeNode): string {
         const o = f.optional ? 'Opt' : 'Req';
         return `Fld${keySeg}${o}${typeToPascalSlug(f.type)}`;
       });
-      return `Shape${parts.join('')}`;
+      const prefix = n.object ? 'ObjectShape' : 'Shape';
+      return `${prefix}${parts.join('')}`;
     }
     case 'union': {
       const members = sortFlattenedUnionMembers(n);

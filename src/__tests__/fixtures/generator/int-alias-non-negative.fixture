@@ -1,0 +1,9 @@
+---
+input: "non-negative-int"
+output: function
+---
+/** @phpstan-assert-if-true int<0, max> $value */
+function isIntGe0(mixed $value): bool
+{
+    return (is_int($value) && $value >= 0);
+}
