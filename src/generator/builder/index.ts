@@ -15,7 +15,7 @@ import {
   arrayAccessRef,
   propertyAccessRef,
 } from '../ir/';
-import { phpStringLiteral, renderValueRef } from '../render/refs.ts';
+import { phpLiteralKey } from './phpLiteral.ts';
 import { exprAtomsForType, singleExprForType } from './primitive.ts';
 import {
   isExpressible,
@@ -42,7 +42,7 @@ export type BuildContext = {
 
 export class Builder {
   build(node: TypeNode, parameter: string, ctx: BuildContext): CheckerProgram {
-    const body = this.buildBody(node, parameter, {
+    const body = this.buildBody(node, variableRef(parameter), {
       ...ctx,
       includeArrayGuard: true,
       assumeVarIsArray: false,
@@ -54,26 +54,25 @@ export class Builder {
 
   private buildBody(
     node: TypeNode,
-    pathOrSubject: string | ValueRef,
+    subject: ValueRef,
     ctx: BuildContext,
   ): Block {
     const n = normalizeNode(node);
-    const { path, subject } = resolvePathSubject(pathOrSubject);
 
     switch (n.kind) {
       case 'union':
         if (ctx.inLoopBody) {
           return [this.nestedUnionStmt(n, subject, ctx)];
         }
-        return this.rootUnion(n, path, ctx);
+        return this.rootUnion(n, subject, ctx);
       case 'intersection':
-        return this.intersection(n, path, ctx);
+        return this.intersection(n, subject, ctx);
       case 'array':
-        return this.array(n, path, ctx);
+        return this.array(n, subject, ctx);
       case 'list':
-        return this.list(n, path, ctx);
+        return this.list(n, subject, ctx);
       case 'shape':
-        return this.shape(n, path, ctx);
+        return this.shape(n, subject, ctx);
       default:
         return this.leaf(n, subject, ctx);
     }
@@ -112,11 +111,10 @@ export class Builder {
 
   private rootUnion(
     node: Extract<TypeNode, { kind: 'union' }>,
-    parameter: string,
+    subject: ValueRef,
     ctx: BuildContext,
   ): Block {
     const members = sortUnionMembers(flattenUnion(node));
-    const subject = subjectFromPath(parameter);
     if (members.every((m) => isExpressible(m) && !needsStatementBlock(m))) {
       const arms = members.map((m) => singleExprForType(normalizeNode(m), subject));
       if (arms.every((a): a is Expr => a !== null)) {
@@ -155,7 +153,7 @@ export class Builder {
 
   private intersection(
     node: Extract<TypeNode, { kind: 'intersection' }>,
-    parameter: string,
+    subject: ValueRef,
     ctx: BuildContext,
   ): Block {
     const out: Block = [];
@@ -164,7 +162,7 @@ export class Builder {
     for (const raw of node.types) {
       const member = normalizeNode(raw);
       out.push(
-        ...this.buildBody(member, parameter, {
+        ...this.buildBody(member, subject, {
           ...ctx,
           assumeVarIsArray,
           assumeVarIsObject,
@@ -181,10 +179,14 @@ export class Builder {
     return out;
   }
 
-  private shape(node: Extract<TypeNode, { kind: 'shape' }>, parameter: string, ctx: BuildContext): Block {
+  private shape(
+    node: Extract<TypeNode, { kind: 'shape' }>,
+    base: ValueRef,
+    ctx: BuildContext,
+  ): Block {
     const out: Block = [];
     const objectShape = Boolean(node.object);
-    const base = variableRef(parameter);
+    const root = valueRefRootBase(base);
 
     if (ctx.includeArrayGuard !== false) {
       if (objectShape) {
@@ -200,9 +202,9 @@ export class Builder {
       const field = node.fields[i]!;
       const isLast = i === node.fields.length - 1;
       const fieldRef = objectShape
-        ? propertyAccessRef(parameter, String(field.key))
-        : arrayAccessRef(parameter, field.key);
-      const keyLit = phpStringLiteral(field.key);
+        ? propertyAccessRef(root, String(field.key))
+        : arrayAccessRef(root, field.key);
+      const keyLit = phpLiteralKey(field.key);
 
       if (!field.optional) {
         if (objectShape) {
@@ -252,10 +254,9 @@ export class Builder {
 
   private list(
     node: Extract<TypeNode, { kind: 'list' }>,
-    parameter: string,
+    subject: ValueRef,
     ctx: BuildContext,
   ): Block {
-    const subject = subjectFromPath(parameter);
     if (isNeverPrimitive(node.element)) {
       if (node.nonEmpty) {
         return [failIfStmt(boolLit(false))];
@@ -275,7 +276,7 @@ export class Builder {
     }
 
     const { value: valueVar } = ctx.allocateLoopPair();
-    const body = this.buildBody(node.element, valueVar, {
+    const body = this.buildBody(node.element, variableRef(valueVar), {
       ...ctx,
       includeArrayGuard: true,
       inLoopBody: true,
@@ -324,8 +325,7 @@ export class Builder {
     }
   }
 
-  private array(node: ArrayNode, parameter: string, ctx: BuildContext): Block {
-    const subject = subjectFromPath(parameter);
+  private array(node: ArrayNode, subject: ValueRef, ctx: BuildContext): Block {
     if (isNeverPrimitive(node.value)) {
       if (node.nonEmpty) {
         return [failIfStmt(boolLit(false))];
@@ -366,7 +366,7 @@ export class Builder {
     }
     if (!isNoOpValueCheck(node.value)) {
       body.push(
-        ...this.buildBody(node.value, valueVar, {
+        ...this.buildBody(node.value, variableRef(valueVar), {
           ...ctx,
           includeArrayGuard: true,
           inLoopBody: true,
@@ -489,34 +489,35 @@ export class Builder {
   }
 }
 
+/** Root variable name for {@link ValueRef} chains (IR uses a single root base). */
+function valueRefRootBase(ref: ValueRef): string {
+  switch (ref.kind) {
+    case 'variable':
+      return ref.name;
+    case 'array_access':
+      return ref.base;
+    case 'property_access':
+      return ref.base;
+    default: {
+      const _exhaustive: never = ref;
+      return _exhaustive;
+    }
+  }
+}
 
-function subjectFromPath(path: string): ValueRef {
-    return variableRef(path);
+function appendTrailingReturn(body: Block): void {
+  const last = body[body.length - 1];
+  if (last?.kind === 'return') {
+    return;
   }
-  
-  function resolvePathSubject(pathOrSubject: string | ValueRef): {
-    path: string;
-    subject: ValueRef;
-  } {
-    if (typeof pathOrSubject === 'string') {
-      return { path: pathOrSubject, subject: subjectFromPath(pathOrSubject) };
-    }
-    return { path: renderValueRef(pathOrSubject), subject: pathOrSubject };
+  body.push(returnStmt(boolLit(true)));
+}
+
+function typeSupportsReturnPromotion(node: TypeNode, subject: ValueRef): boolean {
+  const n = normalizeNode(node);
+  if (isNoOpValueCheck(n) || needsStatementBlock(n) || !isExpressible(n)) {
+    return false;
   }
-  
-  function appendTrailingReturn(body: Block): void {
-    const last = body[body.length - 1];
-    if (last?.kind === 'return') {
-      return;
-    }
-    body.push(returnStmt(boolLit(true)));
-  }
-  
-  function typeSupportsReturnPromotion(node: TypeNode, subject: ValueRef): boolean {
-    const n = normalizeNode(node);
-    if (isNoOpValueCheck(n) || needsStatementBlock(n) || !isExpressible(n)) {
-      return false;
-    }
-    const atoms = exprAtomsForType(n, subject);
-    return atoms.length === 1;
-  }
+  const atoms = exprAtomsForType(n, subject);
+  return atoms.length === 1;
+}

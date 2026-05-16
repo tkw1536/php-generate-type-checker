@@ -10,7 +10,7 @@ import {
   variableRef,
 } from '../ir/';
 import type { CheckerProgram } from '../ir/types.ts';
-import { renderExpr, renderProgramBody } from './renderPhp.ts';
+import { renderExpr, renderProgramBody } from './php.ts';
 
 const $v = variableRef('$value');
 

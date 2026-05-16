@@ -1,7 +1,7 @@
 import {
   DEFAULT_CHECKER_OUTPUT,
   type CheckerOutputMode,
-} from '../generator/php.ts';
+} from '../generator/render/output.ts';
 import {
   FRONTMATTER_RE,
   parseFrontmatter,

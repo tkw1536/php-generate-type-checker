@@ -12,4 +12,5 @@ export {
   isExpressible,
   needsStatementBlock,
 } from './expressibility.ts';
-export { isSupportedLeafType } from './leaves.ts';
+export { isSupportedLeafType, leafPrimitiveSupported } from './leaves.ts';
+export { assertCheckable, type CheckContext } from './checkability.ts';

@@ -5,8 +5,15 @@ import type { CallableParam, ShapeField, TypeNode } from '../../parser/ast.ts';
 import { normalizeNode, type ArrayNode } from '../semantics/normalize.ts';
 import { flattenUnion } from '../semantics/union.ts';
 
+/**
+ * Format normalized type for `@phpstan-assert-if-true … $value` (single line, no comment delimiters).
+ */
+export function formatTypeForPhpstanDoc(node: TypeNode): string {
+  return escapePhpdocTypeLine(formatTypeForPhpstanDocRaw(normalizeNode(node)));
+}
+
 /** Escapes a type string for safe use inside `/** … *\/` (one line). */
-export function escapePhpdocTypeLine(type: string): string {
+function escapePhpdocTypeLine(type: string): string {
   return type.replace(/\*\//g, '* /');
 }
 
@@ -45,7 +52,7 @@ function callableParamsDoc(params: CallableParam[]): string {
 }
 
 /** Single-line PHPStan type (normalized). */
-export function formatTypeForPhpstanDocRaw(n: TypeNode): string {
+function formatTypeForPhpstanDocRaw(n: TypeNode): string {
   const node = normalizeNode(n);
   return formatTypeForPhpstanDocInner(node);
 }
@@ -120,11 +127,4 @@ function formatTypeForPhpstanDocInner(node: TypeNode): string {
     default:
       return 'mixed';
   }
-}
-
-/**
- * Format normalized type for `@phpstan-assert-if-true … $value` (single line, no comment delimiters).
- */
-export function formatTypeForPhpstanDoc(node: TypeNode): string {
-  return escapePhpdocTypeLine(formatTypeForPhpstanDocRaw(normalizeNode(node)));
 }

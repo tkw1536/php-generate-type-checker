@@ -1,8 +1,8 @@
 /**
  * Pure IR → PHP rendering. No output mode (function vs static).
  */
-import type { Arg, Block, CheckerProgram, Expr, Stmt, ValueRef } from '../ir/types.ts';
-import { phpStringLiteral, renderValueRef } from './refs.ts';
+import type { Arg, Block, CheckerProgram, Expr, Stmt } from '../ir/types.ts';
+import { renderValueRef } from './refs.ts';
 import {
   type PhpLine,
   formatBody,
@@ -202,32 +202,4 @@ export function renderProgram(
   opts: RenderPhpOptions = {},
 ): PhpLine[] {
   return renderBlock(program.body, 0, opts);
-}
-
-export { phpStringLiteral } from './refs.ts';
-
-export function keyExistsExpr(
-  iterable: ValueRef,
-  key: string | number,
-  objectShape: boolean,
-): Expr {
-  const keyLit = phpStringLiteral(key);
-  if (objectShape) {
-    const base = renderValueRef(iterable);
-    return {
-      kind: 'call',
-      name: 'property_exists',
-      args: [literalArgFromString(base), literalArgFromString(keyLit)],
-    };
-  }
-  const base = renderValueRef(iterable);
-  return {
-    kind: 'call',
-    name: 'array_key_exists',
-    args: [literalArgFromString(keyLit), literalArgFromString(base)],
-  };
-}
-
-function literalArgFromString(value: string): Arg {
-  return { kind: 'literal', value };
 }

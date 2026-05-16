@@ -1,29 +1,11 @@
-export type CheckerOutputMode =
-  | 'function'
-  | 'public_static'
-  | 'protected_static'
-  | 'private_static';
+import {
+  DEFAULT_CHECKER_OUTPUT,
+  type CheckerOutputMode,
+  type GenerateCheckerOptions,
+} from '../options.ts';
 
-export interface GenerateCheckerOptions {
-  output?: CheckerOutputMode;
-  /**
-   * When `true` (default), emit `is{Type}` helper names and a type-based entry function.
-   * When `false`, use legacy `check` / `check_N`.
-   */
-  nameFunctionsByType?: boolean;
-  /**
-   * Name of the emitted entry function or static method. Usually set together with
-   * {@link emitBody}; defaults to `check` when using legacy naming.
-   */
-  mainFunctionName?: string;
-  /**
-   * When `true`, favor readable output: one `if` per guard, builder order (no hoisting).
-   * When `false` (default), favor compact output: combined guards and hoisting for batching.
-   */
-  prioritizeReadabilityOverCompactness?: boolean;
-}
-
-export const DEFAULT_CHECKER_OUTPUT: CheckerOutputMode = 'function';
+export type { CheckerOutputMode, GenerateCheckerOptions };
+export { DEFAULT_CHECKER_OUTPUT };
 
 const CLASS_INDENT = '    ';
 
@@ -52,7 +34,7 @@ function visibilityForMode(mode: CheckerOutputMode): 'public' | 'protected' | 'p
  * Builds `class TypeChecker` with the entry method, optional helpers as `private static function …`,
  * and helpers placed after the entry method inside the class body.
  */
-export function formatClassCheckerOutput(
+function formatClassCheckerOutput(
   typeString: string,
   mainBody: string,
   helpersBlock: string,
@@ -95,7 +77,7 @@ ${inner}
  * Wraps emitted checker body with PHPDoc and a top-level function or static method.
  * Method modes wrap with `class TypeChecker { … }` (helpers are assembled in {@link wrapChecker}).
  */
-export function formatCheckerOutput(
+function formatCheckerOutput(
   typeString: string,
   body: string,
   mode: CheckerOutputMode = DEFAULT_CHECKER_OUTPUT,
@@ -143,13 +125,4 @@ export function wrapChecker(
       mainFunctionName,
     ),
   );
-}
-
-export function generateCheckerFromAst(
-  typeString: string,
-  body: string,
-  options?: GenerateCheckerOptions,
-  helpersPrelude?: string,
-): string {
-  return wrapChecker(typeString, body, options, helpersPrelude);
 }

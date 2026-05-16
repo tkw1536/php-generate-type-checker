@@ -1,7 +1,7 @@
-import { assertCheckable } from './checkability.ts';
+import { assertCheckable } from './semantics/checkability.ts';
 import { normalizeNode } from './semantics/normalize.ts';
 import { build, optimize, renderChecker } from './pipeline.ts';
-import type { GenerateCheckerOptions } from './php.ts';
+import type { GenerateCheckerOptions } from './options.ts';
 import { parseType } from '../parser/index.ts';
 
 /** Composed pipeline; used by fixture tests. */
@@ -23,7 +23,7 @@ export function generateChecker(
 }
 
 export { GenerationError } from './errors.ts';
-export { assertCheckable } from './checkability.ts';
+export { assertCheckable } from './semantics/checkability.ts';
 export {
   build,
   optimize,
@@ -34,5 +34,6 @@ export {
 export {
   type CheckerOutputMode,
   type GenerateCheckerOptions,
-} from './php.ts';
+  DEFAULT_CHECKER_OUTPUT,
+} from './options.ts';
 export { normalizeNode } from './semantics/normalize.ts';

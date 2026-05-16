@@ -1,13 +1,9 @@
-import type { TypeNode } from '../parser/ast.ts';
-import { GenerationError } from './errors.ts';
-import {
-  isExpressible,
-  isNoOpValueCheck,
-  isSupportedLeafType,
-  normalizeGeneric,
-  type ArrayNode,
-} from './semantics/index.ts';
-import { describeNode } from './semantics/describe.ts';
+import type { TypeNode } from '../../parser/ast.ts';
+import { GenerationError } from '../errors.ts';
+import { describeNode } from './describe.ts';
+import { isExpressible, isNoOpValueCheck } from './expressibility.ts';
+import { isSupportedLeafType } from './leaves.ts';
+import { normalizeGeneric, type ArrayNode } from './normalize.ts';
 
 export type CheckContext = 'expression' | 'value' | 'function';
 

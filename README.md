@@ -76,12 +76,12 @@ src/
 │   │   └── registry.ts
 │   ├── optimizer/           # IR compaction (dedupe, merge failIf, hoist, fold)
 │   │   └── IROptimizer.ts
-│   ├── render/              # IR → PHP bodies + output wrapper
-│   │   ├── renderPhp.ts     # pure function-body rendering
-│   │   ├── phpdoc.ts        # PHPStan type strings for @phpstan-assert
-│   │   └── IRRenderer.ts
-│   ├── checkability.ts
-│   ├── php.ts               # @phpstan-assert-if-true wrappers, class layout
+│   ├── render/              # IR → PHP (index.ts is IR-only; phpdoc used by pipeline)
+│   │   ├── php.ts           # function-body rendering
+│   │   ├── phpdoc.ts        # PHPStan type strings for @phpstan-assert (pipeline only)
+│   │   ├── output.ts        # @phpstan-assert-if-true wrappers, class layout
+│   │   └── index.ts
+│   ├── options.ts           # shared GenerateCheckerOptions
 │   ├── generateChecker.test.ts
 │   └── index.ts             # generateChecker() composes the pipeline
 ├── support/                 # tests only (fixtures + loaders)
@@ -98,10 +98,10 @@ Production code does not import `src/support/`.
 End-to-end flow for `generateChecker(typeString)`:
 
 1. **Parse** — `parseType` → `TypeNode` ([`src/parser/`](src/parser/))
-2. **Normalize & check** — [`semantics/`](src/generator/semantics/), [`checkability.ts`](src/generator/checkability.ts)
+2. **Normalize & check** — [`semantics/`](src/generator/semantics/) (includes [`checkability.ts`](src/generator/semantics/checkability.ts))
 3. **Build** — [`build()`](src/generator/pipeline.ts) walks the AST via [`IRBuilder`](src/generator/builder/index.ts); names helpers via [`FunctionNameRegistry`](src/generator/builder/registry.ts)
 4. **Optimize** — [`optimize()`](src/generator/optimizer/IROptimizer.ts) unless `prioritizeReadabilityOverCompactness` is true
-5. **Render** — [`render()`](src/generator/render/IRRenderer.ts) turns IR into PHP (body via [`renderPhp.ts`](src/generator/render/renderPhp.ts), then [`php.ts`](src/generator/php.ts) wraps with PHPDoc / class)
+5. **Render** — [`render()`](src/generator/render/index.ts) turns IR into PHP (body via [`php.ts`](src/generator/render/php.ts); PHPDoc type lines from [`phpdoc.ts`](src/generator/render/phpdoc.ts) in pipeline; [`output.ts`](src/generator/render/output.ts) wraps with class/function)
 
 ### Checker IR (outline)
 
@@ -119,7 +119,7 @@ Each **`CheckerProgram`** has a parameter name and a **`Block`** (`Stmt[]`):
 
 **Optimizer** passes: dedupe identical fail-if, merge consecutive fail-if into one guard, hoist fail-if before loops, fold trailing fail-if + `return true` into `return` of combined guards, light boolean cleanup.
 
-**Renderer**: fail-if conditions with `not (a && b)` emit as `!a || !b` chains; output mode (function vs `self::` static) lives only in `IRRenderer`.
+**Renderer**: fail-if conditions with `not (a && b)` emit as `!a || !b` chains; output mode (function vs `self::` static) lives only in [`render/index.ts`](src/generator/render/index.ts) / [`output.ts`](src/generator/render/output.ts).
 
 ## Programmatic API
 
@@ -181,6 +181,7 @@ Run `yarn test` (Vitest).
 | New primitive / leaf checks | [`builder/leafIr.ts`](src/generator/builder/leafIr.ts), [`semantics/expressibility.ts`](src/generator/semantics/expressibility.ts) |
 | IR for a type construct | [`builder/index.ts`](src/generator/builder/index.ts) |
 | Guard order / dedupe / fold | [`optimizer/IROptimizer.ts`](src/generator/optimizer/IROptimizer.ts) |
-| PHP formatting (`if`, `foreach`, precedence) | [`render/renderPhp.ts`](src/generator/render/renderPhp.ts) |
-| PHPDoc wrapper / class layout | [`render/IRRenderer.ts`](src/generator/render/IRRenderer.ts), [`php.ts`](src/generator/php.ts) |
+| PHP formatting (`if`, `foreach`, precedence) | [`render/php.ts`](src/generator/render/php.ts) |
+| PHPDoc type strings | [`render/phpdoc.ts`](src/generator/render/phpdoc.ts) (via pipeline) |
+| PHPDoc wrapper / class layout | [`render/output.ts`](src/generator/render/output.ts) |
 | What is allowed to generate | [`checkability.ts`](src/generator/checkability.ts) |

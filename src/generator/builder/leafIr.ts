@@ -11,12 +11,17 @@ import {
   orExpr,
   refArg,
 } from '../ir/index.ts';
+import { isSupportedLeafType } from '../semantics/leaves.ts';
 import { normalizeNode } from '../semantics/normalize.ts';
+import { phpLiteralScalar } from './phpLiteral.ts';
 
 
 /** Single positive guard expression, or null if uncheckable. */
 export function exprForType(node: TypeNode, subject: ValueRef): Expr | null {
   const n = normalizeNode(node);
+  if (!isSupportedLeafType(n)) {
+    return null;
+  }
 
   if (n.kind === 'primitive') {
     return primitiveToExpr(n.name, subject);
@@ -27,7 +32,7 @@ export function exprForType(node: TypeNode, subject: ValueRef): Expr | null {
   }
 
   if (n.kind === 'literal') {
-    const lit = literalPhp(n.value);
+    const lit = phpLiteralScalar(n.value);
     if (lit === null) {
       return null;
     }
@@ -54,19 +59,6 @@ export function exprForType(node: TypeNode, subject: ValueRef): Expr | null {
 
 function subjectArg(subject: ValueRef): Arg {
   return refArg(subject);
-}
-
-function literalPhp(value: string | number | boolean): string | null {
-  if (typeof value === 'string') {
-    return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
-  }
-  if (typeof value === 'number') {
-    return String(value);
-  }
-  if (typeof value === 'boolean') {
-    return value ? 'true' : 'false';
-  }
-  return null;
 }
 
 function primitiveToExpr(name: string, subject: ValueRef): Expr | null {

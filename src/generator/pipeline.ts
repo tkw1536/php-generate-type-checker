@@ -5,10 +5,11 @@ import {
   createFunctionNameRegistry,
   type FunctionNameRegistry,
 } from './builder/registry.ts';
-import { optimize as optimizeIr } from './optimizer/IROptimizer.ts';
-import { render, type RenderOptions } from './render/IRRenderer.ts';
+import { optimize as optimizeIr } from './optimizer/';
+import type { GenerateCheckerOptions } from './options.ts';
+import { render, type RenderOptions } from './render/index.ts';
+import { formatTypeForPhpstanDoc } from './render/phpdoc.ts';
 import { normalizeNode } from './semantics/normalize.ts';
-import type { GenerateCheckerOptions } from './php.ts';
 
 const DEFAULT_PARAMETER = '$value';
 
@@ -19,6 +20,11 @@ export type BuildOptions = GenerateCheckerOptions & {
 
 export type BuildResult = {
   ir: CheckerIR;
+  typesByName: Record<string, TypeNode>;
+};
+
+export type RenderCheckerInput = GenerateCheckerOptions & {
+  typeString: string;
   typesByName: Record<string, TypeNode>;
 };
 
@@ -117,8 +123,23 @@ export function optimize(ir: CheckerIR): CheckerIR {
 export type { RenderOptions };
 
 /** Render {@link CheckerIR} to PHP source. */
-export function renderChecker(ir: CheckerIR, options: RenderOptions): string {
-  return render(ir, options);
+export function renderChecker(ir: CheckerIR, options: RenderCheckerInput): string {
+  const docsByName = Object.fromEntries(
+    Object.entries(options.typesByName).map(([name, type]) => [
+      name,
+      formatTypeForPhpstanDoc(type),
+    ]),
+  );
+  const entryName = options.mainFunctionName ?? ir.order[0] ?? 'check';
+  const renderOptions: RenderOptions = {
+    output: options.output,
+    nameFunctionsByType: options.nameFunctionsByType,
+    mainFunctionName: options.mainFunctionName,
+    prioritizeReadabilityOverCompactness: options.prioritizeReadabilityOverCompactness,
+    docsByName,
+    entryDocType: docsByName[entryName] ?? options.typeString,
+  };
+  return render(ir, renderOptions);
 }
 
 export type { CheckerIR } from './ir/types.ts';
