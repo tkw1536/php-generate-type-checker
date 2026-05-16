@@ -16,6 +16,11 @@ export interface GenerateCheckerOptions {
    * {@link emitBody}; defaults to `check` when using legacy naming.
    */
   mainFunctionName?: string;
+  /**
+   * When `true`, favor readable output: one `if` per guard, builder order (no hoisting).
+   * When `false` (default), favor compact output: combined guards and hoisting for batching.
+   */
+  prioritizeReadabilityOverCompactness?: boolean;
 }
 
 export const DEFAULT_CHECKER_OUTPUT: CheckerOutputMode = 'function';

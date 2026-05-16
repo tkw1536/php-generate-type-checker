@@ -5,19 +5,14 @@ output: function
 /** @phpstan-assert-if-true array{'foo': int, 'bar'?: string} $value */
 function isShapeFldbarOptStringFldfooReqInt(mixed $value): bool
 {
-    if (!is_array($value)) {
-        return false;
-    }
-    if (!array_key_exists('foo', $value)) {
-        return false;
-    }
-    $value_foo = $value['foo'];
-    if (!is_int($value_foo)) {
+    if (!is_array($value)
+        || !array_key_exists('foo', $value)
+        || !is_int($value['foo'])
+    ) {
         return false;
     }
     if (array_key_exists('bar', $value)) {
-            $value_bar = $value['bar'];
-            return is_string($value_bar);
+        return is_string($value['bar']);
     }
     return true;
 }

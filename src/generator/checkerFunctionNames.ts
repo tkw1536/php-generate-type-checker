@@ -1,5 +1,5 @@
 /**
- * Deterministic PHP helper names: `is` + readable PascalCase slug from normalized types.
+ * Deterministic checker function names: `is` + readable PascalCase slug from normalized types.
  */
 import type { ShapeField, TypeNode } from '../parser/ast.ts';
 import { normalizeNode, type ArrayNode } from './normalize.ts';
@@ -177,7 +177,7 @@ export function toIsFunctionIdentifier(pascalSlug: string): string {
 /**
  * Allocates unique `is*` names per {@link typeDedupeKey}, avoiding collisions with reserved names.
  */
-export class IsFunctionNameRegistry {
+export class CheckerFunctionNameRegistry {
   private readonly assigned = new Map<string, string>();
   private readonly used = new Set<string>();
 

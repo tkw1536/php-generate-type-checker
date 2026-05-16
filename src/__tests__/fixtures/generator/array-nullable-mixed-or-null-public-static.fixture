@@ -17,7 +17,7 @@ class TypeChecker
             return false;
         }
         foreach ($value as $key1 => $value1) {
-            if (!(is_string($key1) || $key1 === null)) {
+            if (!($key1 === null || is_string($key1))) {
                 return false;
             }
         }

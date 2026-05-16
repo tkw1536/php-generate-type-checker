@@ -1,23 +1,16 @@
 ---
-input: 'array{"hello:world": string, "hello.world": string}'
+input: "array{'hello:world': string, 'hello.world': string}"
 output: function
 ---
 /** @phpstan-assert-if-true array{'hello:world': string, 'hello.world': string} $value */
 function isShapeFldhello_worldReqStringFldhello_worldReqString(mixed $value): bool
 {
-    if (!is_array($value)) {
+    if (!is_array($value)
+        || !array_key_exists('hello:world', $value)
+        || !is_string($value['hello:world'])
+        || !array_key_exists('hello.world', $value)
+    ) {
         return false;
     }
-    if (!array_key_exists('hello:world', $value)) {
-        return false;
-    }
-    $value_hello_world = $value['hello:world'];
-    if (!is_string($value_hello_world)) {
-        return false;
-    }
-    if (!array_key_exists('hello.world', $value)) {
-        return false;
-    }
-    $value_hello_world_2 = $value['hello.world'];
-    return is_string($value_hello_world_2);
+    return is_string($value['hello.world']);
 }

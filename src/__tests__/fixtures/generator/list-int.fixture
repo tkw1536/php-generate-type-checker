@@ -5,7 +5,9 @@ output: function
 /** @phpstan-assert-if-true list<int> $value */
 function isListInt(mixed $value): bool
 {
-    if (!is_array($value) || !array_is_list($value)) {
+    if (!is_array($value)
+        || !array_is_list($value)
+    ) {
         return false;
     }
     foreach ($value as $value1) {

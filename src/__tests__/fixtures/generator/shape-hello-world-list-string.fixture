@@ -1,0 +1,21 @@
+---
+input: "array{'hello': string, 'world': list<string>}"
+output: function
+---
+/** @phpstan-assert-if-true array{'hello': string, 'world': list<string>} $value */
+function isShapeFldhelloReqStringFldworldReqListString(mixed $value): bool
+{
+    if (!is_array($value)
+        || !array_key_exists('hello', $value)
+        || !is_string($value['hello'])
+        || !array_key_exists('world', $value)
+    ) {
+        return false;
+    }
+    foreach ($value['world'] as $value1) {
+        if (!is_string($value1)) {
+            return false;
+        }
+    }
+    return true;
+}

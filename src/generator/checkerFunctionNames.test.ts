@@ -3,10 +3,10 @@ import { parseType } from '../parser/index.ts';
 import { normalizeNode } from './normalize.ts';
 import { typeDedupeKey } from './typeKey.ts';
 import {
-  IsFunctionNameRegistry,
+  CheckerFunctionNameRegistry,
   toIsFunctionIdentifier,
   typeToPascalSlug,
-} from './helperFunctionNames.ts';
+} from './checkerFunctionNames.ts';
 import { sortFlattenedUnionMembers } from './unionOrder.ts';
 
 describe('typeToPascalSlug', () => {
@@ -67,14 +67,14 @@ describe('toIsFunctionIdentifier', () => {
   });
 });
 
-describe('IsFunctionNameRegistry', () => {
+describe('CheckerFunctionNameRegistry', () => {
   it('disambiguates different dedupe keys that share the same slug', () => {
     const a = normalizeNode(parseType('\\Vendor\\A\\Foo'));
     const b = normalizeNode(parseType('\\Vendor\\B\\Foo'));
     expect(typeToPascalSlug(a)).toBe(typeToPascalSlug(b));
     expect(typeDedupeKey(a)).not.toBe(typeDedupeKey(b));
 
-    const r = new IsFunctionNameRegistry();
+    const r = new CheckerFunctionNameRegistry();
     expect(r.allocate(typeDedupeKey(a), a)).toBe('isFoo');
     expect(r.allocate(typeDedupeKey(b), b)).toBe('isFoo_2');
   });
@@ -82,7 +82,7 @@ describe('IsFunctionNameRegistry', () => {
   it('returns the same name for the same dedupe key', () => {
     const a = normalizeNode(parseType('int'));
     const k = typeDedupeKey(a);
-    const r = new IsFunctionNameRegistry();
+    const r = new CheckerFunctionNameRegistry();
     expect(r.allocate(k, a)).toBe(r.allocate(k, a));
   });
 

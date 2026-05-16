@@ -5,7 +5,9 @@ output: function
 /** @phpstan-assert-if-true non-empty-array<string> $value */
 function isNonEmptyArrayString(mixed $value): bool
 {
-    if (!is_array($value) || $value === []) {
+    if (!is_array($value)
+        || $value === []
+    ) {
         return false;
     }
     foreach ($value as $value1) {

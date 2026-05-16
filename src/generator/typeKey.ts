@@ -1,6 +1,6 @@
 /**
  * Stable, canonical string keys for normalized {@link TypeNode} values so the same
- * logical type dedupes to one `check_N` helper (order of union members, etc.).
+ * logical type dedupes to one checker function (order of union members, etc.).
  */
 import type { CallableParam, ShapeField, TypeNode } from '../parser/ast.ts';
 import { normalizeNode, type ArrayNode } from './normalize.ts';
@@ -16,7 +16,7 @@ function unionMemberSortKey(t: TypeNode): string {
   return canonicalTypeKeyNormalized(t);
 }
 
-/** Deterministic key for deduplicating helper bodies. */
+/** Deterministic key for deduplicating checker function bodies. */
 export function typeDedupeKey(node: TypeNode): string {
   return canonicalTypeKeyNormalized(normalizeNode(node));
 }

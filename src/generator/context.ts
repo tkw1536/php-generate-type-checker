@@ -38,6 +38,73 @@ export function ifBlock(
   ];
 }
 
+/**
+ * `if` whose condition is `part0 || part1 || …`, split across lines (first line `if (part0`,
+ * following lines `    || partN`, then `) {`).
+ */
+export function ifBlockOrChain(
+  depth: number,
+  orParts: string[],
+  body: PhpLine[],
+): PhpLine[] {
+  if (orParts.length === 0) {
+    return [];
+  }
+  if (orParts.length === 1) {
+    return ifBlock(depth, orParts[0]!, body);
+  }
+  const lines: PhpLine[] = [line(depth, `if (${orParts[0]}`)];
+  for (let i = 1; i < orParts.length; i++) {
+    lines.push(line(depth, `    || ${orParts[i]}`));
+  }
+  lines.push(line(depth, ') {'));
+  lines.push(...shiftLines(1, body));
+  lines.push(line(depth, '}'));
+  return lines;
+}
+
+/**
+ * `if` with each failure clause on its own line (`if (` then indented parts with leading `||`).
+ */
+export function ifBlockMultilineOr(
+  depth: number,
+  orParts: string[],
+  body: PhpLine[],
+): PhpLine[] {
+  if (orParts.length === 0) {
+    return [];
+  }
+  if (orParts.length === 1) {
+    return ifBlock(depth, orParts[0]!, body);
+  }
+  const head: PhpLine[] = [
+    line(depth, 'if ('),
+    line(depth + 1, orParts[0]!.trim()),
+  ];
+  for (let i = 1; i < orParts.length; i++) {
+    head.push(line(depth + 1, `|| ${orParts[i]!.trim()}`));
+  }
+  head.push(line(depth, ') {'));
+  return [...head, ...shiftLines(1, body), line(depth, '}')];
+}
+
+/** Multi-line `return ( … && … );` when there are multiple conjuncts. */
+export function returnMultilineAnd(depth: number, andParts: string[]): PhpLine[] {
+  if (andParts.length === 0) {
+    return [];
+  }
+  if (andParts.length === 1) {
+    return [line(depth, `return ${andParts[0]};`)];
+  }
+  const out: PhpLine[] = [line(depth, 'return (')];
+  out.push(line(depth + 1, andParts[0]!.trim()));
+  for (let i = 1; i < andParts.length; i++) {
+    out.push(line(depth + 1, `&& ${andParts[i]!.trim()}`));
+  }
+  out.push(line(depth, ');'));
+  return out;
+}
+
 export function braceBlock(depth: number, body: PhpLine[]): PhpLine[] {
   return [line(depth, '{'), ...shiftLines(1, body), line(depth, '}')];
 }

@@ -9,7 +9,9 @@ function isArrayStringToString(mixed $value): bool
         return false;
     }
     foreach ($value as $key1 => $value1) {
-        if (!is_string($key1) || !is_string($value1)) {
+        if (!is_string($key1)
+            || !is_string($value1)
+        ) {
             return false;
         }
     }

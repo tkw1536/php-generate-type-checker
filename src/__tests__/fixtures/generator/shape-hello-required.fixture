@@ -5,12 +5,10 @@ output: function
 /** @phpstan-assert-if-true array{'hello': string} $value */
 function isShapeFldhelloReqString(mixed $value): bool
 {
-    if (!is_array($value)) {
+    if (!is_array($value)
+        || !array_key_exists('hello', $value)
+    ) {
         return false;
     }
-    if (!array_key_exists('hello', $value)) {
-        return false;
-    }
-    $value_hello = $value['hello'];
-    return is_string($value_hello);
+    return is_string($value['hello']);
 }

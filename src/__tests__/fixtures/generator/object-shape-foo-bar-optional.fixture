@@ -5,19 +5,14 @@ output: function
 /** @phpstan-assert-if-true object{foo: int, bar?: string} $value */
 function isObjectShapeFldbarOptStringFldfooReqInt(mixed $value): bool
 {
-    if (!is_object($value)) {
-        return false;
-    }
-    if (!property_exists($value, 'foo')) {
-        return false;
-    }
-    $value_foo = $value->{'foo'};
-    if (!is_int($value_foo)) {
+    if (!is_object($value)
+        || !property_exists($value, 'foo')
+        || !is_int($value->foo)
+    ) {
         return false;
     }
     if (property_exists($value, 'bar')) {
-            $value_bar = $value->{'bar'};
-            return is_string($value_bar);
+        return is_string($value->bar);
     }
     return true;
 }

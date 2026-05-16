@@ -5,7 +5,10 @@ output: function
 /** @phpstan-assert-if-true non-empty-list<string> $value */
 function isNonEmptyListString(mixed $value): bool
 {
-    if (!is_array($value) || !array_is_list($value) || $value === []) {
+    if (!is_array($value)
+        || !array_is_list($value)
+        || $value === []
+    ) {
         return false;
     }
     foreach ($value as $value1) {

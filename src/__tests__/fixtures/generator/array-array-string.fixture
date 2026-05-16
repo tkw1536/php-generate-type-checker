@@ -1,0 +1,22 @@
+---
+input: "array<array<string>>"
+output: function
+---
+/** @phpstan-assert-if-true array<array<string>> $value */
+function isArrayArrayString(mixed $value): bool
+{
+    if (!is_array($value)) {
+        return false;
+    }
+    foreach ($value as $value1) {
+        if (!is_array($value1)) {
+            return false;
+        }
+        foreach ($value1 as $value2) {
+            if (!is_string($value2)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}

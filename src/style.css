@@ -156,7 +156,8 @@ body {
 @media (max-width: 900px) {
   .panel-grid {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(10rem, auto) minmax(0, 1fr);
+    /* Bounded input column so footer + Generate stay on screen; textarea shrinks inside. */
+    grid-template-rows: minmax(0, 38%) minmax(0, 1fr);
     flex: 1 1 0;
     min-height: 0;
   }
@@ -175,6 +176,10 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
+}
+
+.panel.panel-input {
+  grid-template-rows: var(--panel-header-h) minmax(0, 1fr) auto;
 }
 
 .panel-header {
@@ -234,9 +239,10 @@ body {
 
 .output-tab {
   font: inherit;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 500;
-  padding: 0.25rem 0.625rem;
+  padding: 0.25rem 0.5rem;
+  white-space: nowrap;
   border: none;
   border-radius: 4px;
   background: transparent;
@@ -332,43 +338,69 @@ body {
   background: var(--bg);
 }
 
-.panel-footer--actions {
-  gap: 0.5rem;
+.panel-footer--generate {
+  flex-direction: row;
+  align-items: center;
   flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  min-height: unset;
+  max-height: none;
+  padding: 0.5rem 0.875rem;
+  flex-shrink: 0;
 }
 
-.panel-footer-label {
-  font-size: 0.8125rem;
+.panel-footer-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.panel-footer-option {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}
+
+.panel-footer-option input {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.panel-footer-emit {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.panel-footer-emit-label {
+  font-size: 0.75rem;
   color: var(--muted);
   white-space: nowrap;
 }
 
 .panel-footer-select {
-  flex: 1;
-  min-width: 10rem;
-  max-width: 18rem;
+  flex: 0 1 auto;
+  width: auto;
+  min-width: 5.5rem;
+  max-width: 9.5rem;
   font: inherit;
-  font-size: 0.8125rem;
-  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  padding: 0.25rem 1.5rem 0.25rem 0.4rem;
   color: var(--text);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;
 }
 
-.panel-footer-naming {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  cursor: pointer;
-  user-select: none;
-}
-
-.panel-footer-naming input {
-  margin: 0;
-}
-
-.panel-footer--actions .btn-primary {
+.panel-footer--generate .btn-primary {
+  flex-shrink: 0;
   margin-left: auto;
 }
 
@@ -631,6 +663,26 @@ body {
   margin-top: 1rem;
   color: var(--muted);
   font-size: 0.875rem;
+}
+
+@media (max-width: 900px) {
+  .site-footer {
+    max-height: 22vh;
+    margin-top: 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  .site-header {
+    margin-bottom: 0.5rem;
+  }
+
+  .site-header h1 {
+    font-size: 1.25rem;
+  }
+
+  body {
+    padding: 0.75rem;
+  }
 }
 
 .site-footer p {

@@ -1,5 +1,10 @@
 import './style.css';
-import { generateChecker, parseType, type CheckerOutputMode } from './index.ts';
+import {
+  checkerIRSnapshotsForType,
+  generateChecker,
+  parseType,
+  type CheckerOutputMode,
+} from './index.ts';
 import {
   detectOutputLanguage,
   highlightCode,
@@ -39,7 +44,8 @@ function writeStoredTypeInput(value: string): void {
   }
 }
 
-type OutputTabId = 'php' | 'ast';
+/** Left → right in the tab bar: AST → IR build → IR optimized → PHP */
+type OutputTabId = 'ast' | 'ir-build' | 'ir-optimized' | 'php';
 
 interface OutputPanel {
   tabId: OutputTabId;
@@ -148,19 +154,37 @@ function getNameFunctionsByType(): boolean {
   return el?.checked !== false;
 }
 
+function getPrioritizeReadabilityOverCompactness(): boolean {
+  const el = document.querySelector<HTMLInputElement>(
+    '#generate-prioritize-readability',
+  );
+  return el?.checked === true;
+}
+
+function getGenerateOptions() {
+  return {
+    output: getGenerateOutputMode(),
+    nameFunctionsByType: getNameFunctionsByType(),
+    prioritizeReadabilityOverCompactness: getPrioritizeReadabilityOverCompactness(),
+  };
+}
+
 interface GenerationSnapshot {
   type: string;
   outputMode: CheckerOutputMode;
   nameFunctionsByType: boolean;
+  prioritizeReadabilityOverCompactness: boolean;
 }
 
 let lastGenerated: GenerationSnapshot | null = null;
 
 function getGenerationSnapshot(): GenerationSnapshot {
+  const opts = getGenerateOptions();
   return {
     type: getTypeInput(),
-    outputMode: getGenerateOutputMode(),
-    nameFunctionsByType: getNameFunctionsByType(),
+    outputMode: opts.output,
+    nameFunctionsByType: opts.nameFunctionsByType,
+    prioritizeReadabilityOverCompactness: opts.prioritizeReadabilityOverCompactness,
   };
 }
 
@@ -172,7 +196,9 @@ function isOutputUpToDate(): boolean {
   return (
     current.type === lastGenerated.type &&
     current.outputMode === lastGenerated.outputMode &&
-    current.nameFunctionsByType === lastGenerated.nameFunctionsByType
+    current.nameFunctionsByType === lastGenerated.nameFunctionsByType &&
+    current.prioritizeReadabilityOverCompactness ===
+      lastGenerated.prioritizeReadabilityOverCompactness
   );
 }
 
@@ -180,25 +206,34 @@ function syncGenerateButton(): void {
   generateBtn.disabled = isOutputUpToDate();
 }
 
-function runGenerate(phpPanel: OutputPanel, astPanel: OutputPanel): void {
+function runGenerate(panels: {
+  ast: OutputPanel;
+  irBuild: OutputPanel;
+  irOptimized: OutputPanel;
+  php: OutputPanel;
+}): void {
   const typeString = getTypeInput();
+  const genOpts = getGenerateOptions();
 
   try {
-    setSuccessOutput(astPanel, JSON.stringify(parseType(typeString), null, 2));
+    setSuccessOutput(panels.ast, JSON.stringify(parseType(typeString), null, 2));
   } catch (err) {
-    setErrorOutput(astPanel, err, typeString);
+    setErrorOutput(panels.ast, err, typeString);
   }
 
   try {
-    setSuccessOutput(
-      phpPanel,
-      generateChecker(typeString, {
-        output: getGenerateOutputMode(),
-        nameFunctionsByType: getNameFunctionsByType(),
-      }),
-    );
+    const ir = checkerIRSnapshotsForType(typeString, genOpts);
+    setSuccessOutput(panels.irBuild, ir.built);
+    setSuccessOutput(panels.irOptimized, ir.optimized);
   } catch (err) {
-    setErrorOutput(phpPanel, err, typeString);
+    setErrorOutput(panels.irBuild, err, typeString);
+    setErrorOutput(panels.irOptimized, err, typeString);
+  }
+
+  try {
+    setSuccessOutput(panels.php, generateChecker(typeString, genOpts));
+  } catch (err) {
+    setErrorOutput(panels.php, err, typeString);
   }
 
   lastGenerated = getGenerationSnapshot();
@@ -253,16 +288,38 @@ function setupOutputTabs(): void {
   });
 }
 
-const phpPanel = setupOutputPanel('php', 'php-output-body', 'php-output', 'php');
 const astPanel = setupOutputPanel('ast', 'ast-output-body', 'ast-output', 'json');
+const irBuildPanel = setupOutputPanel(
+  'ir-build',
+  'ir-build-output-body',
+  'ir-build-output',
+  'json',
+);
+const irOptimizedPanel = setupOutputPanel(
+  'ir-optimized',
+  'ir-optimized-output-body',
+  'ir-optimized-output',
+  'json',
+);
+const phpPanel = setupOutputPanel('php', 'php-output-body', 'php-output', 'php');
 
-const scheduleGenerate = debounce(() => runGenerate(phpPanel, astPanel), INPUT_DEBOUNCE_MS);
+const outputPanelSet = {
+  ast: astPanel,
+  irBuild: irBuildPanel,
+  irOptimized: irOptimizedPanel,
+  php: phpPanel,
+};
+
+const scheduleGenerate = debounce(() => runGenerate(outputPanelSet), INPUT_DEBOUNCE_MS);
 
 const generateBtn = document.querySelector<HTMLButtonElement>('#generate-run')!;
 const typeInput = document.querySelector<HTMLTextAreaElement>('#type-input')!;
 const outputModeSelect = document.querySelector<HTMLSelectElement>('#generate-output-mode')!;
 const nameByTypeCheckbox =
   document.querySelector<HTMLInputElement>('#generate-name-by-type')!;
+const prioritizeReadabilityCheckbox = document.querySelector<HTMLInputElement>(
+  '#generate-prioritize-readability',
+)!;
 
 copyBtn.addEventListener('click', async () => {
   const panel = getActiveOutputPanel();
@@ -279,7 +336,7 @@ copyBtn.addEventListener('click', async () => {
 });
 
 generateBtn.addEventListener('click', () => {
-  runGenerate(phpPanel, astPanel);
+  runGenerate(outputPanelSet);
 });
 
 typeInput.addEventListener('input', () => {
@@ -288,6 +345,7 @@ typeInput.addEventListener('input', () => {
 });
 outputModeSelect.addEventListener('change', onGenerateInputChanged);
 nameByTypeCheckbox.addEventListener('change', onGenerateInputChanged);
+prioritizeReadabilityCheckbox.addEventListener('change', onGenerateInputChanged);
 
 document.querySelector<HTMLButtonElement>('#theme-toggle')!.addEventListener('click', () => {
   toggleTheme();
@@ -327,4 +385,4 @@ setupExamples();
   const stored = readStoredTypeInput();
   typeInput.value = stored !== null ? stored : DEFAULT_TYPE;
 }
-runGenerate(phpPanel, astPanel);
+runGenerate(outputPanelSet);

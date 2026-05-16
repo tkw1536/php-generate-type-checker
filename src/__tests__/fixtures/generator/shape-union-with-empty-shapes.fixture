@@ -12,21 +12,12 @@ function isArrayNeverOrShapeFldleftReqArrayNeverFldrightReqArrayNever(mixed $val
 /** @phpstan-assert-if-true array{'left': array<never>, 'right': array<never>} $value */
 function isShapeFldleftReqArrayNeverFldrightReqArrayNever(mixed $value): bool
 {
-    if (!is_array($value)) {
-        return false;
-    }
-    if (!array_key_exists('left', $value)) {
-        return false;
-    }
-    $value_left = $value['left'];
-    if ($value_left !== []) {
-        return false;
-    }
-    if (!array_key_exists('right', $value)) {
-        return false;
-    }
-    $value_right = $value['right'];
-    if ($value_right !== []) {
+    if (!is_array($value)
+        || !array_key_exists('left', $value)
+        || !($value['left'] === [])
+        || !array_key_exists('right', $value)
+        || !($value['right'] === [])
+    ) {
         return false;
     }
     return true;
