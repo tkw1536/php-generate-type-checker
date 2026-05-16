@@ -1,4 +1,4 @@
-# PHPStan Type Checker Generator
+# Type Checker Generator
 
 Parse [PHPStan PHPDoc types](https://phpstan.org/writing-php-code/phpdoc-types) and generate PHP 8+ runtime checker methods.
 
@@ -39,4 +39,4 @@ const php = generateChecker('array<string, int>');
 
 ## Parser
 
-Hand-written lexer + recursive-descent parser in [`src/parser/`](src/parser/). Fixture tests live in [`src/__tests__/fixtures/parser/`](src/__tests__/fixtures/parser/) and run via [`src/__tests__/parser.test.ts`](src/__tests__/parser.test.ts).
+Lexer + recursive-descent parser in [`src/parser/`](src/parser/). Fixture tests live in [`src/__tests__/fixtures/parser/`](src/__tests__/fixtures/parser/) and run via [`src/__tests__/parser.test.ts`](src/__tests__/parser.test.ts).
