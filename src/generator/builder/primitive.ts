@@ -10,7 +10,7 @@ import {
   literalArg,
   orExpr,
   refArg,
-} from '../ir/';
+} from '../ir/index.ts';
 import { normalizeNode } from '../normalize.ts';
 import { stripRedundantOuterParens } from '../negateExpression.ts';
 
@@ -361,7 +361,7 @@ function primitiveToExpr(name: string, subject: ValueRef): Expr | null {
 }
 
 /** Single positive guard expression, or null if uncheckable. */
-export function exprForType(node: TypeNode, subject: ValueRef): Expr | null {
+function exprForType(node: TypeNode, subject: ValueRef): Expr | null {
   const n = normalizeNode(node);
 
   if (n.kind === 'primitive') {

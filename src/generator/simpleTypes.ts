@@ -1,5 +1,4 @@
 import type { TypeNode } from '../parser/ast.ts';
-import { GenerationError } from './errors.ts';
 import { normalizeNode } from './normalize.ts';
 import { formatTypeForPhpstanDocRaw } from './typeDoc.ts';
 
@@ -7,7 +6,7 @@ import { formatTypeForPhpstanDocRaw } from './typeDoc.ts';
  * Extension point: PHP boolean expressions for leaf types.
  * Returns null if this module does not handle the node (caller throws after checkability pass).
  */
-export function emitIntRangeExpression(
+function emitIntRangeExpression(
   node: Extract<TypeNode, { kind: 'int_range' }>,
   varName: string,
 ): string {
@@ -151,16 +150,6 @@ export function emitPrimitiveExpression(name: string, varName: string): string |
   }
 }
 
-export function requireExpression(node: TypeNode, varName: string): string {
-  const expr = emitExpression(node, varName);
-  if (expr === null) {
-    throw new GenerationError(
-      `Cannot emit expression for ${describeNode(node)}`,
-      describeNode(node),
-    );
-  }
-  return expr;
-}
 
 export function isNoOpValueCheck(node: TypeNode): boolean {
   return node.kind === 'primitive' && node.name === 'mixed';

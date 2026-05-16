@@ -1,10 +1,27 @@
-/**
- * Deterministic checker function names: `is` + readable PascalCase slug from normalized types.
- */
 import type { ShapeField, TypeNode } from '../../parser/ast.ts';
 import { normalizeNode, type ArrayNode } from '../normalize.ts';
 import { typeDedupeKey } from '../typeKey.ts';
 import { sortFlattenedUnionMembers } from '../unionOrder.ts';
+
+
+/** Proposes a base PHP function name from a type (no cache or collision handling). */
+export interface FunctionNameProposer {
+  name(type: TypeNode): string;
+}
+
+export class IsStyleFunctionNameProposer implements FunctionNameProposer {
+  name(type: TypeNode): string {
+    return toIsFunctionIdentifier(typeToPascalSlug(type));
+  }
+}
+
+export class SequentialCheckNameProposer implements FunctionNameProposer {
+  private next = 1;
+
+  name(_type: TypeNode): string {
+    return `check_${this.next++}`;
+  }
+}
 
 /** Lowercase names that must not be used as a whole slug segment (PHP keywords / reserved). */
 const RESERVED_WHOLE_SLUG = new Set(
@@ -87,10 +104,7 @@ function escapeReservedWholeSlug(pascal: string): string {
   return pascal;
 }
 
-/**
- * Readable PascalCase identifier (no `is` prefix) from a **normalized** {@link TypeNode}.
- */
-export function typeToPascalSlug(node: TypeNode): string {
+function typeToPascalSlug(node: TypeNode): string {
   const n = normalizeNode(node);
   switch (n.kind) {
     case 'primitive':
@@ -163,7 +177,7 @@ export function typeToPascalSlug(node: TypeNode): string {
   }
 }
 
-export function toIsFunctionIdentifier(pascalSlug: string): string {
+function toIsFunctionIdentifier(pascalSlug: string): string {
   const core = escapeReservedWholeSlug(
     pascalSlug.replace(/[^A-Za-z0-9_]/g, ''),
   );
@@ -172,35 +186,4 @@ export function toIsFunctionIdentifier(pascalSlug: string): string {
     ident = `T${ident}`;
   }
   return `is${ident[0]!.toUpperCase()}${ident.slice(1)}`;
-}
-
-/**
- * Allocates unique `is*` names per {@link typeDedupeKey}, avoiding collisions with reserved names.
- */
-export class CheckerFunctionNameRegistry {
-  private readonly assigned = new Map<string, string>();
-  private readonly used = new Set<string>();
-
-  constructor(reservedNames: Iterable<string> = []) {
-    for (const r of reservedNames) {
-      this.used.add(r);
-    }
-  }
-
-  allocate(dedupeKey: string, node: TypeNode): string {
-    const existing = this.assigned.get(dedupeKey);
-    if (existing !== undefined) {
-      return existing;
-    }
-    const base = toIsFunctionIdentifier(typeToPascalSlug(node));
-    let candidate = base;
-    let n = 2;
-    while (this.used.has(candidate)) {
-      candidate = `${base}_${n}`;
-      n++;
-    }
-    this.used.add(candidate);
-    this.assigned.set(dedupeKey, candidate);
-    return candidate;
-  }
 }

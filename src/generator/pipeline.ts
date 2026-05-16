@@ -1,16 +1,14 @@
 import type { TypeNode } from '../parser/ast.ts';
 import type { CheckerIR } from './ir/types.ts';
-import { IRBuilder } from './builder/IRBuilder.ts';
+import { Builder } from './builder/';
 import {
-  CheckerFunctionNameRegistry,
-  toIsFunctionIdentifier,
-  typeToPascalSlug,
-} from './builder/checkerFunctionNames.ts';
+  createFunctionNameRegistry,
+  type FunctionNameRegistry,
+} from './builder/registry.ts';
 import { optimize as optimizeIr } from './optimizer/IROptimizer.ts';
 import { render, type RenderOptions } from './render/IRRenderer.ts';
 import { normalizeNode } from './normalize.ts';
 import type { GenerateCheckerOptions } from './php.ts';
-import { typeDedupeKey } from './typeKey.ts';
 
 const DEFAULT_PARAMETER = '$value';
 
@@ -30,25 +28,17 @@ class PipelineBuilder {
   private readonly ir: CheckerIR = { programs: {}, order: [] };
   readonly typesByName: Record<string, TypeNode> = {};
   private readonly parameter: string;
-  private readonly nameFunctionsByType: boolean;
-  private readonly registry: CheckerFunctionNameRegistry | null;
+  private readonly registry: FunctionNameRegistry;
   private readonly loopScopes: LoopScope[] = [{ loopVarN: 0 }];
-  private readonly byKey = new Map<string, string>();
-  private nextLegacyId = 1;
 
-  constructor(options?: BuildOptions) {
+  constructor(registry: FunctionNameRegistry, options?: BuildOptions) {
     this.parameter = options?.parameter ?? DEFAULT_PARAMETER;
-    this.nameFunctionsByType = options?.nameFunctionsByType !== false;
-    const reserved = options?.reservedNames ?? [];
-    this.registry = this.nameFunctionsByType
-      ? new CheckerFunctionNameRegistry(reserved)
-      : null;
+    this.registry = registry;
   }
 
   buildEntry(rootType: TypeNode, entryName: string): BuildResult {
     const n = normalizeNode(rootType);
-    const key = typeDedupeKey(n);
-    this.byKey.set(key, entryName);
+    this.registry.set(n, entryName);
     if (!this.ir.order.includes(entryName)) {
       this.ir.order.unshift(entryName);
     }
@@ -61,19 +51,10 @@ class PipelineBuilder {
 
   private resolveName(type: TypeNode): string {
     const n = normalizeNode(type);
-    const key = typeDedupeKey(n);
-    const existing = this.byKey.get(key);
-    if (existing !== undefined) {
-      return existing;
+    const fnName = this.registry.get(n);
+    if (this.ir.programs[fnName] !== undefined) {
+      return fnName;
     }
-
-    let fnName: string;
-    if (this.nameFunctionsByType && this.registry) {
-      fnName = this.registry.allocate(key, n);
-    } else {
-      fnName = `check_${this.nextLegacyId++}`;
-    }
-    this.byKey.set(key, fnName);
     this.loopScopes.push({ loopVarN: 0 });
     try {
       this.materialize(fnName, n, true);
@@ -87,7 +68,7 @@ class PipelineBuilder {
     if (this.ir.programs[fnName] !== undefined) {
       return;
     }
-    const program = new IRBuilder().build(type, this.parameter, {
+    const program = new Builder().build(type, this.parameter, {
       parameter: this.parameter,
       resolveCheckerName: (t) => this.resolveName(t),
       allocateLoopPair: () => {
@@ -108,13 +89,23 @@ class PipelineBuilder {
 export function build(type: TypeNode, options?: BuildOptions): BuildResult {
   const n = normalizeNode(type);
   const nameByType = options?.nameFunctionsByType !== false;
-  const mainFunctionName =
-    options?.mainFunctionName ??
-    (nameByType ? toIsFunctionIdentifier(typeToPascalSlug(n)) : 'check');
-  const builder = new PipelineBuilder({
-    ...options,
-    reservedNames: [mainFunctionName, ...(options?.reservedNames ?? [])],
+  const registry = createFunctionNameRegistry({
+    nameFunctionsByType: nameByType,
+    reservedNames: options?.reservedNames ?? [],
   });
+
+  let mainFunctionName: string;
+  if (options?.mainFunctionName !== undefined) {
+    mainFunctionName = options.mainFunctionName;
+    registry.set(n, mainFunctionName);
+  } else if (nameByType) {
+    mainFunctionName = registry.get(n);
+  } else {
+    mainFunctionName = 'check';
+    registry.set(n, mainFunctionName);
+  }
+
+  const builder = new PipelineBuilder(registry, options);
   return builder.buildEntry(n, mainFunctionName);
 }
 

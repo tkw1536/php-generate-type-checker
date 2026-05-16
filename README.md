@@ -48,7 +48,7 @@ Single workspace: **type input** on the left, **pipeline output** on the right. 
 **Output tabs** (left → right):
 
 1. **Type AST** — parsed JSON AST
-2. **IR (build)** — checker IR from `IRBuilder`
+2. **IR (build)** — checker IR from `builder/index.ts` (`IRBuilder`)
 3. **IR (optimized)** — IR after optimizer passes (or a note when readable layout is on)
 4. **PHP Code** — final generated PHP
 
@@ -68,9 +68,10 @@ src/
 │   ├── pipeline.ts          # build(), optimize(), renderChecker()
 │   ├── ir/                  # CheckerIR, Expr, Stmt, ValueRef, helpers
 │   ├── builder/             # AST → naive IR
-│   │   ├── IRBuilder.ts
-│   │   ├── primitiveExpr.ts
-│   │   └── checkerFunctionNames.ts
+│   │   ├── index.ts           # IRBuilder
+│   │   ├── primitive.ts
+│   │   ├── proposer.ts
+│   │   └── registry.ts
 │   ├── optimizer/           # IR compaction (dedupe, merge failIf, hoist, fold)
 │   │   └── IROptimizer.ts
 │   ├── render/              # IR → PHP bodies + output wrapper
@@ -98,7 +99,7 @@ End-to-end flow for `generateChecker(typeString)`:
 
 1. **Parse** — `parseType` → `TypeNode` ([`src/parser/`](src/parser/))
 2. **Normalize & check** — [`normalize.ts`](src/generator/normalize.ts), [`checkability.ts`](src/generator/checkability.ts)
-3. **Build** — [`build()`](src/generator/pipeline.ts) walks the AST via [`IRBuilder`](src/generator/builder/IRBuilder.ts); dedupes helpers in `PipelineBuilder`
+3. **Build** — [`build()`](src/generator/pipeline.ts) walks the AST via [`IRBuilder`](src/generator/builder/index.ts); names helpers via [`FunctionNameRegistry`](src/generator/builder/registry.ts)
 4. **Optimize** — [`optimize()`](src/generator/optimizer/IROptimizer.ts) unless `prioritizeReadabilityOverCompactness` is true
 5. **Render** — [`render()`](src/generator/render/IRRenderer.ts) turns IR into PHP (body via [`renderPhp.ts`](src/generator/render/renderPhp.ts), then [`php.ts`](src/generator/php.ts) wraps with PHPDoc / class)
 
@@ -177,8 +178,8 @@ Run `yarn test` (Vitest).
 | Goal | Start here |
 |------|------------|
 | New syntax in type strings | [`src/parser/parser.ts`](src/parser/parser.ts) |
-| New primitive / leaf checks | [`builder/primitiveExpr.ts`](src/generator/builder/primitiveExpr.ts), [`simpleTypes.ts`](src/generator/simpleTypes.ts) |
-| IR for a type construct | [`builder/IRBuilder.ts`](src/generator/builder/IRBuilder.ts) |
+| New primitive / leaf checks | [`builder/primitive.ts`](src/generator/builder/primitive.ts), [`simpleTypes.ts`](src/generator/simpleTypes.ts) |
+| IR for a type construct | [`builder/index.ts`](src/generator/builder/index.ts) |
 | Guard order / dedupe / fold | [`optimizer/IROptimizer.ts`](src/generator/optimizer/IROptimizer.ts) |
 | PHP formatting (`if`, `foreach`, precedence) | [`render/renderPhp.ts`](src/generator/render/renderPhp.ts) |
 | PHPDoc wrapper / class layout | [`render/IRRenderer.ts`](src/generator/render/IRRenderer.ts), [`php.ts`](src/generator/php.ts) |
