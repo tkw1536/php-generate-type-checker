@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { parseType } from '../src/parser/index.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const outDir = path.join(__dirname, '../src/__tests__/fixtures/parser');
+const outDir = path.join(__dirname, '../src/support/fixtures/parser');
 
 const successCases = {
   'primitive-int': 'int',

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { CheckerProgram } from './checkerIR.ts';
+import type { CheckerProgram } from '../checkerIR.ts';
 import { emitCheckerIR } from './emitCheckerIR.ts';
-import { optimizeCheckerIR } from './normalizeCheckerIR.ts';
+import { optimizeCheckerIR } from '../optimizer/optimizeCheckerIR.ts';
 import { formatBody } from './context.ts';
 
 /** Built-stage IR for `array{hello: string, world: list<string>}` (guards before foreach). */

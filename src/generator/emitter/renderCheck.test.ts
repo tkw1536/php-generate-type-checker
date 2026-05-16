@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { instanceofCheck } from './checkerIR.ts';
+import { instanceofCheck } from '../checkerIR.ts';
 import { renderAtom, renderFailAtom } from './renderCheck.ts';
 
 describe('renderCheck', () => {

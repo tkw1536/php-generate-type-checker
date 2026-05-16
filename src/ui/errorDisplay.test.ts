@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ParseError } from '../parser/parser.ts';
-import { renderErrorHtml } from '../ui/errorDisplay.ts';
+import { renderErrorHtml } from './errorDisplay.ts';
 
 describe('renderErrorHtml', () => {
   it('shows caret at parse error position', () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { CheckerProgram } from './checkerIR.ts';
-import { formatCheckerProgram } from './checkerIR.ts';
-import { optimizeCheckerIR } from './normalizeCheckerIR.ts';
+import type { CheckerProgram } from '../checkerIR.ts';
+import { formatCheckerProgram } from '../checkerIR.ts';
+import { optimizeCheckerIR } from './optimizeCheckerIR.ts';
 
 describe('optimizeCheckerIR', () => {
   it('hoists failIf before foreach', () => {

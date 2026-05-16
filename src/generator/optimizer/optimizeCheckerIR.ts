@@ -10,7 +10,7 @@ import {
   type CheckerProgram,
   type CheckerStmt,
   checkEquals,
-} from './checkerIR.ts';
+} from '../checkerIR.ts';
 
 export type OptimizeCheckerIRInput = {
   /**

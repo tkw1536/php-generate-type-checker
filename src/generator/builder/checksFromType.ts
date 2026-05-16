@@ -1,13 +1,13 @@
-import type { TypeNode } from '../parser/ast.ts';
-import type { Check, CheckCall, CheckEquals } from './checkerIR.ts';
-import { instanceofCheck } from './checkerIR.ts';
+import type { TypeNode } from '../../parser/ast.ts';
+import type { Check, CheckCall, CheckEquals } from '../checkerIR.ts';
+import { instanceofCheck } from '../checkerIR.ts';
 import {
   emitExpression as emitLeafExpression,
   emitIntRangeExpression,
   isNoOpValueCheck,
-} from './simpleTypes.ts';
-import { normalizeNode } from './normalize.ts';
-import { stripRedundantOuterParens } from './negateExpression.ts';
+} from '../simpleTypes.ts';
+import { normalizeNode } from '../normalize.ts';
+import { stripRedundantOuterParens } from '../negateExpression.ts';
 
 export type ChecksFromTypeContext = {
   /** When true, atoms are shaped for `failIf` (negated guards). */

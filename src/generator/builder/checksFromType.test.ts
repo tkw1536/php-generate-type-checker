@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { parseType } from '../parser/index.ts';
+import { parseType } from '../../parser/index.ts';
 import { checksForType } from './checksFromType.ts';
-import { renderFailAtom } from './renderCheck.ts';
+import { renderFailAtom } from '../emitter/renderCheck.ts';
 
 describe('checksForType', () => {
   it('maps class type to instanceof atom', () => {

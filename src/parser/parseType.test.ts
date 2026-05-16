@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { parseType } from '../parser/index.ts';
-import { parseParserFixture } from './loadParserFixture.ts';
+import { parseType } from './index.ts';
+import { parseParserFixture } from '../support/loadParserFixture.ts';
 
-const fixtureModules = import.meta.glob('./fixtures/parser/*.fixture', {
+const fixtureModules = import.meta.glob('../support/fixtures/parser/*.fixture', {
   query: '?raw',
   import: 'default',
   eager: true,

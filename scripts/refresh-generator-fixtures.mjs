@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { generateChecker } from '../src/generator/index.ts';
 
-const dir = new URL('../src/__tests__/fixtures/generator/', import.meta.url);
+const dir = new URL('../src/support/fixtures/generator/', import.meta.url);
 for (const name of readdirSync(dir)) {
   if (!name.endsWith('.fixture') || name.includes('error')) continue;
   const path = new URL(name, dir);

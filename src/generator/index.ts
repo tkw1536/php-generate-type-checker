@@ -3,11 +3,8 @@ import {
   buildCheckerPipeline,
   formatCheckerIR,
 } from './checkerPipeline.ts';
-import { CheckerCodegen } from './emit.ts';
-import {
-  toIsFunctionIdentifier,
-  typeToPascalSlug,
-} from './checkerFunctionNames.ts';
+import { toIsFunctionIdentifier, typeToPascalSlug } from './builder/checkerFunctionNames.ts';
+import { CheckerCodegen } from './emitter/emit.ts';
 import { normalizeNode } from './normalize.ts';
 import {
   type GenerateCheckerOptions,
@@ -67,13 +64,23 @@ export {
   type BuildCheckerPipelineOptions,
 } from './checkerPipeline.ts';
 export {
+  buildCheckerIR,
+  type BuildCheckerContext,
+} from './builder/buildCheckerIR.ts';
+export {
+  optimizeCheckerIR,
+  type OptimizeCheckerIRInput,
+} from './optimizer/optimizeCheckerIR.ts';
+export {
   CheckerCodegen,
   emitBody,
   emitFromPipeline,
+  emitCheckerIR,
   type EmittedCheckerBody,
   emitExpression,
-  needsStatementBlock,
-} from './emit.ts';
+  type EmitCheckerIRInput,
+} from './emitter/index.ts';
+export { needsStatementBlock } from './simpleTypes.ts';
 export { assertCheckable } from './checkability.ts';
 export { isExpressible, isNoOpValueCheck } from './simpleTypes.ts';
 export {
@@ -86,4 +93,3 @@ export {
   wrapChecker,
 } from './php.ts';
 export { normalizeNode } from './normalize.ts';
-export { optimizeCheckerIR, type OptimizeCheckerIRInput } from './normalizeCheckerIR.ts';

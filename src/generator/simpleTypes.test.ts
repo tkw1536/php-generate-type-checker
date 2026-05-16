@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { emitPrimitiveExpression } from '../generator/simpleTypes.ts';
+import { emitPrimitiveExpression } from './simpleTypes.ts';
 
 describe('emitPrimitiveExpression (PHPStan string subtypes)', () => {
   const v = '$x';

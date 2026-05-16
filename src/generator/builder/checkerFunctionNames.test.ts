@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { parseType } from '../parser/index.ts';
-import { normalizeNode } from './normalize.ts';
-import { typeDedupeKey } from './typeKey.ts';
+import { parseType } from '../../parser/index.ts';
+import { normalizeNode } from '../normalize.ts';
+import { typeDedupeKey } from '../typeKey.ts';
 import {
   CheckerFunctionNameRegistry,
   toIsFunctionIdentifier,
   typeToPascalSlug,
 } from './checkerFunctionNames.ts';
-import { sortFlattenedUnionMembers } from './unionOrder.ts';
+import { sortFlattenedUnionMembers } from '../unionOrder.ts';
 
 describe('typeToPascalSlug', () => {
   it('maps int to Int', () => {

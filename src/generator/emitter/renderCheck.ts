@@ -1,5 +1,5 @@
-import type { Check } from './checkerIR.ts';
-import { negateExpressionForIf } from './negateExpression.ts';
+import type { Check } from '../checkerIR.ts';
+import { negateExpressionForIf } from '../negateExpression.ts';
 
 function renderCallExpression(check: Extract<Check, { kind: 'call' }>): string {
   if (check.function === '' && check.arguments.length === 1) {

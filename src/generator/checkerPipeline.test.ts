@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseType } from '../parser/index.ts';
 import type { CheckerStmt } from './checkerIR.ts';
 import { buildCheckerPipeline } from './checkerPipeline.ts';
-import { emitFromPipeline } from './emit.ts';
+import { emitFromPipeline } from './emitter/emit.ts';
 import { normalizeNode } from './normalize.ts';
 
 function countFailIfStatements(statements: CheckerStmt[]): number {

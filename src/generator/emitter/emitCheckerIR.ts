@@ -8,7 +8,7 @@ import {
   type CheckerProgram,
   type CheckerStmt,
   valueRefToPath,
-} from './checkerIR.ts';
+} from '../checkerIR.ts';
 import {
   type PhpLine,
   ifBlock,

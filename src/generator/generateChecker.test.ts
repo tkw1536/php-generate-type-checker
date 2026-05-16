@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { GenerationError, generateChecker } from '../generator/index.ts';
-import { parseGeneratorFixture } from './loadGeneratorFixture.ts';
+import { GenerationError, generateChecker } from './index.ts';
+import { parseGeneratorFixture } from '../support/loadGeneratorFixture.ts';
 
-const fixtureModules = import.meta.glob('./fixtures/generator/*.fixture', {
+const fixtureModules = import.meta.glob('../support/fixtures/generator/*.fixture', {
   query: '?raw',
   import: 'default',
   eager: true,

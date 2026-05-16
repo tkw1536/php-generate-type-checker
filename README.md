@@ -23,19 +23,19 @@ The UI uses **tabs** (Generate PHP / Parse AST) with input on the left and highl
 Generated validation logic uses a small **checker IR** pipeline:
 
 1. Parse + checkability ([`checkability.ts`](src/generator/checkability.ts))
-2. [`buildCheckerIR.ts`](src/generator/buildCheckerIR.ts) — mechanical AST → IR (atomic `call` / `equals` checks)
-3. **[`normalizeCheckerIR.ts`](src/generator/normalizeCheckerIR.ts)** (`optimizeCheckerIR`) — dedupe guards, hoist `failIf` before loops
-4. **[`emitCheckerIR.ts`](src/generator/emitCheckerIR.ts)** — IR → PHP (`if` batching, `foreach`, optional blocks)
+2. [`builder/`](src/generator/builder/) — mechanical AST → IR (atomic `call` / `equals` checks)
+3. [`optimizer/`](src/generator/optimizer/) — dedupe guards, hoist `failIf` before loops
+4. [`emitter/`](src/generator/emitter/) — IR → PHP (`if` batching, `foreach`, optional blocks)
 5. Wrap in [`php.ts`](src/generator/php.ts)
 
-**Start here** when reading or changing how guards are combined or emitted: `normalizeCheckerIR.ts` (`optimizeCheckerIR`) and `emitCheckerIR.ts`.
+**Start here** when reading or changing how guards are combined or emitted: `optimizer/` and `emitter/`.
 
 IR checks are only:
 
 - `{ kind: 'call', function, arguments, negated }` — e.g. `is_array`, `array_key_exists`, **`instanceof`**
 - `{ kind: 'equals', variable, literal, negated }` — e.g. `$value === []`
 
-PHPStan primitives are expanded in [`checksFromType.ts`](src/generator/checksFromType.ts). Atoms are rendered in [`renderCheck.ts`](src/generator/renderCheck.ts).
+PHPStan primitives are expanded in [`builder/checksFromType.ts`](src/generator/builder/checksFromType.ts). Atoms are rendered in [`emitter/renderCheck.ts`](src/generator/emitter/renderCheck.ts).
 
 ```ts
 import {
@@ -52,9 +52,9 @@ On `GenerateCheckerOptions`, the default (`false`) merges consecutive failure gu
 
 ## Where to extend
 
-- **New primitive / leaf type checks:** [`checksFromType.ts`](src/generator/checksFromType.ts) and [`simpleTypes.ts`](src/generator/simpleTypes.ts)
-- **Guard combining / ordering / dedupe:** [`normalizeCheckerIR.ts`](src/generator/normalizeCheckerIR.ts) (`optimizeCheckerIR`)
-- **PHP shape (`if` vs combined, foreach, optional):** [`emitCheckerIR.ts`](src/generator/emitCheckerIR.ts)
+- **New primitive / leaf type checks:** [`builder/checksFromType.ts`](src/generator/builder/checksFromType.ts) and [`simpleTypes.ts`](src/generator/simpleTypes.ts)
+- **Guard combining / ordering / dedupe:** [`optimizer/optimizeCheckerIR.ts`](src/generator/optimizer/optimizeCheckerIR.ts)
+- **PHP shape (`if` vs combined, foreach, optional):** [`emitter/emitCheckerIR.ts`](src/generator/emitter/emitCheckerIR.ts)
 - **Checkability rules:** [`checkability.ts`](src/generator/checkability.ts)
 - **Method wrapper:** [`php.ts`](src/generator/php.ts)
 
@@ -72,4 +72,4 @@ const php = generateChecker('array<string, int>');
 
 ## Parser
 
-Hand-written lexer + recursive-descent parser in [`src/parser/`](src/parser/). Fixture tests live in [`src/__tests__/fixtures/parser/`](src/__tests__/fixtures/parser/) and run via [`src/__tests__/parser.test.ts`](src/__tests__/parser.test.ts).
+Hand-written lexer + recursive-descent parser in [`src/parser/`](src/parser/). Fixture tests use files in [`src/support/fixtures/parser/`](src/support/fixtures/parser/) and run via [`src/parser/parseType.test.ts`](src/parser/parseType.test.ts).

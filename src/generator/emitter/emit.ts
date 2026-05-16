@@ -4,16 +4,12 @@
  * Structural bodies use the checker IR pipeline: build → optimize → emit.
  * Compact leaf types and top-level expressible unions stay as single `return` expressions.
  */
-import type { TypeNode } from '../parser/ast.ts';
+import type { TypeNode } from '../../parser/ast.ts';
 import { type PhpLine, formatBody, line } from './context.ts';
-import {
-  buildCheckerPipeline,
-  emitCheckerProgramLines,
-  type CheckerPipeline,
-} from './checkerPipeline.ts';
-import type { CheckerProgram } from './checkerIR.ts';
+import { buildCheckerPipeline, type CheckerPipeline } from '../checkerPipeline.ts';
+import type { CheckerProgram } from '../checkerIR.ts';
 import { emitCheckerIR, type EmitCheckerIRInput } from './emitCheckerIR.ts';
-import { normalizeNode, type ArrayNode } from './normalize.ts';
+import { normalizeNode, type ArrayNode } from '../normalize.ts';
 import {
   emitExpression as emitLeafExpression,
   isExpressible,
@@ -21,30 +17,27 @@ import {
   isNoOpValueCheck,
   needsStatementBlock,
   requireExpression,
-} from './simpleTypes.ts';
-import { formatTypeForPhpstanDoc } from './typeDoc.ts';
+} from '../simpleTypes.ts';
+import { formatTypeForPhpstanDoc } from '../typeDoc.ts';
 import {
   DEFAULT_CHECKER_OUTPUT,
   type GenerateCheckerOptions,
-} from './php.ts';
+} from '../php.ts';
 import {
   toIsFunctionIdentifier,
   typeToPascalSlug,
-} from './checkerFunctionNames.ts';
-import { flattenUnion, sortUnionMembers } from './unionOrder.ts';
-import { typeDedupeKey } from './typeKey.ts';
+} from '../builder/checkerFunctionNames.ts';
+import { flattenUnion, sortUnionMembers } from '../unionOrder.ts';
+import { typeDedupeKey } from '../typeKey.ts';
 
 /** Parameter name for checker function bodies (same as the main entry `mixed $value`). */
-const HELPER_VALUE_PARAM = '$value';
+const CHECKER_VALUE_PARAM = '$value';
 
-/** Helpers string (after `check`) plus inner body lines for `check`. */
+/** Prelude functions plus inner body lines for the entry checker. */
 export interface EmittedCheckerBody {
   helpers: string;
   body: string;
 }
-
-export { negateExpressionForIf } from './negateExpression.ts';
-export { needsStatementBlock } from './simpleTypes.ts';
 
 export function emitExpression(node: TypeNode, varName: string): string {
   const n = normalizeNode(node);
@@ -69,43 +62,6 @@ export function emitExpression(node: TypeNode, varName: string): string {
   }
 
   return requireExpression(n, varName);
-}
-
-export function emitStatementBlock(
-  node: TypeNode,
-  varName: string,
-  options?: GenerateCheckerOptions,
-): PhpLine[] {
-  return emitCheckerProgramLines(
-    normalizeNode(node),
-    varName,
-    {
-      resolveCheckerFunction: () => {
-        throw new Error('emitStatementBlock does not emit checker functions');
-      },
-      allocateLoopPair: () => ({ key: '$key1', value: '$value1' }),
-    },
-    {
-      prioritizeReadabilityOverCompactness:
-        options?.prioritizeReadabilityOverCompactness,
-    },
-  );
-}
-
-export function emitFunctionBody(node: TypeNode, varName: string): PhpLine[] {
-  const pipeline = buildCheckerPipeline(node, {
-    parameter: varName,
-    nameFunctionsByType: false,
-  });
-  const entry = pipeline.built.order[0]!;
-  return emitCheckerFunctionBody(
-    pipeline.typesByName[entry]!,
-    pipeline.optimized.programs[entry]!,
-    pipeline,
-    (fn) => fn,
-    undefined,
-    varName,
-  );
 }
 
 function compactTypeCheckExpression(n: TypeNode, varName: string): string | null {
@@ -234,7 +190,7 @@ export function emitFromPipeline(
       options?.prioritizeReadabilityOverCompactness,
   };
 
-  const helperBlocks: string[] = [];
+  const preludeBlocks: string[] = [];
   let body = '';
 
   const emitOrder = pipeline.built.order;
@@ -248,21 +204,21 @@ export function emitFromPipeline(
       pipeline,
       formatCall,
       emitInput,
-      HELPER_VALUE_PARAM,
+      CHECKER_VALUE_PARAM,
     );
     const formatted = formatBody(lines);
     if (i === 0) {
       body = formatted;
     } else {
-      const doc = `/** @phpstan-assert-if-true ${formatTypeForPhpstanDoc(type)} ${HELPER_VALUE_PARAM} */`;
-      helperBlocks.push(
-        `${doc}\nfunction ${name}(mixed ${HELPER_VALUE_PARAM}): bool\n{\n${formatted}\n}`,
+      const doc = `/** @phpstan-assert-if-true ${formatTypeForPhpstanDoc(type)} ${CHECKER_VALUE_PARAM} */`;
+      preludeBlocks.push(
+        `${doc}\nfunction ${name}(mixed ${CHECKER_VALUE_PARAM}): bool\n{\n${formatted}\n}`,
       );
     }
   }
 
   return {
-    helpers: helperBlocks.length === 0 ? '' : helperBlocks.join('\n\n'),
+    helpers: preludeBlocks.length === 0 ? '' : preludeBlocks.join('\n\n'),
     body,
   };
 }

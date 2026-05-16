@@ -1,18 +1,16 @@
 import type { TypeNode } from '../parser/ast.ts';
-import type { PhpLine } from './context.ts';
-import type { CheckerProgram } from './checkerIR.ts';
-import { buildCheckerIR, type BuildCheckerContext } from './buildCheckerIR.ts';
-import {
-  optimizeCheckerIR,
-  type OptimizeCheckerIRInput,
-} from './normalizeCheckerIR.ts';
-import { emitCheckerIR, type EmitCheckerIRInput } from './emitCheckerIR.ts';
-import { normalizeNode } from './normalize.ts';
+import { buildCheckerIR, type BuildCheckerContext } from './builder/buildCheckerIR.ts';
 import {
   CheckerFunctionNameRegistry,
   toIsFunctionIdentifier,
   typeToPascalSlug,
-} from './checkerFunctionNames.ts';
+} from './builder/checkerFunctionNames.ts';
+import type { CheckerProgram } from './checkerIR.ts';
+import { normalizeNode } from './normalize.ts';
+import {
+  optimizeCheckerIR,
+  type OptimizeCheckerIRInput,
+} from './optimizer/optimizeCheckerIR.ts';
 import { typeDedupeKey } from './typeKey.ts';
 
 const DEFAULT_PARAMETER = '$value';
@@ -61,16 +59,11 @@ export type BuildCheckerPipelineOptions = {
   output?: import('./php.ts').CheckerOutputMode;
 };
 
-export type CheckerPipelineHooks = {
-  resolveCheckerFunction: (type: TypeNode) => string;
-  allocateLoopPair: () => { key: string; value: string };
-};
-
 function createCheckerIR(order: string[]): CheckerIR {
-  return { programs: {}, order: order };
+  return { programs: {}, order };
 }
 
-export function createCheckerPipeline(): CheckerPipeline {
+function createCheckerPipeline(): CheckerPipeline {
   const order: string[] = [];
   return {
     built: createCheckerIR(order),
@@ -196,24 +189,4 @@ export function buildCheckerPipeline(
   });
   builder.materializeEntry(n, mainFunctionName);
   return builder.result;
-}
-
-export function emitCheckerProgramLines(
-  node: TypeNode,
-  parameter: string,
-  hooks: CheckerPipelineHooks,
-  emitInput?: EmitCheckerIRInput,
-): PhpLine[] {
-  let loopCounter = 0;
-  const buildCtx: BuildCheckerContext = {
-    parameter,
-    resolveCheckerFunction: hooks.resolveCheckerFunction,
-    nextLoopId: () => `loop${++loopCounter}`,
-    allocateLoopPair: () => hooks.allocateLoopPair(),
-  };
-  const built = buildCheckerIR(node, parameter, buildCtx);
-  const optimized = optimizeCheckerIR(built, {
-    preserveStatementOrder: emitInput?.prioritizeReadabilityOverCompactness === true,
-  });
-  return emitCheckerIR(optimized, emitInput);
 }

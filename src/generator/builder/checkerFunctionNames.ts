@@ -1,10 +1,10 @@
 /**
  * Deterministic checker function names: `is` + readable PascalCase slug from normalized types.
  */
-import type { ShapeField, TypeNode } from '../parser/ast.ts';
-import { normalizeNode, type ArrayNode } from './normalize.ts';
-import { typeDedupeKey } from './typeKey.ts';
-import { sortFlattenedUnionMembers } from './unionOrder.ts';
+import type { ShapeField, TypeNode } from '../../parser/ast.ts';
+import { normalizeNode, type ArrayNode } from '../normalize.ts';
+import { typeDedupeKey } from '../typeKey.ts';
+import { sortFlattenedUnionMembers } from '../unionOrder.ts';
 
 /** Lowercase names that must not be used as a whole slug segment (PHP keywords / reserved). */
 const RESERVED_WHOLE_SLUG = new Set(

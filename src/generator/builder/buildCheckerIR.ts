@@ -1,4 +1,4 @@
-import type { TypeNode } from '../parser/ast.ts';
+import type { TypeNode } from '../../parser/ast.ts';
 import {
   type CheckerProgram,
   type CheckerStmt,
@@ -9,22 +9,22 @@ import {
   loopValueRef,
   parameterRef,
   valueRefToPath,
-} from './checkerIR.ts';
+} from '../checkerIR.ts';
 import {
   checkForReturnIf,
   checksForType,
   expressionToChecks,
   expressionToMatchArms,
 } from './checksFromType.ts';
-import { normalizeNode, type ArrayNode } from './normalize.ts';
+import { normalizeNode, type ArrayNode } from '../normalize.ts';
 import {
   emitExpression,
   isExpressible,
   isNeverPrimitive,
   isNoOpValueCheck,
   needsStatementBlock,
-} from './simpleTypes.ts';
-import { flattenUnion, sortUnionMembers } from './unionOrder.ts';
+} from '../simpleTypes.ts';
+import { flattenUnion, sortUnionMembers } from '../unionOrder.ts';
 
 /** Whether an expressible leaf can use `returnIf` instead of `failIf` (shape field tails). */
 function typeSupportsReturnIfPromotion(
