@@ -1,5 +1,5 @@
 import { assertCheckable } from './checkability.ts';
-import { normalizeNode } from './normalize.ts';
+import { normalizeNode } from './semantics/normalize.ts';
 import { build, optimize, renderChecker } from './pipeline.ts';
 import type { GenerateCheckerOptions } from './php.ts';
 import { parseType } from '../parser/index.ts';
@@ -35,4 +35,4 @@ export {
   type CheckerOutputMode,
   type GenerateCheckerOptions,
 } from './php.ts';
-export { normalizeNode } from './normalize.ts';
+export { normalizeNode } from './semantics/normalize.ts';

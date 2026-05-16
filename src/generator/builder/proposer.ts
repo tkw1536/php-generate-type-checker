@@ -1,7 +1,7 @@
 import type { ShapeField, TypeNode } from '../../parser/ast.ts';
-import { normalizeNode, type ArrayNode } from '../normalize.ts';
-import { typeDedupeKey } from '../typeKey.ts';
-import { sortFlattenedUnionMembers } from '../unionOrder.ts';
+import { normalizeNode, type ArrayNode } from '../semantics/normalize.ts';
+import { typeDedupeKey } from '../semantics/keys.ts';
+import { sortFlattenedUnionMembers } from '../semantics/union.ts';
 
 
 /** Proposes a base PHP function name from a type (no cache or collision handling). */

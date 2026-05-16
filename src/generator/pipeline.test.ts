@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseType } from '../parser/index.ts';
 import { build, renderChecker } from './pipeline.ts';
-import { normalizeNode } from './normalize.ts';
+import { normalizeNode } from './semantics/normalize.ts';
 
 /** Phase 1: built IR only (no optimizer). */
 describe('pipeline build + render (unoptimized)', () => {

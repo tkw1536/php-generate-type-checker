@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseType } from '../../parser/index.ts';
-import { normalizeNode } from '../normalize.ts';
-import { typeDedupeKey } from '../typeKey.ts';
+import { normalizeNode } from '../semantics/normalize.ts';
+import { typeDedupeKey } from '../semantics/keys.ts';
 import { IsStyleFunctionNameProposer, SequentialCheckNameProposer } from './proposer.ts';
 import { FunctionNameRegistry } from './registry.ts';
 

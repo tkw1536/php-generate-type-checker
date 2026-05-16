@@ -67,8 +67,10 @@ src/
 ├── generator/               # AST → PHP checkers
 │   ├── pipeline.ts          # build(), optimize(), renderChecker()
 │   ├── ir/                  # CheckerIR, Expr, Stmt, ValueRef, helpers
-│   ├── builder/             # AST → naive IR
+│   ├── semantics/           # TypeNode: normalize, keys, expressibility, union order
+│   ├── builder/             # TypeNode → Checker IR
 │   │   ├── index.ts           # IRBuilder
+│   │   ├── leafIr.ts          # leaf type → Expr IR
 │   │   ├── primitive.ts
 │   │   ├── proposer.ts
 │   │   └── registry.ts
@@ -76,11 +78,9 @@ src/
 │   │   └── IROptimizer.ts
 │   ├── render/              # IR → PHP bodies + output wrapper
 │   │   ├── renderPhp.ts     # pure function-body rendering
-│   │   └── IRRenderer.ts    # PHPDoc, helpers, class/function shell
+│   │   ├── phpdoc.ts        # PHPStan type strings for @phpstan-assert
+│   │   └── IRRenderer.ts
 │   ├── checkability.ts
-│   ├── normalize.ts
-│   ├── simpleTypes.ts       # legacy PHP string helpers for compact paths
-│   ├── typeDoc.ts, typeKey.ts, unionOrder.ts
 │   ├── php.ts               # @phpstan-assert-if-true wrappers, class layout
 │   ├── generateChecker.test.ts
 │   └── index.ts             # generateChecker() composes the pipeline
@@ -98,7 +98,7 @@ Production code does not import `src/support/`.
 End-to-end flow for `generateChecker(typeString)`:
 
 1. **Parse** — `parseType` → `TypeNode` ([`src/parser/`](src/parser/))
-2. **Normalize & check** — [`normalize.ts`](src/generator/normalize.ts), [`checkability.ts`](src/generator/checkability.ts)
+2. **Normalize & check** — [`semantics/`](src/generator/semantics/), [`checkability.ts`](src/generator/checkability.ts)
 3. **Build** — [`build()`](src/generator/pipeline.ts) walks the AST via [`IRBuilder`](src/generator/builder/index.ts); names helpers via [`FunctionNameRegistry`](src/generator/builder/registry.ts)
 4. **Optimize** — [`optimize()`](src/generator/optimizer/IROptimizer.ts) unless `prioritizeReadabilityOverCompactness` is true
 5. **Render** — [`render()`](src/generator/render/IRRenderer.ts) turns IR into PHP (body via [`renderPhp.ts`](src/generator/render/renderPhp.ts), then [`php.ts`](src/generator/php.ts) wraps with PHPDoc / class)
@@ -178,7 +178,7 @@ Run `yarn test` (Vitest).
 | Goal | Start here |
 |------|------------|
 | New syntax in type strings | [`src/parser/parser.ts`](src/parser/parser.ts) |
-| New primitive / leaf checks | [`builder/primitive.ts`](src/generator/builder/primitive.ts), [`simpleTypes.ts`](src/generator/simpleTypes.ts) |
+| New primitive / leaf checks | [`builder/leafIr.ts`](src/generator/builder/leafIr.ts), [`semantics/expressibility.ts`](src/generator/semantics/expressibility.ts) |
 | IR for a type construct | [`builder/index.ts`](src/generator/builder/index.ts) |
 | Guard order / dedupe / fold | [`optimizer/IROptimizer.ts`](src/generator/optimizer/IROptimizer.ts) |
 | PHP formatting (`if`, `foreach`, precedence) | [`render/renderPhp.ts`](src/generator/render/renderPhp.ts) |

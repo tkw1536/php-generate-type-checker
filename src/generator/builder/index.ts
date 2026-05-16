@@ -16,20 +16,15 @@ import {
   propertyAccessRef,
 } from '../ir/';
 import { phpStringLiteral, renderValueRef } from '../render/refs.ts';
+import { exprAtomsForType, singleExprForType } from './primitive.ts';
 import {
-  exprAtomsForType,
-  parsePhpExprToIr,
-  singleExprForType,
-} from './primitive.ts';
-import { normalizeNode, type ArrayNode } from '../normalize.ts';
-import {
-  emitExpression,
   isExpressible,
   isNeverPrimitive,
   isNoOpValueCheck,
   needsStatementBlock,
-} from '../simpleTypes.ts';
-import { flattenUnion, sortUnionMembers } from '../unionOrder.ts';
+} from '../semantics/expressibility.ts';
+import { normalizeNode, type ArrayNode } from '../semantics/normalize.ts';
+import { flattenUnion, sortUnionMembers } from '../semantics/union.ts';
 
 export type BuildContext = {
   parameter: string;
@@ -121,25 +116,22 @@ export class Builder {
     ctx: BuildContext,
   ): Block {
     const members = sortUnionMembers(flattenUnion(node));
-    if (
-      members.every((m) => isExpressible(m) && !needsStatementBlock(m))
-    ) {
-      const expr = emitExpression(node, parameter);
-      if (expr !== null) {
-        return [returnStmt(parsePhpExprToIr(expr, parameter))];
+    const subject = subjectFromPath(parameter);
+    if (members.every((m) => isExpressible(m) && !needsStatementBlock(m))) {
+      const arms = members.map((m) => singleExprForType(normalizeNode(m), subject));
+      if (arms.every((a): a is Expr => a !== null)) {
+        return [returnStmt(orExpr(arms))];
       }
     }
     const arms: Expr[] = [];
     for (const m of members) {
       const nm = normalizeNode(m);
-      const inline = Builder.compactExpr(nm, subjectFromPath(parameter));
+      const inline = Builder.compactExpr(nm, subject);
       if (inline !== null) {
         arms.push(inline);
         continue;
       }
-      arms.push(
-        callCheckerExpr(ctx.resolveCheckerName(m), subjectFromPath(parameter)),
-      );
+      arms.push(callCheckerExpr(ctx.resolveCheckerName(m), subject));
     }
     return [returnStmt(orExpr(arms))];
   }
@@ -433,15 +425,14 @@ export class Builder {
 
   private static compactExpr(n: TypeNode, subject: ValueRef): Expr | null {
     const node = normalizeNode(n);
-    const path = renderValueRef(subject);
 
     if (isNoOpValueCheck(node)) {
       return boolLit(true);
     }
     if (isExpressible(node) && !needsStatementBlock(node)) {
-      const expr = emitExpression(node, path);
-      if (expr !== null) {
-        return parsePhpExprToIr(expr, path);
+      const direct = singleExprForType(node, subject);
+      if (direct !== null) {
+        return direct;
       }
     }
     if (node.kind === 'array') {

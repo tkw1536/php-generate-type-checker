@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { parseType } from '../../parser/index.ts';
-import { normalizeNode } from '../normalize.ts';
+import { normalizeNode } from '../semantics/normalize.ts';
 import { IsStyleFunctionNameProposer, SequentialCheckNameProposer } from './proposer.ts';
-import { sortFlattenedUnionMembers } from '../unionOrder.ts';
+import { sortFlattenedUnionMembers } from '../semantics/union.ts';
 
 describe('IsStyleFunctionNameProposer', () => {
   const propose = (type: string) =>

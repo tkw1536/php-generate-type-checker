@@ -1,6 +1,6 @@
 import type { TypeNode } from '../../parser/ast.ts';
-import { normalizeNode } from '../normalize.ts';
-import { typeDedupeKey } from '../typeKey.ts';
+import { normalizeNode } from '../semantics/normalize.ts';
+import { typeDedupeKey } from '../semantics/keys.ts';
 import {
   type FunctionNameProposer,
   IsStyleFunctionNameProposer,

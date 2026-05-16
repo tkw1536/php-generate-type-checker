@@ -1,9 +1,9 @@
 /**
- * Union member ordering shared by emit and type slugs so OR / naming stay consistent.
+ * Union member ordering shared by naming and codegen so OR chains stay consistent.
  */
-import type { TypeNode } from '../parser/ast.ts';
-import { typeDedupeKey } from './typeKey.ts';
-import { isExpressible, needsStatementBlock } from './simpleTypes.ts';
+import type { TypeNode } from '../../parser/ast.ts';
+import { typeDedupeKey } from './keys.ts';
+import { isExpressible, needsStatementBlock } from './expressibility.ts';
 
 export function flattenUnion(node: TypeNode): TypeNode[] {
   if (node.kind === 'union') {
@@ -32,7 +32,6 @@ export function sortUnionMembers(members: TypeNode[]): TypeNode[] {
   });
 }
 
-/** Flatten then sort the same way as {@link emitRootUnionDisjunctive}. */
 export function sortFlattenedUnionMembers(node: TypeNode): TypeNode[] {
   return sortUnionMembers(flattenUnion(node));
 }

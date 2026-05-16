@@ -1,4 +1,4 @@
-import type { TypeNode } from '../parser/ast.ts';
+import type { TypeNode } from '../../parser/ast.ts';
 
 export type ArrayNode = Extract<TypeNode, { kind: 'array' }> & {
   nonEmpty?: boolean;

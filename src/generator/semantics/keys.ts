@@ -2,7 +2,7 @@
  * Stable, canonical string keys for normalized {@link TypeNode} values so the same
  * logical type dedupes to one checker function (order of union members, etc.).
  */
-import type { CallableParam, ShapeField, TypeNode } from '../parser/ast.ts';
+import type { CallableParam, ShapeField, TypeNode } from '../../parser/ast.ts';
 import { normalizeNode, type ArrayNode } from './normalize.ts';
 
 function flattenUnionTypes(node: TypeNode): TypeNode[] {

@@ -1,6 +1,6 @@
 import type { TypeNode } from '../../parser/ast.ts';
 import type { CheckerIR } from '../ir/types.ts';
-import { formatTypeForPhpstanDoc } from '../typeDoc.ts';
+import { formatTypeForPhpstanDoc } from './phpdoc.ts';
 import {
   DEFAULT_CHECKER_OUTPUT,
   type GenerateCheckerOptions,

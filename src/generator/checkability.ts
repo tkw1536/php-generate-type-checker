@@ -1,12 +1,13 @@
 import type { TypeNode } from '../parser/ast.ts';
 import { GenerationError } from './errors.ts';
-import { normalizeGeneric, type ArrayNode } from './normalize.ts';
 import {
-  describeNode,
-  emitExpression,
   isExpressible,
   isNoOpValueCheck,
-} from './simpleTypes.ts';
+  isSupportedLeafType,
+  normalizeGeneric,
+  type ArrayNode,
+} from './semantics/index.ts';
+import { describeNode } from './semantics/describe.ts';
 
 export type CheckContext = 'expression' | 'value' | 'function';
 
@@ -57,7 +58,7 @@ export function assertCheckable(node: TypeNode, context: CheckContext = 'functio
           node.name,
         );
       }
-      if (context !== 'expression' && !isNoOpValueCheck(node) && emitExpression(node, '$_') === null) {
+      if (context !== 'expression' && !isNoOpValueCheck(node) && !isSupportedLeafType(node)) {
         throw new GenerationError(
           `Cannot generate a runtime check for the primitive type ${node.name}: not representable as a supported boolean assertion in this generator`,
           node.name,

@@ -7,7 +7,7 @@ import {
 } from './builder/registry.ts';
 import { optimize as optimizeIr } from './optimizer/IROptimizer.ts';
 import { render, type RenderOptions } from './render/IRRenderer.ts';
-import { normalizeNode } from './normalize.ts';
+import { normalizeNode } from './semantics/normalize.ts';
 import type { GenerateCheckerOptions } from './php.ts';
 
 const DEFAULT_PARAMETER = '$value';

@@ -1,15 +1,9 @@
 /**
  * Print a {@link TypeNode} as a single-line PHPStan-style type string for PHPDoc.
  */
-import type { CallableParam, ShapeField, TypeNode } from '../parser/ast.ts';
-import { normalizeNode, type ArrayNode } from './normalize.ts';
-
-function flattenUnion(node: TypeNode): TypeNode[] {
-  if (node.kind === 'union') {
-    return node.types.flatMap(flattenUnion);
-  }
-  return [node];
-}
+import type { CallableParam, ShapeField, TypeNode } from '../../parser/ast.ts';
+import { normalizeNode, type ArrayNode } from '../semantics/normalize.ts';
+import { flattenUnion } from '../semantics/union.ts';
 
 /** Escapes a type string for safe use inside `/** … *\/` (one line). */
 export function escapePhpdocTypeLine(type: string): string {
