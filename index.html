@@ -3,22 +3,20 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PHPStan Type Checker Generator</title>
+    <title>PHP Type Checker Generator</title>
     <link rel="stylesheet" href="/src/style.css">
   </head>
   <body>
     <header class="site-header">
-      <h1>PHPStan Type Checker Generator</h1>
-      <button id="theme-toggle" type="button" class="btn btn-theme" aria-label="Toggle color theme">
-        Dark mode
-      </button>
+      <h1>PHP Type Checker Generator</h1>
+      <button id="theme-toggle" type="button" class="btn btn-theme" aria-label="Switch to dark mode" title="Dark mode">☾</button>
     </header>
 
     <main class="workspace">
       <div class="panel-grid">
         <div class="panel panel-input">
           <div class="panel-header panel-header--with-actions">
-            <label for="type-input">PHPStan type</label>
+            <label for="type-input">Type</label>
             <div class="panel-header-actions">
               <select id="type-example" class="panel-header-select" aria-label="Load example type">
                 <option value="">Load example…</option>
@@ -57,7 +55,6 @@
                 <option value="private_static">private static</option>
               </select>
             </label>
-            <button id="generate-run" type="button" class="btn btn-primary">Generate</button>
           </div>
         </div>
         <div class="panel panel-output">
@@ -165,13 +162,13 @@
 
     <footer class="site-footer">
       <p>
-        Generate PHP 8+ type checking code for 
-        <a href="https://phpstan.org/writing-php-code/phpdoc-types" target="_blank" rel="noopener noreferrer">PHPStan PHPDoc types</a> with <code>@phpstan-assert-if-true</code>.
+        Generate PHP 8+ type checking code for
+        <a href="https://phpstan.org/writing-php-code/phpdoc-types" target="_blank" rel="noopener noreferrer">PHPDoc types as supported by PHPStan</a> with <code>@phpstan-assert-if-true</code>.
         Source on
         <a href="https://github.com/tkw1536/php-generate-type-checker" target="_blank" rel="noopener noreferrer">GitHub</a>.
       </p>
       <p>
-        Enter a type on the left and click <strong>Generate</strong>. Output tabs follow the pipeline left to right:
+        Edit the type or options on the left; output updates automatically. Tabs follow the pipeline left to right:
         <strong>Type AST</strong> → <strong>IR (build)</strong> → <strong>IR (optimized)</strong> → <strong>PHP Code</strong>.
         Some types cannot be validated at runtime (for example <code>callable(int): void</code> or unhandled generics) and report a generation error.
       </p>

@@ -40,17 +40,22 @@ export function applyTheme(theme: ResolvedTheme): void {
   updateThemeToggleLabel(theme);
 }
 
+const THEME_ICON_LIGHT = '☀';
+const THEME_ICON_DARK = '☾';
+
 function updateThemeToggleLabel(theme: ResolvedTheme): void {
   const btn = document.querySelector<HTMLButtonElement>('#theme-toggle');
   if (!btn) {
     return;
   }
   if (theme === 'dark') {
-    btn.textContent = 'Light mode';
+    btn.textContent = THEME_ICON_LIGHT;
     btn.setAttribute('aria-label', 'Switch to light mode');
+    btn.title = 'Light mode';
   } else {
-    btn.textContent = 'Dark mode';
+    btn.textContent = THEME_ICON_DARK;
     btn.setAttribute('aria-label', 'Switch to dark mode');
+    btn.title = 'Dark mode';
   }
 }
 

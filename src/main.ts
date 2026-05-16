@@ -169,43 +169,6 @@ function getGenerateOptions() {
   };
 }
 
-interface GenerationSnapshot {
-  type: string;
-  outputMode: CheckerOutputMode;
-  nameFunctionsByType: boolean;
-  prioritizeReadabilityOverCompactness: boolean;
-}
-
-let lastGenerated: GenerationSnapshot | null = null;
-
-function getGenerationSnapshot(): GenerationSnapshot {
-  const opts = getGenerateOptions();
-  return {
-    type: getTypeInput(),
-    outputMode: opts.output,
-    nameFunctionsByType: opts.nameFunctionsByType,
-    prioritizeReadabilityOverCompactness: opts.prioritizeReadabilityOverCompactness,
-  };
-}
-
-function isOutputUpToDate(): boolean {
-  if (lastGenerated === null) {
-    return false;
-  }
-  const current = getGenerationSnapshot();
-  return (
-    current.type === lastGenerated.type &&
-    current.outputMode === lastGenerated.outputMode &&
-    current.nameFunctionsByType === lastGenerated.nameFunctionsByType &&
-    current.prioritizeReadabilityOverCompactness ===
-      lastGenerated.prioritizeReadabilityOverCompactness
-  );
-}
-
-function syncGenerateButton(): void {
-  generateBtn.disabled = isOutputUpToDate();
-}
-
 function runGenerate(panels: {
   ast: OutputPanel;
   irBuild: OutputPanel;
@@ -236,12 +199,9 @@ function runGenerate(panels: {
     setErrorOutput(panels.php, err, typeString);
   }
 
-  lastGenerated = getGenerationSnapshot();
-  syncGenerateButton();
 }
 
 function onGenerateInputChanged(): void {
-  syncGenerateButton();
   scheduleGenerate();
 }
 
@@ -312,7 +272,6 @@ const outputPanelSet = {
 
 const scheduleGenerate = debounce(() => runGenerate(outputPanelSet), INPUT_DEBOUNCE_MS);
 
-const generateBtn = document.querySelector<HTMLButtonElement>('#generate-run')!;
 const typeInput = document.querySelector<HTMLTextAreaElement>('#type-input')!;
 const outputModeSelect = document.querySelector<HTMLSelectElement>('#generate-output-mode')!;
 const nameByTypeCheckbox =
@@ -333,10 +292,6 @@ copyBtn.addEventListener('click', async () => {
     copyBtn.textContent = 'Copy';
     copyBtn.classList.remove('copied');
   }, 1500);
-});
-
-generateBtn.addEventListener('click', () => {
-  runGenerate(outputPanelSet);
 });
 
 typeInput.addEventListener('input', () => {
