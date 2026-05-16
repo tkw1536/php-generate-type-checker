@@ -7,8 +7,8 @@ import {
   orExpr,
   refArg,
   returnStmt,
-} from '../ir/expr.ts';
-import { variableRef } from '../ir/refs.ts';
+  variableRef,
+} from '../ir/';
 import type { CheckerProgram } from '../ir/types.ts';
 import { renderExpr, renderProgramBody } from './renderPhp.ts';
 
@@ -83,16 +83,17 @@ describe('renderProgramBody', () => {
     );
   });
 
-  it('expands not(and) fail-if to multiline or-chain', () => {
+  it('renders merged fail-if or-chain', () => {
     const body = program([
       {
         kind: 'if',
-        cond: notExpr(
-          andExpr([
-            callExpr('is_string', [refArg(variableRef('$key1'))]),
-            callExpr('is_string', [refArg(variableRef('$value1'))]),
-          ]),
-        ),
+        cond: {
+          kind: 'or',
+          exprs: [
+            notExpr(callExpr('is_string', [refArg(variableRef('$key1'))])),
+            notExpr(callExpr('is_string', [refArg(variableRef('$value1'))])),
+          ],
+        },
         body: [{ kind: 'return', expr: { kind: 'bool', value: false } }],
       },
     ]);

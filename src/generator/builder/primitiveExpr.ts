@@ -10,7 +10,7 @@ import {
   literalArg,
   orExpr,
   refArg,
-} from '../ir/expr.ts';
+} from '../ir/';
 import { normalizeNode } from '../normalize.ts';
 import { stripRedundantOuterParens } from '../negateExpression.ts';
 

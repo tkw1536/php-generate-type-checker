@@ -1,6 +1,7 @@
 import type { Block, CheckerIR, Expr, Stmt } from '../ir/types.ts';
-import { andExpr, returnStmt } from '../ir/expr.ts';
-import { exprEquals, failIfFromGuard, isFailIfReturnFalse } from '../ir/exprEquals.ts';
+import { andExpr, returnStmt } from '../ir/';
+import { equals } from '../ir/equals.ts';
+import { failIfOrChainStmt, isFailIfStmt, parseFailIfGuard } from './failIf.ts';
 
 export class IROptimizer {
   optimize(ir: CheckerIR): CheckerIR {
@@ -39,14 +40,14 @@ export class IROptimizer {
   private dedupeFailIf(stmts: Stmt[]): Stmt[] {
     const out: Stmt[] = [];
     for (const stmt of stmts) {
-      const guard = isFailIfReturnFalse(stmt);
+      const guard = parseFailIfGuard(stmt);
       if (guard === null) {
         out.push(stmt);
         continue;
       }
       const dup = out.some((s) => {
-        const g = isFailIfReturnFalse(s);
-        return g !== null && exprEquals(g, guard);
+        const g = parseFailIfGuard(s);
+        return g !== null && equals(g, guard);
       });
       if (!dup) {
         out.push(stmt);
@@ -59,7 +60,7 @@ export class IROptimizer {
     const out: Stmt[] = [];
     let i = 0;
     while (i < stmts.length) {
-      const guard = isFailIfReturnFalse(stmts[i]!);
+      const guard = parseFailIfGuard(stmts[i]!);
       if (guard === null) {
         out.push(stmts[i]!);
         i++;
@@ -68,7 +69,7 @@ export class IROptimizer {
       const guards: Expr[] = [guard];
       let j = i + 1;
       while (j < stmts.length) {
-        const g = isFailIfReturnFalse(stmts[j]!);
+        const g = parseFailIfGuard(stmts[j]!);
         if (g === null) {
           break;
         }
@@ -78,7 +79,7 @@ export class IROptimizer {
       if (guards.length === 1) {
         out.push(stmts[i]!);
       } else {
-        out.push(failIfFromGuard(andExpr(guards)));
+        out.push(failIfOrChainStmt(guards));
       }
       i = j;
     }
@@ -91,7 +92,7 @@ export class IROptimizer {
     const tail: Stmt[] = [];
 
     for (const stmt of stmts) {
-      if (isFailIfReturnFalse(stmt) !== null) {
+      if (isFailIfStmt(stmt)) {
         failIfs.push(stmt);
       } else if (stmt.kind === 'if' || stmt.kind === 'foreach') {
         middle.push(stmt);
@@ -117,7 +118,7 @@ export class IROptimizer {
     const guards: Expr[] = [];
     let i = stmts.length - 2;
     while (i >= 0) {
-      const g = isFailIfReturnFalse(stmts[i]!);
+      const g = parseFailIfGuard(stmts[i]!);
       if (g === null) {
         break;
       }

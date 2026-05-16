@@ -1,6 +1,6 @@
-import type { Arg, Expr, Stmt } from './types.ts';
+import type { Arg, Expr } from './types.ts';
 
-export function exprEquals(a: Expr, b: Expr): boolean {
+export function equals(a: Expr, b: Expr): boolean {
   if (a.kind !== b.kind) {
     return false;
   }
@@ -8,18 +8,18 @@ export function exprEquals(a: Expr, b: Expr): boolean {
     case 'bool':
       return b.kind === 'bool' && a.value === b.value;
     case 'not':
-      return b.kind === 'not' && exprEquals(a.expr, b.expr);
+      return b.kind === 'not' && equals(a.expr, b.expr);
     case 'and':
       return (
         b.kind === 'and' &&
         a.exprs.length === b.exprs.length &&
-        a.exprs.every((e, i) => exprEquals(e, b.exprs[i]!))
+        a.exprs.every((e, i) => equals(e, b.exprs[i]!))
       );
     case 'or':
       return (
         b.kind === 'or' &&
         a.exprs.length === b.exprs.length &&
-        a.exprs.every((e, i) => exprEquals(e, b.exprs[i]!))
+        a.exprs.every((e, i) => equals(e, b.exprs[i]!))
       );
     case 'call':
       return (
@@ -97,31 +97,4 @@ function valueRefEquals(
     default:
       return false;
   }
-}
-
-/** `if (not guard) { return false; }` */
-export function isFailIfReturnFalse(stmt: Stmt): Expr | null {
-  if (stmt.kind !== 'if' || stmt.body.length !== 1) {
-    return null;
-  }
-  const inner = stmt.body[0]!;
-  if (
-    inner.kind !== 'return' ||
-    inner.expr.kind !== 'bool' ||
-    inner.expr.value !== false
-  ) {
-    return null;
-  }
-  if (stmt.cond.kind !== 'not') {
-    return null;
-  }
-  return stmt.cond.expr;
-}
-
-export function failIfFromGuard(guard: Expr): Stmt {
-  return {
-    kind: 'if',
-    cond: { kind: 'not', expr: guard },
-    body: [{ kind: 'return', expr: { kind: 'bool', value: false } }],
-  };
 }

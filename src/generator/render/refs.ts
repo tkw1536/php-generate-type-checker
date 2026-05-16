@@ -1,4 +1,4 @@
-import type { ValueRef } from './types.ts';
+import type { ValueRef } from '../ir/types.ts';
 
 const PHP_RESERVED_OBJECT_PROPERTIES = new Set([
   'class',
@@ -40,24 +40,20 @@ const PHP_RESERVED_OBJECT_PROPERTIES = new Set([
   'enum',
 ]);
 
-function phpString(value: string): string {
+function phpQuotedString(value: string): string {
   return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 }
 
 function arrayIndexExpr(key: string | number): string {
-  return typeof key === 'number' ? String(key) : phpString(key);
+  return typeof key === 'number' ? String(key) : phpQuotedString(key);
 }
 
-export function variableRef(name: string): ValueRef {
-  return { kind: 'variable', name };
-}
-
-export function arrayAccessRef(base: string, key: string | number): ValueRef {
-  return { kind: 'array_access', base, key };
-}
-
-export function propertyAccessRef(base: string, name: string): ValueRef {
-  return { kind: 'property_access', base, name };
+/** PHP literal for a shape key in `array_key_exists` / `property_exists` args. */
+export function phpStringLiteral(key: string | number): string {
+  if (typeof key === 'number') {
+    return String(key);
+  }
+  return phpQuotedString(key);
 }
 
 /** Render a {@link ValueRef} to a PHP lvalue path. */
@@ -69,7 +65,7 @@ export function renderValueRef(ref: ValueRef): string {
       return `${ref.base}[${arrayIndexExpr(ref.key)}]`;
     case 'property_access': {
       if (PHP_RESERVED_OBJECT_PROPERTIES.has(ref.name)) {
-        return `${ref.base}->{${phpString(ref.name)}}`;
+        return `${ref.base}->{${phpQuotedString(ref.name)}}`;
       }
       return `${ref.base}->${ref.name}`;
     }

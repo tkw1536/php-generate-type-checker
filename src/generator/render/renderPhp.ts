@@ -2,8 +2,7 @@
  * Pure IR → PHP rendering. No output mode (function vs static).
  */
 import type { Arg, Block, CheckerProgram, Expr, Stmt, ValueRef } from '../ir/types.ts';
-import { isFailIfReturnFalse } from '../ir/exprEquals.ts';
-import { renderValueRef } from '../ir/refs.ts';
+import { phpStringLiteral, renderValueRef } from './refs.ts';
 import {
   type PhpLine,
   formatBody,
@@ -67,8 +66,19 @@ export function renderExpr(expr: Expr, opts: RenderPhpOptions = {}): string {
     case 'bool':
       return expr.value ? 'true' : 'false';
     case 'not': {
-      const inner = renderExpr(expr.expr, opts);
       const child = expr.expr;
+      if (
+        child.kind === 'bin' &&
+        child.op === '!==' &&
+        child.right.kind === 'literal' &&
+        child.right.value === '[]'
+      ) {
+        return renderExpr(
+          { kind: 'bin', op: '===', left: child.left, right: child.right },
+          opts,
+        );
+      }
+      const inner = renderExpr(child, opts);
       if (child.kind === 'bin' || child.kind === 'and' || child.kind === 'or') {
         return `!(${inner})`;
       }
@@ -107,31 +117,6 @@ export function renderExpr(expr: Expr, opts: RenderPhpOptions = {}): string {
   }
 }
 
-function renderNegatedGuard(expr: Expr, opts: RenderPhpOptions): string {
-  if (
-    expr.kind === 'bin' &&
-    expr.op === '!==' &&
-    expr.right.kind === 'literal' &&
-    expr.right.value === '[]'
-  ) {
-    return renderExpr(
-      { kind: 'bin', op: '===', left: expr.left, right: expr.right },
-      opts,
-    );
-  }
-  return renderExpr({ kind: 'not', expr }, opts);
-}
-
-function renderIfCondition(expr: Expr, opts: RenderPhpOptions): string | string[] {
-  if (expr.kind === 'not' && expr.expr.kind === 'and' && expr.expr.exprs.length > 1) {
-    return expr.expr.exprs.map((e) => renderNegatedGuard(e, opts));
-  }
-  if (expr.kind === 'or' && expr.exprs.length > 1) {
-    return expr.exprs.map((e) => renderExpr(e, opts));
-  }
-  return renderExpr(expr, opts);
-}
-
 function renderReturnExpr(expr: Expr, opts: RenderPhpOptions): string {
   if (expr.kind === 'or' && expr.exprs.length > 1) {
     const parts = expr.exprs.map((e) =>
@@ -149,21 +134,21 @@ function renderReturnExpr(expr: Expr, opts: RenderPhpOptions): string {
   return renderExpr(expr, opts);
 }
 
-function isFailIfStmt(stmt: Stmt): boolean {
-  return isFailIfReturnFalse(stmt) !== null;
-}
-
-function emitIf(depth: number, cond: Expr, _body: PhpLine[], opts: RenderPhpOptions): PhpLine[] {
-  const inner = [line(0, 'return false;')];
-  const rendered = renderIfCondition(cond, opts);
-  if (Array.isArray(rendered)) {
-    const useMultiline = rendered.some((p) => p.length > 48);
+function renderIfStmt(
+  stmt: Extract<Stmt, { kind: 'if' }>,
+  depth: number,
+  opts: RenderPhpOptions,
+): PhpLine[] {
+  const body = renderBlock(stmt.body, 0, opts);
+  if (stmt.cond.kind === 'or' && stmt.cond.exprs.length > 1) {
+    const parts = stmt.cond.exprs.map((e) => renderExpr(e, opts));
+    const useMultiline = parts.some((p) => p.length > 48);
     if (useMultiline) {
-      return ifBlockMultilineOr(depth, rendered, inner);
+      return ifBlockMultilineOr(depth, parts, body);
     }
-    return ifBlockOrChain(depth, rendered, inner);
+    return ifBlockOrChain(depth, parts, body);
   }
-  return ifBlock(depth, rendered, inner);
+  return ifBlock(depth, renderExpr(stmt.cond, opts), body);
 }
 
 export function renderBlock(block: Block, depth: number, opts: RenderPhpOptions): PhpLine[] {
@@ -177,14 +162,7 @@ export function renderBlock(block: Block, depth: number, opts: RenderPhpOptions)
 function renderStmt(stmt: Stmt, depth: number, opts: RenderPhpOptions): PhpLine[] {
   switch (stmt.kind) {
     case 'if':
-      if (isFailIfStmt(stmt)) {
-        return emitIf(depth, stmt.cond, renderBlock(stmt.body, 0, opts), opts);
-      }
-      return ifBlock(
-        depth,
-        renderExpr(stmt.cond, opts),
-        renderBlock(stmt.body, 0, opts),
-      );
+      return renderIfStmt(stmt, depth, opts);
     case 'foreach': {
       const iterable = renderValueRef(stmt.iterable);
       const bind = stmt.keyVar
@@ -226,12 +204,7 @@ export function renderProgram(
   return renderBlock(program.body, 0, opts);
 }
 
-export function phpStringLiteral(key: string | number): string {
-  if (typeof key === 'number') {
-    return String(key);
-  }
-  return `'${String(key).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
-}
+export { phpStringLiteral } from './refs.ts';
 
 export function keyExistsExpr(
   iterable: ValueRef,

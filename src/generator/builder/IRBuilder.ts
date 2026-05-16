@@ -2,7 +2,6 @@ import type { TypeNode } from '../../parser/ast.ts';
 import type { Block, CheckerProgram, Expr, Stmt, ValueRef } from '../ir/types.ts';
 import {
   andExpr,
-  appendTrailingReturn,
   binExpr,
   boolLit,
   callCheckerExpr,
@@ -12,14 +11,11 @@ import {
   orExpr,
   refArg,
   returnStmt,
-} from '../ir/expr.ts';
-import {
+  variableRef,
   arrayAccessRef,
   propertyAccessRef,
-  renderValueRef,
-  variableRef,
-} from '../ir/refs.ts';
-import { phpStringLiteral } from '../render/renderPhp.ts';
+} from '../ir/';
+import { phpStringLiteral, renderValueRef } from '../render/refs.ts';
 import {
   exprAtomsForType,
   parsePhpExprToIr,
@@ -60,6 +56,14 @@ function resolvePathSubject(pathOrSubject: string | ValueRef): {
     return { path: pathOrSubject, subject: subjectFromPath(pathOrSubject) };
   }
   return { path: renderValueRef(pathOrSubject), subject: pathOrSubject };
+}
+
+function appendTrailingReturn(body: Block): void {
+  const last = body[body.length - 1];
+  if (last?.kind === 'return') {
+    return;
+  }
+  body.push(returnStmt(boolLit(true)));
 }
 
 function typeSupportsReturnPromotion(node: TypeNode, subject: ValueRef): boolean {
