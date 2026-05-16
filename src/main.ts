@@ -1,8 +1,11 @@
 import './style.css';
 import {
-  checkerIRSnapshotsForType,
-  generateChecker,
+  assertCheckable,
+  build,
+  normalizeNode,
+  optimize,
   parseType,
+  render,
   type CheckerOutputMode,
 } from './index.ts';
 import {
@@ -161,6 +164,11 @@ function getPrioritizeReadabilityOverCompactness(): boolean {
   return el?.checked === true;
 }
 
+/** Compact mode: run optimizer (!readable layout). Not wired in UI yet. */
+function wouldRunOptimizer(): boolean {
+  return !getPrioritizeReadabilityOverCompactness();
+}
+
 function getGenerateOptions() {
   return {
     output: getGenerateOutputMode(),
@@ -185,17 +193,31 @@ function runGenerate(panels: {
   }
 
   try {
-    const ir = checkerIRSnapshotsForType(typeString, genOpts);
-    setSuccessOutput(panels.irBuild, ir.built);
-    setSuccessOutput(panels.irOptimized, ir.optimized);
+    const ast = normalizeNode(parseType(typeString));
+    assertCheckable(ast, 'function');
+    const built = build(ast, genOpts);
+    const builtJson = JSON.stringify(built.ir, null, 2);
+    setSuccessOutput(panels.irBuild, builtJson);
+    const irForPhp = wouldRunOptimizer() ? optimize(built.ir) : built.ir;
+    if (wouldRunOptimizer()) {
+      setSuccessOutput(panels.irOptimized, JSON.stringify(irForPhp, null, 2));
+    } else {
+      setSuccessOutput(
+        panels.irOptimized,
+        'Optimizer skipped (Readable layout is on).\nIR (optimized) matches IR (build).',
+      );
+    }
+    setSuccessOutput(
+      panels.php,
+      render(irForPhp, {
+        ...genOpts,
+        typeString,
+        typesByName: built.typesByName,
+      }),
+    );
   } catch (err) {
     setErrorOutput(panels.irBuild, err, typeString);
     setErrorOutput(panels.irOptimized, err, typeString);
-  }
-
-  try {
-    setSuccessOutput(panels.php, generateChecker(typeString, genOpts));
-  } catch (err) {
     setErrorOutput(panels.php, err, typeString);
   }
 

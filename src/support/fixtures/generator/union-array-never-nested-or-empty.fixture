@@ -5,7 +5,7 @@ output: function
 /** @phpstan-assert-if-true array<array<never>>|array<never> $value */
 function isArrayArrayNeverOrArrayNever(mixed $value): bool
 {
-    return isArrayArrayNever($value) || $value === [];
+    return (isArrayArrayNever($value) || $value === []);
 }
 
 

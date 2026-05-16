@@ -1,17 +1,2 @@
-export {
-  buildCheckerIR,
-  CheckerIRBuilder,
-  type BuildCheckerContext,
-} from './buildCheckerIR.ts';
-export {
-  checksForType,
-  checkForReturnIf,
-  expressionToChecks,
-  expressionToMatchArms,
-  type ChecksFromTypeContext,
-} from './checksFromType.ts';
-export {
-  CheckerFunctionNameRegistry,
-  toIsFunctionIdentifier,
-  typeToPascalSlug,
-} from './checkerFunctionNames.ts';
+export { IRBuilder, buildProgram, type BuildContext } from './IRBuilder.ts';
+export { exprForType, exprAtomsForType, singleExprForType } from './primitiveExpr.ts';

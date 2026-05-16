@@ -2,17 +2,13 @@ export { parseType, ParseError, LexerError, tokenize } from './parser/index.ts';
 export {
   type CheckerOutputMode,
   type GenerateCheckerOptions,
-  type EmittedCheckerBody,
-  DEFAULT_CHECKER_OUTPUT,
-  formatCheckerOutput,
-  formatClassCheckerOutput,
-  generateChecker,
-  checkerIRSnapshotsForType,
   type CheckerIR,
-  type CheckerPipeline,
+  type BuildResult,
+  build,
+  optimize,
+  render,
   GenerationError,
-  emitBody,
-  emitExpression,
   assertCheckable,
+  normalizeNode,
 } from './generator/index.ts';
 export type { TypeNode, ShapeField, CallableSig, CallableParam } from './parser/ast.ts';

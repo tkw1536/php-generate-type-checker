@@ -5,7 +5,7 @@ output: function
 /** @phpstan-assert-if-true array<null|string, mixed>|null $value */
 function isNullTypeOrArrayNullTypeOrStringToMixed(mixed $value): bool
 {
-    return $value === null || isArrayNullTypeOrStringToMixed($value);
+    return ($value === null || isArrayNullTypeOrStringToMixed($value));
 }
 
 

@@ -1,95 +1,38 @@
 import { assertCheckable } from './checkability.ts';
-import {
-  buildCheckerPipeline,
-  formatCheckerIR,
-} from './checkerPipeline.ts';
-import { toIsFunctionIdentifier, typeToPascalSlug } from './builder/checkerFunctionNames.ts';
-import { CheckerCodegen } from './emitter/emit.ts';
 import { normalizeNode } from './normalize.ts';
-import {
-  type GenerateCheckerOptions,
-  generateCheckerFromAst,
-} from './php.ts';
+import { build, optimize, renderChecker } from './pipeline.ts';
+import type { GenerateCheckerOptions } from './php.ts';
 import { parseType } from '../parser/index.ts';
-import { formatTypeForPhpstanDoc } from './typeDoc.ts';
 
+/** Composed pipeline; used by fixture tests. */
 export function generateChecker(
   typeString: string,
   options?: GenerateCheckerOptions,
 ): string {
   const ast = normalizeNode(parseType(typeString));
   assertCheckable(ast, 'function');
-  const nameByType = options?.nameFunctionsByType !== false;
-  const mainFunctionName =
-    options?.mainFunctionName ??
-    (nameByType ? toIsFunctionIdentifier(typeToPascalSlug(ast)) : 'check');
-  const merged: GenerateCheckerOptions = { ...options, mainFunctionName };
-  const { helpers, body } = new CheckerCodegen(merged).emitBody(ast, '$value');
-  const docType = formatTypeForPhpstanDoc(ast);
-  return generateCheckerFromAst(docType, body, merged, helpers || undefined);
-}
-
-/** Pretty-printed checker IR before and after {@link optimizeCheckerIR}. */
-export function checkerIRSnapshotsForType(
-  typeString: string,
-  options?: Pick<
-    GenerateCheckerOptions,
-    'prioritizeReadabilityOverCompactness' | 'nameFunctionsByType' | 'mainFunctionName'
-  >,
-): { built: string; optimized: string } {
-  const ast = normalizeNode(parseType(typeString));
-  assertCheckable(ast, 'function');
-  const nameByType = options?.nameFunctionsByType !== false;
-  const mainFunctionName =
-    options?.mainFunctionName ??
-    (nameByType ? toIsFunctionIdentifier(typeToPascalSlug(ast)) : 'check');
-  const pipeline = buildCheckerPipeline(ast, {
-    prioritizeReadabilityOverCompactness:
-      options?.prioritizeReadabilityOverCompactness,
-    nameFunctionsByType: nameByType,
-    mainFunctionName,
+  const { ir: built, typesByName } = build(ast, options);
+  const ir = options?.prioritizeReadabilityOverCompactness
+    ? built
+    : optimize(built);
+  return renderChecker(ir, {
+    ...options,
+    typeString: typeString.trim(),
+    typesByName,
   });
-  return {
-    built: formatCheckerIR(pipeline.built),
-    optimized: formatCheckerIR(pipeline.optimized),
-  };
 }
 
 export { GenerationError } from './errors.ts';
-export {
-  buildCheckerPipeline,
-  formatCheckerIR,
-  type CheckerIR,
-  type CheckerPipeline,
-  type BuildCheckerPipelineOptions,
-} from './checkerPipeline.ts';
-export {
-  buildCheckerIR,
-  type BuildCheckerContext,
-} from './builder/buildCheckerIR.ts';
-export {
-  optimizeCheckerIR,
-  type OptimizeCheckerIRInput,
-} from './optimizer/optimizeCheckerIR.ts';
-export {
-  CheckerCodegen,
-  emitBody,
-  emitFromPipeline,
-  emitCheckerIR,
-  type EmittedCheckerBody,
-  emitExpression,
-  type EmitCheckerIRInput,
-} from './emitter/index.ts';
-export { needsStatementBlock } from './simpleTypes.ts';
 export { assertCheckable } from './checkability.ts';
-export { isExpressible, isNoOpValueCheck } from './simpleTypes.ts';
+export {
+  build,
+  optimize,
+  renderChecker as render,
+  type BuildResult,
+  type CheckerIR,
+} from './pipeline.ts';
 export {
   type CheckerOutputMode,
-  DEFAULT_CHECKER_OUTPUT,
-  formatCheckerOutput,
-  formatClassCheckerOutput,
   type GenerateCheckerOptions,
-  generateCheckerFromAst,
-  wrapChecker,
 } from './php.ts';
 export { normalizeNode } from './normalize.ts';

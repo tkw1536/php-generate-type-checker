@@ -10,11 +10,6 @@ export function line(depth: number, text: string): PhpLine {
   return { depth, text };
 }
 
-export function lines(depth: number, texts: string[]): PhpLine[] {
-  return texts.map((text) => line(depth, text));
-}
-
-/** Increase depth of all lines by `delta`. */
 export function shiftLines(delta: number, block: PhpLine[]): PhpLine[] {
   return block.map((l) => ({ depth: l.depth + delta, text: l.text }));
 }
@@ -38,10 +33,6 @@ export function ifBlock(
   ];
 }
 
-/**
- * `if` whose condition is `part0 || part1 || …`, split across lines (first line `if (part0`,
- * following lines `    || partN`, then `) {`).
- */
 export function ifBlockOrChain(
   depth: number,
   orParts: string[],
@@ -63,9 +54,6 @@ export function ifBlockOrChain(
   return lines;
 }
 
-/**
- * `if` with each failure clause on its own line (`if (` then indented parts with leading `||`).
- */
 export function ifBlockMultilineOr(
   depth: number,
   orParts: string[],
@@ -88,7 +76,6 @@ export function ifBlockMultilineOr(
   return [...head, ...shiftLines(1, body), line(depth, '}')];
 }
 
-/** Multi-line `return ( … && … );` when there are multiple conjuncts. */
 export function returnMultilineAnd(depth: number, andParts: string[]): PhpLine[] {
   if (andParts.length === 0) {
     return [];
@@ -103,8 +90,4 @@ export function returnMultilineAnd(depth: number, andParts: string[]): PhpLine[]
   }
   out.push(line(depth, ');'));
   return out;
-}
-
-export function braceBlock(depth: number, body: PhpLine[]): PhpLine[] {
-  return [line(depth, '{'), ...shiftLines(1, body), line(depth, '}')];
 }

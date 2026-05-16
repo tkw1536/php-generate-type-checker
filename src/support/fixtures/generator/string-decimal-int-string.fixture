@@ -5,5 +5,5 @@ output: function
 /** @phpstan-assert-if-true decimal-int-string $value */
 function isDecimalIntString(mixed $value): bool
 {
-    return (is_string($value) && preg_match('/^-?(?:0|[1-9]\d*)$/', $value) === 1);
+    return (is_string($value) && preg_match('/^-?(?:0|[1-9]\\d*)$/', $value) === 1);
 }

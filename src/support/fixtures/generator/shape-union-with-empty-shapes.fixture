@@ -5,20 +5,18 @@ output: function
 /** @phpstan-assert-if-true array{'left': array<never>, 'right': array<never>}|array<never> $value */
 function isArrayNeverOrShapeFldleftReqArrayNeverFldrightReqArrayNever(mixed $value): bool
 {
-    return $value === [] || isShapeFldleftReqArrayNeverFldrightReqArrayNever($value);
+    return ($value === [] || isShapeFldleftReqArrayNeverFldrightReqArrayNever($value));
 }
 
 
 /** @phpstan-assert-if-true array{'left': array<never>, 'right': array<never>} $value */
 function isShapeFldleftReqArrayNeverFldrightReqArrayNever(mixed $value): bool
 {
-    if (!is_array($value)
-        || !array_key_exists('left', $value)
-        || !($value['left'] === [])
-        || !array_key_exists('right', $value)
-        || !($value['right'] === [])
-    ) {
-        return false;
-    }
-    return true;
+    return (
+        is_array($value)
+        && array_key_exists('left', $value)
+        && $value['left'] !== []
+        && array_key_exists('right', $value)
+        && $value['right'] !== []
+    );
 }

@@ -8,11 +8,11 @@ Parse [PHPDoc types as supported by PHPStan](https://phpstan.org/writing-php-cod
 
 - **Type parser** — lexer and recursive-descent parser for PHPDoc-style types (primitives, unions, intersections, shapes, generics, callables, int ranges, and common aliases).
 - **Runtime checkers** — emits `bool` functions (or class methods) that validate `mixed $value` against a type string.
-- **Checker IR pipeline** — build → optimize → emit, with JSON snapshots in the UI for debugging.
+- **Checker IR pipeline** — `build` → `optimize` → `render`, with JSON IR tabs in the UI for debugging.
 - **Deduped checker functions** — nested or repeated types share one function per canonical type (e.g. `array<int>` inside a shape and inside a union).
 - **Output shapes** — standalone `function`, or `public` / `protected` / `private` `static` methods on a `TypeChecker` class.
 - **Naming** — default `is{TypeSlug}` entry and helper names from the type AST; optional legacy `check` / `check_N`.
-- **Layout** — compact combined `if` guards (default) or readable one-`if`-per-guard mode.
+- **Layout** — compact combined guards (default) or readable one-`if`-per-guard mode (**Readable layout** skips the optimizer).
 - **Web UI** — type input, example presets, generate options, and tabbed pipeline output with syntax highlighting and light/dark theme.
 
 Types that cannot be checked at runtime (e.g. most `callable` signatures, unsupported generics, `literal-string`) fail with `GenerationError`.
@@ -42,14 +42,14 @@ Single workspace: **type input** on the left, **pipeline output** on the right. 
 | Control | Effect |
 |--------|--------|
 | **Name from type** | `is{TypeSlug}` names (on) vs legacy `check` / `check_N` (off) |
-| **Readable layout** | One `if` per guard, preserve builder order (on) vs combined guards + hoisting (off) |
+| **Readable layout** | Skip optimizer; PHP from **IR (build)** (on) vs compact **IR (optimized)** (off) |
 | **Emit as** | Standalone function, or `public` / `protected` / `private` static method on `TypeChecker` |
 
 **Output tabs** (left → right):
 
 1. **Type AST** — parsed JSON AST
-2. **IR (build)** — checker IR straight from the builder
-3. **IR (optimized)** — IR after dedupe, hoist, etc.
+2. **IR (build)** — checker IR from `IRBuilder`
+3. **IR (optimized)** — IR after optimizer passes (or a note when readable layout is on)
 4. **PHP Code** — final generated PHP
 
 The header **theme toggle** (☾ / ☀) follows the system preference until you override it. Highlight.js uses GitHub (light) and GitHub Dark themes.
@@ -58,33 +58,31 @@ The header **theme toggle** (☾ / ☀) follows the system preference until you 
 
 ```
 src/
-├── index.ts                 # public API (parseType, generateChecker, …)
+├── index.ts                 # public API (parseType, build, optimize, render, …)
 ├── main.ts                  # Vite app bootstrap
 ├── theme.ts, style.css
 ├── parser/                  # PHPDoc type → AST
 │   ├── parser.ts, lexer.ts, ast.ts
 │   └── parseType.test.ts
 ├── generator/               # AST → PHP checkers
-│   ├── checkerIR.ts         # shared IR types (CheckerProgram, Check, …)
-│   ├── checkerPipeline.ts   # materialize built + optimized IR, emit order
-│   ├── checkerPipeline.test.ts
-│   ├── builder/             # AST → checker IR
-│   │   ├── buildCheckerIR.ts
-│   │   ├── checksFromType.ts
+│   ├── pipeline.ts          # build(), optimize(), renderChecker()
+│   ├── ir/                  # CheckerIR, Expr, Stmt, ValueRef, helpers
+│   ├── builder/             # AST → naive IR
+│   │   ├── IRBuilder.ts
+│   │   ├── primitiveExpr.ts
 │   │   └── checkerFunctionNames.ts
-│   ├── optimizer/           # IR cleanup (dedupe, hoist failIf, …)
-│   │   └── optimizeCheckerIR.ts
-│   ├── emitter/             # IR → PHP lines → formatted body
-│   │   ├── emitCheckerIR.ts
-│   │   ├── emit.ts          # pipeline emit, compact unions, class wrapper
-│   │   └── renderCheck.ts
-│   ├── checkability.ts      # what can / cannot be generated
-│   ├── normalize.ts         # AST normalization before codegen
-│   ├── simpleTypes.ts       # leaf PHP expressions
+│   ├── optimizer/           # IR compaction (dedupe, merge failIf, hoist, fold)
+│   │   └── IROptimizer.ts
+│   ├── render/              # IR → PHP bodies + output wrapper
+│   │   ├── renderPhp.ts     # pure function-body rendering
+│   │   └── IRRenderer.ts    # PHPDoc, helpers, class/function shell
+│   ├── checkability.ts
+│   ├── normalize.ts
+│   ├── simpleTypes.ts       # legacy PHP string helpers for compact paths
 │   ├── typeDoc.ts, typeKey.ts, unionOrder.ts
 │   ├── php.ts               # @phpstan-assert-if-true wrappers, class layout
 │   ├── generateChecker.test.ts
-│   └── index.ts
+│   └── index.ts             # generateChecker() composes the pipeline
 ├── support/                 # tests only (fixtures + loaders)
 │   ├── fixtureFormat.ts
 │   ├── loadParserFixture.ts, loadGeneratorFixture.ts
@@ -100,54 +98,63 @@ End-to-end flow for `generateChecker(typeString)`:
 
 1. **Parse** — `parseType` → `TypeNode` ([`src/parser/`](src/parser/))
 2. **Normalize & check** — [`normalize.ts`](src/generator/normalize.ts), [`checkability.ts`](src/generator/checkability.ts)
-3. **Build pipeline** — [`buildCheckerPipeline`](src/generator/checkerPipeline.ts):
-   - For each deduped checker function name: **built** IR via [`builder/buildCheckerIR.ts`](src/generator/builder/buildCheckerIR.ts)
-   - **Optimized** IR via [`optimizer/optimizeCheckerIR.ts`](src/generator/optimizer/optimizeCheckerIR.ts)
-   - Shared **`order`** array: entry function first, then helpers as they are discovered
-4. **Emit PHP** — [`emitter/emit.ts`](src/generator/emitter/emit.ts) walks optimized IR; compact expressible types may become a single `return` expression
-5. **Wrap** — [`php.ts`](src/generator/php.ts) adds PHPDoc and optional `TypeChecker` class
+3. **Build** — [`build()`](src/generator/pipeline.ts) walks the AST via [`IRBuilder`](src/generator/builder/IRBuilder.ts); dedupes helpers in `PipelineBuilder`
+4. **Optimize** — [`optimize()`](src/generator/optimizer/IROptimizer.ts) unless `prioritizeReadabilityOverCompactness` is true
+5. **Render** — [`render()`](src/generator/render/IRRenderer.ts) turns IR into PHP (body via [`renderPhp.ts`](src/generator/render/renderPhp.ts), then [`php.ts`](src/generator/php.ts) wraps with PHPDoc / class)
 
-### Checker IR (rough outline)
+### Checker IR (outline)
 
-Each checker function is a **`CheckerProgram`**: parameter name + ordered **`statements`**.
+`CheckerIR` is `{ programs: Record<string, CheckerProgram>; order: string[] }`.
 
-Common statement kinds:
+Each **`CheckerProgram`** has a parameter name and a **`Block`** (`Stmt[]`):
 
-| Kind | Role |
+| Stmt | Role |
 |------|------|
-| `failIf` | Guard with negated atom (`call` or `equals`) |
-| `foreach` | Loop over array/list with nested body |
-| `optional` | Shape field present only if key exists |
-| `returnIf` / `returnOr` / `returnTrue` | Early success paths |
+| `if` | Condition + body (fail-if uses `if (!guard) { return false; }`, optional shape fields use positive `if (exists) { … }`) |
+| `foreach` | Loop with nested body |
+| `return` | Boolean expression or `true` / `false` |
 
-Atoms in checks are only **`call`** (e.g. `is_array`, `instanceof`) and **`equals`** (e.g. `$value === []`). PHPDoc primitive aliases are lowered in [`builder/checksFromType.ts`](src/generator/builder/checksFromType.ts); PHP text is rendered in [`emitter/renderCheck.ts`](src/generator/emitter/renderCheck.ts).
+**`Expr`** kinds include `bool`, `not`, `and`, `or`, `call`, `bin`, `instanceof`, `call_checker` (helper reference). **`ValueRef`** models `$value`, `$value['key']`, `$value->prop`.
 
-**Optimizer** (default): drop no-op guards, dedupe identical `failIf`, hoist guards before `foreach` / `optional`. With **readable layout**, hoisting is skipped so emit order matches the builder.
+**Optimizer** passes: dedupe identical fail-if, merge consecutive fail-if into one guard, hoist fail-if before loops, fold trailing fail-if + `return true` into `return` of combined guards, light boolean cleanup.
 
-**Emitter**: batches consecutive top-level `failIf` into one `if (!a \|\| !b \|\| …)` unless readable mode is on.
+**Renderer**: fail-if conditions with `not (a && b)` emit as `!a || !b` chains; output mode (function vs `self::` static) lives only in `IRRenderer`.
 
 ## Programmatic API
 
 ```ts
 import {
   parseType,
-  generateChecker,
-  checkerIRSnapshotsForType,
+  build,
+  optimize,
+  render,
+  normalizeNode,
+  assertCheckable,
   GenerationError,
 } from './src/index.ts';
 
-const ast = parseType('array<string, int>');
+const ast = normalizeNode(parseType('array<string, int>'));
+assertCheckable(ast, 'function');
 
-const php = generateChecker('array<string, int>', {
-  output: 'function',                      // or public_static, …
-  nameFunctionsByType: true,               // default
-  prioritizeReadabilityOverCompactness: false, // default
+const { ir: built, typesByName } = build(ast, { nameFunctionsByType: true });
+const ir = optimize(built);
+const php = render(ir, {
+  typeString: 'array<string, int>',
+  typesByName,
+  output: 'function',
 });
-
-const { built, optimized } = checkerIRSnapshotsForType('list<int>');
 ```
 
-Lower-level exports (see [`src/generator/index.ts`](src/generator/index.ts)) include `buildCheckerPipeline`, `optimizeCheckerIR`, `emitCheckerIR`, `emitFromPipeline`, and types `CheckerIR` / `CheckerPipeline`.
+Convenience wrapper (used by tests and the refresh script):
+
+```ts
+import { generateChecker } from './src/generator/index.ts';
+
+const php = generateChecker('list<int>', {
+  output: 'function',
+  prioritizeReadabilityOverCompactness: false,
+});
+```
 
 ### Options reference
 
@@ -156,7 +163,7 @@ Lower-level exports (see [`src/generator/index.ts`](src/generator/index.ts)) inc
 | `output` | `'function'` | Standalone function or class static method visibility |
 | `nameFunctionsByType` | `true` | `is{TypeSlug}` vs `check` / `check_N` |
 | `mainFunctionName` | derived from type | Entry function/method name |
-| `prioritizeReadabilityOverCompactness` | `false` | Readable `if` layout + preserve statement order in optimizer |
+| `prioritizeReadabilityOverCompactness` | `false` | When true, skip optimizer and render built IR |
 
 ## Tests
 
@@ -170,9 +177,9 @@ Run `yarn test` (Vitest).
 | Goal | Start here |
 |------|------------|
 | New syntax in type strings | [`src/parser/parser.ts`](src/parser/parser.ts) |
-| New primitive / leaf checks | [`builder/checksFromType.ts`](src/generator/builder/checksFromType.ts), [`simpleTypes.ts`](src/generator/simpleTypes.ts) |
-| IR shape for a type construct | [`builder/buildCheckerIR.ts`](src/generator/builder/buildCheckerIR.ts) |
-| Guard order / dedupe | [`optimizer/optimizeCheckerIR.ts`](src/generator/optimizer/optimizeCheckerIR.ts) |
-| PHP formatting (`if`, `foreach`) | [`emitter/emitCheckerIR.ts`](src/generator/emitter/emitCheckerIR.ts) |
+| New primitive / leaf checks | [`builder/primitiveExpr.ts`](src/generator/builder/primitiveExpr.ts), [`simpleTypes.ts`](src/generator/simpleTypes.ts) |
+| IR for a type construct | [`builder/IRBuilder.ts`](src/generator/builder/IRBuilder.ts) |
+| Guard order / dedupe / fold | [`optimizer/IROptimizer.ts`](src/generator/optimizer/IROptimizer.ts) |
+| PHP formatting (`if`, `foreach`, precedence) | [`render/renderPhp.ts`](src/generator/render/renderPhp.ts) |
+| PHPDoc wrapper / class layout | [`render/IRRenderer.ts`](src/generator/render/IRRenderer.ts), [`php.ts`](src/generator/php.ts) |
 | What is allowed to generate | [`checkability.ts`](src/generator/checkability.ts) |
-| PHPDoc wrapper / class layout | [`php.ts`](src/generator/php.ts) |

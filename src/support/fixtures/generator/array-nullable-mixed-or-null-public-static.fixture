@@ -7,7 +7,7 @@ class TypeChecker
     /** @phpstan-assert-if-true array<null|string, mixed>|null $value */
     public static function isNullTypeOrArrayNullTypeOrStringToMixed(mixed $value): bool
     {
-        return $value === null || self::isArrayNullTypeOrStringToMixed($value);
+        return ($value === null || self::isArrayNullTypeOrStringToMixed($value));
     }
 
     /** @phpstan-assert-if-true array<null|string, mixed> $value */
