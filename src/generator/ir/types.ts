@@ -38,4 +38,6 @@ export type CheckerProgram = {
 export type CheckerIR = {
   programs: Record<string, CheckerProgram>;
   order: string[];
+  /** User-facing entry checkers in parse order; never pruned by the optimizer. */
+  entries: string[];
 };

@@ -29,8 +29,13 @@ const $elem = variableRef('$value1');
 function ir(
   programs: CheckerIR['programs'],
   order: string[],
+  entries?: string[],
 ): CheckerIR {
-  return { programs, order };
+  return {
+    programs,
+    order,
+    entries: entries ?? (order[0] !== undefined ? [order[0]] : []),
+  };
 }
 
 describe('substituteValueRef', () => {

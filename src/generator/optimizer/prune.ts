@@ -27,5 +27,6 @@ export function prunePrograms(
     }
   }
 
-  return { order, programs };
+  const entries = ir.entries.filter((name) => keep.has(name));
+  return { order, programs, entries };
 }

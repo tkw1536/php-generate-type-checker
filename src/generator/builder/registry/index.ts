@@ -48,6 +48,11 @@ export class FunctionNameRegistry {
     return candidate;
   }
 
+  /** Reserve a name so helpers and later entries do not collide with it. */
+  reserveName(name: string): void {
+    this.used.add(name);
+  }
+
   /** Assign an explicit name for a type (e.g. entry `check`). Idempotent when unchanged. */
   set(type: TypeNode, fnName: string): void {
     const key = FunctionNameRegistry.key(type);

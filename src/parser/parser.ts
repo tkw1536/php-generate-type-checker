@@ -1,16 +1,30 @@
 import type { CallableParam, CallableSig, ShapeField, TypeNode } from './ast.ts';
 import { isKeyword } from './ast.ts';
-import { type Token, tokenize } from './lexer.ts';
+import { LexerError, type Token, tokenize } from './lexer.ts';
 
 export class ParseError extends Error {
   readonly pos: number;
+  /** 0-based index of the type expression being parsed when {@link parseTypes} fails. */
+  readonly expressionIndex?: number;
 
-  constructor(message: string, pos: number) {
+  constructor(message: string, pos: number, expressionIndex?: number) {
     super(message);
     this.name = 'ParseError';
     this.pos = pos;
+    this.expressionIndex = expressionIndex;
   }
 }
+
+export type TypeSegment = {
+  ast: TypeNode;
+  start: number;
+  end: number;
+};
+
+export type ParseTypesResult = {
+  source: string;
+  segments: TypeSegment[];
+};
 
 class Parser {
   private index = 0;
@@ -21,7 +35,7 @@ class Parser {
   }
 
   parse(): TypeNode {
-    const type = this.parseUnion();
+    const type = this.parseOne();
     if (!this.check('eof')) {
       throw new ParseError(
         `Unexpected token "${this.peek().value}"`,
@@ -29,6 +43,25 @@ class Parser {
       );
     }
     return type;
+  }
+
+  parseOne(): TypeNode {
+    return this.parseUnion();
+  }
+
+  atEof(): boolean {
+    return this.check('eof');
+  }
+
+  segmentStartPos(): number {
+    return this.peek().pos;
+  }
+
+  segmentEndPos(sourceLength: number): number {
+    if (this.check('eof')) {
+      return sourceLength;
+    }
+    return this.peek().pos;
   }
 
   private parseUnion(): TypeNode {
@@ -487,4 +520,36 @@ export function parseType(input: string): TypeNode {
   }
   const tokens = tokenize(trimmed);
   return new Parser(tokens).parse();
+}
+
+/** Parse one or more type expressions from sequential input (no delimiter required). */
+export function parseTypes(input: string): ParseTypesResult {
+  const source = input.trim();
+  if (source === '') {
+    throw new ParseError('Empty type string', 0);
+  }
+  const tokens = tokenize(source);
+  const parser = new Parser(tokens);
+  const segments: TypeSegment[] = [];
+  let expressionIndex = 0;
+
+  while (!parser.atEof()) {
+    try {
+      const start = parser.segmentStartPos();
+      const ast = parser.parseOne();
+      const end = parser.segmentEndPos(source.length);
+      segments.push({ ast, start, end });
+      expressionIndex++;
+    } catch (err) {
+      if (err instanceof ParseError) {
+        throw new ParseError(err.message, err.pos, expressionIndex);
+      }
+      if (err instanceof LexerError) {
+        throw new ParseError(err.message, err.pos, expressionIndex);
+      }
+      throw err;
+    }
+  }
+
+  return { source, segments };
 }

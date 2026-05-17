@@ -17,6 +17,7 @@ export function optimize(ir: CheckerIR): CheckerIR {
   let current: CheckerIR = {
     order: [...ir.order],
     programs: { ...ir.programs },
+    entries: [...ir.entries],
   };
 
   for (let iter = 0; iter < params.maxOptimizationLoops; iter++) {
@@ -32,7 +33,11 @@ export function optimize(ir: CheckerIR): CheckerIR {
       }
     }
 
-    current = { order: [...current.order], programs: nextPrograms };
+    current = {
+      order: [...current.order],
+      programs: nextPrograms,
+      entries: [...current.entries],
+    };
     if (!changed) {
       break;
     }

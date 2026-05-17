@@ -11,9 +11,14 @@ export type OptimizerParams = {
 };
 
 export function createOptimizerParams(ir: CheckerIR): OptimizerParams {
-  const entry = ir.order[0];
+  const roots =
+    ir.entries.length > 0
+      ? ir.entries
+      : ir.order[0] !== undefined
+        ? [ir.order[0]]
+        : [];
   return {
-    neverPrune: new Set(entry !== undefined ? [entry] : []),
+    neverPrune: new Set(roots),
     maxOptimizationLoops: 8,
     maxExpressionSimplificationLoops: 32,
   };

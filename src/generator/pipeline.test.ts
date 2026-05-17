@@ -1,19 +1,41 @@
 import { describe, expect, it } from 'vitest';
-import { parseType } from '../parser/index.ts';
-import { build, renderChecker } from './pipeline.ts';
+import { parseType, parseTypes } from '../parser/index.ts';
+import { build, buildMany, optimize, renderChecker } from './pipeline.ts';
 
 /** Phase 1: built IR only (no optimizer). */
 describe('pipeline build + render (unoptimized)', () => {
   it('names entry from type when nameFunctionsByType is default', () => {
     const ast = parseType('int');
     const { ir } = build(ast);
-    expect(ir.order[0]).toBe('isInt');
+    expect(ir.entries[0]).toBe('isInt');
   });
 
   it('uses check entry when nameFunctionsByType is false', () => {
     const ast = parseType('int');
     const { ir } = build(ast, { nameFunctionsByType: false });
-    expect(ir.order[0]).toBe('check');
+    expect(ir.entries[0]).toBe('check');
+  });
+
+  it('buildMany emits two entry checkers for array<string>array<int>', () => {
+    const { segments } = parseTypes('array<string>array<int>');
+    const { ir, typesByName } = buildMany(segments.map((s) => s.ast));
+    expect(ir.entries).toEqual(['isArrayString', 'isArrayInt']);
+    const php = renderChecker(ir, {
+      typeString: 'array<string>array<int>',
+      typesByName,
+      output: 'function',
+    });
+    expect(php).toContain('function isArrayString(');
+    expect(php).toContain('function isArrayInt(');
+  });
+
+  it('optimize keeps all entry checkers for multi-type IR', () => {
+    const { segments } = parseTypes('string int');
+    const { ir: built } = buildMany(segments.map((s) => s.ast));
+    const optimized = optimize(built);
+    expect(optimized.entries).toEqual(['isString', 'isInt']);
+    expect(optimized.programs.isString).toBeDefined();
+    expect(optimized.programs.isInt).toBeDefined();
   });
 
   it('generates bare non-empty-array keyword', () => {

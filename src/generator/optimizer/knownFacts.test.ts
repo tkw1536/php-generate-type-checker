@@ -21,7 +21,7 @@ import {
 } from './knownFacts.ts';
 import { equals } from '../ir/equals.ts';
 
-const defaultParams = createOptimizerParams({ programs: {}, order: [] });
+const defaultParams = createOptimizerParams({ programs: {}, order: [], entries: [] });
 
 const $v = variableRef('$value');
 const isArray = callExpr('is_array', [refArg($v)]);

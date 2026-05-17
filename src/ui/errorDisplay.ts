@@ -8,6 +8,8 @@ export interface PositionedError {
   message: string;
   pos?: number;
   detail?: string;
+  expressionIndex?: number;
+  segmentSource?: string;
 }
 
 export function describeError(err: unknown): PositionedError {
@@ -17,6 +19,7 @@ export function describeError(err: unknown): PositionedError {
       title: 'Parse error',
       message: err.message,
       pos: err.pos,
+      expressionIndex: err.expressionIndex,
     };
   }
   if (err instanceof LexerError) {
@@ -33,6 +36,8 @@ export function describeError(err: unknown): PositionedError {
       title: 'Generation error',
       message: err.message,
       detail: err.typeDescription,
+      expressionIndex: err.expressionIndex,
+      segmentSource: err.segmentSource,
     };
   }
   if (err instanceof Error) {
@@ -50,13 +55,24 @@ export function describeError(err: unknown): PositionedError {
 }
 
 export function renderErrorHtml(error: PositionedError, sourceText: string): string {
+  const snippetSource = error.segmentSource ?? sourceText;
   const hasPosition =
-    error.pos !== undefined && error.pos >= 0 && sourceText.length > 0;
-  const snippet = hasPosition ? buildSnippet(sourceText, error.pos!) : null;
+    error.pos !== undefined && error.pos >= 0 && snippetSource.length > 0;
+  const snippet = hasPosition ? buildSnippet(snippetSource, error.pos!) : null;
 
-  const detailHtml = error.detail
-    ? `<p class="error-detail">Type: <code>${escapeHtml(error.detail)}</code></p>`
-    : '';
+  const typeLabel =
+    error.expressionIndex !== undefined
+      ? `Type ${error.expressionIndex + 1}`
+      : null;
+
+  const detailHtml = [
+    typeLabel !== null
+      ? `<p class="error-detail">${escapeHtml(typeLabel)}</p>`
+      : '',
+    error.detail
+      ? `<p class="error-detail">Type: <code>${escapeHtml(error.detail)}</code></p>`
+      : '',
+  ].join('');
 
   const snippetHtml = snippet
     ? `
@@ -69,13 +85,13 @@ export function renderErrorHtml(error: PositionedError, sourceText: string): str
           </tbody>
         </table>
       </div>
-      <p class="error-location">${escapeHtml(snippet.locationLabel)}</p>
+      <p class="error-location">${escapeHtml(typeLabel !== null ? `${typeLabel} — ${snippet.locationLabel}` : snippet.locationLabel)}</p>
     </div>`
-    : sourceText
+    : snippetSource
       ? `
     <div class="error-snippet">
-      <div class="error-snippet-label">Input</div>
-      <pre class="error-source-plain">${escapeHtml(sourceText)}</pre>
+      <div class="error-snippet-label">${typeLabel !== null ? escapeHtml(typeLabel) : 'Input'}</div>
+      <pre class="error-source-plain">${escapeHtml(snippetSource)}</pre>
     </div>`
       : '';
 

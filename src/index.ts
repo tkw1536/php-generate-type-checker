@@ -1,10 +1,19 @@
-export { parseType, ParseError, LexerError, tokenize } from './parser/index.ts';
+export {
+  parseType,
+  parseTypes,
+  ParseError,
+  LexerError,
+  tokenize,
+  type TypeSegment,
+  type ParseTypesResult,
+} from './parser/index.ts';
 export {
   type CheckerOutputMode,
   type GenerateCheckerOptions,
   type CheckerIR,
   type BuildResult,
   build,
+  buildMany,
   optimize,
   render,
   GenerationError,

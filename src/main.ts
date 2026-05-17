@@ -1,8 +1,8 @@
 import './style.css';
 import {
-  build,
+  buildMany,
   optimize,
-  parseType,
+  parseTypes,
   render,
   type CheckerOutputMode,
 } from './index.ts';
@@ -184,15 +184,40 @@ function runGenerate(panels: {
   const typeString = getTypeInput();
   const genOpts = getGenerateOptions();
 
+  let parsed: ReturnType<typeof parseTypes> | undefined;
   try {
-    setSuccessOutput(panels.ast, JSON.stringify(parseType(typeString), null, 2));
+    parsed = parseTypes(typeString);
+    setSuccessOutput(
+      panels.ast,
+      JSON.stringify(
+        parsed.segments.map((s) => ({
+          start: s.start,
+          end: s.end,
+          ast: s.ast,
+        })),
+        null,
+        2,
+      ),
+    );
   } catch (err) {
     setErrorOutput(panels.ast, err, typeString);
   }
 
+  if (parsed === undefined) {
+    setErrorOutput(panels.irBuild, new Error('Parse failed'), typeString);
+    setErrorOutput(panels.irOptimized, new Error('Parse failed'), typeString);
+    setErrorOutput(panels.php, new Error('Parse failed'), typeString);
+    return;
+  }
+
   try {
-    const ast = parseType(typeString);
-    const built = build(ast, genOpts);
+    const segmentSources = parsed.segments.map((s) =>
+      parsed!.source.slice(s.start, s.end),
+    );
+    const built = buildMany(
+      parsed.segments.map((s) => s.ast),
+      { ...genOpts, segmentSources },
+    );
     const builtJson = JSON.stringify(built.ir, null, 2);
     setSuccessOutput(panels.irBuild, builtJson);
     const irForPhp = wouldRunOptimizer() ? optimize(built.ir) : built.ir;

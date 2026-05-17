@@ -98,6 +98,72 @@ ${body}
   return formatClassCheckerOutput(typeString, body, '', mode, mainFunctionName);
 }
 
+export type EntryRenderSpec = {
+  functionName: string;
+  docType: string;
+  body: string;
+};
+
+export function wrapMultipleEntries(
+  entries: EntryRenderSpec[],
+  options?: GenerateCheckerOptions,
+  helpersPrelude?: string,
+): string {
+  const mode = options?.output ?? DEFAULT_CHECKER_OUTPUT;
+  if (entries.length === 0) {
+    return '';
+  }
+  if (mode === 'function') {
+    const parts = entries.map((e) =>
+      formatCheckerOutput(e.docType, e.body, 'function', e.functionName),
+    );
+    const combined = parts.join('\n\n');
+    const withHelpers = helpersPrelude ? `${combined}\n\n${helpersPrelude}` : combined;
+    return normalizeEndingNewline(withHelpers);
+  }
+  return normalizeEndingNewline(
+    formatClassMultipleEntries(entries, helpersPrelude ?? '', mode),
+  );
+}
+
+function formatClassMultipleEntries(
+  entries: EntryRenderSpec[],
+  helpersBlock: string,
+  mode: CheckerOutputMode,
+): string {
+  const visibility = visibilityForMode(mode);
+  const methods = entries
+    .map((e) => {
+      const doc = indentEachLine(phpDocBlock(e.docType), CLASS_INDENT);
+      const indentedMain = indentEachLine(e.body, CLASS_INDENT);
+      return `${doc}
+    ${visibility} static function ${e.functionName}(mixed $value): bool
+    {
+${indentedMain}
+    }`;
+    })
+    .join('\n\n');
+
+  const helperBlocks = helpersBlock.trim()
+    ? helpersBlock
+        .split(/\n\n+/)
+        .map((block) => {
+          const withStatic = block
+            .trim()
+            .replace(/^function /m, 'private static function ');
+          return indentEachLine(withStatic, CLASS_INDENT);
+        })
+        .join('\n\n')
+    : '';
+
+  const inner = helperBlocks ? `${methods}\n\n${helperBlocks}` : methods;
+  return `class TypeChecker
+{
+${inner}
+}
+`;
+}
+
 export function wrapChecker(
   typeString: string,
   body: string,

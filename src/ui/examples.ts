@@ -32,4 +32,8 @@ export const TYPE_EXAMPLES: readonly TypeExample[] = [
   { label: 'Query or header map', type: 'array<string, string>' },
   { label: 'Decoded JSON object', type: 'array<string, mixed>' },
   { label: 'Route or query ID', type: 'int|string' },
+  {
+    label: 'Two sequential types (no separator)',
+    type: 'array<string>array<int>',
+  },
 ];

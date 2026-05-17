@@ -34,6 +34,20 @@ describe('renderErrorHtml', () => {
     expect(html).not.toContain('error-caret');
   });
 
+  it('shows type index for multi-type parse errors', () => {
+    const html = renderErrorHtml(
+      {
+        kind: 'parse',
+        title: 'Parse error',
+        message: 'Unexpected token ">"',
+        pos: 3,
+        expressionIndex: 1,
+      },
+      'int array<string>>',
+    );
+    expect(html).toContain('Type 2');
+  });
+
   it('integrates with ParseError', () => {
     const err = new ParseError('Expected )', 5);
     const html = renderErrorHtml(

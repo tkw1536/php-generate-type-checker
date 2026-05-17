@@ -20,7 +20,7 @@ import {
 } from './expression.ts';
 import { createOptimizerParams } from './params.ts';
 
-const defaultParams = createOptimizerParams({ programs: {}, order: [] });
+const defaultParams = createOptimizerParams({ programs: {}, order: [], entries: [] });
 
 const $v = variableRef('$value');
 const isInt = callExpr('is_int', [refArg($v)]);

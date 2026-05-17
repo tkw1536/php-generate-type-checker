@@ -1,4 +1,10 @@
-export { parseType, ParseError } from './parser.ts';
+export {
+  parseType,
+  parseTypes,
+  ParseError,
+  type TypeSegment,
+  type ParseTypesResult,
+} from './parser.ts';
 export { LexerError, tokenize } from './lexer.ts';
 export type {
   TypeNode,
