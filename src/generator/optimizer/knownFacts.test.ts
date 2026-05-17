@@ -3,6 +3,7 @@ import {
   andExpr,
   boolLit,
   callExpr,
+  failIfStmt,
   notExpr,
   refArg,
   returnStmt,
@@ -11,7 +12,13 @@ import {
 import type { Block } from '../ir/types.ts';
 import { simplifyExpression } from './expression.ts';
 import { createOptimizerParams } from './params.ts';
-import { applyKnownFacts, emptyFactEnv, substituteFacts } from './knownFacts.ts';
+import {
+  applyKnownFacts,
+  blockAlwaysExitsWhenEntered,
+  emptyFactEnv,
+  substituteFacts,
+} from './knownFacts.ts';
+import { equals } from '../ir/equals.ts';
 
 const defaultParams = createOptimizerParams({ programs: {}, order: [] });
 
@@ -22,6 +29,55 @@ describe('substituteFacts', () => {
   it('replaces expr known false', () => {
     const env = { ...emptyFactEnv(), falseFacts: [isArray] };
     expect(substituteFacts(isArray, env)).toEqual(boolLit(false));
+  });
+});
+
+describe('blockAlwaysExitsWhenEntered', () => {
+  it.each([
+    ['return only', [returnStmt(boolLit(true))], true],
+    [
+      'fail-if then return',
+      [
+        {
+          kind: 'if',
+          cond: notExpr(isArray),
+          body: [returnStmt(boolLit(false))],
+        },
+        returnStmt(boolLit(true)),
+      ],
+      true,
+    ],
+    [
+      'early return on condition',
+      [returnStmt(boolLit(true))],
+      true,
+    ],
+    [
+      'if alone is not an exiting body',
+      [{ kind: 'if', cond: isArray, body: [returnStmt(boolLit(true))] }],
+      false,
+    ],
+    ['empty block', [], false],
+    ['non-return tail', [returnStmt(boolLit(true)), failIfStmt(isArray)], false],
+    [
+      'trailing return after if that may fall through inside',
+      [
+        {
+          kind: 'if',
+          cond: isArray,
+          body: [{ kind: 'if', cond: callExpr('is_int', [refArg($v)]), body: [] }],
+        },
+        returnStmt(boolLit(true)),
+      ],
+      true,
+    ],
+    [
+      'empty if body has no trailing return',
+      [{ kind: 'if', cond: isArray, body: [] }],
+      false,
+    ],
+  ] as [string, Block, boolean][])('%s', (_name, block, expected) => {
+    expect(blockAlwaysExitsWhenEntered(block)).toBe(expected);
   });
 });
 
@@ -79,5 +135,19 @@ describe('applyKnownFacts', () => {
       return;
     }
     expect(innerIf.cond).toEqual(boolLit(false));
+  });
+
+  it('does not record false fact when if body can fall through', () => {
+    const block: Block = [
+      { kind: 'if', cond: isArray, body: [] },
+      failIfStmt(isArray),
+    ];
+    const result = applyKnownFacts(block, '$value', emptyFactEnv());
+    const secondIf = result[1]!;
+    expect(secondIf.kind).toBe('if');
+    if (secondIf.kind !== 'if') {
+      return;
+    }
+    expect(equals(secondIf.cond, notExpr(isArray))).toBe(true);
   });
 });

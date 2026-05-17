@@ -138,6 +138,17 @@ function substituteFactsShallow(
   }
 }
 
+/**
+ * True when an `if` body (linear IR, no else) always reaches `return` if entered:
+ * the last statement must be `return`, so any `if`/`foreach` inside either
+ * returns there or falls through to that trailing `return`.
+ */
+export function blockAlwaysExitsWhenEntered(block: Block): boolean {
+  // Note: Checking only the last statement assumes DCE has run.
+  // This may not be true this time, but will be eventually.
+  return block.length > 0 && block[block.length - 1]!.kind === 'return';
+}
+
 export function applyKnownFacts(
   block: Block,
   parameter: string,
@@ -153,7 +164,9 @@ export function applyKnownFacts(
         const bodyEnv = withTrueFact(currentEnv, cond);
         const newBody = applyKnownFacts(stmt.body, parameter, bodyEnv);
         out.push({ kind: 'if', cond, body: newBody });
-        currentEnv = withFalseFact(currentEnv, cond);
+        if (blockAlwaysExitsWhenEntered(stmt.body)) {
+          currentEnv = withFalseFact(currentEnv, cond);
+        }
         break;
       }
       case 'foreach': {
