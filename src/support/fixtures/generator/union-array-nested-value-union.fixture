@@ -3,7 +3,7 @@ input: "array<int|array<int>|array<string>>"
 output: function
 ---
 /** @phpstan-assert-if-true array<int|array<int>|array<string>> $value */
-function isArrayIntOrArrayIntOrArrayString(mixed $value): bool
+function isArrayIntArrayIntArrayString(mixed $value): bool
 {
     if (!is_array($value)) {
         return false;

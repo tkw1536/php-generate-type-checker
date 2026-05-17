@@ -3,15 +3,13 @@ input: "array{'hello:world': string, 'hello.world': string}"
 output: function
 ---
 /** @phpstan-assert-if-true array{'hello:world': string, 'hello.world': string} $value */
-function isShapeFldhello_worldReqStringFldhello_worldReqString(mixed $value): bool
+function isArrayHelloWorldStringHelloWorldString(mixed $value): bool
 {
-    if (
-        !is_array($value) ||
-        !array_key_exists('hello:world', $value) ||
-        !is_string($value['hello:world']) ||
-        !array_key_exists('hello.world', $value)
-    ) {
-        return false;
-    }
-    return is_string($value['hello.world']);
+    return (
+        is_array($value)
+        && array_key_exists('hello:world', $value)
+        && is_string($value['hello:world'])
+        && array_key_exists('hello.world', $value)
+        && is_string($value['hello.world'])
+    );
 }

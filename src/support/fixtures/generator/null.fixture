@@ -3,7 +3,7 @@ input: "null"
 output: function
 ---
 /** @phpstan-assert-if-true null $value */
-function isNullType(mixed $value): bool
+function isNull(mixed $value): bool
 {
     return $value === null;
 }

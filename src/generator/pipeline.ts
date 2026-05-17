@@ -1,6 +1,6 @@
 import type { TypeNode } from '../parser/ast.ts';
 import type { CheckerIR } from './ir/types.ts';
-import { Builder } from './builder/';
+import { build as buildChecker } from './builder/';
 import {
   createFunctionNameRegistry,
   type FunctionNameRegistry,
@@ -71,8 +71,7 @@ class PipelineBuilder {
     if (this.ir.programs[fnName] !== undefined) {
       return;
     }
-    const program = new Builder().build(type, this.parameter, {
-      parameter: this.parameter,
+    const program = buildChecker(type, this.parameter, {
       resolveCheckerName: (t) => this.resolveName(t),
       allocateLoopPair: () => {
         const scope = this.loopScopes[this.loopScopes.length - 1]!;

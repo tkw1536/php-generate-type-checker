@@ -3,20 +3,14 @@ input: "array{left: array{}, right: never[]}|array{}"
 output: function
 ---
 /** @phpstan-assert-if-true array{left: array{}, right: never[]}|array{} $value */
-function isShapeOrShapeFldleftReqShapeFldrightReqPostfixArrayNever(mixed $value): bool
+function isArrayLeftArrayRightNeverArray(mixed $value): bool
 {
-    return isShape($value) || isShapeFldleftReqShapeFldrightReqPostfixArrayNever($value);
+    return isArrayLeftArrayRightNever($value) || isArray($value);
 }
 
-
-/** @phpstan-assert-if-true array{} $value */
-function isShape(mixed $value): bool
-{
-    return is_array($value);
-}
 
 /** @phpstan-assert-if-true array{left: array{}, right: never[]} $value */
-function isShapeFldleftReqShapeFldrightReqPostfixArrayNever(mixed $value): bool
+function isArrayLeftArrayRightNever(mixed $value): bool
 {
     return (
         is_array($value)
@@ -24,4 +18,10 @@ function isShapeFldleftReqShapeFldrightReqPostfixArrayNever(mixed $value): bool
         && array_key_exists('right', $value)
         && $value['right'] === []
     );
+}
+
+/** @phpstan-assert-if-true array{} $value */
+function isArray(mixed $value): bool
+{
+    return is_array($value);
 }

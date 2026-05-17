@@ -3,25 +3,11 @@ input: "array<string>|array<int>"
 output: function
 ---
 /** @phpstan-assert-if-true array<string>|array<int> $value */
-function isArrayIntOrArrayString(mixed $value): bool
+function isArrayStringArrayInt(mixed $value): bool
 {
-    return isArrayInt($value) || isArrayString($value);
+    return isArrayString($value) || isArrayInt($value);
 }
 
-
-/** @phpstan-assert-if-true array<int> $value */
-function isArrayInt(mixed $value): bool
-{
-    if (!is_array($value)) {
-        return false;
-    }
-    foreach ($value as $value1) {
-        if (!is_int($value1)) {
-            return false;
-        }
-    }
-    return true;
-}
 
 /** @phpstan-assert-if-true array<string> $value */
 function isArrayString(mixed $value): bool
@@ -31,6 +17,20 @@ function isArrayString(mixed $value): bool
     }
     foreach ($value as $value1) {
         if (!is_string($value1)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/** @phpstan-assert-if-true array<int> $value */
+function isArrayInt(mixed $value): bool
+{
+    if (!is_array($value)) {
+        return false;
+    }
+    foreach ($value as $value1) {
+        if (!is_int($value1)) {
             return false;
         }
     }

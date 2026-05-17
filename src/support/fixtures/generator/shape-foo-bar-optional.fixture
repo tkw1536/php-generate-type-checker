@@ -3,7 +3,7 @@ input: "array{foo: int, bar?: string}"
 output: function
 ---
 /** @phpstan-assert-if-true array{foo: int, bar?: string} $value */
-function isShapeFldbarOptStringFldfooReqInt(mixed $value): bool
+function isArrayFooIntBarString(mixed $value): bool
 {
     if (
         !is_array($value) ||
@@ -13,7 +13,9 @@ function isShapeFldbarOptStringFldfooReqInt(mixed $value): bool
         return false;
     }
     if (array_key_exists('bar', $value)) {
-        return is_string($value['bar']);
+        if (!is_string($value['bar'])) {
+            return false;
+        }
     }
     return true;
 }

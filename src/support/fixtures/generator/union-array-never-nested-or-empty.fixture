@@ -3,7 +3,7 @@ input: "array<array<never>>|array<never>"
 output: function
 ---
 /** @phpstan-assert-if-true array<array<never>>|array<never> $value */
-function isArrayArrayNeverOrArrayNever(mixed $value): bool
+function isArrayArrayNeverArrayNever(mixed $value): bool
 {
     return (isArrayArrayNever($value) || $value === []);
 }

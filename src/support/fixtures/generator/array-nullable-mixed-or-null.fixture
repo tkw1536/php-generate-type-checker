@@ -3,7 +3,7 @@ input: "(array<string|null,mixed>)|null"
 output: function
 ---
 /** @phpstan-assert-if-true array<string|null, mixed>|null $value */
-function isNullTypeOrArrayNullTypeOrStringToMixed(mixed $value): bool
+function isArrayStringNullMixedNull(mixed $value): bool
 {
-    return ($value === null || is_array($value));
+    return (is_array($value) || $value === null);
 }

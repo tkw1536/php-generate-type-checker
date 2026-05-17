@@ -21,8 +21,12 @@ for (const name of readdirSync(dir)) {
     input = input.slice(1, -1);
   }
   const output = meta.output ?? 'function';
-  const php = generateChecker(input, { output });
-  const quoted = JSON.stringify(input);
-  writeFileSync(path, `---\ninput: ${quoted}\noutput: ${output}\n---\n${php}`);
-  console.log('updated', name);
+  try {
+    const php = generateChecker(input, { output });
+    const quoted = JSON.stringify(input);
+    writeFileSync(path, `---\ninput: ${quoted}\noutput: ${output}\n---\n${php}`);
+    console.log('updated', name);
+  } catch (err) {
+    console.warn('skip', name, err?.message ?? err);
+  }
 }

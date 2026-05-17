@@ -3,7 +3,7 @@ input: "object{foo: int, bar?: string}"
 output: function
 ---
 /** @phpstan-assert-if-true object{foo: int, bar?: string} $value */
-function isObjectShapeFldbarOptStringFldfooReqInt(mixed $value): bool
+function isObjectFooIntBarString(mixed $value): bool
 {
     if (
         !is_object($value) ||
@@ -13,7 +13,9 @@ function isObjectShapeFldbarOptStringFldfooReqInt(mixed $value): bool
         return false;
     }
     if (property_exists($value, 'bar')) {
-        return is_string($value->bar);
+        if (!is_string($value->bar)) {
+            return false;
+        }
     }
     return true;
 }

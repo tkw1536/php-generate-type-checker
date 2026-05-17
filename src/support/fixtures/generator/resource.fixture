@@ -3,7 +3,7 @@ input: "resource"
 output: function
 ---
 /** @phpstan-assert-if-true resource $value */
-function isResourceType(mixed $value): bool
+function isResource(mixed $value): bool
 {
     return is_resource($value);
 }

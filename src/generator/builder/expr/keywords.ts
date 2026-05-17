@@ -1,68 +1,47 @@
-import type { TypeNode } from '../../parser/ast.ts';
-import type { Arg, Expr, ValueRef } from '../ir/types.ts';
+import type { TypeNode } from '../../../parser/ast.ts';
+import type { Arg, Expr, ValueRef } from '../../ir/types.ts';
 import {
   andExpr,
   binExpr,
   boolLit,
   callArg,
   callExpr,
-  instanceofExpr,
   literalArg,
   orExpr,
   refArg,
-} from '../ir/index.ts';
-import { isSupportedLeafType } from './leaves.ts';
-import { phpLiteralFromNode } from './phpLiteral.ts';
+} from '../../ir/index.ts';
+import { cannotBuild } from '../errors.ts';
 
-/** Single positive guard expression, or null if uncheckable. */
-export function exprForType(node: TypeNode, subject: ValueRef): Expr | null {
-  if (!isSupportedLeafType(node)) {
-    return null;
-  }
+const UNCHECKABLE_KEYWORDS = new Set([
+  'void',
+  'static',
+  '$this',
+  'self',
+  'parent',
+]);
 
-  if (node.kind === 'keyword') {
-    return keywordToExpr(node.keyword, subject);
-  }
-
-  if (node.kind === 'class') {
-    const s = subjectArg(subject);
-    if (node.name === 'callable-array') {
-      return andExpr([callExpr('is_callable', [s]), callExpr('is_array', [s])]);
-    }
-    if (node.name === 'callable-object') {
-      return andExpr([callExpr('is_callable', [s]), callExpr('is_object', [s])]);
-    }
-    return instanceofExpr(subjectArg(subject), node.name);
-  }
-
-  if (node.kind === 'literal') {
-    const lit = phpLiteralFromNode(node);
-    if (lit === null) {
-      return null;
-    }
-    return binExpr('===', subjectArg(subject), literalArg(lit));
-  }
-
-  if (node.kind === 'range') {
-    const s = subjectArg(subject);
-    const parts: Expr[] = [callExpr('is_int', [s])];
-    if (node.min !== null) {
-      parts.push(binExpr('>=', s, literalArg(String(node.min))));
-    }
-    if (node.max !== null) {
-      parts.push(binExpr('<=', s, literalArg(String(node.max))));
-    }
-    if (parts.length === 1) {
-      return parts[0];
-    }
-    return andExpr(parts);
-  }
-
-  return null;
+export function subjectArg(subject: ValueRef): Arg {
+  return refArg(subject);
 }
 
-function subjectArg(subject: ValueRef): Arg {
-  return refArg(subject);
+export function buildKeywordExpr(keyword: string, subject: ValueRef): Expr {
+  if (keyword === 'literal-string' || keyword === 'non-empty-literal-string') {
+    cannotBuild(
+      { kind: 'keyword', keyword } as TypeNode,
+      'Cannot generate a runtime check for literal-string types: PHP cannot verify PHPStan literal-string semantics at runtime',
+    );
+  }
+  if (UNCHECKABLE_KEYWORDS.has(keyword)) {
+    cannotBuild(
+      { kind: 'keyword', keyword } as TypeNode,
+      `Cannot generate a runtime check for the type ${keyword}: this built-in is not supported for codegen`,
+    );
+  }
+  const expr = keywordToExpr(keyword, subject);
+  if (expr === null) {
+    cannotBuild({ kind: 'keyword', keyword } as TypeNode);
+  }
+  return expr;
 }
 
 function keywordToExpr(keyword: string, subject: ValueRef): Expr | null {
@@ -227,9 +206,6 @@ function keywordToExpr(keyword: string, subject: ValueRef): Expr | null {
         binExpr('!==', s, literalArg("''")),
         binExpr('===', callArg('strtoupper', [s]), s),
       ]);
-    case 'literal-string':
-    case 'non-empty-literal-string':
-      return null;
     default:
       return null;
   }

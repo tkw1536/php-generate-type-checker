@@ -9,9 +9,9 @@ describe('FunctionNameRegistry', () => {
     const a = parseType('\\Vendor\\A\\Foo');
     const b = parseType('\\Vendor\\B\\Foo');
     const r = new FunctionNameRegistry(new IsStyleFunctionNameProposer());
-    expect(r.get(a)).toBe('isFoo');
+    expect(r.get(a)).toBe('isVendorAFoo');
     expect(formatType(a)).not.toBe(formatType(b));
-    expect(r.get(b)).toBe('isFoo_2');
+    expect(r.get(b)).toBe('isVendorBFoo');
   });
 
   it('returns the same name for the same type', () => {

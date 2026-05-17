@@ -3,7 +3,7 @@ input: "array<string, string>"
 output: function
 ---
 /** @phpstan-assert-if-true array<string, string> $value */
-function isArrayStringToString(mixed $value): bool
+function isArrayStringString(mixed $value): bool
 {
     if (!is_array($value)) {
         return false;

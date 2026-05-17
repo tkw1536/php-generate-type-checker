@@ -1,4 +1,5 @@
 import type { TypeNode } from '../../parser/ast.ts';
+import { GenerationError } from '../errors.ts';
 
 function describeRange(node: Extract<TypeNode, { kind: 'range' }>): string {
   const lo = node.min === null ? 'min' : String(node.min);
@@ -35,4 +36,17 @@ export function describeNode(node: TypeNode): string {
     default:
       return 'unknown';
   }
+}
+
+export function cannotBuild(
+  node: TypeNode,
+  message?: string,
+  typeDescription?: string,
+): never {
+  const desc = typeDescription ?? describeNode(node);
+  throw new GenerationError(
+    message ??
+      `Cannot generate a runtime check for ${desc}: not representable as a supported boolean assertion in this generator`,
+    desc,
+  );
 }

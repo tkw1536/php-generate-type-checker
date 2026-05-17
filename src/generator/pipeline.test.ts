@@ -45,7 +45,7 @@ describe('pipeline build + render (unoptimized)', () => {
     expect(php).not.toMatch(/return !\(/);
   });
 
-  it('union-int|string emits return or without optimize', () => {
+  it('union-int|string emits fail-if or then return true without optimize', () => {
     const ast = parseType('int|string');
     const { ir, typesByName } = build(ast, {
       prioritizeReadabilityOverCompactness: true,
@@ -55,7 +55,9 @@ describe('pipeline build + render (unoptimized)', () => {
       typesByName,
       output: 'function',
     });
-    expect(php).toContain('return (is_int($value) || is_string($value));');
+    expect(php).toContain('if (!(is_int($value) || is_string($value)))');
+    expect(php).toContain('return false;');
+    expect(php).toContain('return true;');
   });
 
   it('array<string,string> foreach uses separate fail-if guards', () => {
