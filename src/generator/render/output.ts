@@ -30,47 +30,76 @@ function visibilityForMode(mode: CheckerOutputMode): 'public' | 'protected' | 'p
   return 'private';
 }
 
-/**
- * Builds `class TypeChecker` with the entry method, optional helpers as `private static function …`,
- * and helpers placed after the entry method inside the class body.
- */
-function formatClassCheckerOutput(
-  typeString: string,
-  mainBody: string,
-  helpersBlock: string,
-  mode: CheckerOutputMode,
-  mainFunctionName = 'check',
+export type MethodRenderSpec = {
+  functionName: string;
+  docType: string;
+  body: string;
+};
+
+export type EntryRenderSpec = MethodRenderSpec;
+
+export type HelperRenderSpec = MethodRenderSpec;
+
+/** One class method: PHPDoc and body indented once; visibility applied only here. */
+function formatClassStaticMethod(
+  spec: MethodRenderSpec,
+  visibility: 'public' | 'protected' | 'private',
 ): string {
-  const escapedType = typeString.trim();
-  const doc = indentEachLine(phpDocBlock(escapedType), CLASS_INDENT);
-  const visibility = visibilityForMode(mode);
-  const indentedMain = indentEachLine(mainBody, CLASS_INDENT);
-
-  const helperBlocks = helpersBlock.trim()
-    ? helpersBlock
-        .split(/\n\n+/)
-        .map((block) => {
-          const withStatic = block
-            .trim()
-            .replace(/^function /m, 'private static function ');
-          return indentEachLine(withStatic, CLASS_INDENT);
-        })
-        .join('\n\n')
-    : '';
-
-  const checkMethod = `${doc}
-    ${visibility} static function ${mainFunctionName}(mixed $value): bool
+  const doc = indentEachLine(phpDocBlock(spec.docType.trim()), CLASS_INDENT);
+  const indentedBody = indentEachLine(spec.body, CLASS_INDENT);
+  return `${doc}
+    ${visibility} static function ${spec.functionName}(mixed $value): bool
     {
-${indentedMain}
+${indentedBody}
     }`;
+}
 
-  const inner = helperBlocks ? `${checkMethod}\n\n${helperBlocks}` : checkMethod;
+function formatClassHelpers(helpers: HelperRenderSpec[]): string {
+  return helpers
+    .map((h) => formatClassStaticMethod(h, 'private'))
+    .join('\n\n');
+}
 
+function formatTopLevelFunction(spec: MethodRenderSpec): string {
+  return `${phpDocBlock(spec.docType.trim())}
+function ${spec.functionName}(mixed $value): bool
+{
+${spec.body}
+}`;
+}
+
+function formatClassTypeChecker(entryMethods: string, helperMethods: string): string {
+  const inner = helperMethods
+    ? `${entryMethods}\n\n${helperMethods}`
+    : entryMethods;
   return `class TypeChecker
 {
 ${inner}
 }
 `;
+}
+
+function formatClassCheckerOutput(
+  entry: MethodRenderSpec,
+  helpers: HelperRenderSpec[],
+  mode: CheckerOutputMode,
+): string {
+  const entryMethod = formatClassStaticMethod(entry, visibilityForMode(mode));
+  const helperMethods = formatClassHelpers(helpers);
+  return formatClassTypeChecker(entryMethod, helperMethods);
+}
+
+function formatClassMultipleEntries(
+  entries: EntryRenderSpec[],
+  helpers: HelperRenderSpec[],
+  mode: CheckerOutputMode,
+): string {
+  const visibility = visibilityForMode(mode);
+  const entryMethods = entries
+    .map((e) => formatClassStaticMethod(e, visibility))
+    .join('\n\n');
+  const helperMethods = formatClassHelpers(helpers);
+  return formatClassTypeChecker(entryMethods, helperMethods);
 }
 
 /**
@@ -95,19 +124,17 @@ ${body}
 `;
   }
 
-  return formatClassCheckerOutput(typeString, body, '', mode, mainFunctionName);
+  return formatClassCheckerOutput(
+    { functionName: mainFunctionName, docType: escapedType, body },
+    [],
+    mode,
+  );
 }
-
-export type EntryRenderSpec = {
-  functionName: string;
-  docType: string;
-  body: string;
-};
 
 export function wrapMultipleEntries(
   entries: EntryRenderSpec[],
   options?: GenerateCheckerOptions,
-  helpersPrelude?: string,
+  helpers: HelperRenderSpec[] = [],
 ): string {
   const mode = options?.output ?? DEFAULT_CHECKER_OUTPUT;
   if (entries.length === 0) {
@@ -118,57 +145,20 @@ export function wrapMultipleEntries(
       formatCheckerOutput(e.docType, e.body, 'function', e.functionName),
     );
     const combined = parts.join('\n\n');
-    const withHelpers = helpersPrelude ? `${combined}\n\n${helpersPrelude}` : combined;
+    const helperText = helpers.map(formatTopLevelFunction).join('\n\n');
+    const withHelpers = helperText ? `${combined}\n\n${helperText}` : combined;
     return normalizeEndingNewline(withHelpers);
   }
   return normalizeEndingNewline(
-    formatClassMultipleEntries(entries, helpersPrelude ?? '', mode),
+    formatClassMultipleEntries(entries, helpers, mode),
   );
-}
-
-function formatClassMultipleEntries(
-  entries: EntryRenderSpec[],
-  helpersBlock: string,
-  mode: CheckerOutputMode,
-): string {
-  const visibility = visibilityForMode(mode);
-  const methods = entries
-    .map((e) => {
-      const doc = indentEachLine(phpDocBlock(e.docType), CLASS_INDENT);
-      const indentedMain = indentEachLine(e.body, CLASS_INDENT);
-      return `${doc}
-    ${visibility} static function ${e.functionName}(mixed $value): bool
-    {
-${indentedMain}
-    }`;
-    })
-    .join('\n\n');
-
-  const helperBlocks = helpersBlock.trim()
-    ? helpersBlock
-        .split(/\n\n+/)
-        .map((block) => {
-          const withStatic = block
-            .trim()
-            .replace(/^function /m, 'private static function ');
-          return indentEachLine(withStatic, CLASS_INDENT);
-        })
-        .join('\n\n')
-    : '';
-
-  const inner = helperBlocks ? `${methods}\n\n${helperBlocks}` : methods;
-  return `class TypeChecker
-{
-${inner}
-}
-`;
 }
 
 export function wrapChecker(
   typeString: string,
   body: string,
   options?: GenerateCheckerOptions,
-  helpersPrelude?: string,
+  helpers: HelperRenderSpec[] = [],
 ): string {
   const mode = options?.output ?? DEFAULT_CHECKER_OUTPUT;
   const mainFunctionName = options?.mainFunctionName ?? 'check';
@@ -179,16 +169,15 @@ export function wrapChecker(
       'function',
       mainFunctionName,
     );
-    const combined = helpersPrelude ? `${core}\n\n${helpersPrelude}` : core;
+    const helperText = helpers.map(formatTopLevelFunction).join('\n\n');
+    const combined = helperText ? `${core}\n\n${helperText}` : core;
     return normalizeEndingNewline(combined);
   }
   return normalizeEndingNewline(
     formatClassCheckerOutput(
-      typeString,
-      body,
-      helpersPrelude ?? '',
+      { functionName: mainFunctionName, docType: typeString, body },
+      helpers,
       mode,
-      mainFunctionName,
     ),
   );
 }

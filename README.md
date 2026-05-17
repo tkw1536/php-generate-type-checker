@@ -7,12 +7,13 @@ Parse [PHPDoc types as supported by PHPStan](https://phpstan.org/writing-php-cod
 ## Features
 
 - **Type parser** — lexer and recursive-descent parser for PHPDoc-style types (primitives, unions, intersections, shapes, generics, callables, int ranges, and common aliases).
-- **Runtime checkers** — emits `bool` functions (or class methods) that validate `mixed $value` against a type string.
-- **Checker IR pipeline** — `build` → `optimize` → `render`, with JSON IR tabs in the UI for debugging.
-- **Deduped checker functions** — nested or repeated types share one function per canonical type (e.g. `array<int>` inside a shape and inside a union).
-- **Output shapes** — standalone `function`, or `public` / `protected` / `private` `static` methods on a `TypeChecker` class.
+- **Sequential multi-type input** — `parseTypes` splits the input into several top-level types (token boundaries only, e.g. `array<string>array<int>` or `string int`; glued names like `stringint` stay one class).
+- **Runtime checkers** — emits `bool` functions (or class methods) that validate `mixed $value` against each type.
+- **Checker IR pipeline** — `buildMany` → `optimize` → `render`, with JSON IR tabs in the UI for debugging.
+- **Deduped checker functions** — nested or repeated types share one helper per canonical type (e.g. `array<int>` inside a shape and inside a union).
+- **Output shapes** — standalone `function`, or `public` / `protected` / `private` `static` entry methods on a `TypeChecker` class (helpers are always `private static` in class modes).
 - **Naming** — default `is{TypeSlug}` entry and helper names from the type AST; optional legacy `check` / `check_N`.
-- **Layout** — compact combined guards (default) or readable one-`if`-per-guard mode (**Readable layout** skips the optimizer).
+- **Layout** — compact optimized IR (default) or readable one-`if`-per-guard mode (**Readable layout** skips the optimizer).
 - **Web UI** — type input, example presets, generate options, and tabbed pipeline output with syntax highlighting and light/dark theme.
 
 Types that cannot be checked at runtime (e.g. most `callable` signatures, unsupported generics, `literal-string`) fail with `GenerationError`.
@@ -30,26 +31,27 @@ yarn spellcheck   # cspell
 
 Helper scripts (optional):
 
-- `node scripts/build-parser-fixtures.mjs` — regenerate parser fixture JSON bodies
+- `node scripts/build-parser-fixtures.mjs` — regenerate parser `.fixture` bodies from `parseType`
+- `node scripts/build-generator-fixtures.mjs` — build generator fixtures
 - `node scripts/refresh-generator-fixtures.mjs` — refresh generator fixture expected PHP
 
 ## Web UI
 
-Single workspace: **type input** on the left, **pipeline output** on the right. Output refreshes automatically when the type or options change (debounced).
+Single workspace: **types input** on the left, **pipeline output** on the right. Output refreshes automatically when the input or options change (debounced).
 
 **Generate options** (footer of the input panel):
 
 | Control | Effect |
 |--------|--------|
 | **Name from type** | `is{TypeSlug}` names (on) vs legacy `check` / `check_N` (off) |
-| **Readable layout** | Skip optimizer; PHP from **IR (build)** (on) vs compact **IR (optimized)** (off) |
-| **Emit as** | Standalone function, or `public` / `protected` / `private` static method on `TypeChecker` |
+| **Optimize** | Run optimizer; PHP from **IR (optimized)** (on) vs **IR (build)** (off) |
+| **Emit as** | Standalone function, or entry as `public` / `protected` / `private` `static` on `TypeChecker` |
 
 **Output tabs** (left → right):
 
-1. **Type AST** — parsed JSON AST
-2. **IR (build)** — checker IR from `builder/index.ts` (`IRBuilder`)
-3. **IR (optimized)** — IR after optimizer passes (or a note when readable layout is on)
+1. **Type AST** — parsed segments (`start`, `end`, `ast`) as JSON
+2. **IR (build)** — checker IR after `buildMany`
+3. **IR (optimized)** — IR after optimizer passes (or a note when optimize is off)
 4. **PHP Code** — final generated PHP
 
 The header **theme toggle** (☾ / ☀) follows the system preference until you override it. Highlight.js uses GitHub (light) and GitHub Dark themes.
@@ -58,101 +60,133 @@ The header **theme toggle** (☾ / ☀) follows the system preference until you 
 
 ```
 src/
-├── index.ts                 # public API (parseType, build, optimize, render, …)
+├── index.ts                 # public API (parseType, parseTypes, build, buildMany, …)
 ├── main.ts                  # Vite app bootstrap
-├── theme.ts, style.css
+├── theme.ts, style.css, highlight.ts
 ├── parser/                  # PHPDoc type → AST
-│   ├── parser.ts, lexer.ts, ast.ts
-│   └── parseType.test.ts
-├── generator/               # AST → PHP checkers
-│   ├── pipeline.ts          # build(), optimize(), renderChecker()
-│   ├── ir/                  # CheckerIR, Expr, Stmt, ValueRef, helpers
-│   ├── semantics/           # TypeNode: normalize, keys, expressibility, union order
-│   ├── builder/             # TypeNode → Checker IR
-│   │   ├── index.ts           # IRBuilder
-│   │   ├── leafIr.ts          # leaf type → Expr IR
-│   │   ├── primitive.ts
-│   │   ├── proposer.ts
-│   │   └── registry.ts
-│   ├── optimizer/           # IR compaction (dedupe, merge failIf, hoist, fold)
-│   │   └── IROptimizer.ts
-│   ├── render/              # IR → PHP (index.ts is IR-only; phpdoc used by pipeline)
-│   │   ├── php.ts           # function-body rendering
-│   │   ├── phpdoc.ts        # PHPStan type strings for @phpstan-assert (pipeline only)
-│   │   ├── output.ts        # @phpstan-assert-if-true wrappers, class layout
+│   ├── parser.ts            # parseType, parseTypes
+│   ├── lexer.ts, ast.ts, format.ts
+│   ├── parser.test.ts
+│   └── testdata/            # parser.success.json, parser.errors.json
+├── generator/
+│   ├── pipeline.ts          # build(), buildMany(), optimize(), renderChecker()
+│   ├── index.ts             # generateChecker()
+│   ├── options.ts, errors.ts
+│   ├── ir/                  # CheckerIR, Expr, Stmt, ValueRef, equals, substitute
+│   ├── builder/             # TypeNode → checker IR (per program)
+│   │   ├── index.ts
+│   │   ├── context.ts, errors.ts
+│   │   ├── ast/             # classify, collection helpers
+│   │   ├── expr/            # guards, keywords, literals → Expr
+│   │   ├── statements/      # shape, collection, union
+│   │   └── registry/        # FunctionNameRegistry, name proposers
+│   ├── optimizer/           # modular IR passes (see below)
+│   │   ├── index.ts         # optimize() fixpoint + prunePrograms
+│   │   ├── inline.ts, dedupe.ts, combine.ts, flatten.ts, unnest.ts
+│   │   ├── reorder.ts, knownFacts.ts, expression.ts, dce.ts, prune.ts
+│   │   └── params.ts
+│   ├── render/
+│   │   ├── php.ts           # IR → PHP function body
+│   │   ├── context.ts, refs.ts
+│   │   ├── phpdoc.ts        # PHPStan type strings for @phpstan-assert
+│   │   ├── output.ts        # class/function wrappers, visibility
 │   │   └── index.ts
-│   ├── options.ts           # shared GenerateCheckerOptions
-│   ├── generateChecker.test.ts
-│   └── index.ts             # generateChecker() composes the pipeline
-├── support/                 # tests only (fixtures + loaders)
+│   ├── pipeline.test.ts
+│   └── generateChecker.test.ts
+├── support/                 # fixtures + loaders (tests / scripts)
 │   ├── fixtureFormat.ts
 │   ├── loadParserFixture.ts, loadGeneratorFixture.ts
 │   └── fixtures/{parser,generator}/
-└── ui/                      # error display, examples
+└── ui/
+    ├── errorDisplay.ts      # parse/generation errors with segment index
+    └── examples.ts
 ```
 
-Production code does not import `src/support/`.
+Production app code does not import `src/support/`.
 
 ## Generation pipeline
 
 End-to-end flow for `generateChecker(typeString)`:
 
-1. **Parse** — `parseType` → `TypeNode` ([`src/parser/`](src/parser/))
-2. **Normalize & check** — [`semantics/`](src/generator/semantics/) (includes [`checkability.ts`](src/generator/semantics/checkability.ts))
-3. **Build** — [`build()`](src/generator/pipeline.ts) walks the AST via [`IRBuilder`](src/generator/builder/index.ts); names helpers via [`FunctionNameRegistry`](src/generator/builder/registry.ts)
-4. **Optimize** — [`optimize()`](src/generator/optimizer/IROptimizer.ts) unless `prioritizeReadabilityOverCompactness` is true
-5. **Render** — [`render()`](src/generator/render/index.ts) turns IR into PHP (body via [`php.ts`](src/generator/render/php.ts); PHPDoc type lines from [`phpdoc.ts`](src/generator/render/phpdoc.ts) in pipeline; [`output.ts`](src/generator/render/output.ts) wraps with class/function)
+1. **Parse** — `parseTypes` → one or more `TypeSegment` ASTs ([`src/parser/parser.ts`](src/parser/parser.ts))
+2. **Build** — [`buildMany()`](src/generator/pipeline.ts) materializes all entry checkers and shared helpers into one [`CheckerIR`](src/generator/ir/types.ts) via [`builder/index.ts`](src/generator/builder/index.ts) and [`FunctionNameRegistry`](src/generator/builder/registry/index.ts)
+3. **Optimize** — single [`optimize()`](src/generator/optimizer/index.ts) over the combined IR unless `prioritizeReadabilityOverCompactness` is true
+4. **Render** — single [`render()`](src/generator/render/index.ts): bodies via [`php.ts`](src/generator/render/php.ts), wrappers via [`output.ts`](src/generator/render/output.ts)
+
+There is no per-type optimize/render loop: all segments share one IR, one optimize pass, one render pass.
 
 ### Checker IR (outline)
 
-`CheckerIR` is `{ programs: Record<string, CheckerProgram>; order: string[] }`.
+`CheckerIR` is `{ programs, order, entries }`.
 
-Each **`CheckerProgram`** has a parameter name and a **`Block`** (`Stmt[]`):
+- **`programs`** — `Record<string, CheckerProgram>` (parameter + `Stmt[]` body)
+- **`order`** — emission / optimization order (entries and helpers)
+- **`entries`** — user-facing checker names in parse order; never pruned by the optimizer
+
+Each **`CheckerProgram`** body uses:
 
 | Stmt | Role |
 |------|------|
-| `if` | Condition + body (fail-if uses `if (!guard) { return false; }`, optional shape fields use positive `if (exists) { … }`) |
+| `if` | Condition + body (fail-if, optional shape field checks) |
 | `foreach` | Loop with nested body |
-| `return` | Boolean expression or `true` / `false` |
+| `return` | Boolean expression |
 
-**`Expr`** kinds include `bool`, `not`, `and`, `or`, `call`, `bin`, `instanceof`, `call_checker` (helper reference). **`ValueRef`** models `$value`, `$value['key']`, `$value->prop`.
+**`Expr`** kinds: `bool`, `not`, `and`, `or`, `call`, `bin`, `instanceof`, `call_checker`. **`ValueRef`**: `$value`, array/property access.
 
-**Optimizer** passes: dedupe identical fail-if, merge consecutive fail-if into one guard, hoist fail-if before loops, fold trailing fail-if + `return true` into `return` of combined guards, light boolean cleanup.
+### Optimizer (per program, fixpoint)
 
-**Renderer**: fail-if conditions with `not (a && b)` emit as `!a || !b` chains; output mode (function vs `self::` static) lives only in [`render/index.ts`](src/generator/render/index.ts) / [`output.ts`](src/generator/render/output.ts).
+Outer loop over programs (reverse `order`), inner loop until stable:
+
+1. **Inline** — substitute single-return helpers (`inline.ts`)
+2. **Block phases** (`runPhases`): `reorder` → `dedupe` → `unnest` → `combine` → `flatten`
+3. **Known facts** — branch-local boolean facts (`knownFacts.ts`)
+4. **Simplify** — expression normalization (`expression.ts`)
+5. **DCE** — drop unreachable / constant branches (`dce.ts`)
+6. **Simplify** again
+
+Then **`prunePrograms`** removes unreferenced helpers; all `entries` are kept.
 
 ## Programmatic API
 
 ```ts
 import {
-  parseType,
-  build,
+  parseTypes,
+  buildMany,
   optimize,
   render,
-  normalizeNode,
-  assertCheckable,
   GenerationError,
 } from './src/index.ts';
 
-const ast = normalizeNode(parseType('array<string, int>'));
-assertCheckable(ast, 'function');
+const { segments, source } = parseTypes('array<string>array<int>');
+const types = segments.map((s) => s.ast);
 
-const { ir: built, typesByName } = build(ast, { nameFunctionsByType: true });
+const { ir: built, typesByName } = buildMany(types, {
+  nameFunctionsByType: true,
+  segmentSources: segments.map((s) => source.slice(s.start, s.end)),
+});
 const ir = optimize(built);
 const php = render(ir, {
-  typeString: 'array<string, int>',
+  typeString: source,
   typesByName,
   output: 'function',
 });
 ```
 
-Convenience wrapper (used by tests and the refresh script):
+Single-type convenience (must consume full input):
+
+```ts
+import { parseType, build } from './src/index.ts';
+
+const { ir, typesByName } = build(parseType('int'));
+```
+
+Wrapper used by fixtures:
 
 ```ts
 import { generateChecker } from './src/generator/index.ts';
 
 const php = generateChecker('list<int>', {
-  output: 'function',
+  output: 'public_static',
   prioritizeReadabilityOverCompactness: false,
 });
 ```
@@ -161,15 +195,16 @@ const php = generateChecker('list<int>', {
 
 | Option | Default | Meaning |
 |--------|---------|---------|
-| `output` | `'function'` | Standalone function or class static method visibility |
+| `output` | `'function'` | Standalone function or class static entry visibility |
 | `nameFunctionsByType` | `true` | `is{TypeSlug}` vs `check` / `check_N` |
-| `mainFunctionName` | derived from type | Entry function/method name |
-| `prioritizeReadabilityOverCompactness` | `false` | When true, skip optimizer and render built IR |
+| `mainFunctionName` | derived | Entry function/method name (first segment only in `buildMany`) |
+| `prioritizeReadabilityOverCompactness` | `false` | When true, skip optimizer |
 
 ## Tests
 
-- **Unit / integration** — `*.test.ts` next to the module they cover (`src/parser/`, `src/generator/**/`, `src/ui/`).
-- **Fixtures** — YAML frontmatter + body under [`src/support/fixtures/`](src/support/fixtures/); loaded by [`loadParserFixture.ts`](src/support/loadParserFixture.ts) and [`loadGeneratorFixture.ts`](src/support/loadGeneratorFixture.ts).
+- **Unit / integration** — `*.test.ts` next to the module (`src/parser/`, `src/generator/**/`, `src/ui/`)
+- **Parser JSON** — [`src/parser/testdata/`](src/parser/testdata/)
+- **Fixtures** — YAML frontmatter + body under [`src/support/fixtures/`](src/support/fixtures/); loaded by [`loadParserFixture.ts`](src/support/loadParserFixture.ts) and [`loadGeneratorFixture.ts`](src/support/loadGeneratorFixture.ts)
 
 Run `yarn test` (Vitest).
 
@@ -178,10 +213,12 @@ Run `yarn test` (Vitest).
 | Goal | Start here |
 |------|------------|
 | New syntax in type strings | [`src/parser/parser.ts`](src/parser/parser.ts) |
-| New primitive / leaf checks | [`builder/leafIr.ts`](src/generator/builder/leafIr.ts), [`semantics/expressibility.ts`](src/generator/semantics/expressibility.ts) |
-| IR for a type construct | [`builder/index.ts`](src/generator/builder/index.ts) |
-| Guard order / dedupe / fold | [`optimizer/IROptimizer.ts`](src/generator/optimizer/IROptimizer.ts) |
+| Multi-type splitting rules | [`parseTypes`](src/parser/parser.ts) |
+| New primitive / leaf checks | [`builder/expr/`](src/generator/builder/expr/), [`builder/ast/`](src/generator/builder/ast/) |
+| IR for shapes / unions / collections | [`builder/statements/`](src/generator/builder/statements/) |
+| Helper naming / collisions | [`builder/registry/`](src/generator/builder/registry/) |
+| IR passes (inline, facts, DCE, …) | [`optimizer/`](src/generator/optimizer/) |
 | PHP formatting (`if`, `foreach`, precedence) | [`render/php.ts`](src/generator/render/php.ts) |
-| PHPDoc type strings | [`render/phpdoc.ts`](src/generator/render/phpdoc.ts) (via pipeline) |
-| PHPDoc wrapper / class layout | [`render/output.ts`](src/generator/render/output.ts) |
-| What is allowed to generate | [`checkability.ts`](src/generator/checkability.ts) |
+| PHPDoc type strings | [`render/phpdoc.ts`](src/generator/render/phpdoc.ts) |
+| Class layout / method visibility | [`render/output.ts`](src/generator/render/output.ts) |
+| Segment-aware errors in the UI | [`ui/errorDisplay.ts`](src/ui/errorDisplay.ts) |

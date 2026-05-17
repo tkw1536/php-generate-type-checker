@@ -5,10 +5,9 @@ import {
   wrapChecker,
   wrapMultipleEntries,
   type EntryRenderSpec,
+  type HelperRenderSpec,
 } from './output.ts';
 import { renderProgramBody } from './php.ts';
-
-const CHECKER_VALUE_PARAM = '$value';
 
 export type RenderOptions = GenerateCheckerOptions & {
   entryDocType: string;
@@ -27,7 +26,7 @@ class Renderer {
     const entryNames =
       ir.entries.length > 0 ? ir.entries : ir.order[0] !== undefined ? [ir.order[0]] : [];
 
-    const helpers: string[] = [];
+    const helpers: HelperRenderSpec[] = [];
     for (const name of ir.order) {
       if (entrySet.has(name)) {
         continue;
@@ -38,12 +37,8 @@ class Renderer {
         continue;
       }
       const body = renderProgramBody(program, { useSelfCalls });
-      const doc = `/** @phpstan-assert-if-true ${docType} ${CHECKER_VALUE_PARAM} */`;
-      helpers.push(
-        `${doc}\nfunction ${name}(mixed ${CHECKER_VALUE_PARAM}): bool\n{\n${body}\n}`,
-      );
+      helpers.push({ functionName: name, docType, body });
     }
-    const helpersBlock = helpers.length > 0 ? helpers.join('\n\n') : undefined;
 
     const entrySpecs: EntryRenderSpec[] = [];
     for (const name of entryNames) {
@@ -71,9 +66,9 @@ class Renderer {
         entry.docType,
         entry.body,
         { ...options, output: mode, mainFunctionName: entry.functionName },
-        helpersBlock,
+        helpers,
       );
     }
-    return wrapMultipleEntries(entrySpecs, { ...options, output: mode }, helpersBlock);
+    return wrapMultipleEntries(entrySpecs, { ...options, output: mode }, helpers);
   }
 }
