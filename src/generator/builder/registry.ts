@@ -1,6 +1,5 @@
 import type { TypeNode } from '../../parser/ast.ts';
-import { normalizeNode } from '../semantics/normalize.ts';
-import { typeDedupeKey } from '../semantics/keys.ts';
+import { formatType } from "../../parser/format.ts";
 import {
   type FunctionNameProposer,
   IsStyleFunctionNameProposer,
@@ -32,14 +31,17 @@ export class FunctionNameRegistry {
     }
   }
 
+  private static key(type: TypeNode): string {
+    return formatType(type);
+  }
+
   get(type: TypeNode): string {
-    const n = normalizeNode(type);
-    const key = typeDedupeKey(n);
+    const key = FunctionNameRegistry.key(type);
     const existing = this.assigned.get(key);
     if (existing !== undefined) {
       return existing;
     }
-    const base = this.proposer.name(n);
+    const base = this.proposer.name(type);
     const candidate = this.allocateUnique(base);
     this.used.add(candidate);
     this.assigned.set(key, candidate);
@@ -48,8 +50,7 @@ export class FunctionNameRegistry {
 
   /** Assign an explicit name for a type (e.g. entry `check`). Idempotent when unchanged. */
   set(type: TypeNode, fnName: string): void {
-    const n = normalizeNode(type);
-    const key = typeDedupeKey(n);
+    const key = FunctionNameRegistry.key(type);
     const existing = this.assigned.get(key);
     if (existing !== undefined) {
       return;

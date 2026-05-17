@@ -1,12 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { parseType } from '../parser/index.ts';
 import { build, renderChecker } from './pipeline.ts';
-import { normalizeNode } from './semantics/normalize.ts';
 
 /** Phase 1: built IR only (no optimizer). */
 describe('pipeline build + render (unoptimized)', () => {
+  it('names entry from type when nameFunctionsByType is default', () => {
+    const ast = parseType('int');
+    const { ir } = build(ast);
+    expect(ir.order[0]).toBe('isInt');
+  });
+
+  it('uses check entry when nameFunctionsByType is false', () => {
+    const ast = parseType('int');
+    const { ir } = build(ast, { nameFunctionsByType: false });
+    expect(ir.order[0]).toBe('check');
+  });
+
   it('callable-array emits per-guard fail-if, not negated and', () => {
-    const ast = normalizeNode(parseType('callable-array'));
+    const ast = parseType('callable-array');
     const { ir, typesByName } = build(ast, {
       prioritizeReadabilityOverCompactness: true,
     });
@@ -22,7 +33,7 @@ describe('pipeline build + render (unoptimized)', () => {
   });
 
   it('union-int|string emits return or without optimize', () => {
-    const ast = normalizeNode(parseType('int|string'));
+    const ast = parseType('int|string');
     const { ir, typesByName } = build(ast, {
       prioritizeReadabilityOverCompactness: true,
     });
@@ -35,7 +46,7 @@ describe('pipeline build + render (unoptimized)', () => {
   });
 
   it('array<string,string> foreach uses separate fail-if guards', () => {
-    const ast = normalizeNode(parseType('array<string,string>'));
+    const ast = parseType('array<string,string>');
     const { ir, typesByName } = build(ast, {
       prioritizeReadabilityOverCompactness: true,
     });
@@ -51,7 +62,7 @@ describe('pipeline build + render (unoptimized)', () => {
   });
 
   it('array<never> requires empty array', () => {
-    const ast = normalizeNode(parseType('array<never>'));
+    const ast = parseType('array<never>');
     const { ir, typesByName } = build(ast, {
       prioritizeReadabilityOverCompactness: true,
     });
@@ -60,12 +71,12 @@ describe('pipeline build + render (unoptimized)', () => {
       typesByName,
       output: 'function',
     });
-    expect(php).toContain('/** @phpstan-assert-if-true never[] $value */');
+    expect(php).toContain('/** @phpstan-assert-if-true array<never> $value */');
     expect(php).toMatch(/\$value === \[\]/);
   });
 
   it('public_static emits self:: for helper calls', () => {
-    const ast = normalizeNode(parseType('array<int>|array<string>'));
+    const ast = parseType('array<int>|array<string>');
     const { ir, typesByName } = build(ast, {
       prioritizeReadabilityOverCompactness: true,
     });
@@ -79,8 +90,8 @@ describe('pipeline build + render (unoptimized)', () => {
     expect(php).toContain('self::isArrayString(');
   });
 
-  it('negative-int helper doc uses int range after normalize', () => {
-    const ast = normalizeNode(parseType('negative-int'));
+  it('negative-int helper doc matches parsed keyword', () => {
+    const ast = parseType('negative-int');
     const { ir, typesByName } = build(ast, {
       prioritizeReadabilityOverCompactness: true,
     });
@@ -89,8 +100,8 @@ describe('pipeline build + render (unoptimized)', () => {
       typesByName,
       output: 'function',
     });
-    expect(php).toContain('/** @phpstan-assert-if-true int<min, -1> $value */');
+    expect(php).toContain('/** @phpstan-assert-if-true negative-int $value */');
     expect(php).toContain('if (!is_int($value))');
-    expect(php).toContain('$value <= -1');
+    expect(php).toContain('$value < 0');
   });
 });

@@ -8,7 +8,6 @@ import {
   formatBody,
   ifBlock,
   ifBlockMultilineOr,
-  ifBlockOrChain,
   line,
   returnMultilineAnd,
   shiftLines,
@@ -142,11 +141,7 @@ function renderIfStmt(
   const body = renderBlock(stmt.body, 0, opts);
   if (stmt.cond.kind === 'or' && stmt.cond.exprs.length > 1) {
     const parts = stmt.cond.exprs.map((e) => renderExpr(e, opts));
-    const useMultiline = parts.some((p) => p.length > 48);
-    if (useMultiline) {
-      return ifBlockMultilineOr(depth, parts, body);
-    }
-    return ifBlockOrChain(depth, parts, body);
+    return ifBlockMultilineOr(depth, parts, body);
   }
   return ifBlock(depth, renderExpr(stmt.cond, opts), body);
 }

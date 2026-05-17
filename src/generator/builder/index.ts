@@ -23,7 +23,14 @@ import {
   isNoOpValueCheck,
   needsStatementBlock,
 } from '../semantics/expressibility.ts';
-import { normalizeNode, type ArrayNode } from '../semantics/normalize.ts';
+import {
+  bareListKeywordAsCollection,
+  isBareListKeyword,
+  isIterableKeyword,
+  isListKeyword,
+  isNonEmptyKeyword,
+  shapeIsObject,
+} from '../semantics/collection.ts';
 import { flattenUnion, sortUnionMembers } from '../semantics/union.ts';
 
 export type BuildContext = {
@@ -38,7 +45,6 @@ export type BuildContext = {
   resolveCheckerName: (type: TypeNode) => string;
   allocateLoopPair: () => { key: string; value: string };
 };
-
 
 export class Builder {
   build(node: TypeNode, parameter: string, ctx: BuildContext): CheckerProgram {
@@ -57,53 +63,59 @@ export class Builder {
     subject: ValueRef,
     ctx: BuildContext,
   ): Block {
-    const n = normalizeNode(node);
-
-    switch (n.kind) {
+    switch (node.kind) {
       case 'union':
         if (ctx.inLoopBody) {
-          return [this.nestedUnionStmt(n, subject, ctx)];
+          return [this.nestedUnionStmt(node, subject, ctx)];
         }
-        return this.rootUnion(n, subject, ctx);
+        return this.rootUnion(node, subject, ctx);
       case 'intersection':
-        return this.intersection(n, subject, ctx);
-      case 'array':
-        return this.array(n, subject, ctx);
-      case 'list':
-        return this.list(n, subject, ctx);
+        return this.intersection(node, subject, ctx);
+      case 'collection':
+        return this.collection(node, subject, ctx);
       case 'shape':
-        return this.shape(n, subject, ctx);
+        return this.shape(node, subject, ctx);
+      case 'array':
+        return this.postfixArray(node, subject, ctx);
+      case 'keyword':
+        if (isBareListKeyword(node)) {
+          return this.listCollection(
+            bareListKeywordAsCollection(node),
+            subject,
+            ctx,
+          );
+        }
+        return this.leaf(node, subject, ctx);
       default:
-        return this.leaf(n, subject, ctx);
+        return this.leaf(node, subject, ctx);
     }
   }
 
   private leaf(node: TypeNode, subject: ValueRef, ctx: BuildContext): Block {
-    const n = normalizeNode(node);
     const out: Block = [];
 
-    if (isNoOpValueCheck(n)) {
+    if (isNoOpValueCheck(node)) {
       return out;
     }
-    if (n.kind === 'union') {
-      out.push(this.nestedUnionStmt(n, subject, ctx));
+    if (node.kind === 'union') {
+      out.push(this.nestedUnionStmt(node, subject, ctx));
       return out;
     }
-    if (needsStatementBlock(n)) {
-      return this.buildBody(n, subject, ctx);
+    if (needsStatementBlock(node)) {
+      return this.buildBody(node, subject, ctx);
     }
     if (
       !ctx.inLoopBody &&
       ctx.allowReturn !== false &&
-      typeSupportsReturnPromotion(n, subject)
+      typeSupportsReturnPromotion(node, subject)
     ) {
-      const expr = singleExprForType(n, subject);
+      const expr = singleExprForType(node, subject);
       if (expr) {
         out.push(returnStmt(expr));
         return out;
       }
     }
-    for (const atom of exprAtomsForType(n, subject)) {
+    for (const atom of exprAtomsForType(node, subject)) {
       out.push(failIfStmt(atom));
     }
     return out;
@@ -116,15 +128,14 @@ export class Builder {
   ): Block {
     const members = sortUnionMembers(flattenUnion(node));
     if (members.every((m) => isExpressible(m) && !needsStatementBlock(m))) {
-      const arms = members.map((m) => singleExprForType(normalizeNode(m), subject));
+      const arms = members.map((m) => singleExprForType(m, subject));
       if (arms.every((a): a is Expr => a !== null)) {
         return [returnStmt(orExpr(arms))];
       }
     }
     const arms: Expr[] = [];
     for (const m of members) {
-      const nm = normalizeNode(m);
-      const inline = Builder.compactExpr(nm, subject);
+      const inline = Builder.compactExpr(m, subject);
       if (inline !== null) {
         arms.push(inline);
         continue;
@@ -141,8 +152,7 @@ export class Builder {
   ): Stmt {
     const members = sortUnionMembers(flattenUnion(node));
     const arms: Expr[] = members.map((m) => {
-      const nm = normalizeNode(m);
-      const inline = Builder.compactExpr(nm, subject);
+      const inline = Builder.compactExpr(m, subject);
       if (inline !== null) {
         return inline;
       }
@@ -159,8 +169,7 @@ export class Builder {
     const out: Block = [];
     let assumeVarIsArray = Boolean(ctx.assumeVarIsArray);
     let assumeVarIsObject = Boolean(ctx.assumeVarIsObject);
-    for (const raw of node.types) {
-      const member = normalizeNode(raw);
+    for (const member of node.types) {
       out.push(
         ...this.buildBody(member, subject, {
           ...ctx,
@@ -179,13 +188,33 @@ export class Builder {
     return out;
   }
 
+  private collection(
+    node: Extract<TypeNode, { kind: 'collection' }>,
+    subject: ValueRef,
+    ctx: BuildContext,
+  ): Block {
+    if (isListKeyword(node.keyword)) {
+      return this.listCollection(node, subject, ctx);
+    }
+    if (isIterableKeyword(node.keyword) && !('key' in node)) {
+      return this.iterableCollection(node, subject, ctx);
+    }
+    if ('values' in node) {
+      return this.valuesCollection(node, subject, ctx);
+    }
+    if ('key' in node) {
+      return this.keyedCollection(node, subject, ctx);
+    }
+    return this.valueOnlyCollection(node, subject, ctx);
+  }
+
   private shape(
     node: Extract<TypeNode, { kind: 'shape' }>,
     base: ValueRef,
     ctx: BuildContext,
   ): Block {
     const out: Block = [];
-    const objectShape = Boolean(node.object);
+    const objectShape = shapeIsObject(node);
     const root = valueRefRootBase(base);
 
     if (ctx.includeArrayGuard !== false) {
@@ -228,7 +257,7 @@ export class Builder {
         }
       }
 
-      const fieldBody = this.buildBody(field.type, fieldRef, {
+      const fieldBody = this.buildBody(field.value, fieldRef, {
         ...ctx,
         includeArrayGuard: false,
         inShapeField: true,
@@ -252,13 +281,28 @@ export class Builder {
     return out;
   }
 
-  private list(
-    node: Extract<TypeNode, { kind: 'list' }>,
+  private listCollection(
+    node: Extract<TypeNode, { kind: 'collection' }>,
     subject: ValueRef,
     ctx: BuildContext,
   ): Block {
-    if (isNeverPrimitive(node.element)) {
-      if (node.nonEmpty) {
+    const nonEmpty = isNonEmptyKeyword(node.keyword);
+
+    if ('values' in node && node.values.length > 1) {
+      return this.indexedValuesCollection(node.values, subject, ctx, {
+        nonEmpty,
+        listGuards: true,
+      });
+    }
+
+    const element = 'value' in node
+      ? node.value
+      : 'values' in node && node.values.length === 1
+        ? node.values[0]!
+        : { kind: 'keyword', keyword: 'mixed' } as TypeNode;
+
+    if (isNeverPrimitive(element)) {
+      if (nonEmpty) {
         return [failIfStmt(boolLit(false))];
       }
       return [
@@ -269,14 +313,14 @@ export class Builder {
     }
 
     const out: Block = [];
-    this.appendListGuards(out, node, subject, ctx);
+    this.appendListGuards(out, subject, ctx, nonEmpty);
 
-    if (isNoOpValueCheck(node.element)) {
+    if (isNoOpValueCheck(element)) {
       return out;
     }
 
     const { value: valueVar } = ctx.allocateLoopPair();
-    const body = this.buildBody(node.element, variableRef(valueVar), {
+    const body = this.buildBody(element, variableRef(valueVar), {
       ...ctx,
       includeArrayGuard: true,
       inLoopBody: true,
@@ -293,58 +337,114 @@ export class Builder {
     return out;
   }
 
-  private appendListGuards(
-    out: Block,
-    node: Extract<TypeNode, { kind: 'list' }>,
+  private iterableCollection(
+    node: Extract<TypeNode, { kind: 'collection' }>,
     subject: ValueRef,
     ctx: BuildContext,
-  ): void {
-    if (ctx.includeArrayGuard === false) {
-      if (node.nonEmpty) {
-        out.push(
-          failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),
-        );
-      }
-      return;
+  ): Block {
+    const nonEmpty = isNonEmptyKeyword(node.keyword);
+    const out: Block = [];
+    if (ctx.includeArrayGuard !== false && !ctx.assumeVarIsArray) {
+      out.push(failIfStmt(callExpr('is_iterable', [refArg(subject)])));
     }
-    if (ctx.assumeVarIsArray) {
-      out.push(failIfStmt(callExpr('array_is_list', [refArg(subject)])));
-      if (node.nonEmpty) {
-        out.push(
-          failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),
-        );
-      }
-      return;
-    }
-    out.push(failIfStmt(callExpr('is_array', [refArg(subject)])));
-    out.push(failIfStmt(callExpr('array_is_list', [refArg(subject)])));
-    if (node.nonEmpty) {
+    if (nonEmpty) {
       out.push(
         failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),
       );
     }
+    if ('value' in node && !isNoOpValueCheck(node.value)) {
+      const compact = Builder.compactExpr(node, subject);
+      if (compact !== null) {
+        const atoms = compact.kind === 'and' ? compact.exprs : [compact];
+        for (const atom of atoms) {
+          out.push(failIfStmt(atom));
+        }
+      }
+    }
+    return out;
   }
 
-  private array(node: ArrayNode, subject: ValueRef, ctx: BuildContext): Block {
-    if (isNeverPrimitive(node.value)) {
-      if (node.nonEmpty) {
-        return [failIfStmt(boolLit(false))];
-      }
-      if (!node.iterable) {
-        const emptyCheck = ctx.inShapeField
-          ? binExpr('!==', refArg(subject), literalArg('[]'))
-          : binExpr('===', refArg(subject), literalArg('[]'));
-        return [failIfStmt(emptyCheck)];
+  private valuesCollection(
+    node: Extract<TypeNode, { kind: 'collection'; values: TypeNode[] }>,
+    subject: ValueRef,
+    ctx: BuildContext,
+  ): Block {
+    const nonEmpty = isNonEmptyKeyword(node.keyword);
+    return this.indexedValuesCollection(node.values, subject, ctx, {
+      nonEmpty,
+      listGuards: false,
+    });
+  }
+
+  private indexedValuesCollection(
+    values: TypeNode[],
+    subject: ValueRef,
+    ctx: BuildContext,
+    opts: { nonEmpty: boolean; listGuards: boolean },
+  ): Block {
+    const out: Block = [];
+    if (opts.listGuards) {
+      this.appendListGuards(out, subject, ctx, opts.nonEmpty);
+    } else if (ctx.includeArrayGuard !== false && !ctx.assumeVarIsArray) {
+      out.push(failIfStmt(callExpr('is_array', [refArg(subject)])));
+      if (opts.nonEmpty) {
+        out.push(
+          failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),
+        );
       }
     }
 
-    const out: Block = [];
+    const root = valueRefRootBase(subject);
+    for (let i = 0; i < values.length; i++) {
+      const fieldRef = arrayAccessRef(root, i);
+      const isLast = i === values.length - 1;
+      out.push(
+        ...this.buildBody(values[i]!, fieldRef, {
+          ...ctx,
+          includeArrayGuard: false,
+          inShapeField: true,
+          iterable: fieldRef,
+          allowReturn: isLast,
+        }),
+      );
+    }
+    return out;
+  }
 
-    if (!Builder.arrayNeedsLoop(node)) {
-      const compact = Builder.compactExpr(node, subject);
+  private keyedCollection(
+    node: Extract<TypeNode, { kind: 'collection'; key: TypeNode; value: TypeNode }>,
+    subject: ValueRef,
+    ctx: BuildContext,
+  ): Block {
+    return this.keyedIterable(subject, ctx, node.key, node.value, {
+      nonEmpty: isNonEmptyKeyword(node.keyword),
+      iterable: false,
+    });
+  }
+
+  private valueOnlyCollection(
+    node: Extract<TypeNode, { kind: 'collection'; value: TypeNode }>,
+    subject: ValueRef,
+    ctx: BuildContext,
+  ): Block {
+    const nonEmpty = isNonEmptyKeyword(node.keyword);
+    if (isNeverPrimitive(node.value)) {
+      if (nonEmpty) {
+        return [failIfStmt(boolLit(false))];
+      }
+      const emptyCheck = ctx.inShapeField
+        ? binExpr('!==', refArg(subject), literalArg('[]'))
+        : binExpr('===', refArg(subject), literalArg('[]'));
+      return [failIfStmt(emptyCheck)];
+    }
+
+    const out: Block = [];
+    const pseudo: Extract<TypeNode, { kind: 'collection'; value: TypeNode }> = node;
+
+    if (!Builder.collectionNeedsLoop(pseudo)) {
+      const compact = Builder.compactExpr(pseudo, subject);
       if (compact !== null) {
-        const atoms =
-          compact.kind === 'and' ? compact.exprs : [compact];
+        const atoms = compact.kind === 'and' ? compact.exprs : [compact];
         for (const atom of atoms) {
           out.push(failIfStmt(atom));
         }
@@ -352,21 +452,48 @@ export class Builder {
       }
     }
 
-    this.appendArrayGuards(out, node, subject, ctx);
+    this.appendArrayGuards(out, subject, ctx, nonEmpty, false);
 
-    if (!Builder.arrayNeedsLoop(node)) {
+    if (!Builder.collectionNeedsLoop(pseudo)) {
       return out;
     }
 
-    const { key: keyVar, value: valueVar } = ctx.allocateLoopPair();
-    const bindsKey = Boolean(node.key && !isNoOpValueCheck(node.key));
-    const body: Block = [];
-    if (node.key && !isNoOpValueCheck(node.key)) {
-      body.push(...this.leaf(node.key, variableRef(keyVar), { ...ctx, inLoopBody: true }));
+    return [
+      ...out,
+      ...this.keyedIterable(subject, ctx, null, node.value, {
+        nonEmpty,
+        iterable: false,
+        skipGuards: true,
+      }),
+    ];
+  }
+
+  private keyedIterable(
+    subject: ValueRef,
+    ctx: BuildContext,
+    key: TypeNode | null,
+    value: TypeNode,
+    opts: {
+      nonEmpty: boolean;
+      iterable: boolean;
+      skipGuards?: boolean;
+    },
+  ): Block {
+    const out: Block = [];
+
+    if (!opts.skipGuards) {
+      this.appendArrayGuards(out, subject, ctx, opts.nonEmpty, opts.iterable);
     }
-    if (!isNoOpValueCheck(node.value)) {
+
+    const bindsKey = Boolean(key && !isNoOpValueCheck(key));
+    const { key: keyVar, value: valueVar } = ctx.allocateLoopPair();
+    const body: Block = [];
+    if (key && !isNoOpValueCheck(key)) {
+      body.push(...this.leaf(key, variableRef(keyVar), { ...ctx, inLoopBody: true }));
+    }
+    if (!isNoOpValueCheck(value)) {
       body.push(
-        ...this.buildBody(node.value, variableRef(valueVar), {
+        ...this.buildBody(value, variableRef(valueVar), {
           ...ctx,
           includeArrayGuard: true,
           inLoopBody: true,
@@ -386,17 +513,86 @@ export class Builder {
     return out;
   }
 
-  private appendArrayGuards(
-    out: Block,
-    node: ArrayNode,
+  private postfixArray(
+    node: Extract<TypeNode, { kind: 'array' }>,
     subject: ValueRef,
     ctx: BuildContext,
+  ): Block {
+    if (isNeverPrimitive(node.value)) {
+      return [failIfStmt(binExpr('===', refArg(subject), literalArg('[]')))];
+    }
+
+    const out: Block = [];
+    if (ctx.includeArrayGuard !== false && !ctx.assumeVarIsArray) {
+      out.push(failIfStmt(callExpr('is_array', [refArg(subject)])));
+    }
+
+    if (isNoOpValueCheck(node.value)) {
+      return out;
+    }
+
+    const { value: valueVar } = ctx.allocateLoopPair();
+    const body = this.buildBody(node.value, variableRef(valueVar), {
+      ...ctx,
+      includeArrayGuard: true,
+      inLoopBody: true,
+      iterable: variableRef(valueVar),
+    }).filter((s) => !(s.kind === 'return' && s.expr.kind === 'bool' && s.expr.value));
+
+    out.push({
+      kind: 'foreach',
+      iterable: ctx.iterable ?? subject,
+      keyVar: null,
+      valueVar,
+      body,
+    });
+    return out;
+  }
+
+  private appendListGuards(
+    out: Block,
+    subject: ValueRef,
+    ctx: BuildContext,
+    nonEmpty: boolean,
+  ): void {
+    if (ctx.includeArrayGuard === false) {
+      if (nonEmpty) {
+        out.push(
+          failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),
+        );
+      }
+      return;
+    }
+    if (ctx.assumeVarIsArray) {
+      out.push(failIfStmt(callExpr('array_is_list', [refArg(subject)])));
+      if (nonEmpty) {
+        out.push(
+          failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),
+        );
+      }
+      return;
+    }
+    out.push(failIfStmt(callExpr('is_array', [refArg(subject)])));
+    out.push(failIfStmt(callExpr('array_is_list', [refArg(subject)])));
+    if (nonEmpty) {
+      out.push(
+        failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),
+      );
+    }
+  }
+
+  private appendArrayGuards(
+    out: Block,
+    subject: ValueRef,
+    ctx: BuildContext,
+    nonEmpty: boolean,
+    iterable: boolean,
   ): void {
     const includeGuard = ctx.includeArrayGuard !== false;
     const av = Boolean(ctx.assumeVarIsArray);
 
-    if (includeGuard && av && !node.iterable) {
-      if (node.nonEmpty) {
+    if (includeGuard && av && !iterable) {
+      if (nonEmpty) {
         out.push(
           failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),
         );
@@ -406,17 +602,17 @@ export class Builder {
     if (includeGuard) {
       out.push(
         failIfStmt(
-          callExpr(node.iterable ? 'is_iterable' : 'is_array', [refArg(subject)]),
+          callExpr(iterable ? 'is_iterable' : 'is_array', [refArg(subject)]),
         ),
       );
-      if (node.nonEmpty) {
+      if (nonEmpty) {
         out.push(
           failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),
         );
       }
       return;
     }
-    if (node.nonEmpty) {
+    if (nonEmpty) {
       out.push(
         failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),
       );
@@ -424,67 +620,99 @@ export class Builder {
   }
 
   private static compactExpr(n: TypeNode, subject: ValueRef): Expr | null {
-    const node = normalizeNode(n);
-
-    if (isNoOpValueCheck(node)) {
+    if (isBareListKeyword(n)) {
+      return Builder.compactExpr(bareListKeywordAsCollection(n), subject);
+    }
+    if (isNoOpValueCheck(n)) {
       return boolLit(true);
     }
-    if (isExpressible(node) && !needsStatementBlock(node)) {
-      const direct = singleExprForType(node, subject);
+    if (isExpressible(n) && !needsStatementBlock(n)) {
+      const direct = singleExprForType(n, subject);
       if (direct !== null) {
         return direct;
       }
     }
-    if (node.kind === 'array') {
-      const an = node as ArrayNode;
-      if (Builder.isUnconstrainedArray(an)) {
-        const e = an.iterable ? 'is_iterable' : 'is_array';
-        return callExpr(e, [refArg(subject)]);
+    if (n.kind === 'collection') {
+      if (isIterableKeyword(n.keyword) && !('key' in n)) {
+        const listOk = callExpr('is_iterable', [refArg(subject)]);
+        return isNonEmptyKeyword(n.keyword)
+          ? andExpr([listOk, binExpr('!==', refArg(subject), literalArg('[]'))])
+          : listOk;
       }
-      if (isNeverPrimitive(an.value) && !an.iterable) {
-        return an.nonEmpty
+      if ('value' in n && !isNeverPrimitive(n.value) && isNoOpValueCheck(n.value)) {
+        const guard = isIterableKeyword(n.keyword) ? 'is_iterable' : 'is_array';
+        const arrOk = callExpr(guard, [refArg(subject)]);
+        return isNonEmptyKeyword(n.keyword)
+          ? andExpr([arrOk, binExpr('!==', refArg(subject), literalArg('[]'))])
+          : arrOk;
+      }
+      if (
+        'value' in n &&
+        isNeverPrimitive(n.value) &&
+        !isIterableKeyword(n.keyword)
+      ) {
+        return isNonEmptyKeyword(n.keyword)
           ? boolLit(false)
           : binExpr('===', refArg(subject), literalArg('[]'));
       }
     }
-    if (node.kind === 'list' && isNeverPrimitive(node.element)) {
-      return node.nonEmpty
-        ? boolLit(false)
-        : binExpr('===', refArg(subject), literalArg('[]'));
+    if (n.kind === 'collection' && isListKeyword(n.keyword)) {
+      const el =
+        'value' in n
+          ? n.value
+          : 'values' in n && n.values.length === 1
+            ? n.values[0]
+            : null;
+      if (el && isNeverPrimitive(el)) {
+        return isNonEmptyKeyword(n.keyword)
+          ? boolLit(false)
+          : binExpr('===', refArg(subject), literalArg('[]'));
+      }
+      if (el && isNoOpValueCheck(el)) {
+        const listOk = andExpr([
+          callExpr('is_array', [refArg(subject)]),
+          callExpr('array_is_list', [refArg(subject)]),
+        ]);
+        return isNonEmptyKeyword(n.keyword)
+          ? andExpr([listOk, binExpr('!==', refArg(subject), literalArg('[]'))])
+          : listOk;
+      }
     }
-    if (node.kind === 'list' && isNoOpValueCheck(node.element)) {
-      const listOk = andExpr([
-        callExpr('is_array', [refArg(subject)]),
-        callExpr('array_is_list', [refArg(subject)]),
-      ]);
-      return node.nonEmpty
-        ? andExpr([listOk, binExpr('!==', refArg(subject), literalArg('[]'))])
-        : listOk;
+    if (n.kind === 'array' && isNeverPrimitive(n.value)) {
+      return binExpr('===', refArg(subject), literalArg('[]'));
     }
     return null;
   }
 
-  private static isUnconstrainedArray(node: ArrayNode): boolean {
-    if (node.nonEmpty) return false;
-    if (node.key && !isNoOpValueCheck(node.key)) return false;
-    if (!isNoOpValueCheck(node.value)) return false;
-    return true;
-  }
-
-  private static arrayNeedsLoop(node: ArrayNode): boolean {
-    return Boolean(node.key && !isNoOpValueCheck(node.key)) || !isNoOpValueCheck(node.value);
+  private static collectionNeedsLoop(
+    node: Extract<TypeNode, { kind: 'collection'; value: TypeNode }>,
+  ): boolean {
+    return !isNoOpValueCheck(node.value);
   }
 
   private static establishesObject(member: TypeNode): boolean {
-    const m = normalizeNode(member);
-    return m.kind === 'shape' && Boolean(m.object);
+    return member.kind === 'shape' && shapeIsObject(member);
   }
 
   private static establishesArray(member: TypeNode): boolean {
-    const m = normalizeNode(member);
-    if (m.kind === 'shape' && m.object) return false;
-    if (m.kind === 'shape' || m.kind === 'list') return true;
-    if (m.kind === 'array') return !(m as ArrayNode).iterable;
+    if (member.kind === 'shape' && shapeIsObject(member)) {
+      return false;
+    }
+    if (member.kind === 'shape') {
+      return true;
+    }
+    if (isBareListKeyword(member)) {
+      return true;
+    }
+    if (member.kind === 'collection' && isListKeyword(member.keyword)) {
+      return true;
+    }
+    if (member.kind === 'collection' && !isIterableKeyword(member.keyword)) {
+      return true;
+    }
+    if (member.kind === 'array') {
+      return true;
+    }
     return false;
   }
 }
@@ -514,10 +742,9 @@ function appendTrailingReturn(body: Block): void {
 }
 
 function typeSupportsReturnPromotion(node: TypeNode, subject: ValueRef): boolean {
-  const n = normalizeNode(node);
-  if (isNoOpValueCheck(n) || needsStatementBlock(n) || !isExpressible(n)) {
+  if (isNoOpValueCheck(node) || needsStatementBlock(node) || !isExpressible(node)) {
     return false;
   }
-  const atoms = exprAtomsForType(n, subject);
+  const atoms = exprAtomsForType(node, subject);
   return atoms.length === 1;
 }

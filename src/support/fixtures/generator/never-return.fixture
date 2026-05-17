@@ -5,5 +5,5 @@ output: function
 /** @phpstan-assert-if-true never-return $value */
 function isNeverReturn(mixed $value): bool
 {
-    return false;
+    return $value instanceof never-return;
 }

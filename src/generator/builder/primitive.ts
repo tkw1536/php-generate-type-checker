@@ -1,14 +1,11 @@
 import type { TypeNode } from '../../parser/ast.ts';
 import type { Expr, ValueRef } from '../ir/types.ts';
 import { andExpr } from '../ir/index.ts';
-import { normalizeNode } from '../semantics/normalize.ts';
 import { exprForType } from './leafIr.ts';
 
 /** One or more positive atoms (for consecutive failIf). */
 export function exprAtomsForType(node: TypeNode, subject: ValueRef): Expr[] {
-  const n = normalizeNode(node);
-
-  const single = exprForType(n, subject);
+  const single = exprForType(node, subject);
   if (single !== null) {
     if (single.kind === 'and') {
       return single.exprs;
@@ -16,7 +13,7 @@ export function exprAtomsForType(node: TypeNode, subject: ValueRef): Expr[] {
     return [single];
   }
 
-  if (n.kind === 'primitive' && n.name === 'mixed') {
+  if (node.kind === 'keyword' && node.keyword === 'mixed') {
     return [];
   }
 

@@ -2,8 +2,8 @@
 input: "non-zero-int"
 output: function
 ---
-/** @phpstan-assert-if-true int<1, max>|int<min, -1> $value */
-function isIntGe1OrIntLeNeg1(mixed $value): bool
+/** @phpstan-assert-if-true non-zero-int $value */
+function isNonZeroInt(mixed $value): bool
 {
-    return ((is_int($value) && $value >= 1) || (is_int($value) && $value <= -1));
+    return (is_int($value) && $value !== 0);
 }

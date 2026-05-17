@@ -12,41 +12,45 @@ import {
   refArg,
 } from '../ir/index.ts';
 import { isSupportedLeafType } from '../semantics/leaves.ts';
-import { normalizeNode } from '../semantics/normalize.ts';
-import { phpLiteralScalar } from './phpLiteral.ts';
-
+import { phpLiteralFromNode } from './phpLiteral.ts';
 
 /** Single positive guard expression, or null if uncheckable. */
 export function exprForType(node: TypeNode, subject: ValueRef): Expr | null {
-  const n = normalizeNode(node);
-  if (!isSupportedLeafType(n)) {
+  if (!isSupportedLeafType(node)) {
     return null;
   }
 
-  if (n.kind === 'primitive') {
-    return primitiveToExpr(n.name, subject);
+  if (node.kind === 'keyword') {
+    return keywordToExpr(node.keyword, subject);
   }
 
-  if (n.kind === 'class') {
-    return instanceofExpr(subjectArg(subject), n.name);
+  if (node.kind === 'class') {
+    const s = subjectArg(subject);
+    if (node.name === 'callable-array') {
+      return andExpr([callExpr('is_callable', [s]), callExpr('is_array', [s])]);
+    }
+    if (node.name === 'callable-object') {
+      return andExpr([callExpr('is_callable', [s]), callExpr('is_object', [s])]);
+    }
+    return instanceofExpr(subjectArg(subject), node.name);
   }
 
-  if (n.kind === 'literal') {
-    const lit = phpLiteralScalar(n.value);
+  if (node.kind === 'literal') {
+    const lit = phpLiteralFromNode(node);
     if (lit === null) {
       return null;
     }
     return binExpr('===', subjectArg(subject), literalArg(lit));
   }
 
-  if (n.kind === 'int_range') {
+  if (node.kind === 'range') {
     const s = subjectArg(subject);
     const parts: Expr[] = [callExpr('is_int', [s])];
-    if (n.min !== undefined) {
-      parts.push(binExpr('>=', s, literalArg(String(n.min))));
+    if (node.min !== null) {
+      parts.push(binExpr('>=', s, literalArg(String(node.min))));
     }
-    if (n.max !== undefined) {
-      parts.push(binExpr('<=', s, literalArg(String(n.max))));
+    if (node.max !== null) {
+      parts.push(binExpr('<=', s, literalArg(String(node.max))));
     }
     if (parts.length === 1) {
       return parts[0];
@@ -61,10 +65,10 @@ function subjectArg(subject: ValueRef): Arg {
   return refArg(subject);
 }
 
-function primitiveToExpr(name: string, subject: ValueRef): Expr | null {
+function keywordToExpr(keyword: string, subject: ValueRef): Expr | null {
   const s = subjectArg(subject);
 
-  switch (name) {
+  switch (keyword) {
     case 'int':
     case 'integer':
       return callExpr('is_int', [s]);
@@ -81,16 +85,6 @@ function primitiveToExpr(name: string, subject: ValueRef): Expr | null {
       return callExpr('is_bool', [s]);
     case 'scalar':
       return callExpr('is_scalar', [s]);
-    case 'empty-scalar':
-      return andExpr([
-        callExpr('is_scalar', [s]),
-        binExpr('==', s, literalArg('false')),
-      ]);
-    case 'non-empty-scalar':
-      return andExpr([
-        callExpr('is_scalar', [s]),
-        binExpr('!=', s, literalArg('false')),
-      ]);
     case 'null':
       return binExpr('===', s, literalArg('null'));
     case 'array':
@@ -105,9 +99,6 @@ function primitiveToExpr(name: string, subject: ValueRef): Expr | null {
       return null;
     case 'never':
     case 'noreturn':
-    case 'never-return':
-    case 'never-returns':
-    case 'no-return':
       return boolLit(false);
     case 'true':
       return binExpr('===', s, literalArg('true'));
@@ -115,16 +106,6 @@ function primitiveToExpr(name: string, subject: ValueRef): Expr | null {
       return binExpr('===', s, literalArg('false'));
     case 'callable':
       return callExpr('is_callable', [s]);
-    case 'callable-object':
-      return andExpr([
-        callExpr('is_object', [s]),
-        callExpr('is_callable', [s]),
-      ]);
-    case 'callable-array':
-      return andExpr([
-        callExpr('is_array', [s]),
-        callExpr('is_callable', [s]),
-      ]);
     case 'array-key':
       return orExpr([callExpr('is_string', [s]), callExpr('is_int', [s])]);
     case 'positive-int':
@@ -253,4 +234,3 @@ function primitiveToExpr(name: string, subject: ValueRef): Expr | null {
       return null;
   }
 }
-

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { parseType } from '../../parser/index.ts';
-import { normalizeNode } from '../semantics/normalize.ts';
 import { IsStyleFunctionNameProposer, SequentialCheckNameProposer } from './proposer.ts';
 import { sortFlattenedUnionMembers } from '../semantics/union.ts';
 
@@ -17,7 +16,7 @@ describe('IsStyleFunctionNameProposer', () => {
   });
 
   it('orders union members like sortFlattenedUnionMembers', () => {
-    const u = normalizeNode(parseType('array<int>|array<string>'));
+    const u = parseType('array<int>|array<string>');
     const members = sortFlattenedUnionMembers(u);
     const proposer = new IsStyleFunctionNameProposer();
     const parts = members.map((m) => proposer.name(m));
@@ -39,8 +38,8 @@ describe('IsStyleFunctionNameProposer', () => {
     expect(propose('array<string, mixed>')).toBe('isArrayStringToMixed');
   });
 
-  it('slugs int_range with Ge/Le and Neg for negative bounds', () => {
-    expect(propose('negative-int')).toBe('isIntLeNeg1');
+  it('slugs range and negative-int bounds', () => {
+    expect(propose('negative-int')).toBe('isNegativeInt');
     expect(propose('int<-3, -1>')).toBe('isIntGeNeg3LeNeg1');
   });
 

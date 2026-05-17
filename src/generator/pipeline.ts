@@ -7,9 +7,8 @@ import {
 } from './builder/registry.ts';
 import { optimize as optimizeIr } from './optimizer/';
 import type { GenerateCheckerOptions } from './options.ts';
-import { render, type RenderOptions } from './render/index.ts';
+import { render } from './render/index.ts';
 import { formatTypeForPhpstanDoc } from './render/phpdoc.ts';
-import { normalizeNode } from './semantics/normalize.ts';
 
 const DEFAULT_PARAMETER = '$value';
 
@@ -43,12 +42,11 @@ class PipelineBuilder {
   }
 
   buildEntry(rootType: TypeNode, entryName: string): BuildResult {
-    const n = normalizeNode(rootType);
-    this.registry.set(n, entryName);
+    this.registry.set(rootType, entryName);
     if (!this.ir.order.includes(entryName)) {
       this.ir.order.unshift(entryName);
     }
-    this.materialize(entryName, n, false);
+    this.materialize(entryName, rootType, false);
     return {
       ir: { order: [...this.ir.order], programs: { ...this.ir.programs } },
       typesByName: { ...this.typesByName },
@@ -56,14 +54,13 @@ class PipelineBuilder {
   }
 
   private resolveName(type: TypeNode): string {
-    const n = normalizeNode(type);
-    const fnName = this.registry.get(n);
+    const fnName = this.registry.get(type);
     if (this.ir.programs[fnName] !== undefined) {
       return fnName;
     }
     this.loopScopes.push({ loopVarN: 0 });
     try {
-      this.materialize(fnName, n, true);
+      this.materialize(fnName, type, true);
     } finally {
       this.loopScopes.pop();
     }
@@ -84,7 +81,7 @@ class PipelineBuilder {
       },
     });
     this.ir.programs[fnName] = program;
-    this.typesByName[fnName] = normalizeNode(type);
+    this.typesByName[fnName] = type;
     if (addToOrder) {
       this.ir.order.push(fnName);
     }
@@ -93,53 +90,39 @@ class PipelineBuilder {
 
 /** Build unoptimized {@link CheckerIR} and per-function type map. */
 export function build(type: TypeNode, options?: BuildOptions): BuildResult {
-  const n = normalizeNode(type);
   const nameByType = options?.nameFunctionsByType !== false;
   const registry = createFunctionNameRegistry({
     nameFunctionsByType: nameByType,
     reservedNames: options?.reservedNames ?? [],
   });
-
-  let mainFunctionName: string;
-  if (options?.mainFunctionName !== undefined) {
-    mainFunctionName = options.mainFunctionName;
-    registry.set(n, mainFunctionName);
-  } else if (nameByType) {
-    mainFunctionName = registry.get(n);
-  } else {
-    mainFunctionName = 'check';
-    registry.set(n, mainFunctionName);
-  }
-
-  const builder = new PipelineBuilder(registry, options);
-  return builder.buildEntry(n, mainFunctionName);
+  const pipeline = new PipelineBuilder(registry, options);
+  const entryName =
+    options?.mainFunctionName ?? (nameByType ? registry.get(type) : 'check');
+  return pipeline.buildEntry(type, entryName);
 }
 
-/** Compact {@link CheckerIR}. */
 export function optimize(ir: CheckerIR): CheckerIR {
   return optimizeIr(ir);
 }
 
-export type { RenderOptions };
-
-/** Render {@link CheckerIR} to PHP source. */
-export function renderChecker(ir: CheckerIR, options: RenderCheckerInput): string {
-  const docsByName = Object.fromEntries(
-    Object.entries(options.typesByName).map(([name, type]) => [
-      name,
-      formatTypeForPhpstanDoc(type),
-    ]),
-  );
-  const entryName = options.mainFunctionName ?? ir.order[0] ?? 'check';
-  const renderOptions: RenderOptions = {
-    output: options.output,
-    nameFunctionsByType: options.nameFunctionsByType,
-    mainFunctionName: options.mainFunctionName,
-    prioritizeReadabilityOverCompactness: options.prioritizeReadabilityOverCompactness,
-    docsByName,
-    entryDocType: docsByName[entryName] ?? options.typeString,
-  };
-  return render(ir, renderOptions);
-}
-
 export type { CheckerIR } from './ir/types.ts';
+
+export function renderChecker(
+  ir: CheckerIR,
+  input: RenderCheckerInput,
+): string {
+  const docsByName: Record<string, string> = {};
+  for (const [name, type] of Object.entries(input.typesByName)) {
+    docsByName[name] = formatTypeForPhpstanDoc(type);
+  }
+  const entryName = ir.order[0] ?? 'check';
+  const entryDocType =
+    docsByName[entryName] ??
+    input.typeString.trim().replace(/\*\//g, '* /');
+
+  return render(ir, {
+    ...input,
+    entryDocType,
+    docsByName,
+  });
+}

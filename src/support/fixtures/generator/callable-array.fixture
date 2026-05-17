@@ -5,5 +5,5 @@ output: function
 /** @phpstan-assert-if-true callable-array $value */
 function isCallableArray(mixed $value): bool
 {
-    return (is_array($value) && is_callable($value));
+    return (is_callable($value) && is_array($value));
 }

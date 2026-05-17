@@ -2,7 +2,7 @@
 input: "integer<0, 5>"
 output: function
 ---
-/** @phpstan-assert-if-true int<0, 5> $value */
+/** @phpstan-assert-if-true integer<0, 5> $value */
 function isIntGe0Le5(mixed $value): bool
 {
     return is_int($value) && $value >= 0 && $value <= 5;

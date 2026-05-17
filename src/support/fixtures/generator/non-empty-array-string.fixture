@@ -2,11 +2,12 @@
 input: "non-empty-array<string>"
 output: function
 ---
-/** @phpstan-assert-if-true string[] $value */
+/** @phpstan-assert-if-true non-empty-array<string> $value */
 function isNonEmptyArrayString(mixed $value): bool
 {
-    if (!is_array($value)
-        || $value === []
+    if (
+        !is_array($value) ||
+        $value === []
     ) {
         return false;
     }

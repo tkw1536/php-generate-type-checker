@@ -1,5 +1,4 @@
 import { assertCheckable } from './semantics/checkability.ts';
-import { normalizeNode } from './semantics/normalize.ts';
 import { build, optimize, renderChecker } from './pipeline.ts';
 import type { GenerateCheckerOptions } from './options.ts';
 import { parseType } from '../parser/index.ts';
@@ -9,7 +8,7 @@ export function generateChecker(
   typeString: string,
   options?: GenerateCheckerOptions,
 ): string {
-  const ast = normalizeNode(parseType(typeString));
+  const ast = parseType(typeString);
   assertCheckable(ast, 'function');
   const { ir: built, typesByName } = build(ast, options);
   const ir = options?.prioritizeReadabilityOverCompactness
@@ -36,4 +35,3 @@ export {
   type GenerateCheckerOptions,
   DEFAULT_CHECKER_OUTPUT,
 } from './options.ts';
-export { normalizeNode } from './semantics/normalize.ts';

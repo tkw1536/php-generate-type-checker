@@ -5,5 +5,5 @@ output: function
 /** @phpstan-assert-if-true empty-scalar $value */
 function isEmptyScalar(mixed $value): bool
 {
-    return (is_scalar($value) && $value == false);
+    return $value instanceof empty-scalar;
 }

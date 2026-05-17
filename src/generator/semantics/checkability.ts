@@ -3,18 +3,22 @@ import { GenerationError } from '../errors.ts';
 import { describeNode } from './describe.ts';
 import { isExpressible, isNoOpValueCheck } from './expressibility.ts';
 import { isSupportedLeafType } from './leaves.ts';
-import { normalizeGeneric, type ArrayNode } from './normalize.ts';
+import {
+  collectionHasValuesForm,
+  collectionListElement,
+  isBareListKeyword,
+  isIterableKeyword,
+  isListKeyword,
+} from './collection.ts';
 
 export type CheckContext = 'expression' | 'value' | 'function';
 
-const UNCHECKABLE_PRIMITIVES = new Set([
+const UNCHECKABLE_KEYWORDS = new Set([
   'void',
   'static',
   '$this',
   'self',
   'parent',
-  'pure-callable',
-  'pure-Closure',
 ]);
 
 export function assertCheckable(node: TypeNode, context: CheckContext = 'function'): void {
@@ -29,61 +33,93 @@ export function assertCheckable(node: TypeNode, context: CheckContext = 'functio
         'Cannot generate a runtime check for callable with parameter or return types: parameter and return types cannot be verified without invoking the callable',
         'callable(...)',
       );
-    case 'primitive':
-      if (node.name === 'literal-string' || node.name === 'non-empty-literal-string') {
+    case 'keyword': {
+      const kw = node.keyword;
+      if (isBareListKeyword(node)) {
+        return;
+      }
+      if (kw === 'literal-string' || kw === 'non-empty-literal-string') {
         throw new GenerationError(
           'Cannot generate a runtime check for literal-string types: PHP cannot verify PHPStan literal-string semantics at runtime',
-          node.name,
+          kw,
         );
       }
-      if (node.name === 'open-resource' || node.name === 'closed-resource') {
+      if (UNCHECKABLE_KEYWORDS.has(kw)) {
         throw new GenerationError(
-          'Cannot generate a runtime check for open-resource or closed-resource: PHP has no side-effect-free predicate that matches PHPStan open vs closed resource semantics',
-          node.name,
-        );
-      }
-      if (UNCHECKABLE_PRIMITIVES.has(node.name)) {
-        throw new GenerationError(
-          `Cannot generate a runtime check for the primitive type ${node.name}: this built-in is not supported for codegen`,
-          node.name,
+          `Cannot generate a runtime check for the type ${kw}: this built-in is not supported for codegen`,
+          kw,
         );
       }
       if (context === 'expression' && !isExpressible(node) && !isNoOpValueCheck(node)) {
         throw new GenerationError(
-          `Cannot generate a runtime check for the primitive type ${node.name} in expression context: not representable as a single boolean PHP expression (for example as an array key type)`,
-          node.name,
+          `Cannot generate a runtime check for the type ${kw} in expression context: not representable as a single boolean PHP expression (for example as an array key type)`,
+          kw,
         );
       }
       if (context !== 'expression' && !isNoOpValueCheck(node) && !isSupportedLeafType(node)) {
         throw new GenerationError(
-          `Cannot generate a runtime check for the primitive type ${node.name}: not representable as a supported boolean assertion in this generator`,
+          `Cannot generate a runtime check for the type ${kw}: not representable as a supported boolean assertion in this generator`,
+          kw,
+        );
+      }
+      return;
+    }
+    case 'literal':
+      return;
+    case 'class': {
+      if (node.name === 'closed-resource' || node.name === 'open-resource') {
+        throw new GenerationError(
+          `Cannot generate a runtime check for the type ${node.name}: PHP cannot distinguish open and closed resources at runtime`,
           node.name,
         );
       }
       return;
-    case 'literal':
-    case 'class':
+    }
+    case 'range':
       return;
-    case 'int_range':
-      return;
-    case 'array':
-      if ((node as ArrayNode).iterable) {
+    case 'collection': {
+      if (isIterableKeyword(node.keyword) && 'key' in node) {
         throw new GenerationError(
           'Cannot generate a runtime check for parameterized iterable: validating keys or elements would require foreach iteration and is not side-effect-free',
-          'iterable<...>',
+          `${node.keyword}<...>`,
         );
       }
-      if (node.key) {
+      if ('key' in node) {
         assertCheckable(node.key, 'expression');
+        assertCheckable(node.value, 'value');
+        return;
       }
-      assertCheckable(node.value, 'value');
+      if ('value' in node) {
+        if (isIterableKeyword(node.keyword)) {
+          throw new GenerationError(
+            'Cannot generate a runtime check for parameterized iterable: validating keys or elements would require foreach iteration and is not side-effect-free',
+            `${node.keyword}<...>`,
+          );
+        }
+        assertCheckable(node.value, 'value');
+        return;
+      }
+      if (collectionHasValuesForm(node)) {
+        if (isListKeyword(node.keyword)) {
+          const el = collectionListElement(node);
+          if (el) {
+            assertCheckable(el, 'value');
+          }
+          return;
+        }
+        for (const el of node.values) {
+          assertCheckable(el, 'value');
+        }
+        return;
+      }
       return;
-    case 'list':
-      assertCheckable(node.element, 'value');
+    }
+    case 'array':
+      assertCheckable(node.value, 'value');
       return;
     case 'shape':
       for (const field of node.fields) {
-        assertCheckable(field.type, 'value');
+        assertCheckable(field.value, 'value');
       }
       return;
     case 'union':
@@ -117,17 +153,11 @@ export function assertCheckable(node: TypeNode, context: CheckContext = 'functio
         }
       }
       return;
-    case 'generic': {
-      const normalized = normalizeGeneric(node);
-      if (normalized) {
-        assertCheckable(normalized, context);
-        return;
-      }
+    case 'generic':
       throw new GenerationError(
         `Cannot generate a runtime check for the generic type ${node.name}: not a supported generic for codegen`,
         `${node.name}<...>`,
       );
-    }
     default:
       throw new GenerationError(
         `Cannot generate a runtime check for ${describeNode(node)}: this type is not supported for codegen`,

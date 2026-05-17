@@ -2,21 +2,26 @@
 input: "array{left: array{}, right: never[]}|array{}"
 output: function
 ---
-/** @phpstan-assert-if-true array{left: never[], right: never[]}|never[] $value */
-function isArrayNeverOrShapeFldleftReqArrayNeverFldrightReqArrayNever(mixed $value): bool
+/** @phpstan-assert-if-true array{left: array{}, right: never[]}|array{} $value */
+function isShapeOrShapeFldleftReqShapeFldrightReqPostfixArrayNever(mixed $value): bool
 {
-    return ($value === [] || isShapeFldleftReqArrayNeverFldrightReqArrayNever($value));
+    return isShape($value) || isShapeFldleftReqShapeFldrightReqPostfixArrayNever($value);
 }
 
 
-/** @phpstan-assert-if-true array{left: never[], right: never[]} $value */
-function isShapeFldleftReqArrayNeverFldrightReqArrayNever(mixed $value): bool
+/** @phpstan-assert-if-true array{} $value */
+function isShape(mixed $value): bool
+{
+    return is_array($value);
+}
+
+/** @phpstan-assert-if-true array{left: array{}, right: never[]} $value */
+function isShapeFldleftReqShapeFldrightReqPostfixArrayNever(mixed $value): bool
 {
     return (
         is_array($value)
         && array_key_exists('left', $value)
-        && $value['left'] !== []
         && array_key_exists('right', $value)
-        && $value['right'] !== []
+        && $value['right'] === []
     );
 }

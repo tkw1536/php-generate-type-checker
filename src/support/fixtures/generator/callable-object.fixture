@@ -5,5 +5,5 @@ output: function
 /** @phpstan-assert-if-true callable-object $value */
 function isCallableObject(mixed $value): bool
 {
-    return (is_object($value) && is_callable($value));
+    return (is_callable($value) && is_object($value));
 }

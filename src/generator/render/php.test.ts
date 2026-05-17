@@ -98,8 +98,9 @@ describe('renderProgramBody', () => {
       },
     ]);
     expect(renderProgramBody(body)).toBe(
-      `    if (!is_string($key1)
-        || !is_string($value1)
+      `    if (
+        !is_string($key1) ||
+        !is_string($value1)
     ) {
         return false;
     }`,

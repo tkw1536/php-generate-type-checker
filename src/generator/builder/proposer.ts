@@ -1,8 +1,12 @@
 import type { ShapeField, TypeNode } from '../../parser/ast.ts';
-import { normalizeNode, type ArrayNode } from '../semantics/normalize.ts';
 import { typeDedupeKey } from '../semantics/keys.ts';
+import {
+  isIterableKeyword,
+  isListKeyword,
+  isNonEmptyKeyword,
+  shapeIsObject,
+} from '../semantics/collection.ts';
 import { sortFlattenedUnionMembers } from '../semantics/union.ts';
-
 
 /** Proposes a base PHP function name from a type (no cache or collision handling). */
 export interface FunctionNameProposer {
@@ -53,11 +57,11 @@ const RESERVED_WHOLE_SLUG = new Set(
 );
 
 function shapeFieldSortKey(f: ShapeField): string {
-  return `${String(f.key)}:${f.optional ? '1' : '0'}:${typeDedupeKey(f.type)}`;
+  return `${String(f.key)}:${f.optional ? '1' : '0'}:${typeDedupeKey(f.value)}`;
 }
 
-function primitiveToPascal(name: string): string {
-  return name
+function keywordToPascal(keyword: string): string {
+  return keyword
     .split('-')
     .filter((s) => s.length > 0)
     .map((seg) => seg[0]!.toUpperCase() + seg.slice(1).toLowerCase())
@@ -76,17 +80,12 @@ function classNameToSlug(name: string): string {
 }
 
 function literalSlug(node: Extract<TypeNode, { kind: 'literal' }>): string {
-  if (typeof node.value === 'number') {
-    const s = String(node.value);
-    const safe = s.replace(/[^0-9eE+-]/g, 'x');
+  if (node.type === 'number') {
+    const safe = node.value.replace(/[^0-9eE+-]/g, 'x');
     return `LitNum${safe}`;
   }
-  if (typeof node.value === 'boolean') {
-    return node.value ? 'LitTrue' : 'LitFalse';
-  }
-  const str = node.value as string;
-  const alnum = str.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 24);
-  return `LitStr${str.length}${alnum ? '_' + alnum : ''}`;
+  const alnum = node.value.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 24);
+  return `LitStr${node.value.length}${alnum ? '_' + alnum : ''}`;
 }
 
 function shortHash(input: string): string {
@@ -104,41 +103,57 @@ function escapeReservedWholeSlug(pascal: string): string {
   return pascal;
 }
 
+function collectionFamilySlug(keyword: string): string {
+  if (isListKeyword(keyword as never)) {
+    return 'List';
+  }
+  if (isIterableKeyword(keyword as never)) {
+    return 'Iterable';
+  }
+  return 'Array';
+}
+
+function collectionSlug(node: Extract<TypeNode, { kind: 'collection' }>): string {
+  const ne = isNonEmptyKeyword(node.keyword) ? 'NonEmpty' : '';
+  const family = collectionFamilySlug(node.keyword);
+
+  if ('key' in node) {
+    return `${ne}${family}${typeToPascalSlug(node.key)}To${typeToPascalSlug(node.value)}`;
+  }
+  if ('value' in node) {
+    return `${ne}${family}${typeToPascalSlug(node.value)}`;
+  }
+  const parts = node.values.map(typeToPascalSlug).join('And');
+  if (isListKeyword(node.keyword)) {
+    return `${ne}${family}${parts}`;
+  }
+  return `${ne}${family}Tuple${parts}`;
+}
+
 function typeToPascalSlug(node: TypeNode): string {
-  const n = normalizeNode(node);
-  switch (n.kind) {
-    case 'primitive':
-      return escapeReservedWholeSlug(primitiveToPascal(n.name));
-    case 'int_range': {
+  switch (node.kind) {
+    case 'keyword':
+      return escapeReservedWholeSlug(keywordToPascal(node.keyword));
+    case 'range': {
       let s = 'Int';
-      if (n.min !== undefined) {
-        s += n.min >= 0 ? `Ge${n.min}` : `GeNeg${-n.min}`;
+      if (node.min !== null) {
+        s += node.min >= 0 ? `Ge${node.min}` : `GeNeg${-node.min}`;
       }
-      if (n.max !== undefined) {
-        s += n.max >= 0 ? `Le${n.max}` : `LeNeg${-n.max}`;
+      if (node.max !== null) {
+        s += node.max >= 0 ? `Le${node.max}` : `LeNeg${-node.max}`;
       }
       return s;
     }
     case 'literal':
-      return literalSlug(n);
+      return literalSlug(node);
     case 'class':
-      return escapeReservedWholeSlug(classNameToSlug(n.name));
-    case 'array': {
-      const an = n as ArrayNode;
-      const family = an.iterable ? 'Iterable' : 'Array';
-      const ne = an.nonEmpty ? 'NonEmpty' : '';
-      const vs = typeToPascalSlug(an.value);
-      if (an.key) {
-        return `${ne}${family}${typeToPascalSlug(an.key)}To${vs}`;
-      }
-      return `${ne}${family}${vs}`;
-    }
-    case 'list': {
-      const inner = typeToPascalSlug(n.element);
-      return n.nonEmpty ? `NonEmptyList${inner}` : `List${inner}`;
-    }
+      return escapeReservedWholeSlug(classNameToSlug(node.name));
+    case 'collection':
+      return collectionSlug(node);
+    case 'array':
+      return `PostfixArray${typeToPascalSlug(node.value)}`;
     case 'shape': {
-      const fields = [...n.fields].sort((a, b) =>
+      const fields = [...node.fields].sort((a, b) =>
         shapeFieldSortKey(a).localeCompare(shapeFieldSortKey(b)),
       );
       const parts = fields.map((f) => {
@@ -147,33 +162,32 @@ function typeToPascalSlug(node: TypeNode): string {
             ? `N${f.key}`
             : String(f.key).replace(/[^a-zA-Z0-9_]/g, '_');
         const o = f.optional ? 'Opt' : 'Req';
-        return `Fld${keySeg}${o}${typeToPascalSlug(f.type)}`;
+        return `Fld${keySeg}${o}${typeToPascalSlug(f.value)}`;
       });
-      const prefix = n.object ? 'ObjectShape' : 'Shape';
+      const prefix = shapeIsObject(node) ? 'ObjectShape' : 'Shape';
       return `${prefix}${parts.join('')}`;
     }
     case 'union': {
-      const members = sortFlattenedUnionMembers(n);
+      const members = sortFlattenedUnionMembers(node);
       return members.map(typeToPascalSlug).join('Or');
     }
     case 'intersection': {
-      const parts = [...n.types]
-        .map((t) => normalizeNode(t))
+      const parts = [...node.types]
         .sort((a, b) => typeDedupeKey(a).localeCompare(typeDedupeKey(b)))
         .map(typeToPascalSlug);
       return parts.join('And');
     }
     case 'generic': {
-      const args = n.typeArgs.map((t) => typeToPascalSlug(normalizeNode(t))).join('');
-      return `Generic${primitiveToPascal(n.name)}${args}`;
+      const args = node.typeArgs.map((t) => typeToPascalSlug(t)).join('');
+      return `Generic${keywordToPascal(node.name)}${args}`;
     }
     case 'callable':
-      return `Callable${shortHash(typeDedupeKey(n))}`;
+      return `Callable${shortHash(typeDedupeKey(node))}`;
     case 'unsupported': {
-      return `Unsupported${shortHash(n.raw + (n.reason ?? ''))}`;
+      return `Unsupported${shortHash(node.raw + (node.reason ?? ''))}`;
     }
     default:
-      return `Node${shortHash(typeDedupeKey(n))}`;
+      return `Node${shortHash(typeDedupeKey(node))}`;
   }
 }
 

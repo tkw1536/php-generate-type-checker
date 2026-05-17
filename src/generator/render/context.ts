@@ -33,27 +33,6 @@ export function ifBlock(
   ];
 }
 
-export function ifBlockOrChain(
-  depth: number,
-  orParts: string[],
-  body: PhpLine[],
-): PhpLine[] {
-  if (orParts.length === 0) {
-    return [];
-  }
-  if (orParts.length === 1) {
-    return ifBlock(depth, orParts[0]!, body);
-  }
-  const lines: PhpLine[] = [line(depth, `if (${orParts[0]}`)];
-  for (let i = 1; i < orParts.length; i++) {
-    lines.push(line(depth, `    || ${orParts[i]}`));
-  }
-  lines.push(line(depth, ') {'));
-  lines.push(...shiftLines(1, body));
-  lines.push(line(depth, '}'));
-  return lines;
-}
-
 export function ifBlockMultilineOr(
   depth: number,
   orParts: string[],
@@ -65,12 +44,11 @@ export function ifBlockMultilineOr(
   if (orParts.length === 1) {
     return ifBlock(depth, orParts[0]!, body);
   }
-  const head: PhpLine[] = [
-    line(depth, 'if ('),
-    line(depth + 1, orParts[0]!.trim()),
-  ];
-  for (let i = 1; i < orParts.length; i++) {
-    head.push(line(depth + 1, `|| ${orParts[i]!.trim()}`));
+  const head: PhpLine[] = [line(depth, 'if (')];
+  for (let i = 0; i < orParts.length; i++) {
+    const part = orParts[i]!.trim();
+    const suffix = i < orParts.length - 1 ? ' ||' : '';
+    head.push(line(depth + 1, `${part}${suffix}`));
   }
   head.push(line(depth, ') {'));
   return [...head, ...shiftLines(1, body), line(depth, '}')];

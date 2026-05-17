@@ -1,21 +1,18 @@
 import type { TypeNode } from '../../parser/ast.ts';
-import { normalizeNode } from './normalize.ts';
+import { isBareListKeyword } from './collection.ts';
 import { isSupportedLeafType } from './leaves.ts';
 
 export function isNoOpValueCheck(node: TypeNode): boolean {
-  return node.kind === 'primitive' && node.name === 'mixed';
+  return node.kind === 'keyword' && node.keyword === 'mixed';
 }
 
 export function isNeverPrimitive(node: TypeNode): boolean {
-  if (node.kind !== 'primitive') {
+  if (node.kind !== 'keyword') {
     return false;
   }
-  switch (node.name) {
+  switch (node.keyword) {
     case 'never':
     case 'noreturn':
-    case 'never-return':
-    case 'never-returns':
-    case 'no-return':
       return true;
     default:
       return false;
@@ -29,8 +26,8 @@ export function isExpressible(node: TypeNode): boolean {
   if (
     node.kind === 'literal' ||
     node.kind === 'class' ||
-    node.kind === 'primitive' ||
-    node.kind === 'int_range'
+    node.kind === 'keyword' ||
+    node.kind === 'range'
   ) {
     return isSupportedLeafType(node);
   }
@@ -45,18 +42,19 @@ export function isExpressible(node: TypeNode): boolean {
 
 /** True when validating this type requires statements (not a single boolean expression check). */
 export function needsStatementBlock(node: TypeNode): boolean {
-  const n = normalizeNode(node);
-  switch (n.kind) {
-    case 'array':
+  switch (node.kind) {
+    case 'collection':
       return true;
-    case 'list':
-      return !isNoOpValueCheck(n.element);
     case 'shape':
       return true;
+    case 'array':
+      return true;
     case 'union':
-      return n.types.some(needsStatementBlock);
+      return node.types.some(needsStatementBlock);
     case 'intersection':
-      return n.types.some(needsStatementBlock);
+      return node.types.some(needsStatementBlock);
+    case 'keyword':
+      return isBareListKeyword(node);
     default:
       return false;
   }

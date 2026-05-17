@@ -1,7 +1,6 @@
 import type { TypeNode } from '../../parser/ast.ts';
-import { normalizeNode } from './normalize.ts';
 
-const SUPPORTED_LEAF_PRIMITIVES = new Set([
+const SUPPORTED_LEAF_KEYWORDS = new Set([
   'int',
   'integer',
   'string',
@@ -12,8 +11,6 @@ const SUPPORTED_LEAF_PRIMITIVES = new Set([
   'bool',
   'boolean',
   'scalar',
-  'empty-scalar',
-  'non-empty-scalar',
   'null',
   'array',
   'iterable',
@@ -21,14 +18,9 @@ const SUPPORTED_LEAF_PRIMITIVES = new Set([
   'resource',
   'never',
   'noreturn',
-  'never-return',
-  'never-returns',
-  'no-return',
   'true',
   'false',
   'callable',
-  'callable-object',
-  'callable-array',
   'array-key',
   'positive-int',
   'negative-int',
@@ -54,26 +46,21 @@ const SUPPORTED_LEAF_PRIMITIVES = new Set([
   'non-empty-uppercase-string',
 ]);
 
-/** Whether a primitive name has a direct single-expression leaf guard. */
-export function leafPrimitiveSupported(name: string): boolean {
-  return SUPPORTED_LEAF_PRIMITIVES.has(name);
+/** Whether a keyword has a direct single-expression leaf guard. */
+export function leafPrimitiveSupported(keyword: string): boolean {
+  return SUPPORTED_LEAF_KEYWORDS.has(keyword);
 }
 
 /** Whether a leaf {@link TypeNode} has a direct single-expression IR guard. */
 export function isSupportedLeafType(node: TypeNode): boolean {
-  const n = normalizeNode(node);
-  switch (n.kind) {
+  switch (node.kind) {
     case 'literal':
-      return (
-        typeof n.value === 'string' ||
-        typeof n.value === 'number' ||
-        typeof n.value === 'boolean'
-      );
+      return node.type === 'string' || node.type === 'number';
     case 'class':
-    case 'int_range':
+    case 'range':
       return true;
-    case 'primitive':
-      return leafPrimitiveSupported(n.name);
+    case 'keyword':
+      return leafPrimitiveSupported(node.keyword);
     default:
       return false;
   }

@@ -13,7 +13,7 @@ export function flattenUnion(node: TypeNode): TypeNode[] {
 }
 
 function unionSortKey(node: TypeNode): number {
-  if (node.kind === 'primitive' && node.name === 'null') {
+  if (node.kind === 'keyword' && node.keyword === 'null') {
     return 0;
   }
   if (isExpressible(node) && !needsStatementBlock(node)) {

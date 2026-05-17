@@ -9,6 +9,5 @@ export {
   render,
   GenerationError,
   assertCheckable,
-  normalizeNode,
 } from './generator/index.ts';
 export type { TypeNode, ShapeField, CallableSig, CallableParam } from './parser/ast.ts';

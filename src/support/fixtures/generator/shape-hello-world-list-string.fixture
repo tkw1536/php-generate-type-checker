@@ -5,10 +5,11 @@ output: function
 /** @phpstan-assert-if-true array{hello: string, world: list<string>} $value */
 function isShapeFldhelloReqStringFldworldReqListString(mixed $value): bool
 {
-    if (!is_array($value)
-        || !array_key_exists('hello', $value)
-        || !is_string($value['hello'])
-        || !array_key_exists('world', $value)
+    if (
+        !is_array($value) ||
+        !array_key_exists('hello', $value) ||
+        !is_string($value['hello']) ||
+        !array_key_exists('world', $value)
     ) {
         return false;
     }

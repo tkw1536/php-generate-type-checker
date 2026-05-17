@@ -4,7 +4,7 @@ output: public_static
 ---
 class TypeChecker
 {
-    /** @phpstan-assert-if-true int<min, max> $value */
+    /** @phpstan-assert-if-true int $value */
     public static function isInt(mixed $value): bool
     {
         return is_int($value);

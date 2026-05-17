@@ -2,7 +2,6 @@ import './style.css';
 import {
   assertCheckable,
   build,
-  normalizeNode,
   optimize,
   parseType,
   render,
@@ -193,7 +192,7 @@ function runGenerate(panels: {
   }
 
   try {
-    const ast = normalizeNode(parseType(typeString));
+    const ast = parseType(typeString);
     assertCheckable(ast, 'function');
     const built = build(ast, genOpts);
     const builtJson = JSON.stringify(built.ir, null, 2);
