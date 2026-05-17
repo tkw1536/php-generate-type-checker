@@ -1,4 +1,4 @@
-import { build, buildMany, optimize, renderChecker } from './pipeline.ts';
+import { buildMany, optimize, renderChecker } from './pipeline.ts';
 import type { GenerateCheckerOptions } from './options.ts';
 import { parseTypes } from '../parser/index.ts';
 
