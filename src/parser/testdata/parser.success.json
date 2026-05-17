@@ -1,0 +1,1570 @@
+[
+  {
+    "source": "int",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "int"
+    }
+  },
+  {
+    "source": "integer",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "integer"
+    }
+  },
+  {
+    "source": "string",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "string"
+    }
+  },
+  {
+    "source": "float",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "float"
+    }
+  },
+  {
+    "source": "double",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "double"
+    }
+  },
+  {
+    "source": "number",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "number"
+    }
+  },
+  {
+    "source": "numeric",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "numeric"
+    }
+  },
+  {
+    "source": "bool",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "bool"
+    }
+  },
+  {
+    "source": "boolean",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "boolean"
+    }
+  },
+  {
+    "source": "array",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "array"
+    }
+  },
+  {
+    "source": "object",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "object"
+    }
+  },
+  {
+    "source": "callable",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "callable"
+    }
+  },
+  {
+    "source": "iterable",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "iterable"
+    }
+  },
+  {
+    "source": "mixed",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "mixed"
+    }
+  },
+  {
+    "source": "null",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "null"
+    }
+  },
+  {
+    "source": "void",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "void"
+    }
+  },
+  {
+    "source": "resource",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "resource"
+    }
+  },
+  {
+    "source": "never",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "never"
+    }
+  },
+  {
+    "source": "noreturn",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "noreturn"
+    }
+  },
+  {
+    "source": "empty",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "empty"
+    }
+  },
+  {
+    "source": "scalar",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "scalar"
+    }
+  },
+  {
+    "source": "array-key",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "array-key"
+    }
+  },
+  {
+    "source": "true",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "true"
+    }
+  },
+  {
+    "source": "false",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "false"
+    }
+  },
+  {
+    "source": "positive-int",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "positive-int"
+    }
+  },
+  {
+    "source": "negative-int",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "negative-int"
+    }
+  },
+  {
+    "source": "non-positive-int",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "non-positive-int"
+    }
+  },
+  {
+    "source": "non-negative-int",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "non-negative-int"
+    }
+  },
+  {
+    "source": "non-zero-int",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "non-zero-int"
+    }
+  },
+  {
+    "source": "class-string",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "class-string"
+    }
+  },
+  {
+    "source": "interface-string",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "interface-string"
+    }
+  },
+  {
+    "source": "trait-string",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "trait-string"
+    }
+  },
+  {
+    "source": "enum-string",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "enum-string"
+    }
+  },
+  {
+    "source": "literal-string",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "literal-string"
+    }
+  },
+  {
+    "source": "numeric-string",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "numeric-string"
+    }
+  },
+  {
+    "source": "callable-string",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "callable-string"
+    }
+  },
+  {
+    "source": "lowercase-string",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "lowercase-string"
+    }
+  },
+  {
+    "source": "uppercase-string",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "uppercase-string"
+    }
+  },
+  {
+    "source": "non-falsy-string",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "non-falsy-string"
+    }
+  },
+  {
+    "source": "truthy-string",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "truthy-string"
+    }
+  },
+  {
+    "source": "decimal-int-string",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "decimal-int-string"
+    }
+  },
+  {
+    "source": "non-decimal-int-string",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "non-decimal-int-string"
+    }
+  },
+  {
+    "source": "non-empty-string",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "non-empty-string"
+    }
+  },
+  {
+    "source": "non-empty-lowercase-string",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "non-empty-lowercase-string"
+    }
+  },
+  {
+    "source": "non-empty-uppercase-string",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "non-empty-uppercase-string"
+    }
+  },
+  {
+    "source": "non-empty-literal-string",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "non-empty-literal-string"
+    }
+  },
+  {
+    "source": "non-empty-mixed",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "non-empty-mixed"
+    }
+  },
+  {
+    "source": "static",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "static"
+    }
+  },
+  {
+    "source": "self",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "self"
+    }
+  },
+  {
+    "source": "parent",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "parent"
+    }
+  },
+  {
+    "source": "$this",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "$this"
+    }
+  },
+  {
+    "source": "Foo",
+    "ast": {
+      "kind": "class",
+      "name": "Foo"
+    }
+  },
+  {
+    "source": "Bar",
+    "ast": {
+      "kind": "class",
+      "name": "Bar"
+    }
+  },
+  {
+    "source": "DateTimeInterface",
+    "ast": {
+      "kind": "class",
+      "name": "DateTimeInterface"
+    }
+  },
+  {
+    "source": "\\Foo\\Bar",
+    "ast": {
+      "kind": "class",
+      "name": "\\Foo\\Bar"
+    }
+  },
+  {
+    "source": "\\Fully\\Qualified\\ClassName",
+    "ast": {
+      "kind": "class",
+      "name": "\\Fully\\Qualified\\ClassName"
+    }
+  },
+  {
+    "source": "42",
+    "ast": {
+      "kind": "literal",
+      "type": "number",
+      "value": "42"
+    }
+  },
+  {
+    "source": "0",
+    "ast": {
+      "kind": "literal",
+      "type": "number",
+      "value": "0"
+    }
+  },
+  {
+    "source": "-1",
+    "ast": {
+      "kind": "literal",
+      "type": "number",
+      "value": "-1"
+    }
+  },
+  {
+    "source": "69",
+    "ast": {
+      "kind": "literal",
+      "type": "number",
+      "value": "69"
+    }
+  },
+  {
+    "source": "69.0",
+    "ast": {
+      "kind": "literal",
+      "type": "number",
+      "value": "69.0"
+    }
+  },
+  {
+    "source": "69.42",
+    "ast": {
+      "kind": "literal",
+      "type": "number",
+      "value": "69.42"
+    }
+  },
+  {
+    "source": "69.420",
+    "ast": {
+      "kind": "literal",
+      "type": "number",
+      "value": "69.420"
+    }
+  },
+  {
+    "source": "'foo'",
+    "ast": {
+      "kind": "literal",
+      "type": "string",
+      "value": "foo",
+      "quotes": "single"
+    }
+  },
+  {
+    "source": "\"bar\"",
+    "ast": {
+      "kind": "literal",
+      "type": "string",
+      "value": "bar",
+      "quotes": "double"
+    }
+  },
+  {
+    "source": "'baz'",
+    "ast": {
+      "kind": "literal",
+      "type": "string",
+      "value": "baz",
+      "quotes": "single"
+    }
+  },
+  {
+    "source": "'hello world'",
+    "ast": {
+      "kind": "literal",
+      "type": "string",
+      "value": "hello world",
+      "quotes": "single"
+    }
+  },
+  {
+    "source": "'foo'|'bar'",
+    "ast": {
+      "kind": "union",
+      "types": [
+        {
+          "kind": "literal",
+          "type": "string",
+          "value": "foo",
+          "quotes": "single"
+        },
+        {
+          "kind": "literal",
+          "type": "string",
+          "value": "bar",
+          "quotes": "single"
+        }
+      ]
+    }
+  },
+  {
+    "source": "42|'foo'|true",
+    "ast": {
+      "kind": "union",
+      "types": [
+        {
+          "kind": "literal",
+          "type": "number",
+          "value": "42"
+        },
+        {
+          "kind": "literal",
+          "type": "string",
+          "value": "foo",
+          "quotes": "single"
+        },
+        {
+          "kind": "keyword",
+          "keyword": "true"
+        }
+      ]
+    }
+  },
+  {
+    "source": "int<0, 100>",
+    "ast": {
+      "kind": "range",
+      "min": 0,
+      "max": 100,
+      "keyword": "int"
+    }
+  },
+  {
+    "source": "int<50, max>",
+    "ast": {
+      "kind": "range",
+      "min": 50,
+      "max": null,
+      "keyword": "int"
+    }
+  },
+  {
+    "source": "int<min, 100>",
+    "ast": {
+      "kind": "range",
+      "min": null,
+      "max": 100,
+      "keyword": "int"
+    }
+  },
+  {
+    "source": "int<min, max>",
+    "ast": {
+      "kind": "range",
+      "min": null,
+      "max": null,
+      "keyword": "int"
+    }
+  },
+  {
+    "source": "integer<0, 5>",
+    "ast": {
+      "kind": "range",
+      "min": 0,
+      "max": 5,
+      "keyword": "integer"
+    }
+  },
+  {
+    "source": "array<int>",
+    "ast": {
+      "kind": "collection",
+      "value": {
+        "kind": "keyword",
+        "keyword": "int"
+      },
+      "keyword": "array"
+    }
+  },
+  {
+    "source": "array<string, int>",
+    "ast": {
+      "kind": "collection",
+      "key": {
+        "kind": "keyword",
+        "keyword": "string"
+      },
+      "value": {
+        "kind": "keyword",
+        "keyword": "int"
+      },
+      "keyword": "array"
+    }
+  },
+  {
+    "source": "array<string, array<int, bool>>",
+    "ast": {
+      "kind": "collection",
+      "key": {
+        "kind": "keyword",
+        "keyword": "string"
+      },
+      "value": {
+        "kind": "collection",
+        "key": {
+          "kind": "keyword",
+          "keyword": "int"
+        },
+        "value": {
+          "kind": "keyword",
+          "keyword": "bool"
+        },
+        "keyword": "array"
+      },
+      "keyword": "array"
+    }
+  },
+  {
+    "source": "array<int, Foo>",
+    "ast": {
+      "kind": "collection",
+      "key": {
+        "kind": "keyword",
+        "keyword": "int"
+      },
+      "value": {
+        "kind": "class",
+        "name": "Foo"
+      },
+      "keyword": "array"
+    }
+  },
+  {
+    "source": "iterable<string>",
+    "ast": {
+      "kind": "collection",
+      "value": {
+        "kind": "keyword",
+        "keyword": "string"
+      },
+      "keyword": "iterable"
+    }
+  },
+  {
+    "source": "iterable<int, string>",
+    "ast": {
+      "kind": "collection",
+      "key": {
+        "kind": "keyword",
+        "keyword": "int"
+      },
+      "value": {
+        "kind": "keyword",
+        "keyword": "string"
+      },
+      "keyword": "iterable"
+    }
+  },
+  {
+    "source": "non-empty-array",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "non-empty-array"
+    }
+  },
+  {
+    "source": "non-empty-array<string>",
+    "ast": {
+      "kind": "collection",
+      "value": {
+        "kind": "keyword",
+        "keyword": "string"
+      },
+      "keyword": "non-empty-array"
+    }
+  },
+  {
+    "source": "non-empty-iterable",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "non-empty-iterable"
+    }
+  },
+  {
+    "source": "non-empty-iterable<string>",
+    "ast": {
+      "kind": "collection",
+      "value": {
+        "kind": "keyword",
+        "keyword": "string"
+      },
+      "keyword": "non-empty-iterable"
+    }
+  },
+  {
+    "source": "non-empty-iterable<int, string>",
+    "ast": {
+      "kind": "collection",
+      "key": {
+        "kind": "keyword",
+        "keyword": "int"
+      },
+      "value": {
+        "kind": "keyword",
+        "keyword": "string"
+      },
+      "keyword": "non-empty-iterable"
+    }
+  },
+  {
+    "source": "list",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "list"
+    }
+  },
+  {
+    "source": "list<int>",
+    "ast": {
+      "kind": "collection",
+      "value": {
+        "kind": "keyword",
+        "keyword": "int"
+      },
+      "keyword": "list"
+    }
+  },
+  {
+    "source": "non-empty-list",
+    "ast": {
+      "kind": "keyword",
+      "keyword": "non-empty-list"
+    }
+  },
+  {
+    "source": "non-empty-list<string>",
+    "ast": {
+      "kind": "collection",
+      "value": {
+        "kind": "keyword",
+        "keyword": "string"
+      },
+      "keyword": "non-empty-list"
+    }
+  },
+  {
+    "source": "Foo<string>",
+    "ast": {
+      "kind": "generic",
+      "name": "Foo",
+      "typeArgs": [
+        {
+          "kind": "keyword",
+          "keyword": "string"
+        }
+      ]
+    }
+  },
+  {
+    "source": "Foo<int, Bar>",
+    "ast": {
+      "kind": "generic",
+      "name": "Foo",
+      "typeArgs": [
+        {
+          "kind": "keyword",
+          "keyword": "int"
+        },
+        {
+          "kind": "class",
+          "name": "Bar"
+        }
+      ]
+    }
+  },
+  {
+    "source": "Collection<array-key, mixed>",
+    "ast": {
+      "kind": "generic",
+      "name": "Collection",
+      "typeArgs": [
+        {
+          "kind": "keyword",
+          "keyword": "array-key"
+        },
+        {
+          "kind": "keyword",
+          "keyword": "mixed"
+        }
+      ]
+    }
+  },
+  {
+    "source": "string[]",
+    "ast": {
+      "kind": "array",
+      "value": {
+        "kind": "keyword",
+        "keyword": "string"
+      }
+    }
+  },
+  {
+    "source": "string[][]",
+    "ast": {
+      "kind": "array",
+      "value": {
+        "kind": "array",
+        "value": {
+          "kind": "keyword",
+          "keyword": "string"
+        }
+      }
+    }
+  },
+  {
+    "source": "int[][]",
+    "ast": {
+      "kind": "array",
+      "value": {
+        "kind": "array",
+        "value": {
+          "kind": "keyword",
+          "keyword": "int"
+        }
+      }
+    }
+  },
+  {
+    "source": "(int|string)[]",
+    "ast": {
+      "kind": "array",
+      "value": {
+        "kind": "union",
+        "types": [
+          {
+            "kind": "keyword",
+            "keyword": "int"
+          },
+          {
+            "kind": "keyword",
+            "keyword": "string"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "source": "array{}",
+    "ast": {
+      "kind": "shape",
+      "fields": [],
+      "keyword": "array"
+    }
+  },
+  {
+    "source": "array{count: positive-int}",
+    "ast": {
+      "kind": "shape",
+      "fields": [
+        {
+          "key": "count",
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "positive-int"
+          }
+        }
+      ],
+      "keyword": "array"
+    }
+  },
+  {
+    "source": "array{foo: int, bar?: string}",
+    "ast": {
+      "kind": "shape",
+      "fields": [
+        {
+          "key": "foo",
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
+        },
+        {
+          "key": "bar",
+          "optional": true,
+          "value": {
+            "kind": "keyword",
+            "keyword": "string"
+          }
+        }
+      ],
+      "keyword": "array"
+    }
+  },
+  {
+    "source": "array{0: int, 1?: string}",
+    "ast": {
+      "kind": "shape",
+      "fields": [
+        {
+          "key": 0,
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
+        },
+        {
+          "key": 1,
+          "optional": true,
+          "value": {
+            "kind": "keyword",
+            "keyword": "string"
+          }
+        }
+      ],
+      "keyword": "array"
+    }
+  },
+  {
+    "source": "array{'field-one': int}",
+    "ast": {
+      "kind": "shape",
+      "fields": [
+        {
+          "key": "field-one",
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
+        }
+      ],
+      "keyword": "array"
+    }
+  },
+  {
+    "source": "array{'field-one'?: int}",
+    "ast": {
+      "kind": "shape",
+      "fields": [
+        {
+          "key": "field-one",
+          "optional": true,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
+        }
+      ],
+      "keyword": "array"
+    }
+  },
+  {
+    "source": "array{int}",
+    "ast": {
+      "kind": "collection",
+      "values": [
+        {
+          "kind": "keyword",
+          "keyword": "int"
+        }
+      ],
+      "keyword": "array"
+    }
+  },
+  {
+    "source": "array{int, int}",
+    "ast": {
+      "kind": "collection",
+      "values": [
+        {
+          "kind": "keyword",
+          "keyword": "int"
+        },
+        {
+          "kind": "keyword",
+          "keyword": "int"
+        }
+      ],
+      "keyword": "array"
+    }
+  },
+  {
+    "source": "list<int>",
+    "ast": {
+      "kind": "collection",
+      "value": {
+        "kind": "keyword",
+        "keyword": "int"
+      },
+      "keyword": "list"
+    }
+  },
+  {
+    "source": "non-empty-list<string>",
+    "ast": {
+      "kind": "collection",
+      "value": {
+        "kind": "keyword",
+        "keyword": "string"
+      },
+      "keyword": "non-empty-list"
+    }
+  },
+  {
+    "source": "list{int}",
+    "ast": {
+      "kind": "collection",
+      "values": [
+        {
+          "kind": "keyword",
+          "keyword": "int"
+        }
+      ],
+      "keyword": "list"
+    }
+  },
+  {
+    "source": "list{int, string}",
+    "ast": {
+      "kind": "collection",
+      "values": [
+        {
+          "kind": "keyword",
+          "keyword": "int"
+        },
+        {
+          "kind": "keyword",
+          "keyword": "string"
+        }
+      ],
+      "keyword": "list"
+    }
+  },
+  {
+    "source": "object{}",
+    "ast": {
+      "kind": "shape",
+      "fields": [],
+      "keyword": "object"
+    }
+  },
+  {
+    "source": "object{foo: int, bar?: string}",
+    "ast": {
+      "kind": "shape",
+      "fields": [
+        {
+          "key": "foo",
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
+        },
+        {
+          "key": "bar",
+          "optional": true,
+          "value": {
+            "kind": "keyword",
+            "keyword": "string"
+          }
+        }
+      ],
+      "keyword": "object"
+    }
+  },
+  {
+    "source": "object{'a-minus': int, 'b-minus'?: string}",
+    "ast": {
+      "kind": "shape",
+      "fields": [
+        {
+          "key": "a-minus",
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
+        },
+        {
+          "key": "b-minus",
+          "optional": true,
+          "value": {
+            "kind": "keyword",
+            "keyword": "string"
+          }
+        }
+      ],
+      "keyword": "object"
+    }
+  },
+  {
+    "source": "int|string",
+    "ast": {
+      "kind": "union",
+      "types": [
+        {
+          "kind": "keyword",
+          "keyword": "int"
+        },
+        {
+          "kind": "keyword",
+          "keyword": "string"
+        }
+      ]
+    }
+  },
+  {
+    "source": "int|string|null",
+    "ast": {
+      "kind": "union",
+      "types": [
+        {
+          "kind": "keyword",
+          "keyword": "int"
+        },
+        {
+          "kind": "keyword",
+          "keyword": "string"
+        },
+        {
+          "kind": "keyword",
+          "keyword": "null"
+        }
+      ]
+    }
+  },
+  {
+    "source": "int|array<string, bool>",
+    "ast": {
+      "kind": "union",
+      "types": [
+        {
+          "kind": "keyword",
+          "keyword": "int"
+        },
+        {
+          "kind": "collection",
+          "key": {
+            "kind": "keyword",
+            "keyword": "string"
+          },
+          "value": {
+            "kind": "keyword",
+            "keyword": "bool"
+          },
+          "keyword": "array"
+        }
+      ]
+    }
+  },
+  {
+    "source": "false|null",
+    "ast": {
+      "kind": "union",
+      "types": [
+        {
+          "kind": "keyword",
+          "keyword": "false"
+        },
+        {
+          "kind": "keyword",
+          "keyword": "null"
+        }
+      ]
+    }
+  },
+  {
+    "source": "true|false",
+    "ast": {
+      "kind": "union",
+      "types": [
+        {
+          "kind": "keyword",
+          "keyword": "true"
+        },
+        {
+          "kind": "keyword",
+          "keyword": "false"
+        }
+      ]
+    }
+  },
+  {
+    "source": "Foo&Bar",
+    "ast": {
+      "kind": "intersection",
+      "types": [
+        {
+          "kind": "class",
+          "name": "Foo"
+        },
+        {
+          "kind": "class",
+          "name": "Bar"
+        }
+      ]
+    }
+  },
+  {
+    "source": "A&B&C",
+    "ast": {
+      "kind": "intersection",
+      "types": [
+        {
+          "kind": "class",
+          "name": "A"
+        },
+        {
+          "kind": "class",
+          "name": "B"
+        },
+        {
+          "kind": "class",
+          "name": "C"
+        }
+      ]
+    }
+  },
+  {
+    "source": "A&B|C",
+    "ast": {
+      "kind": "union",
+      "types": [
+        {
+          "kind": "intersection",
+          "types": [
+            {
+              "kind": "class",
+              "name": "A"
+            },
+            {
+              "kind": "class",
+              "name": "B"
+            }
+          ]
+        },
+        {
+          "kind": "class",
+          "name": "C"
+        }
+      ]
+    }
+  },
+  {
+    "source": "(array<string, int|null>|null)&Foo",
+    "ast": {
+      "kind": "intersection",
+      "types": [
+        {
+          "kind": "union",
+          "types": [
+            {
+              "kind": "collection",
+              "key": {
+                "kind": "keyword",
+                "keyword": "string"
+              },
+              "value": {
+                "kind": "union",
+                "types": [
+                  {
+                    "kind": "keyword",
+                    "keyword": "int"
+                  },
+                  {
+                    "kind": "keyword",
+                    "keyword": "null"
+                  }
+                ]
+              },
+              "keyword": "array"
+            },
+            {
+              "kind": "keyword",
+              "keyword": "null"
+            }
+          ]
+        },
+        {
+          "kind": "class",
+          "name": "Foo"
+        }
+      ]
+    }
+  },
+  {
+    "source": "(int|string)&Foo",
+    "ast": {
+      "kind": "intersection",
+      "types": [
+        {
+          "kind": "union",
+          "types": [
+            {
+              "kind": "keyword",
+              "keyword": "int"
+            },
+            {
+              "kind": "keyword",
+              "keyword": "string"
+            }
+          ]
+        },
+        {
+          "kind": "class",
+          "name": "Foo"
+        }
+      ]
+    }
+  },
+  {
+    "source": "callable(): void",
+    "ast": {
+      "kind": "callable",
+      "signature": {
+        "params": [],
+        "returnType": {
+          "kind": "keyword",
+          "keyword": "void"
+        }
+      }
+    }
+  },
+  {
+    "source": "callable(int, int): string",
+    "ast": {
+      "kind": "callable",
+      "signature": {
+        "params": [
+          {
+            "type": {
+              "kind": "keyword",
+              "keyword": "int"
+            },
+            "byRef": false,
+            "optional": false,
+            "variadic": false
+          },
+          {
+            "type": {
+              "kind": "keyword",
+              "keyword": "int"
+            },
+            "byRef": false,
+            "optional": false,
+            "variadic": false
+          }
+        ],
+        "returnType": {
+          "kind": "keyword",
+          "keyword": "string"
+        }
+      }
+    }
+  },
+  {
+    "source": "callable(int, int=): string",
+    "ast": {
+      "kind": "callable",
+      "signature": {
+        "params": [
+          {
+            "type": {
+              "kind": "keyword",
+              "keyword": "int"
+            },
+            "byRef": false,
+            "optional": false,
+            "variadic": false
+          },
+          {
+            "type": {
+              "kind": "keyword",
+              "keyword": "int"
+            },
+            "byRef": false,
+            "optional": true,
+            "variadic": false
+          }
+        ],
+        "returnType": {
+          "kind": "keyword",
+          "keyword": "string"
+        }
+      }
+    }
+  },
+  {
+    "source": "callable(int $a, string $b): bool",
+    "ast": {
+      "kind": "callable",
+      "signature": {
+        "params": [
+          {
+            "type": {
+              "kind": "keyword",
+              "keyword": "int"
+            },
+            "name": "$a",
+            "byRef": false,
+            "optional": false,
+            "variadic": false
+          },
+          {
+            "type": {
+              "kind": "keyword",
+              "keyword": "string"
+            },
+            "name": "$b",
+            "byRef": false,
+            "optional": false,
+            "variadic": false
+          }
+        ],
+        "returnType": {
+          "kind": "keyword",
+          "keyword": "bool"
+        }
+      }
+    }
+  },
+  {
+    "source": "callable(string &$bar): mixed",
+    "ast": {
+      "kind": "callable",
+      "signature": {
+        "params": [
+          {
+            "type": {
+              "kind": "keyword",
+              "keyword": "string"
+            },
+            "name": "$bar",
+            "byRef": true,
+            "optional": false,
+            "variadic": false
+          }
+        ],
+        "returnType": {
+          "kind": "keyword",
+          "keyword": "mixed"
+        }
+      }
+    }
+  },
+  {
+    "source": "callable(string &$x): void",
+    "ast": {
+      "kind": "callable",
+      "signature": {
+        "params": [
+          {
+            "type": {
+              "kind": "keyword",
+              "keyword": "string"
+            },
+            "name": "$x",
+            "byRef": true,
+            "optional": false,
+            "variadic": false
+          }
+        ],
+        "returnType": {
+          "kind": "keyword",
+          "keyword": "void"
+        }
+      }
+    }
+  },
+  {
+    "source": "callable(float ...$floats): int|null",
+    "ast": {
+      "kind": "callable",
+      "signature": {
+        "params": [
+          {
+            "type": {
+              "kind": "keyword",
+              "keyword": "float"
+            },
+            "name": "$floats",
+            "byRef": false,
+            "optional": false,
+            "variadic": true
+          }
+        ],
+        "returnType": {
+          "kind": "union",
+          "types": [
+            {
+              "kind": "keyword",
+              "keyword": "int"
+            },
+            {
+              "kind": "keyword",
+              "keyword": "null"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "source": "callable(float...): int|null",
+    "ast": {
+      "kind": "callable",
+      "signature": {
+        "params": [
+          {
+            "type": {
+              "kind": "keyword",
+              "keyword": "float"
+            },
+            "byRef": false,
+            "optional": false,
+            "variadic": true
+          }
+        ],
+        "returnType": {
+          "kind": "union",
+          "types": [
+            {
+              "kind": "keyword",
+              "keyword": "int"
+            },
+            {
+              "kind": "keyword",
+              "keyword": "null"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "source": "callable(int ...$rest): void",
+    "ast": {
+      "kind": "callable",
+      "signature": {
+        "params": [
+          {
+            "type": {
+              "kind": "keyword",
+              "keyword": "int"
+            },
+            "name": "$rest",
+            "byRef": false,
+            "optional": false,
+            "variadic": true
+          }
+        ],
+        "returnType": {
+          "kind": "keyword",
+          "keyword": "void"
+        }
+      }
+    }
+  }
+]

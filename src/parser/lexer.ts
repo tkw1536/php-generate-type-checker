@@ -24,6 +24,8 @@ export interface Token {
   type: TokenType;
   value: string;
   pos: number;
+  /** Present on `string` tokens: which quote character wrapped the literal. */
+  quotes?: 'single' | 'double';
 }
 
 export class LexerError extends Error {
@@ -150,7 +152,12 @@ export function tokenize(input: string): Token[] {
         throw new LexerError('Unterminated string literal', start);
       }
       i++;
-      tokens.push({ type: 'string', value, pos: start });
+      tokens.push({
+        type: 'string',
+        value,
+        pos: start,
+        quotes: quote === "'" ? 'single' : 'double',
+      });
       continue;
     }
 

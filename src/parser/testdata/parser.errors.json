@@ -1,0 +1,18 @@
+[
+  {
+    "input": ""
+  },
+  {
+    "input": "int extra"
+  },
+  {
+    "input": "array<string"
+  },
+  {
+    "input": "'foo"
+  },
+  {
+    "input": "int<5, 2>",
+    "messageContains": "Invalid int range"
+  }
+]

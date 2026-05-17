@@ -1,0 +1,164 @@
+# Source file used to generate fixtures in various tests.
+# Blank lines and lines starting with '#' are ignored.
+
+# --- Primitive keywords ---
+int
+integer
+string
+float
+double
+number
+numeric
+bool
+boolean
+array
+object
+callable
+iterable
+mixed
+null
+void
+resource
+never
+noreturn
+empty
+scalar
+array-key
+
+# --- Boolean / null literals (keyword vs literal forms) ---
+true
+false
+
+# --- Built-in type aliases ---
+positive-int
+negative-int
+non-positive-int
+non-negative-int
+non-zero-int
+class-string
+interface-string
+trait-string
+enum-string
+literal-string
+numeric-string
+callable-string
+lowercase-string
+uppercase-string
+non-falsy-string
+truthy-string
+decimal-int-string
+non-decimal-int-string
+non-empty-string
+non-empty-lowercase-string
+non-empty-uppercase-string
+non-empty-literal-string
+non-empty-mixed
+
+# --- Late static / scope types ---
+static
+self
+parent
+$this
+
+# --- Class names ---
+Foo
+Bar
+DateTimeInterface
+\Foo\Bar
+\Fully\Qualified\ClassName
+
+# --- Numeric and string literals ---
+42
+0
+-1
+69
+69.0
+69.42
+69.420
+'foo'
+"bar"
+'baz'
+'hello world'
+'foo'|'bar'
+42|'foo'|true
+
+# --- int ranges ---
+int<0, 100>
+int<50, max>
+int<min, 100>
+int<min, max>
+integer<0, 5>
+
+# --- Generic iterables (array / iterable / list) ---
+array<int>
+array<string, int>
+array<string, array<int, bool>>
+array<int, Foo>
+iterable<string>
+iterable<int, string>
+non-empty-array
+non-empty-array<string>
+non-empty-iterable
+non-empty-iterable<string>
+non-empty-iterable<int, string>
+list
+list<int>
+non-empty-list
+non-empty-list<string>
+
+# --- User-defined generics ---
+Foo<string>
+Foo<int, Bar>
+Collection<array-key, mixed>
+
+# --- Postfix array syntax ---
+string[]
+string[][]
+int[][]
+(int|string)[]
+
+# --- Array shapes ---
+array{}
+array{count: positive-int}
+array{foo: int, bar?: string}
+array{0: int, 1?: string}
+array{'field-one': int}
+array{'field-one'?: int}
+array{int}
+array{int, int}
+
+# --- List Shapes ---
+list<int>
+non-empty-list<string>
+list{int}
+list{int, string}
+
+# --- Object and List shapes --
+object{}
+object{foo: int, bar?: string}
+object{'a-minus': int, 'b-minus'?: string}
+
+# --- Unions ---
+int|string
+int|string|null
+int|array<string, bool>
+false|null
+true|false
+
+# --- Intersections ---
+Foo&Bar
+A&B&C
+A&B|C
+(array<string, int|null>|null)&Foo
+(int|string)&Foo
+
+# --- Callable signatures ---
+callable(): void
+callable(int, int): string
+callable(int, int=): string
+callable(int $a, string $b): bool
+callable(string &$bar): mixed
+callable(string &$x): void
+callable(float ...$floats): int|null
+callable(float...): int|null
+callable(int ...$rest): void

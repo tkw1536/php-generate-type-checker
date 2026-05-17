@@ -6,4 +6,4 @@ export type {
   CallableSig,
   CallableParam,
 } from './ast.ts';
-export { isPrimitiveName } from './ast.ts';
+export { isKeyword as isPrimitiveName } from './ast.ts';

@@ -7,182 +7,158 @@ import type { CallableParam, ShapeField, TypeNode } from './ast';
  * but not necessarily the opposite direction because of possible normalizations during the parsing process.
  */
 export function formatType(type: TypeNode): string {
-  return formatAt(type, Prec.Union);
+  return formatTypeInner(type, 'union');
 }
 
-const Prec = {
-  Union: 0,
-  Intersection: 1,
-  Postfix: 2,
-  Primary: 3,
-} as const;
+type Precedence = 'union' | 'intersection' | 'primary';
 
-type PrecLevel = (typeof Prec)[keyof typeof Prec];
-
-function paren(s: string): string {
-  return `(${s})`;
-}
-
-function formatAt(node: TypeNode, minPrec: PrecLevel): string {
-  switch (node.kind) {
-    case 'union': {
-      if (minPrec > Prec.Union) {
-        return paren(formatAt(node, Prec.Union));
-      }
-      return node.types.map((t) => formatAt(t, Prec.Intersection)).join('|');
-    }
-    case 'intersection': {
-      if (minPrec > Prec.Intersection) {
-        return paren(formatAt(node, Prec.Intersection));
-      }
-      return node.types.map((t) => formatAt(t, Prec.Postfix)).join('&');
-    }
+function formatTypeInner(type: TypeNode, parent: Precedence): string {
+  switch (type.kind) {
+    case 'keyword':
+      return type.keyword;
+    case 'class':
+      return type.name;
+    case 'literal':
+      return formatLiteral(type);
+    case 'range':
+      return formatRange(type);
+    case 'collection':
+      return formatCollection(type);
     case 'array':
-      return formatArray(node, minPrec);
-    case 'list': {
-      const name = node.nonEmpty ? 'non-empty-list' : 'list';
-      const s = `${name}<${formatAt(node.element, Prec.Union)}>`;
-      return minPrec > Prec.Postfix ? paren(s) : s;
-    }
+      return formatPostfixArray(type);
     case 'shape':
-      return formatShape(node, minPrec);
-    case 'generic': {
-      const args = node.typeArgs.map((t) => formatAt(t, Prec.Union)).join(', ');
-      const s = `${node.name}<${args}>`;
-      return minPrec > Prec.Postfix ? paren(s) : s;
-    }
-    case 'callable': {
-      const s = `callable(${formatCallableParams(node.signature.params)}): ${formatAt(node.signature.returnType, Prec.Union)}`;
-      return minPrec > Prec.Postfix ? paren(s) : s;
-    }
-    case 'primitive':
-    case 'class':
-    case 'literal':
-    case 'int_range':
+      return formatShape(type);
+    case 'union':
+      return formatUnion(type, parent);
+    case 'intersection':
+      return formatIntersection(type, parent);
+    case 'callable':
+      return formatCallable(type);
+    case 'generic':
+      return `${type.name}<${type.typeArgs.map((arg) => formatTypeInner(arg, 'union')).join(', ')}>`;
     case 'unsupported':
-      return formatPrimary(node);
-    default:
-      return formatPrimary(node);
+      return type.raw;
   }
 }
 
-function formatPrimary(node: TypeNode): string {
-  switch (node.kind) {
-    case 'primitive':
-      return node.name;
-    case 'int_range':
-      return formatIntRange(node);
-    case 'literal':
-      return formatLiteral(node.value);
-    case 'class':
-      return node.name;
-    case 'unsupported':
-      return node.raw;
-    default:
-      return 'mixed';
+function formatLiteral(literal: Extract<TypeNode, { kind: 'literal' }>): string {
+  if (literal.type === 'number') {
+    return literal.value;
   }
+  if (literal.quotes === 'double') {
+    const escaped = literal.value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    return `"${escaped}"`;
+  }
+  const escaped = literal.value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  return `'${escaped}'`;
 }
 
-function formatIntRange(node: { min?: number; max?: number }): string {
-  const lo = node.min === undefined ? 'min' : String(node.min);
-  const hi = node.max === undefined ? 'max' : String(node.max);
-  return `int<${lo}, ${hi}>`;
+function formatRange(type: Extract<TypeNode, { kind: 'range' }>): string {
+  const min = type.min === null ? 'min' : String(type.min);
+  const max = type.max === null ? 'max' : String(type.max);
+  return `${type.keyword}<${min}, ${max}>`;
 }
 
-function formatLiteral(value: string | number | boolean): string {
-  if (typeof value === 'string') {
-    return `'${value.replace(/'/g, "\\'")}'`;
+function formatCollection(type: Extract<TypeNode, { kind: 'collection' }>): string {
+  if ('key' in type) {
+    const inner = `${formatTypeInner(type.key, 'union')}, ${formatTypeInner(type.value, 'union')}`;
+    return `${type.keyword}<${inner}>`;
   }
-  if (typeof value === 'boolean') {
-    return value ? 'true' : 'false';
+
+  if ('value' in type) {
+    return `${type.keyword}<${formatTypeInner(type.value, 'union')}>`;
   }
-  return String(value);
+
+  const inner = type.values
+    .map((value) => formatTypeInner(value, 'union'))
+    .join(', ');
+
+  if (type.values.length === 0) {
+    return `${type.keyword}<>`;
+  }
+
+  return `${type.keyword}{${inner}}`;
 }
 
-function formatArray(
-  node: { key?: TypeNode; value: TypeNode },
-  minPrec: PrecLevel,
-): string {
-  if (node.key !== undefined) {
-    const s = `array<${formatAt(node.key, Prec.Union)}, ${formatAt(node.value, Prec.Union)}>`;
-    return minPrec > Prec.Postfix ? paren(s) : s;
-  }
-
-  const value = node.value;
-  if (value.kind !== 'union' && value.kind !== 'intersection') {
-    const inner = formatAt(value, Prec.Primary);
-    const s = `${inner}[]`;
-    return minPrec > Prec.Postfix ? paren(s) : s;
-  }
-
-  const s = `array<${formatAt(value, Prec.Union)}>`;
-  return minPrec > Prec.Postfix ? paren(s) : s;
+function formatPostfixArray(type: Extract<TypeNode, { kind: 'array' }>): string {
+  return `${formatPostfixOperand(type.value)}[]`;
 }
 
-function isListTupleFields(fields: ShapeField[]): boolean {
-  if (fields.length < 2) {
-    return false;
+function formatPostfixOperand(type: TypeNode): string {
+  if (type.kind === 'array') {
+    return `${formatPostfixOperand(type.value)}[]`;
   }
-  for (let i = 0; i < fields.length; i++) {
-    const field = fields[i];
-    if (field.key !== i || field.optional) {
-      return false;
-    }
+  const formatted = formatTypeInner(type, 'primary');
+  if (type.kind === 'union' || type.kind === 'intersection') {
+    return `(${formatted})`;
   }
-  return true;
+  return formatted;
 }
 
-function formatShape(
-  node: { fields: ShapeField[]; object?: boolean },
-  minPrec: PrecLevel,
-): string {
-  const objectShape = Boolean(node.object);
-  const useListTuple = !objectShape && isListTupleFields(node.fields);
-  const inner = useListTuple
-    ? node.fields.map((f) => formatAt(f.type, Prec.Union)).join(', ')
-    : node.fields.map((f) => formatShapeField(f, objectShape)).join(', ');
-  const brace = objectShape ? 'object' : useListTuple ? 'list' : 'array';
-  const s = `${brace}{${inner}}`;
-  return minPrec > Prec.Postfix ? paren(s) : s;
+function formatShape(type: Extract<TypeNode, { kind: 'shape' }>): string {
+  const fields = type.fields.map(formatShapeField).join(', ');
+  return `${type.keyword}{${fields}}`;
 }
 
-function formatShapeKey(key: string | number, objectShape: boolean): string {
+function formatShapeField(field: ShapeField): string {
+  const key = formatShapeKey(field.key);
+  const optional = field.optional ? '?' : '';
+  return `${key}${optional}: ${formatTypeInner(field.value, 'union')}`;
+}
+
+function formatShapeKey(key: string | number): string {
   if (typeof key === 'number') {
     return String(key);
   }
-  if (objectShape && /^[a-zA-Z_]\w*$/.test(key)) {
+  if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key)) {
     return key;
   }
-  if (/^[a-zA-Z_]\w*$/.test(key) && !key.includes('::')) {
-    return key;
+  return `'${key.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+}
+
+function formatUnion(
+  type: Extract<TypeNode, { kind: 'union' }>,
+  parent: Precedence,
+): string {
+  const formatted = type.types
+    .map((member) => formatTypeInner(member, 'union'))
+    .join('|');
+  if (parent === 'intersection') {
+    return `(${formatted})`;
   }
-  return `'${key.replace(/'/g, "\\'")}'`;
+  return formatted;
 }
 
-function formatShapeField(field: ShapeField, objectShape: boolean): string {
-  const opt = field.optional ? '?' : '';
-  return `${formatShapeKey(field.key, objectShape)}${opt}: ${formatAt(field.type, Prec.Union)}`;
+function formatIntersection(
+  type: Extract<TypeNode, { kind: 'intersection' }>,
+  _parent: Precedence,
+): string {
+  return type.types
+    .map((member) => formatTypeInner(member, 'intersection'))
+    .join('&');
 }
 
-function formatCallableParams(params: CallableParam[]): string {
-  return params.map(formatCallableParam).join(', ');
+function formatCallable(type: Extract<TypeNode, { kind: 'callable' }>): string {
+  const params = type.signature.params.map(formatCallableParam).join(', ');
+  return `callable(${params}): ${formatTypeInner(type.signature.returnType, 'union')}`;
 }
 
 function formatCallableParam(param: CallableParam): string {
-  let s = formatAt(param.type, Prec.Union);
+  let s = formatTypeInner(param.type, 'union');
+
   if (param.variadic) {
-    if (param.name) {
-      s += ` ...${param.name}`;
-    } else {
-      s += '...';
+    s = param.name ? `${s} ...${param.name}` : `${s}...`;
+  } else {
+    if (param.byRef) {
+      s += param.name ? ` &${param.name}` : ' &';
+    } else if (param.name) {
+      s += ` ${param.name}`;
     }
-  } else if (param.byRef && param.name) {
-    s += ` &${param.name}`;
-  } else if (param.name) {
-    s += ` ${param.name}`;
   }
+
   if (param.optional) {
-    s += param.name ? '?' : '=';
+    s += '=';
   }
+
   return s;
 }

@@ -1,15 +1,60 @@
+export type TypeNode =
+  // known keyword
+  | { kind: 'keyword'; keyword: Keyword }
+
+  // classname (non-keyword)
+  | { kind: 'class'; name: string }
+
+  // string literals "hello world", 'hello world'
+  | { kind: 'literal'; type: 'string'; value: string, quotes: 'single' | 'double' }
+
+  // numeric literals with exact source. e.g. "42" or "42.0"
+  | { kind: 'literal'; type: 'number'; value: string }
+
+  // int<$min, $max> with null meaning a literal "min" or "max"
+  | { kind: 'range'; min: number|null; max: number|null, keyword: 'int' | 'integer' } 
+
+  // iterable<value> + variants
+  | { kind: 'collection'; value: TypeNode; keyword: 'list' | 'non-empty-list' | 'array' | 'non-empty-array' | 'iterable' | 'non-empty-iterable'}
+  // iterable<key, value> + variants
+  | { kind: 'collection'; key: TypeNode; value: TypeNode; keyword: 'array' | 'non-empty-array' | 'iterable' | 'non-empty-iterable'}
+
+  // iterable{value1,value2,...} + variants
+  | { kind: 'collection'; values: TypeNode[], keyword: 'list' | 'non-empty-list' | 'array' | 'non-empty-array' | 'iterable' | 'non-empty-iterable'}
+
+  // iterable{key1: value1, key2: value2} + variants
+  | { kind: 'shape'; fields: ShapeField[], keyword: 'list' | 'non-empty-list' | 'array' | 'non-empty-array' | 'iterable' | 'non-empty-iterable' | 'object' }
+
+  // value[]
+  | { kind: 'array'; value: TypeNode }
+
+  // left|right
+  | { kind: 'union'; types: TypeNode[] }
+
+  // left&right
+  | { kind: 'intersection'; types: TypeNode[] } 
+
+  // callable(params): returnType
+  | { kind: 'callable'; signature: CallableSig }
+
+  // Foo<...>
+  | { kind: 'generic'; name: string; typeArgs: TypeNode[] }
+
+  // everything not supported by the parser
+  | { kind: 'unsupported'; raw: string; reason?: string }; 
+
 export interface ShapeField {
   key: string | number;
-  optional?: boolean;
-  type: TypeNode;
+  optional: boolean;
+  value: TypeNode;
 }
 
 export interface CallableParam {
   name?: string;
   type: TypeNode;
-  optional?: boolean;
-  byRef?: boolean;
-  variadic?: boolean;
+  optional: boolean;
+  byRef: boolean;
+  variadic: boolean;
 }
 
 export interface CallableSig {
@@ -17,74 +62,66 @@ export interface CallableSig {
   returnType: TypeNode;
 }
 
-export type TypeNode =
-  | { kind: 'primitive'; name: string }
-  /** Bounded integer: optional `min` / `max` omit open sides (`int<min, 100>` → no min, max 100). */
-  | { kind: 'int_range'; min?: number; max?: number }
-  | { kind: 'array'; key?: TypeNode; value: TypeNode }
-  | { kind: 'list'; element: TypeNode; nonEmpty?: boolean }
-  | { kind: 'shape'; fields: ShapeField[]; sealed?: boolean; object?: boolean }
-  | { kind: 'union'; types: TypeNode[] }
-  | { kind: 'intersection'; types: TypeNode[] }
-  | { kind: 'generic'; name: string; typeArgs: TypeNode[] }
-  | { kind: 'callable'; signature: CallableSig }
-  | { kind: 'literal'; value: string | number | boolean }
-  | { kind: 'class'; name: string }
-  | { kind: 'unsupported'; raw: string; reason?: string };
 
-export function isPrimitiveName(name: string): boolean {
-  const primitives = new Set([
-    'int',
-    'integer',
-    'string',
-    'float',
-    'double',
-    'number',
-    'numeric',
-    'bool',
-    'boolean',
-    'true',
-    'false',
-    'null',
-    'void',
-    'mixed',
-    'array',
-    'iterable',
-    'callable',
-    'object',
-    'resource',
-    'never',
-    'noreturn',
-    'array-key',
-    'scalar',
-    'empty',
-    'positive-int',
-    'negative-int',
-    'non-positive-int',
-    'non-negative-int',
-    'non-zero-int',
-    'non-empty-string',
-    'non-empty-mixed',
-    'class-string',
-    'interface-string',
-    'trait-string',
-    'enum-string',
-    'literal-string',
-    'numeric-string',
-    'callable-string',
-    'lowercase-string',
-    'uppercase-string',
-    'non-falsy-string',
-    'truthy-string',
-    'decimal-int-string',
-    'non-decimal-int-string',
-    'non-empty-lowercase-string',
-    'non-empty-uppercase-string',
-    'non-empty-literal-string',
-    'static',
-    '$this',
-    'self',
-    'parent',
-  ]);
-  return primitives.has(name) || name.includes('-');
+export type Keyword = typeof keywords extends Set<infer U> ? U : never;
+const keywords = new Set([
+  '$this',
+  'array-key',
+  'array',
+  'bool',
+  'boolean',
+  'callable-string',
+  'callable',
+  'class-string',
+  'decimal-int-string',
+  'double',
+  'empty',
+  'enum-string',
+  'false',
+  'float',
+  'int',
+  'integer',
+  'interface-string',
+  'iterable',
+  'list',
+  'literal-string',
+  'lowercase-string',
+  'mixed',
+  'negative-int',
+  'never',
+  'non-decimal-int-string',
+  'non-empty-array',
+  'non-empty-iterable',
+  'non-empty-list',
+  'non-empty-literal-string',
+  'non-empty-lowercase-string',
+  'non-empty-mixed',
+  'non-empty-string',
+  'non-empty-uppercase-string',
+  'non-falsy-string',
+  'non-negative-int',
+  'non-positive-int',
+  'non-zero-int',
+  'noreturn',
+  'null',
+  'number',
+  'numeric-string',
+  'numeric',
+  'object',
+  'parent',
+  'positive-int',
+  'resource',
+  'scalar',
+  'self',
+  'static',
+  'string',
+  'trait-string',
+  'true',
+  'truthy-string',
+  'uppercase-string',
+  'void',
+] as const);
+
+export function isKeyword(candidate: string): candidate is Keyword {
+  return keywords.has(candidate as Keyword);
 }

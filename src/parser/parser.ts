@@ -1,5 +1,5 @@
 import type { CallableParam, CallableSig, ShapeField, TypeNode } from './ast.ts';
-import { isPrimitiveName } from './ast.ts';
+import { isKeyword } from './ast.ts';
 import { type Token, tokenize } from './lexer.ts';
 
 export class ParseError extends Error {
@@ -71,14 +71,20 @@ class Parser {
 
     if (this.match('number')) {
       const prev = this.previous();
-      const num = prev.value.includes('.')
-        ? parseFloat(prev.value)
-        : parseInt(prev.value, 10);
-      return { kind: 'literal', value: num };
+      return { kind: 'literal', type: 'number', value: prev.value };
     }
 
     if (this.match('string')) {
-      return { kind: 'literal', value: this.previous().value };
+      const prev = this.previous();
+      if (prev.quotes === undefined) {
+        throw new ParseError('Internal error: string token missing quotes', prev.pos);
+      }
+      return {
+        kind: 'literal',
+        type: 'string',
+        value: prev.value,
+        quotes: prev.quotes,
+      };
     }
 
     if (!this.check('identifier')) {
@@ -114,16 +120,16 @@ class Parser {
   }
 
   /** `int<lower, upper>` / `integer<…>`: bounds are integer literals or `min` / `max` for open sides. */
-  private parseIntRangeGenericBody(): TypeNode {
+  private parseIntRangeGenericBody(keyword: 'int' | 'integer'): TypeNode {
     const lo = this.parseIntRangeEndpoint('lower');
     this.expect('comma');
     const hi = this.parseIntRangeEndpoint('upper');
-    const min = lo.kind === 'open' ? undefined : lo.value;
-    const max = hi.kind === 'open' ? undefined : hi.value;
-    if (min !== undefined && max !== undefined && min > max) {
+    const min = lo.kind === 'open' ? null : lo.value;
+    const max = hi.kind === 'open' ? null : hi.value;
+    if (min !== null && max !== null && min > max) {
       throw new ParseError(`Invalid int range: ${min} > ${max}`, this.peek().pos);
     }
-    return { kind: 'int_range', min, max };
+    return { kind: 'range', min, max, keyword };
   }
 
   private parseIntRangeEndpoint(
@@ -157,35 +163,63 @@ class Parser {
 
   private parseArrayShape(): TypeNode {
     this.expect('lbrace');
-    const fields = this.parseShapeFields();
+    const node = this.parseArrayShapeBody();
     this.expect('rbrace');
-    return { kind: 'shape', fields };
+    return node;
+  }
+
+  private parseArrayShapeBody(): TypeNode {
+    if (this.check('rbrace')) {
+      return { kind: 'shape', fields: [], keyword: 'array' };
+    }
+
+    if (!this.isKeyedShapeFieldStart()) {
+      const values: TypeNode[] = [];
+      do {
+        values.push(this.parseUnion());
+      } while (this.match('comma') && !this.check('rbrace'));
+      return { kind: 'collection', values, keyword: 'array' };
+    }
+
+    const fields: ShapeField[] = [];
+    do {
+      fields.push(this.parseShapeField());
+    } while (this.match('comma') && !this.check('rbrace'));
+
+    return { kind: 'shape', fields, keyword: 'array' };
   }
 
   private parseObjectShape(): TypeNode {
     this.expect('lbrace');
     const fields = this.parseShapeFields();
     this.expect('rbrace');
-    return { kind: 'shape', fields, object: true };
+    return { kind: 'shape', fields, keyword: 'object' };
   }
 
   private parseListShape(): TypeNode {
     this.expect('lbrace');
-    const elements: TypeNode[] = [];
+    const values: TypeNode[] = [];
     if (!this.check('rbrace')) {
       do {
-        elements.push(this.parseUnion());
+        values.push(this.parseUnion());
       } while (this.match('comma') && !this.check('rbrace'));
     }
     this.expect('rbrace');
-    if (elements.length === 1) {
-      return { kind: 'list', element: elements[0] };
+    return { kind: 'collection', values, keyword: 'list' };
+  }
+
+  private isKeyedShapeFieldStart(): boolean {
+    if (this.check('number') || this.check('string')) {
+      return true;
     }
-    const fields: ShapeField[] = elements.map((type, index) => ({
-      key: index,
-      type,
-    }));
-    return { kind: 'shape', fields };
+    if (!this.check('identifier')) {
+      return false;
+    }
+    let i = this.index + 1;
+    if (this.tokens[i]?.type === 'question') {
+      i++;
+    }
+    return this.tokens[i]?.type === 'colon';
   }
 
   private parseShapeFields(): ShapeField[] {
@@ -227,7 +261,7 @@ class Parser {
 
     this.expect('colon');
     const type = this.parseUnion();
-    return optional ? { key, optional: true, type } : { key, type };
+    return { key, optional, value: type };
   }
 
   private parseCallable(): TypeNode {
@@ -310,7 +344,7 @@ class Parser {
     this.expect('lt');
 
     if (name === 'int' || name === 'integer') {
-      const node = this.parseIntRangeGenericBody();
+      const node = this.parseIntRangeGenericBody(name);
       this.expect('gt');
       return node;
     }
@@ -325,56 +359,64 @@ class Parser {
 
     this.expect('gt');
 
-    if (name === 'array') {
-      return this.genericArrayToNode(typeArgs);
-    }
-    if (name === 'non-empty-list') {
-      if (typeArgs.length !== 1) {
-        return {
-          kind: 'unsupported',
-          raw: `non-empty-list<${typeArgs.length} args>`,
-          reason: 'non-empty-list expects one type argument',
-        };
-      }
-      return { kind: 'list', element: typeArgs[0], nonEmpty: true };
-    }
-    if (name === 'list') {
-      if (typeArgs.length !== 1) {
-        return {
-          kind: 'unsupported',
-          raw: `list<${typeArgs.length} args>`,
-          reason: 'list expects one type argument',
-        };
-      }
-      return { kind: 'list', element: typeArgs[0] };
+    if (
+      name === 'array' ||
+      name === 'non-empty-array' ||
+      name === 'iterable' ||
+      name === 'non-empty-iterable' ||
+      name === 'list' ||
+      name === 'non-empty-list'
+    ) {
+      return this.genericCollectionToNode(typeArgs, name);
     }
 
     return { kind: 'generic', name, typeArgs };
   }
 
-  private genericArrayToNode(typeArgs: TypeNode[]): TypeNode {
+  private genericCollectionToNode(
+    typeArgs: TypeNode[],
+    keyword:
+      | 'list'
+      | 'non-empty-list'
+      | 'array'
+      | 'non-empty-array'
+      | 'iterable'
+      | 'non-empty-iterable',
+  ): TypeNode {
+    if (typeArgs.length === 0) {
+      return { kind: 'collection', values: [], keyword };
+    }
     if (typeArgs.length === 1) {
-      return { kind: 'array', value: typeArgs[0] };
+      return { kind: 'collection', value: typeArgs[0], keyword };
     }
     if (typeArgs.length === 2) {
-      return { kind: 'array', key: typeArgs[0], value: typeArgs[1] };
+      if (keyword === 'list' || keyword === 'non-empty-list') {
+        return {
+          kind: 'unsupported',
+          raw: `${keyword}<${typeArgs.length} args>`,
+          reason: `${keyword} expects zero or one type argument`,
+        };
+      }
+      return {
+        kind: 'collection',
+        key: typeArgs[0],
+        value: typeArgs[1],
+        keyword,
+      };
     }
     return {
       kind: 'unsupported',
-      raw: `array<${typeArgs.length} args>`,
-      reason: 'array expects one or two type arguments',
+      raw: `${keyword}<${typeArgs.length} args>`,
+      reason: `${keyword} expects zero, one, or two type arguments`,
     };
   }
 
   private identifierToNode(name: string): TypeNode {
-    if (name === 'true' || name === 'false') {
-      return { kind: 'literal', value: name === 'true' };
-    }
     if (name === 'null') {
-      return { kind: 'primitive', name: 'null' };
+      return { kind: 'keyword', keyword: 'null' };
     }
-    if (isPrimitiveName(name)) {
-      return { kind: 'primitive', name };
+    if (isKeyword(name)) {
+      return { kind: 'keyword', keyword: name };
     }
     if (name.startsWith('\\') || name.includes('\\')) {
       return { kind: 'class', name };
