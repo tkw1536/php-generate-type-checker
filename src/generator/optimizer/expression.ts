@@ -141,6 +141,9 @@ function normalizeExpr(expr: Expr): Expr {
 
 function normalizeNot(expr: Extract<Expr, { kind: 'not' }>): Expr {
   const inner = normalizeExpr(expr.expr);
+  if (inner.kind === 'bool') {
+    return boolLit(!inner.value);
+  }
   if (inner.kind === 'not') {
     return normalizeExpr(inner.expr);
   }
@@ -155,6 +158,10 @@ function normalizeNot(expr: Extract<Expr, { kind: 'not' }>): Expr {
 
 function normalizeAnd(exprs: Expr[]): Expr {
   let flat = flattenAnd(exprs.map((e) => normalizeExpr(e)));
+  const factored = factorAndOfOrs(flat);
+  if (factored !== null) {
+    return normalizeOr(factored.exprs);
+  }
   if (flat.some((e) => e.kind === 'bool' && !e.value)) {
     return boolLit(false);
   }
@@ -174,6 +181,10 @@ function normalizeAnd(exprs: Expr[]): Expr {
 
 function normalizeOr(exprs: Expr[]): Expr {
   let flat = flattenOr(exprs.map((e) => normalizeExpr(e)));
+  const factored = factorOrOfAnds(flat);
+  if (factored !== null) {
+    return normalizeAnd(factored.exprs);
+  }
   if (flat.some((e) => e.kind === 'bool' && e.value)) {
     return boolLit(true);
   }
@@ -249,4 +260,96 @@ function flattenOr(exprs: Expr[]): Expr[] {
     }
   }
   return out;
+}
+
+function conjunctsOf(expr: Expr): Expr[] {
+  if (expr.kind === 'and') {
+    return flattenAnd(expr.exprs);
+  }
+  return [expr];
+}
+
+function disjunctsOf(expr: Expr): Expr[] {
+  if (expr.kind === 'or') {
+    return flattenOr(expr.exprs);
+  }
+  return [expr];
+}
+
+function exprInList(expr: Expr, list: Expr[]): boolean {
+  return list.some((e) => equals(e, expr));
+}
+
+function intersectOperands(armLists: Expr[][]): Expr[] {
+  if (armLists.length === 0) {
+    return [];
+  }
+  const [first, ...rest] = armLists;
+  return first!.filter((operand) =>
+    rest.every((arm) => exprInList(operand, arm)),
+  );
+}
+
+function subtractOperands(arm: Expr[], common: Expr[]): Expr[] {
+  return arm.filter((operand) => !common.some((c) => equals(c, operand)));
+}
+
+function remainderAndExpr(remainder: Expr[]): Expr {
+  if (remainder.length === 0) {
+    return boolLit(true);
+  }
+  if (remainder.length === 1) {
+    return remainder[0]!;
+  }
+  return andExpr(remainder);
+}
+
+function remainderOrExpr(remainder: Expr[]): Expr {
+  if (remainder.length === 0) {
+    return boolLit(false);
+  }
+  if (remainder.length === 1) {
+    return remainder[0]!;
+  }
+  return orExpr(remainder);
+}
+
+function allRemaindersEmpty(armLists: Expr[][], common: Expr[]): boolean {
+  return armLists.every((arm) => subtractOperands(arm, common).length === 0);
+}
+
+function factorOrOfAnds(exprs: Expr[]): Extract<Expr, { kind: 'and' }> | null {
+  if (exprs.length < 2) {
+    return null;
+  }
+  const armLists = exprs.map(conjunctsOf);
+  const common = intersectOperands(armLists);
+  if (common.length === 0) {
+    return null;
+  }
+  if (allRemaindersEmpty(armLists, common)) {
+    return { kind: 'and', exprs: common };
+  }
+  const remainderOr = orExpr(
+    armLists.map((arm) => remainderAndExpr(subtractOperands(arm, common))),
+  );
+  return { kind: 'and', exprs: [...common, remainderOr] };
+}
+
+function factorAndOfOrs(exprs: Expr[]): Extract<Expr, { kind: 'or' }> | null {
+  if (exprs.length < 2) {
+    return null;
+  }
+  const armLists = exprs.map(disjunctsOf);
+  const common = intersectOperands(armLists);
+  if (common.length === 0) {
+    return null;
+  }
+  if (allRemaindersEmpty(armLists, common)) {
+    return { kind: 'or', exprs: common };
+  }
+  const remainderAnd = andExpr(
+    armLists.map((arm) => remainderOrExpr(subtractOperands(arm, common))),
+  );
+  return { kind: 'or', exprs: [...common, remainderAnd] };
 }

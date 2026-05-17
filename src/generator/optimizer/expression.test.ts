@@ -84,6 +84,69 @@ describe('simplifyExpression', () => {
       notExpr(binExpr('>', refArg($v), literalArg('0'))),
       binExpr('<=', refArg($v), literalArg('0')),
     ],
+    [
+      'factor common conjunct out of or-of-ands',
+      orExpr([
+        andExpr([isInt, isString]),
+        andExpr([isInt, callExpr('is_bool', [refArg($v)])]),
+      ]),
+      andExpr([isInt, orExpr([isString, callExpr('is_bool', [refArg($v)])])]),
+    ],
+    [
+      'factor common disjunct out of and-of-ors',
+      andExpr([
+        orExpr([isInt, isString]),
+        orExpr([isInt, callExpr('is_bool', [refArg($v)])]),
+      ]),
+      orExpr([isInt, andExpr([isString, callExpr('is_bool', [refArg($v)])])]),
+    ],
+    [
+      'factor three-arm or with shared guards',
+      orExpr([
+        andExpr([
+          callExpr('is_array', [refArg($v)]),
+          callExpr('array_key_exists', [literalArg('x'), refArg($v)]),
+          isString,
+        ]),
+        andExpr([
+          callExpr('is_array', [refArg($v)]),
+          callExpr('array_key_exists', [literalArg('y'), refArg($v)]),
+          isInt,
+        ]),
+        andExpr([
+          callExpr('is_array', [refArg($v)]),
+          callExpr('array_key_exists', [literalArg('z'), refArg($v)]),
+          callExpr('is_bool', [refArg($v)]),
+        ]),
+      ]),
+      andExpr([
+        callExpr('is_array', [refArg($v)]),
+        orExpr([
+          andExpr([
+            callExpr('array_key_exists', [literalArg('x'), refArg($v)]),
+            isString,
+          ]),
+          andExpr([
+            callExpr('array_key_exists', [literalArg('y'), refArg($v)]),
+            isInt,
+          ]),
+          andExpr([
+            callExpr('array_key_exists', [literalArg('z'), refArg($v)]),
+            callExpr('is_bool', [refArg($v)]),
+          ]),
+        ]),
+      ]),
+    ],
+    [
+      'factor (a and b) or a to a',
+      orExpr([andExpr([isInt, isString]), isInt]),
+      isInt,
+    ],
+    [
+      'factor equivalent and arms with different conjunct order',
+      orExpr([andExpr([isInt, isString]), andExpr([isString, isInt])]),
+      andExpr([isInt, isString]),
+    ],
   ] as [string, Expr, Expr][])('%s', (_name, input, expected) => {
     expect(simplifyExpression(input, defaultParams)).toEqual(expected);
   });

@@ -7,6 +7,8 @@ import { flatten } from './flatten.ts';
 import { inlineBlock } from './inline.ts';
 import { createOptimizerParams, type OptimizerParams } from './params.ts';
 import { prunePrograms } from './prune.ts';
+import { dce } from './dce.ts';
+import { applyKnownFacts, emptyFactEnv } from './knownFacts.ts';
 import { reorder } from './reorder.ts';
 import { unnest } from './unnest.ts';
 
@@ -39,9 +41,20 @@ export function optimize(ir: CheckerIR): CheckerIR {
   return prunePrograms(current, params);
 }
 
-function runPhases(block: Block, params: OptimizerParams): Block {
-  const phased = flatten(combine(unnest(dedupe(reorder(block)))));
-  return simplify(phased, params);
+function runPhases(
+  block: Block,
+  ir: CheckerIR,
+  programName: string,
+  params: OptimizerParams,
+): Block {
+  let b = flatten(combine(unnest(dedupe(reorder(block)))));
+  const program = ir.programs[programName];
+  const parameter = program?.parameter ?? '$value';
+  b = applyKnownFacts(b, parameter, emptyFactEnv());
+  b = simplify(b, params);
+  b = dce(b);
+  b = simplify(b, params);
+  return b;
 }
 
 function optimizeBlock(
@@ -54,7 +67,7 @@ function optimizeBlock(
 
   for (let iter = 0; iter < params.maxOptimizationLoops; iter++) {
     const inlined = inlineBlock(current, ir, programName);
-    const next = runPhases(inlined, params);
+    const next = runPhases(inlined, ir, programName, params);
     if (blockEquals(current, next)) {
       return next;
     }
