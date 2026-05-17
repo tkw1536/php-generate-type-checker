@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { parseType } from '../../parser/index.ts';
-import { typeDedupeKey } from '../semantics/keys.ts';
+import { parseType } from '../../../parser/index.ts';
+import { formatType } from '../../../parser/format.ts';
 import { IsStyleFunctionNameProposer, SequentialCheckNameProposer } from './proposer.ts';
-import { FunctionNameRegistry } from './registry.ts';
+import { FunctionNameRegistry } from './index.ts';
 
 describe('FunctionNameRegistry', () => {
   it('disambiguates different dedupe keys that share the same proposed name', () => {
@@ -10,7 +10,7 @@ describe('FunctionNameRegistry', () => {
     const b = parseType('\\Vendor\\B\\Foo');
     const r = new FunctionNameRegistry(new IsStyleFunctionNameProposer());
     expect(r.get(a)).toBe('isFoo');
-    expect(typeDedupeKey(a)).not.toBe(typeDedupeKey(b));
+    expect(formatType(a)).not.toBe(formatType(b));
     expect(r.get(b)).toBe('isFoo_2');
   });
 

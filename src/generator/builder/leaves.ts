@@ -47,7 +47,7 @@ const SUPPORTED_LEAF_KEYWORDS = new Set([
 ]);
 
 /** Whether a keyword has a direct single-expression leaf guard. */
-export function leafPrimitiveSupported(keyword: string): boolean {
+function leafPrimitiveSupported(keyword: string): boolean {
   return SUPPORTED_LEAF_KEYWORDS.has(keyword);
 }
 

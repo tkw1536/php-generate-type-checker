@@ -11,7 +11,7 @@ import {
   orExpr,
   refArg,
 } from '../ir/index.ts';
-import { isSupportedLeafType } from '../semantics/leaves.ts';
+import { isSupportedLeafType } from './leaves.ts';
 import { phpLiteralFromNode } from './phpLiteral.ts';
 
 /** Single positive guard expression, or null if uncheckable. */

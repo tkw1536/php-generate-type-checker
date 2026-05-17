@@ -1,6 +1,5 @@
 import './style.css';
 import {
-  assertCheckable,
   build,
   optimize,
   parseType,
@@ -193,7 +192,6 @@ function runGenerate(panels: {
 
   try {
     const ast = parseType(typeString);
-    assertCheckable(ast, 'function');
     const built = build(ast, genOpts);
     const builtJson = JSON.stringify(built.ir, null, 2);
     setSuccessOutput(panels.irBuild, builtJson);

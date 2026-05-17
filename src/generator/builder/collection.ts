@@ -1,22 +1,34 @@
 import type { TypeNode } from '../../parser/ast.ts';
 
-export type BareListKeyword = 'list' | 'non-empty-list';
+/** Keywords the parser emits without `<…>` that mean an empty type-parameter collection. */
+export type BareEmptyCollectionKeyword =
+  | 'list'
+  | 'non-empty-list'
+  | 'non-empty-array';
 
-export function isBareListKeyword(
+export function isBareEmptyCollectionKeyword(
   node: TypeNode,
-): node is { kind: 'keyword'; keyword: BareListKeyword } {
+): node is { kind: 'keyword'; keyword: BareEmptyCollectionKeyword } {
   return (
     node.kind === 'keyword' &&
-    (node.keyword === 'list' || node.keyword === 'non-empty-list')
+    (node.keyword === 'list' ||
+      node.keyword === 'non-empty-list' ||
+      node.keyword === 'non-empty-array')
   );
 }
 
-/** Parser emits bare `list` / `non-empty-list` as keywords; codegen treats them as empty collections. */
-export function bareListKeywordAsCollection(
-  node: { kind: 'keyword'; keyword: BareListKeyword },
+/** @deprecated Use {@link isBareEmptyCollectionKeyword}. */
+export const isBareListKeyword = isBareEmptyCollectionKeyword;
+
+/** Parser emits bare collection keywords; codegen treats them as `keyword<>`. */
+export function bareEmptyCollectionKeywordAsCollection(
+  node: { kind: 'keyword'; keyword: BareEmptyCollectionKeyword },
 ): Extract<TypeNode, { kind: 'collection'; values: TypeNode[] }> {
   return { kind: 'collection', values: [], keyword: node.keyword };
 }
+
+/** @deprecated Use {@link bareEmptyCollectionKeywordAsCollection}. */
+export const bareListKeywordAsCollection = bareEmptyCollectionKeywordAsCollection;
 
 export type CollectionKeyword = Extract<
   TypeNode,

@@ -4,7 +4,7 @@ import { Builder } from './builder/';
 import {
   createFunctionNameRegistry,
   type FunctionNameRegistry,
-} from './builder/registry.ts';
+} from './builder/registry/index.ts';
 import { optimize as optimizeIr } from './optimizer/';
 import type { GenerateCheckerOptions } from './options.ts';
 import { render } from './render/index.ts';

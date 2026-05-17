@@ -1,12 +1,12 @@
-import type { ShapeField, TypeNode } from '../../parser/ast.ts';
-import { typeDedupeKey } from '../semantics/keys.ts';
+import type { ShapeField, TypeNode } from '../../../parser/ast.ts';
+import { formatType } from '../../../parser/format.ts';
 import {
   isIterableKeyword,
   isListKeyword,
   isNonEmptyKeyword,
   shapeIsObject,
-} from '../semantics/collection.ts';
-import { sortFlattenedUnionMembers } from '../semantics/union.ts';
+} from '../collection.ts';
+import { sortFlattenedUnionMembers } from '../union.ts';
 
 /** Proposes a base PHP function name from a type (no cache or collision handling). */
 export interface FunctionNameProposer {
@@ -57,7 +57,7 @@ const RESERVED_WHOLE_SLUG = new Set(
 );
 
 function shapeFieldSortKey(f: ShapeField): string {
-  return `${String(f.key)}:${f.optional ? '1' : '0'}:${typeDedupeKey(f.value)}`;
+  return `${String(f.key)}:${f.optional ? '1' : '0'}:${formatType(f.value)}`;
 }
 
 function keywordToPascal(keyword: string): string {
@@ -173,7 +173,7 @@ function typeToPascalSlug(node: TypeNode): string {
     }
     case 'intersection': {
       const parts = [...node.types]
-        .sort((a, b) => typeDedupeKey(a).localeCompare(typeDedupeKey(b)))
+        .sort((a, b) => formatType(a).localeCompare(formatType(b)))
         .map(typeToPascalSlug);
       return parts.join('And');
     }
@@ -182,12 +182,12 @@ function typeToPascalSlug(node: TypeNode): string {
       return `Generic${keywordToPascal(node.name)}${args}`;
     }
     case 'callable':
-      return `Callable${shortHash(typeDedupeKey(node))}`;
+      return `Callable${shortHash(formatType(node))}`;
     case 'unsupported': {
       return `Unsupported${shortHash(node.raw + (node.reason ?? ''))}`;
     }
     default:
-      return `Node${shortHash(typeDedupeKey(node))}`;
+      return `Node${shortHash(formatType(node))}`;
   }
 }
 

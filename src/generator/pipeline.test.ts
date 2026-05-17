@@ -16,6 +16,19 @@ describe('pipeline build + render (unoptimized)', () => {
     expect(ir.order[0]).toBe('check');
   });
 
+  it('generates bare non-empty-array keyword', () => {
+    const ast = parseType('non-empty-array');
+    const { ir, typesByName } = build(ast);
+    const php = renderChecker(ir, {
+      typeString: 'non-empty-array',
+      typesByName,
+      output: 'function',
+    });
+    expect(php).toContain('function isNonEmptyArray(');
+    expect(php).toContain('if (!is_array($value))');
+    expect(php).toContain('$value === []');
+  });
+
   it('callable-array emits per-guard fail-if, not negated and', () => {
     const ast = parseType('callable-array');
     const { ir, typesByName } = build(ast, {

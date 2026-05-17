@@ -1,4 +1,3 @@
-import { assertCheckable } from './semantics/checkability.ts';
 import { build, optimize, renderChecker } from './pipeline.ts';
 import type { GenerateCheckerOptions } from './options.ts';
 import { parseType } from '../parser/index.ts';
@@ -9,7 +8,6 @@ export function generateChecker(
   options?: GenerateCheckerOptions,
 ): string {
   const ast = parseType(typeString);
-  assertCheckable(ast, 'function');
   const { ir: built, typesByName } = build(ast, options);
   const ir = options?.prioritizeReadabilityOverCompactness
     ? built
@@ -22,7 +20,6 @@ export function generateChecker(
 }
 
 export { GenerationError } from './errors.ts';
-export { assertCheckable } from './semantics/checkability.ts';
 export {
   build,
   optimize,

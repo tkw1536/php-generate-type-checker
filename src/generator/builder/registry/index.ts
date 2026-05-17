@@ -1,5 +1,5 @@
-import type { TypeNode } from '../../parser/ast.ts';
-import { formatType } from "../../parser/format.ts";
+import type { TypeNode } from '../../../parser/ast.ts';
+import { formatType } from '../../../parser/format.ts';
 import {
   type FunctionNameProposer,
   IsStyleFunctionNameProposer,

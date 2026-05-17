@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseType } from '../../parser/index.ts';
 import { variableRef } from '../ir/index.ts';
-import { isSupportedLeafType } from '../semantics/leaves.ts';
+import { isSupportedLeafType } from './leaves.ts';
 import { singleExprForType } from './primitive.ts';
 
 const $x = variableRef('$x');

@@ -18,23 +18,30 @@ import {
 import { phpLiteralKey } from './phpLiteral.ts';
 import { exprAtomsForType, singleExprForType } from './primitive.ts';
 import {
-  isExpressible,
+  rejectUncheckableLeaf,
+  rejectUnsupported,
+  type BuildCheckContext,
+} from './reject.ts';
+import {
+  isCompactLeaf,
   isNeverPrimitive,
   isNoOpValueCheck,
   needsStatementBlock,
-} from '../semantics/expressibility.ts';
+} from './structure.ts';
 import {
-  bareListKeywordAsCollection,
-  isBareListKeyword,
+  bareEmptyCollectionKeywordAsCollection,
+  isArrayKeyword,
+  isBareEmptyCollectionKeyword,
   isIterableKeyword,
   isListKeyword,
   isNonEmptyKeyword,
   shapeIsObject,
-} from '../semantics/collection.ts';
-import { flattenUnion, sortUnionMembers } from '../semantics/union.ts';
+} from './collection.ts';
+import { flattenUnion, sortUnionMembers } from './union.ts';
 
 export type BuildContext = {
   parameter: string;
+  checkContext?: BuildCheckContext;
   assumeVarIsArray?: boolean;
   assumeVarIsObject?: boolean;
   includeArrayGuard?: boolean;
@@ -63,6 +70,7 @@ export class Builder {
     subject: ValueRef,
     ctx: BuildContext,
   ): Block {
+    rejectUnsupported(node, ctx.checkContext ?? 'value');
     switch (node.kind) {
       case 'union':
         if (ctx.inLoopBody) {
@@ -78,9 +86,9 @@ export class Builder {
       case 'array':
         return this.postfixArray(node, subject, ctx);
       case 'keyword':
-        if (isBareListKeyword(node)) {
-          return this.listCollection(
-            bareListKeywordAsCollection(node),
+        if (isBareEmptyCollectionKeyword(node)) {
+          return this.collection(
+            bareEmptyCollectionKeywordAsCollection(node),
             subject,
             ctx,
           );
@@ -115,7 +123,11 @@ export class Builder {
         return out;
       }
     }
-    for (const atom of exprAtomsForType(node, subject)) {
+    const atoms = exprAtomsForType(node, subject);
+    if (atoms.length === 0) {
+      rejectUncheckableLeaf(node);
+    }
+    for (const atom of atoms) {
       out.push(failIfStmt(atom));
     }
     return out;
@@ -127,7 +139,7 @@ export class Builder {
     ctx: BuildContext,
   ): Block {
     const members = sortUnionMembers(flattenUnion(node));
-    if (members.every((m) => isExpressible(m) && !needsStatementBlock(m))) {
+    if (members.every((m) => isCompactLeaf(m) && !needsStatementBlock(m))) {
       const arms = members.map((m) => singleExprForType(m, subject));
       if (arms.every((a): a is Expr => a !== null)) {
         return [returnStmt(orExpr(arms))];
@@ -489,7 +501,14 @@ export class Builder {
     const { key: keyVar, value: valueVar } = ctx.allocateLoopPair();
     const body: Block = [];
     if (key && !isNoOpValueCheck(key)) {
-      body.push(...this.leaf(key, variableRef(keyVar), { ...ctx, inLoopBody: true }));
+      body.push(
+        ...this.buildBody(key, variableRef(keyVar), {
+          ...ctx,
+          checkContext: 'expression',
+          inLoopBody: true,
+          allowReturn: false,
+        }),
+      );
     }
     if (!isNoOpValueCheck(value)) {
       body.push(
@@ -620,13 +639,16 @@ export class Builder {
   }
 
   private static compactExpr(n: TypeNode, subject: ValueRef): Expr | null {
-    if (isBareListKeyword(n)) {
-      return Builder.compactExpr(bareListKeywordAsCollection(n), subject);
+    if (isBareEmptyCollectionKeyword(n)) {
+      return Builder.compactExpr(
+        bareEmptyCollectionKeywordAsCollection(n),
+        subject,
+      );
     }
     if (isNoOpValueCheck(n)) {
       return boolLit(true);
     }
-    if (isExpressible(n) && !needsStatementBlock(n)) {
+    if (isCompactLeaf(n) && !needsStatementBlock(n)) {
       const direct = singleExprForType(n, subject);
       if (direct !== null) {
         return direct;
@@ -654,6 +676,16 @@ export class Builder {
         return isNonEmptyKeyword(n.keyword)
           ? boolLit(false)
           : binExpr('===', refArg(subject), literalArg('[]'));
+      }
+      if (
+        'values' in n &&
+        n.values.length === 0 &&
+        isArrayKeyword(n.keyword)
+      ) {
+        const arrOk = callExpr('is_array', [refArg(subject)]);
+        return isNonEmptyKeyword(n.keyword)
+          ? andExpr([arrOk, binExpr('!==', refArg(subject), literalArg('[]'))])
+          : arrOk;
       }
     }
     if (n.kind === 'collection' && isListKeyword(n.keyword)) {
@@ -701,7 +733,7 @@ export class Builder {
     if (member.kind === 'shape') {
       return true;
     }
-    if (isBareListKeyword(member)) {
+    if (isBareEmptyCollectionKeyword(member)) {
       return true;
     }
     if (member.kind === 'collection' && isListKeyword(member.keyword)) {
@@ -742,7 +774,7 @@ function appendTrailingReturn(body: Block): void {
 }
 
 function typeSupportsReturnPromotion(node: TypeNode, subject: ValueRef): boolean {
-  if (isNoOpValueCheck(node) || needsStatementBlock(node) || !isExpressible(node)) {
+  if (isNoOpValueCheck(node) || needsStatementBlock(node) || !isCompactLeaf(node)) {
     return false;
   }
   const atoms = exprAtomsForType(node, subject);

@@ -1,17 +1,11 @@
 import type { TypeNode } from '../../parser/ast.ts';
 import { GenerationError } from '../errors.ts';
 import { describeNode } from './describe.ts';
-import { isExpressible, isNoOpValueCheck } from './expressibility.ts';
+import { isBareEmptyCollectionKeyword, isIterableKeyword } from './collection.ts';
 import { isSupportedLeafType } from './leaves.ts';
-import {
-  collectionHasValuesForm,
-  collectionListElement,
-  isBareListKeyword,
-  isIterableKeyword,
-  isListKeyword,
-} from './collection.ts';
+import { isCompactLeaf, isNoOpValueCheck } from './structure.ts';
 
-export type CheckContext = 'expression' | 'value' | 'function';
+export type BuildCheckContext = 'value' | 'expression';
 
 const UNCHECKABLE_KEYWORDS = new Set([
   'void',
@@ -21,7 +15,11 @@ const UNCHECKABLE_KEYWORDS = new Set([
   'parent',
 ]);
 
-export function assertCheckable(node: TypeNode, context: CheckContext = 'function'): void {
+/** Fail fast when this type cannot be codegen'd in the given context. */
+export function rejectUnsupported(
+  node: TypeNode,
+  context: BuildCheckContext = 'value',
+): void {
   switch (node.kind) {
     case 'unsupported':
       throw new GenerationError(
@@ -33,9 +31,14 @@ export function assertCheckable(node: TypeNode, context: CheckContext = 'functio
         'Cannot generate a runtime check for callable with parameter or return types: parameter and return types cannot be verified without invoking the callable',
         'callable(...)',
       );
+    case 'generic':
+      throw new GenerationError(
+        `Cannot generate a runtime check for the generic type ${node.name}: not a supported generic for codegen`,
+        `${node.name}<...>`,
+      );
     case 'keyword': {
       const kw = node.keyword;
-      if (isBareListKeyword(node)) {
+      if (isBareEmptyCollectionKeyword(node)) {
         return;
       }
       if (kw === 'literal-string' || kw === 'non-empty-literal-string') {
@@ -50,13 +53,16 @@ export function assertCheckable(node: TypeNode, context: CheckContext = 'functio
           kw,
         );
       }
-      if (context === 'expression' && !isExpressible(node) && !isNoOpValueCheck(node)) {
-        throw new GenerationError(
-          `Cannot generate a runtime check for the type ${kw} in expression context: not representable as a single boolean PHP expression (for example as an array key type)`,
-          kw,
-        );
+      if (context === 'expression') {
+        if (!isCompactLeaf(node) && !isNoOpValueCheck(node)) {
+          throw new GenerationError(
+            `Cannot generate a runtime check for the type ${kw} in expression context: not representable as a single boolean PHP expression (for example as an array key type)`,
+            kw,
+          );
+        }
+        return;
       }
-      if (context !== 'expression' && !isNoOpValueCheck(node) && !isSupportedLeafType(node)) {
+      if (!isNoOpValueCheck(node) && !isSupportedLeafType(node)) {
         throw new GenerationError(
           `Cannot generate a runtime check for the type ${kw}: not representable as a supported boolean assertion in this generator`,
           kw,
@@ -84,67 +90,33 @@ export function assertCheckable(node: TypeNode, context: CheckContext = 'functio
           `${node.keyword}<...>`,
         );
       }
-      if ('key' in node) {
-        assertCheckable(node.key, 'expression');
-        assertCheckable(node.value, 'value');
-        return;
-      }
-      if ('value' in node) {
-        if (isIterableKeyword(node.keyword)) {
-          throw new GenerationError(
-            'Cannot generate a runtime check for parameterized iterable: validating keys or elements would require foreach iteration and is not side-effect-free',
-            `${node.keyword}<...>`,
-          );
-        }
-        assertCheckable(node.value, 'value');
-        return;
-      }
-      if (collectionHasValuesForm(node)) {
-        if (isListKeyword(node.keyword)) {
-          const el = collectionListElement(node);
-          if (el) {
-            assertCheckable(el, 'value');
-          }
-          return;
-        }
-        for (const el of node.values) {
-          assertCheckable(el, 'value');
-        }
-        return;
+      if ('value' in node && isIterableKeyword(node.keyword)) {
+        throw new GenerationError(
+          'Cannot generate a runtime check for parameterized iterable: validating keys or elements would require foreach iteration and is not side-effect-free',
+          `${node.keyword}<...>`,
+        );
       }
       return;
     }
     case 'array':
-      assertCheckable(node.value, 'value');
-      return;
     case 'shape':
-      for (const field of node.fields) {
-        assertCheckable(field.value, 'value');
-      }
       return;
     case 'union':
       if (context === 'expression') {
         for (const member of node.types) {
-          if (!isExpressible(member)) {
+          if (!isCompactLeaf(member)) {
             throw new GenerationError(
               `Cannot generate a runtime check for union member ${describeNode(member)} in expression context: not representable as a single boolean PHP expression (for example as an array key type)`,
               describeNode(member),
             );
           }
         }
-      } else {
-        for (const member of node.types) {
-          assertCheckable(member, 'function');
-        }
       }
       return;
     case 'intersection':
-      for (const member of node.types) {
-        assertCheckable(member, context === 'expression' ? 'expression' : 'function');
-      }
       if (context === 'expression') {
         for (const member of node.types) {
-          if (!isExpressible(member)) {
+          if (!isCompactLeaf(member)) {
             throw new GenerationError(
               `Cannot generate a runtime check for intersection member ${describeNode(member)} in expression context: not representable as a single boolean PHP expression`,
               describeNode(member),
@@ -153,15 +125,17 @@ export function assertCheckable(node: TypeNode, context: CheckContext = 'functio
         }
       }
       return;
-    case 'generic':
-      throw new GenerationError(
-        `Cannot generate a runtime check for the generic type ${node.name}: not a supported generic for codegen`,
-        `${node.name}<...>`,
-      );
     default:
       throw new GenerationError(
         `Cannot generate a runtime check for ${describeNode(node)}: this type is not supported for codegen`,
         describeNode(node),
       );
   }
+}
+
+export function rejectUncheckableLeaf(node: TypeNode): never {
+  throw new GenerationError(
+    `Cannot generate a runtime check for ${describeNode(node)}: not representable as a supported boolean assertion in this generator`,
+    describeNode(node),
+  );
 }
