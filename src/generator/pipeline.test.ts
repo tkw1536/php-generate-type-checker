@@ -60,7 +60,7 @@ describe('pipeline build + render (unoptimized)', () => {
       typesByName,
       output: 'function',
     });
-    expect(php).toContain('/** @phpstan-assert-if-true array<never> $value */');
+    expect(php).toContain('/** @phpstan-assert-if-true never[] $value */');
     expect(php).toMatch(/\$value === \[\]/);
   });
 

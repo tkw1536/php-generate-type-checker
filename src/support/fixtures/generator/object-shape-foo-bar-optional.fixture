@@ -2,7 +2,7 @@
 input: "object{foo: int, bar?: string}"
 output: function
 ---
-/** @phpstan-assert-if-true object{foo: int, bar?: string} $value */
+/** @phpstan-assert-if-true object{foo: int<min, max>, bar?: string} $value */
 function isObjectShapeFldbarOptStringFldfooReqInt(mixed $value): bool
 {
     if (!is_object($value)

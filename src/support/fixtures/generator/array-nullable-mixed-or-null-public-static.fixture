@@ -4,13 +4,13 @@ output: public_static
 ---
 class TypeChecker
 {
-    /** @phpstan-assert-if-true array<null|string, mixed>|null $value */
+    /** @phpstan-assert-if-true array<string|null, mixed>|null $value */
     public static function isNullTypeOrArrayNullTypeOrStringToMixed(mixed $value): bool
     {
         return ($value === null || self::isArrayNullTypeOrStringToMixed($value));
     }
 
-    /** @phpstan-assert-if-true array<null|string, mixed> $value */
+    /** @phpstan-assert-if-true array<string|null, mixed> $value */
     private static function isArrayNullTypeOrStringToMixed(mixed $value): bool
     {
         if (!is_array($value)) {

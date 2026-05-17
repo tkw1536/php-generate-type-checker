@@ -2,14 +2,14 @@
 input: "array<array<never>>|array<never>"
 output: function
 ---
-/** @phpstan-assert-if-true array<array<never>>|array<never> $value */
+/** @phpstan-assert-if-true (never[])[]|never[] $value */
 function isArrayArrayNeverOrArrayNever(mixed $value): bool
 {
     return (isArrayArrayNever($value) || $value === []);
 }
 
 
-/** @phpstan-assert-if-true array<array<never>> $value */
+/** @phpstan-assert-if-true (never[])[] $value */
 function isArrayArrayNever(mixed $value): bool
 {
     if (!is_array($value)) {

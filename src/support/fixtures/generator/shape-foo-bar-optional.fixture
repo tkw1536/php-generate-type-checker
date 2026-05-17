@@ -2,7 +2,7 @@
 input: "array{foo: int, bar?: string}"
 output: function
 ---
-/** @phpstan-assert-if-true array{'foo': int, 'bar'?: string} $value */
+/** @phpstan-assert-if-true array{foo: int<min, max>, bar?: string} $value */
 function isShapeFldbarOptStringFldfooReqInt(mixed $value): bool
 {
     if (!is_array($value)

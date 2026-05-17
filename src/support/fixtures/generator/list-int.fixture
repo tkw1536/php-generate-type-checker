@@ -2,7 +2,7 @@
 input: "list<int>"
 output: function
 ---
-/** @phpstan-assert-if-true list<int> $value */
+/** @phpstan-assert-if-true list<int<min, max>> $value */
 function isListInt(mixed $value): bool
 {
     if (!is_array($value)

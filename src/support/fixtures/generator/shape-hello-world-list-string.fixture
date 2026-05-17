@@ -2,7 +2,7 @@
 input: "array{'hello': string, 'world': list<string>}"
 output: function
 ---
-/** @phpstan-assert-if-true array{'hello': string, 'world': list<string>} $value */
+/** @phpstan-assert-if-true array{hello: string, world: list<string>} $value */
 function isShapeFldhelloReqStringFldworldReqListString(mixed $value): bool
 {
     if (!is_array($value)

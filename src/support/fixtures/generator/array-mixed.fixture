@@ -2,7 +2,7 @@
 input: "array<mixed>"
 output: function
 ---
-/** @phpstan-assert-if-true array<mixed> $value */
+/** @phpstan-assert-if-true mixed[] $value */
 function isArrayMixed(mixed $value): bool
 {
     return is_array($value);

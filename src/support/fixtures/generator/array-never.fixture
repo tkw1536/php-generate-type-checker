@@ -2,7 +2,7 @@
 input: "array<never>"
 output: function
 ---
-/** @phpstan-assert-if-true array<never> $value */
+/** @phpstan-assert-if-true never[] $value */
 function isArrayNever(mixed $value): bool
 {
     return $value === [];

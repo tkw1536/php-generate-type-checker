@@ -2,7 +2,7 @@
 input: "array{hello: string}"
 output: function
 ---
-/** @phpstan-assert-if-true array{'hello': string} $value */
+/** @phpstan-assert-if-true array{hello: string} $value */
 function isShapeFldhelloReqString(mixed $value): bool
 {
     if (!is_array($value)
