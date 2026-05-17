@@ -54,14 +54,14 @@ describe('equals', () => {
     callCheckerExpr('check_shape', $v),
     callCheckerExpr('check_list', $v),
     callCheckerExpr('check_shape', $elem),
-    callExpr('is_array', [refArg(arrayAccessRef('$value', 'id'))]),
-    callExpr('is_array', [refArg(arrayAccessRef('$value', 0))]),
+    callExpr('is_array', [refArg(arrayAccessRef($v, 'id'))]),
+    callExpr('is_array', [refArg(arrayAccessRef($v, 0))]),
     callExpr('property_exists', [
       refArg($v),
       literalArg('name'),
     ]),
     callExpr('is_string', [
-      refArg(propertyAccessRef('$value', 'name')),
+      refArg(propertyAccessRef($v, 'name')),
     ]),
     notExpr(andExpr([isIntOnV, isStringOnV])),
     callExpr('preg_match', [

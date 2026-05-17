@@ -88,11 +88,15 @@ function valueRefEquals(
       return b.kind === 'variable' && a.name === b.name;
     case 'array_access':
       return (
-        b.kind === 'array_access' && a.base === b.base && a.key === b.key
+        b.kind === 'array_access' &&
+        valueRefEquals(a.object, b.object) &&
+        a.key === b.key
       );
     case 'property_access':
       return (
-        b.kind === 'property_access' && a.base === b.base && a.name === b.name
+        b.kind === 'property_access' &&
+        valueRefEquals(a.object, b.object) &&
+        a.name === b.name
       );
     default:
       return false;

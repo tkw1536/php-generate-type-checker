@@ -18,7 +18,6 @@ export function buildShape(
 ): Block {
   const out: Block = [];
   const objectShape = shapeIsObject(node);
-  const root = valueRefRootBase(base);
 
   if (ctx.includeArrayGuard !== false) {
     if (objectShape) {
@@ -33,8 +32,8 @@ export function buildShape(
   for (let i = 0; i < node.fields.length; i++) {
     const field = node.fields[i]!;
     const fieldRef = objectShape
-      ? propertyAccessRef(root, String(field.key))
-      : arrayAccessRef(root, field.key);
+      ? propertyAccessRef(base, String(field.key))
+      : arrayAccessRef(base, field.key);
     const keyLit = phpLiteralKey(field.key);
 
     if (!field.optional) {
@@ -89,17 +88,3 @@ function phpLiteralKey(key: string | number): string {
   return `'${key.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 }
 
-function valueRefRootBase(ref: ValueRef): string {
-  switch (ref.kind) {
-    case 'variable':
-      return ref.name;
-    case 'array_access':
-      return ref.base;
-    case 'property_access':
-      return ref.base;
-    default: {
-      const _exhaustive: never = ref;
-      return _exhaustive;
-    }
-  }
-}

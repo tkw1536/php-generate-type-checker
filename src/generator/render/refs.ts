@@ -56,18 +56,26 @@ export function phpStringLiteral(key: string | number): string {
   return phpQuotedString(key);
 }
 
+function renderObjectOperand(ref: ValueRef): string {
+  if (ref.kind === 'variable') {
+    return ref.name;
+  }
+  return `(${renderValueRef(ref)})`;
+}
+
 /** Render a {@link ValueRef} to a PHP lvalue path. */
 export function renderValueRef(ref: ValueRef): string {
   switch (ref.kind) {
     case 'variable':
       return ref.name;
     case 'array_access':
-      return `${ref.base}[${arrayIndexExpr(ref.key)}]`;
+      return `${renderObjectOperand(ref.object)}[${arrayIndexExpr(ref.key)}]`;
     case 'property_access': {
+      const object = renderObjectOperand(ref.object);
       if (PHP_RESERVED_OBJECT_PROPERTIES.has(ref.name)) {
-        return `${ref.base}->{${phpQuotedString(ref.name)}}`;
+        return `${object}->{${phpQuotedString(ref.name)}}`;
       }
-      return `${ref.base}->${ref.name}`;
+      return `${object}->${ref.name}`;
     }
     default: {
       const _exhaustive: never = ref;

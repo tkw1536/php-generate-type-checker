@@ -3,8 +3,8 @@
  */
 export type ValueRef =
   | { kind: 'variable'; name: string }
-  | { kind: 'array_access'; base: string; key: string | number }
-  | { kind: 'property_access'; base: string; name: string };
+  | { kind: 'array_access'; object: ValueRef; key: string | number }
+  | { kind: 'property_access'; object: ValueRef; name: string };
 
 export type BinOp = '===' | '!==' | '==' | '!=' | '>' | '<' | '>=' | '<=';
 

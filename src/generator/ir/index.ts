@@ -70,10 +70,13 @@ export function variableRef(name: string): ValueRef {
   return { kind: 'variable', name };
 }
 
-export function arrayAccessRef(base: string, key: string | number): ValueRef {
-  return { kind: 'array_access', base, key };
+export function arrayAccessRef(
+  object: ValueRef,
+  key: string | number,
+): ValueRef {
+  return { kind: 'array_access', object, key };
 }
 
-export function propertyAccessRef(base: string, name: string): ValueRef {
-  return { kind: 'property_access', base, name };
+export function propertyAccessRef(object: ValueRef, name: string): ValueRef {
+  return { kind: 'property_access', object, name };
 }

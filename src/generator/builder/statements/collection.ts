@@ -212,9 +212,8 @@ function buildIndexedValuesCollection(
     }
   }
 
-  const root = valueRefRootBase(subject);
   for (let i = 0; i < values.length; i++) {
-    const fieldRef = arrayAccessRef(root, i);
+    const fieldRef = arrayAccessRef(subject, i);
     out.push(
       ...ctx.buildStatements(values[i]!, fieldRef, {
         ...ctx,
@@ -410,17 +409,3 @@ function appendArrayGuards(
   }
 }
 
-function valueRefRootBase(ref: ValueRef): string {
-  switch (ref.kind) {
-    case 'variable':
-      return ref.name;
-    case 'array_access':
-      return ref.base;
-    case 'property_access':
-      return ref.base;
-    default: {
-      const _exhaustive: never = ref;
-      return _exhaustive;
-    }
-  }
-}

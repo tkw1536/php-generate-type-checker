@@ -18,6 +18,9 @@ import {
   expandBinOps,
   simplifyExpression,
 } from './expression.ts';
+import { createOptimizerParams } from './params.ts';
+
+const defaultParams = createOptimizerParams({ programs: {}, order: [] });
 
 const $v = variableRef('$value');
 const isInt = callExpr('is_int', [refArg($v)]);
@@ -82,7 +85,7 @@ describe('simplifyExpression', () => {
       binExpr('<=', refArg($v), literalArg('0')),
     ],
   ] as [string, Expr, Expr][])('%s', (_name, input, expected) => {
-    expect(simplifyExpression(input)).toEqual(expected);
+    expect(simplifyExpression(input, defaultParams)).toEqual(expected);
   });
 });
 
