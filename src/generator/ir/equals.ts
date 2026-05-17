@@ -1,4 +1,4 @@
-import type { Arg, Expr } from './types.ts';
+import type { Arg, Block, Expr, Stmt } from './types.ts';
 
 export function equals(a: Expr, b: Expr): boolean {
   if (a.kind !== b.kind) {
@@ -94,6 +94,39 @@ function valueRefEquals(
       return (
         b.kind === 'property_access' && a.base === b.base && a.name === b.name
       );
+    default:
+      return false;
+  }
+}
+
+export function blockEquals(a: Block, b: Block): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  return a.every((stmt, i) => stmtEquals(stmt, b[i]!));
+}
+
+export function stmtEquals(a: Stmt, b: Stmt): boolean {
+  if (a.kind !== b.kind) {
+    return false;
+  }
+  switch (a.kind) {
+    case 'if':
+      return (
+        b.kind === 'if' &&
+        equals(a.cond, b.cond) &&
+        blockEquals(a.body, b.body)
+      );
+    case 'foreach':
+      return (
+        b.kind === 'foreach' &&
+        valueRefEquals(a.iterable, b.iterable) &&
+        a.keyVar === b.keyVar &&
+        a.valueVar === b.valueVar &&
+        blockEquals(a.body, b.body)
+      );
+    case 'return':
+      return b.kind === 'return' && equals(a.expr, b.expr);
     default:
       return false;
   }

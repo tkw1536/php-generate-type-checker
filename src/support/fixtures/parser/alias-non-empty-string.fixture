@@ -3,6 +3,6 @@ input: "non-empty-string"
 ---
 // json
 {
-  "kind": "primitive",
-  "name": "non-empty-string"
+  "kind": "keyword",
+  "keyword": "non-empty-string"
 }

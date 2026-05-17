@@ -7,8 +7,8 @@ input: "callable(): void"
   "signature": {
     "params": [],
     "returnType": {
-      "kind": "primitive",
-      "name": "void"
+      "kind": "keyword",
+      "keyword": "void"
     }
   }
 }

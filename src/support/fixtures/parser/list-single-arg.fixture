@@ -3,10 +3,10 @@ input: "non-empty-list<string>"
 ---
 // json
 {
-  "kind": "list",
-  "element": {
-    "kind": "primitive",
-    "name": "string"
+  "kind": "collection",
+  "value": {
+    "kind": "keyword",
+    "keyword": "string"
   },
-  "nonEmpty": true
+  "keyword": "non-empty-list"
 }

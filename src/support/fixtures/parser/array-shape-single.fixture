@@ -7,10 +7,12 @@ input: "array{count: positive-int}"
   "fields": [
     {
       "key": "count",
-      "type": {
-        "kind": "primitive",
-        "name": "positive-int"
+      "optional": false,
+      "value": {
+        "kind": "keyword",
+        "keyword": "positive-int"
       }
     }
-  ]
+  ],
+  "keyword": "array"
 }

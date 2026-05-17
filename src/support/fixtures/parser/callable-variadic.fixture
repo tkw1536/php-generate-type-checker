@@ -1,5 +1,5 @@
 ---
-input: "callable(string &$x): void"
+input: "callable(int ...$rest): void"
 ---
 // json
 {
@@ -9,12 +9,12 @@ input: "callable(string &$x): void"
       {
         "type": {
           "kind": "keyword",
-          "keyword": "string"
+          "keyword": "int"
         },
-        "name": "$x",
-        "byRef": true,
+        "name": "$rest",
+        "byRef": false,
         "optional": false,
-        "variadic": false
+        "variadic": true
       }
     ],
     "returnType": {

@@ -5,7 +5,7 @@ output: function
 /** @phpstan-assert-if-true array<string>|array<int> $value */
 function isArrayStringArrayInt(mixed $value): bool
 {
-    return isArrayString($value) || isArrayInt($value);
+    return (isArrayString($value) || isArrayInt($value));
 }
 
 

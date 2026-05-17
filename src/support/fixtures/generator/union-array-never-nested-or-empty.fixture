@@ -16,7 +16,7 @@ function isArrayArrayNever(mixed $value): bool
         return false;
     }
     foreach ($value as $value1) {
-        if (!($value1 === [])) {
+        if ($value1 !== []) {
             return false;
         }
     }

@@ -3,6 +3,6 @@ input: "object"
 ---
 // json
 {
-  "kind": "primitive",
-  "name": "object"
+  "kind": "keyword",
+  "keyword": "object"
 }

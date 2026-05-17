@@ -7,18 +7,20 @@ input: "array{0: int, 1?: string}"
   "fields": [
     {
       "key": 0,
-      "type": {
-        "kind": "primitive",
-        "name": "int"
+      "optional": false,
+      "value": {
+        "kind": "keyword",
+        "keyword": "int"
       }
     },
     {
       "key": 1,
       "optional": true,
-      "type": {
-        "kind": "primitive",
-        "name": "string"
+      "value": {
+        "kind": "keyword",
+        "keyword": "string"
       }
     }
-  ]
+  ],
+  "keyword": "array"
 }

@@ -9,28 +9,29 @@ input: "(array<string, int|null>|null)&Foo"
       "kind": "union",
       "types": [
         {
-          "kind": "array",
+          "kind": "collection",
           "key": {
-            "kind": "primitive",
-            "name": "string"
+            "kind": "keyword",
+            "keyword": "string"
           },
           "value": {
             "kind": "union",
             "types": [
               {
-                "kind": "primitive",
-                "name": "int"
+                "kind": "keyword",
+                "keyword": "int"
               },
               {
-                "kind": "primitive",
-                "name": "null"
+                "kind": "keyword",
+                "keyword": "null"
               }
             ]
-          }
+          },
+          "keyword": "array"
         },
         {
-          "kind": "primitive",
-          "name": "null"
+          "kind": "keyword",
+          "keyword": "null"
         }
       ]
     },

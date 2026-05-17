@@ -5,5 +5,5 @@ output: function
 /** @phpstan-assert-if-true non-empty-list $value */
 function isNonEmptyList(mixed $value): bool
 {
-    return is_array($value) && array_is_list($value) && $value !== [];
+    return (is_array($value) && array_is_list($value) && $value !== []);
 }

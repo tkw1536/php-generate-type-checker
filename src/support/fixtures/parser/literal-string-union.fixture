@@ -7,11 +7,15 @@ input: "'foo'|'bar'"
   "types": [
     {
       "kind": "literal",
-      "value": "foo"
+      "type": "string",
+      "value": "foo",
+      "quotes": "single"
     },
     {
       "kind": "literal",
-      "value": "bar"
+      "type": "string",
+      "value": "bar",
+      "quotes": "single"
     }
   ]
 }

@@ -3,6 +3,6 @@ input: "null"
 ---
 // json
 {
-  "kind": "primitive",
-  "name": "null"
+  "kind": "keyword",
+  "keyword": "null"
 }

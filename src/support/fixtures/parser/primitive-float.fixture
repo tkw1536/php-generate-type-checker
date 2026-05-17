@@ -3,6 +3,6 @@ input: "float"
 ---
 // json
 {
-  "kind": "primitive",
-  "name": "float"
+  "kind": "keyword",
+  "keyword": "float"
 }

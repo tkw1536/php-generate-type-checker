@@ -3,6 +3,6 @@ input: "bool"
 ---
 // json
 {
-  "kind": "primitive",
-  "name": "bool"
+  "kind": "keyword",
+  "keyword": "bool"
 }

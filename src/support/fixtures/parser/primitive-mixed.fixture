@@ -3,6 +3,6 @@ input: "mixed"
 ---
 // json
 {
-  "kind": "primitive",
-  "name": "mixed"
+  "kind": "keyword",
+  "keyword": "mixed"
 }

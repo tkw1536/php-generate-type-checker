@@ -3,6 +3,6 @@ input: "callable"
 ---
 // json
 {
-  "kind": "primitive",
-  "name": "callable"
+  "kind": "keyword",
+  "keyword": "callable"
 }

@@ -6,12 +6,12 @@ input: "(int|string)"
   "kind": "union",
   "types": [
     {
-      "kind": "primitive",
-      "name": "int"
+      "kind": "keyword",
+      "keyword": "int"
     },
     {
-      "kind": "primitive",
-      "name": "string"
+      "kind": "keyword",
+      "keyword": "string"
     }
   ]
 }

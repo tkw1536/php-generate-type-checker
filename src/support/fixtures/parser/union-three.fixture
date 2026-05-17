@@ -6,16 +6,16 @@ input: "int|string|null"
   "kind": "union",
   "types": [
     {
-      "kind": "primitive",
-      "name": "int"
+      "kind": "keyword",
+      "keyword": "int"
     },
     {
-      "kind": "primitive",
-      "name": "string"
+      "kind": "keyword",
+      "keyword": "string"
     },
     {
-      "kind": "primitive",
-      "name": "null"
+      "kind": "keyword",
+      "keyword": "null"
     }
   ]
 }

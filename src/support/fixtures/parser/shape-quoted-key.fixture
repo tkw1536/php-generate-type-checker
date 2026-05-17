@@ -1,5 +1,5 @@
 ---
-input: 'array{"field-one": int}'
+input: "array{\"field-one\": int}"
 ---
 // json
 {
@@ -7,10 +7,12 @@ input: 'array{"field-one": int}'
   "fields": [
     {
       "key": "field-one",
-      "type": {
-        "kind": "primitive",
-        "name": "int"
+      "optional": false,
+      "value": {
+        "kind": "keyword",
+        "keyword": "int"
       }
     }
-  ]
+  ],
+  "keyword": "array"
 }

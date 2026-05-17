@@ -5,5 +5,5 @@ output: function
 /** @phpstan-assert-if-true truthy-string $value */
 function isTruthyString(mixed $value): bool
 {
-    return is_string($value) && $value !== '' && $value !== '0';
+    return (is_string($value) && $value !== '' && $value !== '0');
 }

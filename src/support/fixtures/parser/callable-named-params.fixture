@@ -8,8 +8,8 @@ input: "callable(int $a, string $b): bool"
     "params": [
       {
         "type": {
-          "kind": "primitive",
-          "name": "int"
+          "kind": "keyword",
+          "keyword": "int"
         },
         "name": "$a",
         "byRef": false,
@@ -18,8 +18,8 @@ input: "callable(int $a, string $b): bool"
       },
       {
         "type": {
-          "kind": "primitive",
-          "name": "string"
+          "kind": "keyword",
+          "keyword": "string"
         },
         "name": "$b",
         "byRef": false,
@@ -28,8 +28,8 @@ input: "callable(int $a, string $b): bool"
       }
     ],
     "returnType": {
-      "kind": "primitive",
-      "name": "bool"
+      "kind": "keyword",
+      "keyword": "bool"
     }
   }
 }

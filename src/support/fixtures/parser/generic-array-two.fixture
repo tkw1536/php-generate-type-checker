@@ -3,13 +3,14 @@ input: "array<int, Foo>"
 ---
 // json
 {
-  "kind": "array",
+  "kind": "collection",
   "key": {
-    "kind": "primitive",
-    "name": "int"
+    "kind": "keyword",
+    "keyword": "int"
   },
   "value": {
     "kind": "class",
     "name": "Foo"
-  }
+  },
+  "keyword": "array"
 }

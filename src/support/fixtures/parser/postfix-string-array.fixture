@@ -5,7 +5,7 @@ input: "string[]"
 {
   "kind": "array",
   "value": {
-    "kind": "primitive",
-    "name": "string"
+    "kind": "keyword",
+    "keyword": "string"
   }
 }

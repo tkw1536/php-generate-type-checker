@@ -5,17 +5,13 @@ output: function
 /** @phpstan-assert-if-true array{foo: int, bar?: string} $value */
 function isArrayFooIntBarString(mixed $value): bool
 {
-    if (
-        !is_array($value) ||
-        !array_key_exists('foo', $value) ||
-        !is_int($value['foo'])
-    ) {
-        return false;
-    }
-    if (array_key_exists('bar', $value)) {
-        if (!is_string($value['bar'])) {
-            return false;
-        }
-    }
-    return true;
+    return (
+        is_array($value) &&
+        array_key_exists('foo', $value) &&
+        is_int($value['foo']) &&
+        (
+            !array_key_exists('bar', $value) ||
+            is_string($value['bar'])
+        )
+    );
 }

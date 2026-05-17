@@ -9,7 +9,11 @@ function isArrayIntArrayIntArrayString(mixed $value): bool
         return false;
     }
     foreach ($value as $value1) {
-        if (!(is_int($value1) || isArrayInt($value1) || isArrayString($value1))) {
+        if (
+            !is_int($value1) &&
+            !isArrayInt($value1) &&
+            !isArrayString($value1)
+        ) {
             return false;
         }
     }

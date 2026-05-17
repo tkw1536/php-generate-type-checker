@@ -1,5 +1,5 @@
 ---
-input: '\Foo\Bar'
+input: "\\Foo\\Bar"
 ---
 // json
 {

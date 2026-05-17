@@ -3,16 +3,14 @@ input: "iterable<int, string>"
 ---
 // json
 {
-  "kind": "generic",
-  "name": "iterable",
-  "typeArgs": [
-    {
-      "kind": "primitive",
-      "name": "int"
-    },
-    {
-      "kind": "primitive",
-      "name": "string"
-    }
-  ]
+  "kind": "collection",
+  "key": {
+    "kind": "keyword",
+    "keyword": "int"
+  },
+  "value": {
+    "kind": "keyword",
+    "keyword": "string"
+  },
+  "keyword": "iterable"
 }

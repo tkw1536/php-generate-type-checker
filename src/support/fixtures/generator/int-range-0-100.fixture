@@ -5,5 +5,5 @@ output: function
 /** @phpstan-assert-if-true int<0, 100> $value */
 function isInt0100(mixed $value): bool
 {
-    return is_int($value) && $value >= 0 && $value <= 100;
+    return (is_int($value) && $value >= 0 && $value <= 100);
 }

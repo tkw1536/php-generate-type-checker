@@ -159,7 +159,7 @@ function getPrioritizeReadabilityOverCompactness(): boolean {
   const el = document.querySelector<HTMLInputElement>(
     '#generate-prioritize-readability',
   );
-  return el?.checked === true;
+  return el?.checked !== true;
 }
 
 /** Compact mode: run optimizer (!readable layout). Not wired in UI yet. */
@@ -201,7 +201,7 @@ function runGenerate(panels: {
     } else {
       setSuccessOutput(
         panels.irOptimized,
-        'Optimizer skipped (Readable layout is on).\nIR (optimized) matches IR (build).',
+        'Optimizer skipped (Optimize is off).\nIR (optimized) matches IR (build).',
       );
     }
     setSuccessOutput(

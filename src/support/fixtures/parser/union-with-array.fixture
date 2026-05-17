@@ -6,19 +6,20 @@ input: "int|array<string, bool>"
   "kind": "union",
   "types": [
     {
-      "kind": "primitive",
-      "name": "int"
+      "kind": "keyword",
+      "keyword": "int"
     },
     {
-      "kind": "array",
+      "kind": "collection",
       "key": {
-        "kind": "primitive",
-        "name": "string"
+        "kind": "keyword",
+        "keyword": "string"
       },
       "value": {
-        "kind": "primitive",
-        "name": "bool"
-      }
+        "kind": "keyword",
+        "keyword": "bool"
+      },
+      "keyword": "array"
     }
   ]
 }

@@ -3,21 +3,16 @@ input: "list{int, string}"
 ---
 // json
 {
-  "kind": "shape",
-  "fields": [
+  "kind": "collection",
+  "values": [
     {
-      "key": 0,
-      "type": {
-        "kind": "primitive",
-        "name": "int"
-      }
+      "kind": "keyword",
+      "keyword": "int"
     },
     {
-      "key": 1,
-      "type": {
-        "kind": "primitive",
-        "name": "string"
-      }
+      "kind": "keyword",
+      "keyword": "string"
     }
-  ]
+  ],
+  "keyword": "list"
 }

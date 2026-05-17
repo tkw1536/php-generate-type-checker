@@ -4,5 +4,6 @@ input: "42"
 // json
 {
   "kind": "literal",
-  "value": 42
+  "type": "number",
+  "value": "42"
 }

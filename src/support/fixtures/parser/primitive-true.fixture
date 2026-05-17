@@ -3,6 +3,6 @@ input: "true"
 ---
 // json
 {
-  "kind": "literal",
-  "value": true
+  "kind": "keyword",
+  "keyword": "true"
 }

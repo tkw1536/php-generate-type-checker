@@ -3,6 +3,6 @@ input: "class-string"
 ---
 // json
 {
-  "kind": "primitive",
-  "name": "class-string"
+  "kind": "keyword",
+  "keyword": "class-string"
 }

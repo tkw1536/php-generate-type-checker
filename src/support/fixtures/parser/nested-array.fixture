@@ -3,20 +3,22 @@ input: "array<string, array<int, bool>>"
 ---
 // json
 {
-  "kind": "array",
+  "kind": "collection",
   "key": {
-    "kind": "primitive",
-    "name": "string"
+    "kind": "keyword",
+    "keyword": "string"
   },
   "value": {
-    "kind": "array",
+    "kind": "collection",
     "key": {
-      "kind": "primitive",
-      "name": "int"
+      "kind": "keyword",
+      "keyword": "int"
     },
     "value": {
-      "kind": "primitive",
-      "name": "bool"
-    }
-  }
+      "kind": "keyword",
+      "keyword": "bool"
+    },
+    "keyword": "array"
+  },
+  "keyword": "array"
 }

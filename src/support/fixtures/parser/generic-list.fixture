@@ -3,9 +3,10 @@ input: "list<int>"
 ---
 // json
 {
-  "kind": "list",
-  "element": {
-    "kind": "primitive",
-    "name": "int"
-  }
+  "kind": "collection",
+  "value": {
+    "kind": "keyword",
+    "keyword": "int"
+  },
+  "keyword": "list"
 }

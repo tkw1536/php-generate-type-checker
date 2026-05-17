@@ -8,8 +8,8 @@ input: "callable(int, int): string"
     "params": [
       {
         "type": {
-          "kind": "primitive",
-          "name": "int"
+          "kind": "keyword",
+          "keyword": "int"
         },
         "byRef": false,
         "optional": false,
@@ -17,8 +17,8 @@ input: "callable(int, int): string"
       },
       {
         "type": {
-          "kind": "primitive",
-          "name": "int"
+          "kind": "keyword",
+          "keyword": "int"
         },
         "byRef": false,
         "optional": false,
@@ -26,8 +26,8 @@ input: "callable(int, int): string"
       }
     ],
     "returnType": {
-      "kind": "primitive",
-      "name": "string"
+      "kind": "keyword",
+      "keyword": "string"
     }
   }
 }
