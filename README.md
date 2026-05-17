@@ -83,7 +83,7 @@ src/
 │   ├── optimizer/           # modular IR passes (see below)
 │   │   ├── index.ts         # optimize() fixpoint + prunePrograms
 │   │   ├── inline.ts, dedupe.ts, combine.ts, flatten.ts, unnest.ts
-│   │   ├── reorder.ts, knownFacts.ts, expression.ts, dce.ts, prune.ts
+│   │   ├── knownFacts.ts, expression.ts, dce.ts, prune.ts
 │   │   └── params.ts
 │   ├── render/
 │   │   ├── php.ts           # IR → PHP function body
@@ -138,7 +138,7 @@ Each **`CheckerProgram`** body uses:
 Outer loop over programs (reverse `order`), inner loop until stable:
 
 1. **Inline** — substitute single-return helpers (`inline.ts`)
-2. **Block phases** (`runPhases`): `reorder` → `dedupe` → `unnest` → `combine` → `flatten`
+2. **Block phases** (`runPhases`): `dedupe` → `unnest` → `combine` → `flatten`
 3. **Known facts** — branch-local boolean facts (`knownFacts.ts`)
 4. **Simplify** — expression normalization (`expression.ts`)
 5. **DCE** — drop unreachable / constant branches (`dce.ts`)

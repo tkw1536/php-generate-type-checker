@@ -9,7 +9,6 @@ import { createOptimizerParams, type OptimizerParams } from './params.ts';
 import { prunePrograms } from './prune.ts';
 import { dce } from './dce.ts';
 import { applyKnownFacts, emptyFactEnv } from './knownFacts.ts';
-import { reorder } from './reorder.ts';
 import { unnest } from './unnest.ts';
 
 export function optimize(ir: CheckerIR): CheckerIR {
@@ -52,7 +51,7 @@ function runPhases(
   programName: string,
   params: OptimizerParams,
 ): Block {
-  let b = flatten(combine(unnest(dedupe(reorder(block)))));
+  let b = flatten(combine(unnest(dedupe(block))));
   const program = ir.programs[programName];
   const parameter = program?.parameter ?? '$value';
   b = applyKnownFacts(b, parameter, emptyFactEnv());
