@@ -5,6 +5,7 @@ import {
   callExpr,
   failIfStmt,
   notExpr,
+  orExpr,
   refArg,
   returnStmt,
   variableRef,
@@ -29,6 +30,95 @@ describe('substituteFacts', () => {
   it('replaces expr known false', () => {
     const env = { ...emptyFactEnv(), falseFacts: [isArray] };
     expect(substituteFacts(isArray, env)).toEqual(boolLit(false));
+  });
+
+  it('replaces conjuncts known true from decomposed and fact', () => {
+    const isList = callExpr('array_is_list', [refArg($v)]);
+    const block: Block = [
+      {
+        kind: 'if',
+        cond: andExpr([isArray, isList]),
+        body: [returnStmt(andExpr([isArray, isList]))],
+      },
+    ];
+    const result = applyKnownFacts(block, '$value', emptyFactEnv());
+    const outerIf = result[0]!;
+    expect(outerIf.kind).toBe('if');
+    if (outerIf.kind !== 'if') {
+      return;
+    }
+    const ret = outerIf.body[0]!;
+    expect(ret.kind).toBe('return');
+    if (ret.kind !== 'return') {
+      return;
+    }
+    expect(ret.expr).toEqual(boolLit(true));
+  });
+
+  it('replaces disjuncts known false from decomposed or fact', () => {
+    const isInt = callExpr('is_int', [refArg($v)]);
+    const block: Block = [
+      {
+        kind: 'if',
+        cond: orExpr([isArray, isInt]),
+        body: [returnStmt(boolLit(true))],
+      },
+      { kind: 'if', cond: orExpr([isArray, isInt]), body: [returnStmt(boolLit(false))] },
+    ];
+    const result = applyKnownFacts(block, '$value', emptyFactEnv());
+    const secondIf = result[1]!;
+    expect(secondIf.kind).toBe('if');
+    if (secondIf.kind !== 'if') {
+      return;
+    }
+    expect(secondIf.cond).toEqual(boolLit(false));
+  });
+
+  it('flips true not fact into false on inner expr', () => {
+    const block: Block = [
+      {
+        kind: 'if',
+        cond: notExpr(isArray),
+        body: [
+          { kind: 'if', cond: isArray, body: [returnStmt(boolLit(false))] },
+        ],
+      },
+    ];
+    const result = applyKnownFacts(block, '$value', emptyFactEnv());
+    const outerIf = result[0]!;
+    expect(outerIf.kind).toBe('if');
+    if (outerIf.kind !== 'if') {
+      return;
+    }
+    const innerIf = outerIf.body[0]!;
+    expect(innerIf.kind).toBe('if');
+    if (innerIf.kind !== 'if') {
+      return;
+    }
+    expect(innerIf.cond).toEqual(boolLit(false));
+  });
+
+  it('applies De Morgan via not then or on true fact', () => {
+    const isInt = callExpr('is_int', [refArg($v)]);
+    const block: Block = [
+      {
+        kind: 'if',
+        cond: notExpr(orExpr([isArray, isInt])),
+        body: [returnStmt(orExpr([isArray, isInt]))],
+      },
+    ];
+    const result = applyKnownFacts(block, '$value', emptyFactEnv());
+    const outerIf = result[0]!;
+    expect(outerIf.kind).toBe('if');
+    if (outerIf.kind !== 'if') {
+      return;
+    }
+    const ret = outerIf.body[0]!;
+    expect(ret.kind).toBe('return');
+    if (ret.kind !== 'return') {
+      return;
+    }
+    expect(ret.expr).toEqual(boolLit(false));
   });
 });
 
@@ -135,6 +225,64 @@ describe('applyKnownFacts', () => {
       return;
     }
     expect(innerIf.cond).toEqual(boolLit(false));
+  });
+
+  it('flips false not fact into true on inner expr after exiting if', () => {
+    const block: Block = [
+      { kind: 'if', cond: notExpr(isArray), body: [returnStmt(boolLit(true))] },
+      { kind: 'if', cond: isArray, body: [returnStmt(boolLit(false))] },
+    ];
+    const result = applyKnownFacts(block, '$value', emptyFactEnv());
+    const secondIf = result[1]!;
+    expect(secondIf.kind).toBe('if');
+    if (secondIf.kind !== 'if') {
+      return;
+    }
+    expect(secondIf.cond).toEqual(boolLit(true));
+  });
+
+  it('records each disjunct as false after if on or with exiting body', () => {
+    const isInt = callExpr('is_int', [refArg($v)]);
+    const block: Block = [
+      {
+        kind: 'if',
+        cond: orExpr([isArray, isInt]),
+        body: [returnStmt(boolLit(true))],
+      },
+      { kind: 'if', cond: isArray, body: [returnStmt(boolLit(false))] },
+    ];
+    const result = applyKnownFacts(block, '$value', emptyFactEnv());
+    const secondIf = result[1]!;
+    expect(secondIf.kind).toBe('if');
+    if (secondIf.kind !== 'if') {
+      return;
+    }
+    expect(secondIf.cond).toEqual(boolLit(false));
+  });
+
+  it('records each conjunct as true inside if with and condition', () => {
+    const isList = callExpr('array_is_list', [refArg($v)]);
+    const block: Block = [
+      {
+        kind: 'if',
+        cond: andExpr([isArray, isList]),
+        body: [
+          { kind: 'if', cond: isArray, body: [returnStmt(boolLit(true))] },
+        ],
+      },
+    ];
+    const result = applyKnownFacts(block, '$value', emptyFactEnv());
+    const outerIf = result[0]!;
+    expect(outerIf.kind).toBe('if');
+    if (outerIf.kind !== 'if') {
+      return;
+    }
+    const innerIf = outerIf.body[0]!;
+    expect(innerIf.kind).toBe('if');
+    if (innerIf.kind !== 'if') {
+      return;
+    }
+    expect(innerIf.cond).toEqual(boolLit(true));
   });
 
   it('does not record false fact when if body can fall through', () => {

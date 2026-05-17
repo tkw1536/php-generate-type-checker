@@ -13,17 +13,33 @@ export function emptyFactEnv(): FactEnv {
 }
 
 function withTrueFact(env: FactEnv, expr: Expr): FactEnv {
-  if (env.trueFacts.some((f) => equals(f, expr))) {
-    return env;
+  let next = env;
+  if (!next.trueFacts.some((f) => equals(f, expr))) {
+    next = { ...next, trueFacts: [...next.trueFacts, expr] };
   }
-  return { ...env, trueFacts: [...env.trueFacts, expr] };
+  if (expr.kind === 'and') {
+    for (const conjunct of expr.exprs) {
+      next = withTrueFact(next, conjunct);
+    }
+  } else if (expr.kind === 'not') {
+    next = withFalseFact(next, expr.expr);
+  }
+  return next;
 }
 
 function withFalseFact(env: FactEnv, expr: Expr): FactEnv {
-  if (env.falseFacts.some((f) => equals(f, expr))) {
-    return env;
+  let next = env;
+  if (!next.falseFacts.some((f) => equals(f, expr))) {
+    next = { ...next, falseFacts: [...next.falseFacts, expr] };
   }
-  return { ...env, falseFacts: [...env.falseFacts, expr] };
+  if (expr.kind === 'or') {
+    for (const disjunct of expr.exprs) {
+      next = withFalseFact(next, disjunct);
+    }
+  } else if (expr.kind === 'not') {
+    next = withTrueFact(next, expr.expr);
+  }
+  return next;
 }
 
 function valueRefUsesShadowed(ref: ValueRef, shadowed: Set<string>): boolean {
