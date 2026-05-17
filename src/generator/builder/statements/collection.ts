@@ -346,6 +346,10 @@ function appendListGuards(
   nonEmpty: boolean,
 ): void {
   if (ctx.includeArrayGuard === false) {
+    if (!ctx.assumeVarIsArray) {
+      out.push(failIfStmt(callExpr('is_array', [refArg(subject)])));
+    }
+    out.push(failIfStmt(callExpr('array_is_list', [refArg(subject)])));
     if (nonEmpty) {
       out.push(
         failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),

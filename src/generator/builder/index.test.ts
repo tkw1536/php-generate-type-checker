@@ -98,4 +98,21 @@ describe('build', () => {
       { kind: 'return', expr: { kind: 'bool', value: false } },
     ]);
   });
+
+  it('shape list field checks array_is_list on field value', () => {
+    const program = build(
+      parseType('array{x: list<string>}'),
+      '$value',
+      mockContext(),
+    );
+    const stmts = program.body.filter((s) => s.kind === 'if');
+    const listGuard = stmts.find(
+      (s) =>
+        s.kind === 'if' &&
+        s.cond.kind === 'not' &&
+        s.cond.expr.kind === 'call' &&
+        s.cond.expr.name === 'array_is_list',
+    );
+    expect(listGuard).toBeDefined();
+  });
 });

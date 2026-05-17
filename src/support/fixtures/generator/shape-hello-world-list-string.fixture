@@ -9,7 +9,9 @@ function isArrayHelloStringWorldListString(mixed $value): bool
         !is_array($value) ||
         !array_key_exists('hello', $value) ||
         !is_string($value['hello']) ||
-        !array_key_exists('world', $value)
+        !array_key_exists('world', $value) ||
+        !is_array($value['world']) ||
+        !array_is_list($value['world'])
     ) {
         return false;
     }
