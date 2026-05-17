@@ -6,6 +6,7 @@
     "bluesky",
     "checkability",
     "codegen",
+    "conds",
     "corepack",
     "dedupes",
     "disambiguates",
@@ -34,6 +35,7 @@
     "strtolower",
     "strtoupper",
     "testdata",
-    "themechange"
+    "themechange",
+    "unnests"
   ]
 }
