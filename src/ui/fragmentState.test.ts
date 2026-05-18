@@ -1,0 +1,45 @@
+import { describe, expect, it } from 'vitest';
+import {
+  decodeFragmentState,
+  encodeFragmentState,
+  type AppFragmentState,
+} from './fragmentState.ts';
+
+const sample: AppFragmentState = {
+  nameFromType: true,
+  optimize: false,
+  emit: 'public_static',
+  input: 'array{x: list<string>}',
+};
+
+describe('fragmentState', () => {
+  it('round-trips via URLSearchParams encoding', () => {
+    const encoded = encodeFragmentState(sample);
+    expect(encoded).toContain('name=1');
+    expect(encoded).toContain('optimize=0');
+    expect(encoded).toContain('emit=public_static');
+    expect(encoded).toContain('input=array%7Bx%3A+list%3Cstring%3E%7D');
+
+    expect(decodeFragmentState(`#${encoded}`)).toEqual(sample);
+  });
+
+  it('escapes special characters in input', () => {
+    const state: AppFragmentState = {
+      ...sample,
+      input: 'a&b=c\n"d',
+    };
+    const encoded = encodeFragmentState(state);
+    expect(decodeFragmentState(encoded)).toEqual(state);
+  });
+
+  it('returns null for empty hash', () => {
+    expect(decodeFragmentState('')).toBeNull();
+    expect(decodeFragmentState('#')).toBeNull();
+  });
+
+  it('ignores invalid emit values', () => {
+    expect(decodeFragmentState('#emit=not-a-mode&input=int')).toEqual({
+      input: 'int',
+    });
+  });
+});

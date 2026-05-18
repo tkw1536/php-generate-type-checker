@@ -8,6 +8,7 @@
     "codegen",
     "conds",
     "corepack",
+    "Cstring",
     "dedupes",
     "disambiguates",
     "evenodd",

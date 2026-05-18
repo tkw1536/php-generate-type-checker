@@ -14,36 +14,17 @@ import {
 import { initTheme, toggleTheme } from './theme.ts';
 import { describeError, renderErrorHtml } from './ui/errorDisplay.ts';
 import { TYPE_EXAMPLES } from './ui/examples.ts';
+import {
+  readFragmentFromLocation,
+  replaceLocationFragment,
+  type AppFragmentState,
+} from './ui/fragmentState.ts';
 
 initTheme();
 
 const DEFAULT_TYPE =
   'array{id: int, email: non-empty-string, name?: string}';
 const INPUT_DEBOUNCE_MS = 300;
-const TYPE_INPUT_STORAGE_KEY = 'php-generate-type-checker:type-input';
-const PERSIST_TYPE_INPUT_IN_DEV = import.meta.env.DEV;
-
-function readStoredTypeInput(): string | null {
-  if (!PERSIST_TYPE_INPUT_IN_DEV) {
-    return null;
-  }
-  try {
-    return sessionStorage.getItem(TYPE_INPUT_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
-
-function writeStoredTypeInput(value: string): void {
-  if (!PERSIST_TYPE_INPUT_IN_DEV) {
-    return;
-  }
-  try {
-    sessionStorage.setItem(TYPE_INPUT_STORAGE_KEY, value);
-  } catch {
-    /* ignore (private mode, quota, etc.) */
-  }
-}
 
 /** Left → right in the tab bar: AST → IR build → IR optimized → PHP */
 type OutputTabId = 'ast' | 'ir-build' | 'ir-optimized' | 'php';
@@ -155,16 +136,52 @@ function getNameFunctionsByType(): boolean {
   return el?.checked !== false;
 }
 
-function getPrioritizeReadabilityOverCompactness(): boolean {
+function getOptimize(): boolean {
   const el = document.querySelector<HTMLInputElement>(
     '#generate-prioritize-readability',
   );
-  return el?.checked !== true;
+  return el?.checked === true;
 }
 
-/** Compact mode: run optimizer (!readable layout). Not wired in UI yet. */
+function getPrioritizeReadabilityOverCompactness(): boolean {
+  return !getOptimize();
+}
+
 function wouldRunOptimizer(): boolean {
-  return !getPrioritizeReadabilityOverCompactness();
+  return getOptimize();
+}
+
+function readUiFragmentState(): AppFragmentState {
+  return {
+    nameFromType: getNameFunctionsByType(),
+    optimize: getOptimize(),
+    emit: getGenerateOutputMode(),
+    input: document.querySelector<HTMLTextAreaElement>('#type-input')!.value,
+  };
+}
+
+function applyFragmentState(fragment: Partial<AppFragmentState>): void {
+  if (fragment.nameFromType !== undefined) {
+    document.querySelector<HTMLInputElement>('#generate-name-by-type')!.checked =
+      fragment.nameFromType;
+  }
+  if (fragment.optimize !== undefined) {
+    document.querySelector<HTMLInputElement>(
+      '#generate-prioritize-readability',
+    )!.checked = fragment.optimize;
+  }
+  if (fragment.emit !== undefined) {
+    document.querySelector<HTMLSelectElement>('#generate-output-mode')!.value =
+      fragment.emit;
+  }
+  if (fragment.input !== undefined) {
+    document.querySelector<HTMLTextAreaElement>('#type-input')!.value =
+      fragment.input;
+  }
+}
+
+function syncFragmentToLocation(): void {
+  replaceLocationFragment(readUiFragmentState());
 }
 
 function getGenerateOptions() {
@@ -246,6 +263,7 @@ function runGenerate(panels: {
 }
 
 function onGenerateInputChanged(): void {
+  syncFragmentToLocation();
   scheduleGenerate();
 }
 
@@ -317,7 +335,8 @@ const outputPanelSet = {
 const scheduleGenerate = debounce(() => runGenerate(outputPanelSet), INPUT_DEBOUNCE_MS);
 
 const typeInput = document.querySelector<HTMLTextAreaElement>('#type-input')!;
-const outputModeSelect = document.querySelector<HTMLSelectElement>('#generate-output-mode')!;
+const outputModeSelect =
+  document.querySelector<HTMLSelectElement>('#generate-output-mode')!;
 const nameByTypeCheckbox =
   document.querySelector<HTMLInputElement>('#generate-name-by-type')!;
 const prioritizeReadabilityCheckbox = document.querySelector<HTMLInputElement>(
@@ -338,10 +357,7 @@ copyBtn.addEventListener('click', async () => {
   }, 1500);
 });
 
-typeInput.addEventListener('input', () => {
-  writeStoredTypeInput(typeInput.value);
-  onGenerateInputChanged();
-});
+typeInput.addEventListener('input', onGenerateInputChanged);
 outputModeSelect.addEventListener('change', onGenerateInputChanged);
 nameByTypeCheckbox.addEventListener('change', onGenerateInputChanged);
 prioritizeReadabilityCheckbox.addEventListener('change', onGenerateInputChanged);
@@ -372,7 +388,6 @@ function setupExamples(): void {
     }
     input.value = type;
     select.value = '';
-    writeStoredTypeInput(type);
     onGenerateInputChanged();
   });
 }
@@ -381,7 +396,12 @@ setupOutputTabs();
 setupExamples();
 
 {
-  const stored = readStoredTypeInput();
-  typeInput.value = stored !== null ? stored : DEFAULT_TYPE;
+  const fromFragment = readFragmentFromLocation();
+  if (fromFragment !== null) {
+    applyFragmentState(fromFragment);
+  } else {
+    typeInput.value = DEFAULT_TYPE;
+  }
+  syncFragmentToLocation();
 }
 runGenerate(outputPanelSet);
