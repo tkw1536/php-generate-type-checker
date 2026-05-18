@@ -203,13 +203,8 @@ function buildIndexedValuesCollection(
   const out: Block = [];
   if (opts.listGuards) {
     appendListGuards(out, subject, ctx, opts.nonEmpty);
-  } else if (ctx.includeArrayGuard !== false && !ctx.assumeVarIsArray) {
-    out.push(failIfStmt(callExpr('is_array', [refArg(subject)])));
-    if (opts.nonEmpty) {
-      out.push(
-        failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),
-      );
-    }
+  } else {
+    appendArrayGuards(out, subject, ctx, opts.nonEmpty, false);
   }
 
   for (let i = 0; i < values.length; i++) {
@@ -405,6 +400,13 @@ function appendArrayGuards(
       );
     }
     return;
+  }
+  if (!ctx.assumeVarIsArray) {
+    out.push(
+      failIfStmt(
+        callExpr(iterable ? 'is_iterable' : 'is_array', [refArg(subject)]),
+      ),
+    );
   }
   if (nonEmpty) {
     out.push(

@@ -115,4 +115,23 @@ describe('build', () => {
     );
     expect(listGuard).toBeDefined();
   });
+
+  it('shape non-empty array field checks is_array on field value', () => {
+    const program = build(
+      parseType('array{x: non-empty-array<string, string>}'),
+      '$value',
+      mockContext(),
+    );
+    const arrayGuard = program.body.find(
+      (s) =>
+        s.kind === 'if' &&
+        s.cond.kind === 'not' &&
+        s.cond.expr.kind === 'call' &&
+        s.cond.expr.name === 'is_array' &&
+        s.cond.expr.args[0]?.kind === 'ref' &&
+        s.cond.expr.args[0].ref.kind === 'array_access' &&
+        s.cond.expr.args[0].ref.key === 'x',
+    );
+    expect(arrayGuard).toBeDefined();
+  });
 });
