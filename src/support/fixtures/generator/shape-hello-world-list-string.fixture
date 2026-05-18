@@ -13,12 +13,12 @@ function isArrayHelloStringWorldListString(mixed $value): bool
         !is_array($value['world']) ||
         !array_is_list($value['world'])
     ) {
-        return false;
+        return FALSE;
     }
     foreach ($value['world'] as $value1) {
         if (!is_string($value1)) {
-            return false;
+            return FALSE;
         }
     }
-    return true;
+    return TRUE;
 }

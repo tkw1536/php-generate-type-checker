@@ -63,7 +63,7 @@ describe('pipeline build + render (unoptimized)', () => {
     });
     expect(php).toContain('if (!is_array($value))');
     expect(php).toContain('if (!is_callable($value))');
-    expect(php).toContain('return true;');
+    expect(php).toContain('return TRUE;');
     expect(php).not.toMatch(/return !\(/);
   });
 
@@ -78,8 +78,8 @@ describe('pipeline build + render (unoptimized)', () => {
       output: 'function',
     });
     expect(php).toContain('if (!(is_int($value) || is_string($value)))');
-    expect(php).toContain('return false;');
-    expect(php).toContain('return true;');
+    expect(php).toContain('return FALSE;');
+    expect(php).toContain('return TRUE;');
   });
 
   it('array<string,string> foreach uses separate fail-if guards', () => {

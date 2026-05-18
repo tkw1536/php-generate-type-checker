@@ -6,15 +6,15 @@ output: function
 function isArrayArrayNeverArrayNever(mixed $value): bool
 {
     if ($value === []) {
-        return true;
+        return TRUE;
     }
     if (!is_array($value)) {
-        return false;
+        return FALSE;
     }
     foreach ($value as $value1) {
         if ($value1 !== []) {
-            return false;
+            return FALSE;
         }
     }
-    return true;
+    return TRUE;
 }

@@ -6,7 +6,7 @@ output: function
 function isArrayIntArrayIntArrayString(mixed $value): bool
 {
     if (!is_array($value)) {
-        return false;
+        return FALSE;
     }
     foreach ($value as $value1) {
         if (
@@ -14,10 +14,10 @@ function isArrayIntArrayIntArrayString(mixed $value): bool
             !isArrayInt($value1) &&
             !isArrayString($value1)
         ) {
-            return false;
+            return FALSE;
         }
     }
-    return true;
+    return TRUE;
 }
 
 
@@ -25,26 +25,26 @@ function isArrayIntArrayIntArrayString(mixed $value): bool
 function isArrayInt(mixed $value): bool
 {
     if (!is_array($value)) {
-        return false;
+        return FALSE;
     }
     foreach ($value as $value1) {
         if (!is_int($value1)) {
-            return false;
+            return FALSE;
         }
     }
-    return true;
+    return TRUE;
 }
 
 /** @phpstan-assert-if-true array<string> $value */
 function isArrayString(mixed $value): bool
 {
     if (!is_array($value)) {
-        return false;
+        return FALSE;
     }
     foreach ($value as $value1) {
         if (!is_string($value1)) {
-            return false;
+            return FALSE;
         }
     }
-    return true;
+    return TRUE;
 }

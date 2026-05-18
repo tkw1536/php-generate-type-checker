@@ -10,6 +10,20 @@ export type RenderPhpOptions = {
   useSelfCalls?: boolean;
 };
 
+/** PHP scalar keywords in generated checker output. */
+export function renderPhpScalarLiteral(value: string): string {
+  switch (value) {
+    case 'true':
+      return 'TRUE';
+    case 'false':
+      return 'FALSE';
+    case 'null':
+      return 'NULL';
+    default:
+      return value;
+  }
+}
+
 function isLeaf(expr: Expr): boolean {
   switch (expr.kind) {
     case 'bool':
@@ -60,7 +74,7 @@ function renderArg(arg: Arg, opts: RenderPhpOptions): string {
     case 'ref':
       return renderValueRef(arg.ref);
     case 'literal':
-      return arg.value;
+      return renderPhpScalarLiteral(arg.value);
     case 'call': {
       if (arg.name === '' && arg.args.length === 1) {
         return renderArg(arg.args[0]!, opts);
@@ -76,7 +90,7 @@ function renderArg(arg: Arg, opts: RenderPhpOptions): string {
 export function renderExpr(expr: Expr, opts: RenderPhpOptions = {}): string {
   switch (expr.kind) {
     case 'bool':
-      return expr.value ? 'true' : 'false';
+      return expr.value ? 'TRUE' : 'FALSE';
     case 'not': {
       const child = expr.expr;
       if (
@@ -117,7 +131,7 @@ export function renderExpr(expr: Expr, opts: RenderPhpOptions = {}): string {
       return `${name}(${path})`;
     }
     default:
-      return 'false';
+      return 'FALSE';
   }
 }
 

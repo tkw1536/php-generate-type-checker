@@ -58,6 +58,19 @@ describe('renderExpr', () => {
     ).toBe('!($value === [])');
   });
 
+  it('renders bool and null literals uppercase', () => {
+    expect(renderExpr({ kind: 'bool', value: true })).toBe('TRUE');
+    expect(renderExpr({ kind: 'bool', value: false })).toBe('FALSE');
+    expect(
+      renderExpr({
+        kind: 'bin',
+        op: '===',
+        left: refArg($v),
+        right: { kind: 'literal', value: 'null' },
+      }),
+    ).toBe('$value === NULL');
+  });
+
   it('renders call_checker with and without self::', () => {
     const e = { kind: 'call_checker' as const, name: 'isFoo', subject: $v };
     expect(renderExpr(e)).toBe('isFoo($value)');
@@ -74,12 +87,12 @@ describe('renderProgramBody', () => {
     ]);
     expect(renderProgramBody(body)).toBe(
       `    if (!is_array($value)) {
-        return false;
+        return FALSE;
     }
     if (!is_callable($value)) {
-        return false;
+        return FALSE;
     }
-    return true;`,
+    return TRUE;`,
     );
   });
 
@@ -102,7 +115,7 @@ describe('renderProgramBody', () => {
         !is_string($key1) ||
         !is_string($value1)
     ) {
-        return false;
+        return FALSE;
     }`,
     );
   });
@@ -147,7 +160,7 @@ describe('renderProgramBody', () => {
     ]);
     expect(renderProgramBody(body)).toBe(
       `    foreach ($value as $key1 => $value1) {
-        return true;
+        return TRUE;
     }`,
     );
   });

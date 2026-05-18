@@ -10,12 +10,12 @@ function isNonEmptyListString(mixed $value): bool
         !array_is_list($value) ||
         $value === []
     ) {
-        return false;
+        return FALSE;
     }
     foreach ($value as $value1) {
         if (!is_string($value1)) {
-            return false;
+            return FALSE;
         }
     }
-    return true;
+    return TRUE;
 }

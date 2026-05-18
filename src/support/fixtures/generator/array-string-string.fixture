@@ -6,15 +6,15 @@ output: function
 function isArrayStringString(mixed $value): bool
 {
     if (!is_array($value)) {
-        return false;
+        return FALSE;
     }
     foreach ($value as $key1 => $value1) {
         if (
             !is_string($key1) ||
             !is_string($value1)
         ) {
-            return false;
+            return FALSE;
         }
     }
-    return true;
+    return TRUE;
 }

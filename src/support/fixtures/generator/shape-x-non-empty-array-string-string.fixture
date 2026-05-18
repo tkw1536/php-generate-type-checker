@@ -11,15 +11,15 @@ function isArrayXNonEmptyArrayStringString(mixed $value): bool
         !is_array($value['x']) ||
         $value['x'] === []
     ) {
-        return false;
+        return FALSE;
     }
     foreach ($value['x'] as $key1 => $value1) {
         if (
             !is_string($key1) ||
             !is_string($value1)
         ) {
-            return false;
+            return FALSE;
         }
     }
-    return true;
+    return TRUE;
 }

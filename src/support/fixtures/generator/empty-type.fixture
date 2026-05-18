@@ -5,5 +5,5 @@ output: function
 /** @phpstan-assert-if-true empty $value */
 function isEmpty(mixed $value): bool
 {
-    return ($value === false || $value === 0 || $value === 0.0 || $value === '' || $value === '0' || $value === [] || $value === null);
+    return ($value === FALSE || $value === 0 || $value === 0.0 || $value === '' || $value === '0' || $value === [] || $value === NULL);
 }

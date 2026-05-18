@@ -9,12 +9,12 @@ function isListInt(mixed $value): bool
         !is_array($value) ||
         !array_is_list($value)
     ) {
-        return false;
+        return FALSE;
     }
     foreach ($value as $value1) {
         if (!is_int($value1)) {
-            return false;
+            return FALSE;
         }
     }
-    return true;
+    return TRUE;
 }
