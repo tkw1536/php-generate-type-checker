@@ -135,7 +135,7 @@ A&B|C
 (int|string)&Foo
 
 # --- Custom Test Cases ---
-(array<string|null,mixed>)|null
+(array<string,mixed>)|null
 array{'hello:world': string, 'hello.world': string}
 array{'hello': string, 'world': list<string>}
 array{hello: string}

@@ -27,14 +27,23 @@ yarn dev          # web UI at http://localhost:5173
 yarn test                      # vitest
 yarn build                     # tsc + production bundle
 yarn spellcheck                # cspell
-yarn update_fixtures:parser    # parser.success.IN → parser.success.json
-yarn update_fixtures:generator # generator/testdata/*.IN → *.json
+yarn update_fixtures:parser     # parser.success.IN → parser.success.json
+yarn update_fixtures:generator  # generator/testdata/*.IN → *.json
+yarn review_fixtures:generator  # interactively review generator golden output (optional)
 ```
 
 Golden fixture sources live next to each module under `testdata/`:
 
 - **Parser** — [`parser.success.IN`](src/parser/testdata/parser.success.IN) (one list; blank lines and `#` comments are ignored)
 - **Generator** — [`function.IN`](src/generator/testdata/function.IN), [`public_static.IN`](src/generator/testdata/public_static.IN), and sibling files per output mode, plus [`errors.IN`](src/generator/testdata/errors.IN) for types that must throw `GenerationError`
+
+After regenerating generator fixtures, you can walk through each case interactively:
+
+```bash
+yarn review_fixtures:generator
+```
+
+For every fixture it prints the type string and expected PHP (or `GenerationError` for error cases), then prompts `Look good [y/n/e]?` — press a single key (no Enter). Answers are appended to [`review-state.json`](src/generator/testdata/review-state.json) (`good` / `bad` name lists; gitignored). Re-running the script skips fixtures already recorded. Press `e` to stop early; progress is saved.
 
 ## Web UI
 
@@ -95,7 +104,8 @@ src/
 │   │   └── index.ts
 │   ├── pipeline.test.ts
 │   └── testdata/            # *.IN → *.json (function, public_static, errors, …)
-│       └── update-testdata.mjs
+│       ├── update-testdata.mjs
+│       └── review-fixtures.mjs
 └── ui/
     ├── errorDisplay.ts      # parse/generation errors with segment index
     └── examples.ts
@@ -201,7 +211,7 @@ const php = generateChecker('list<int>', {
 
 - **Unit / integration** — `*.test.ts` next to the module (`src/parser/`, `src/generator/**/`, `src/ui/`)
 - **Parser JSON** — [`src/parser/testdata/`](src/parser/testdata/) (`yarn update_fixtures:parser` / `update-testdata.mjs`)
-- **Generator fixtures** — type lists in [`src/generator/testdata/*.IN`](src/generator/testdata/function.IN), golden PHP in matching `*.json`; exercised by [`index.test.ts`](src/generator/index.test.ts) (`yarn update_fixtures:generator` / `update-testdata.mjs`)
+- **Generator fixtures** — type lists in [`src/generator/testdata/*.IN`](src/generator/testdata/function.IN), golden PHP in matching `*.json`; exercised by [`index.test.ts`](src/generator/index.test.ts) (`yarn update_fixtures:generator` / `update-testdata.mjs`; optional human review via `yarn review_fixtures:generator` / `review-fixtures.mjs`)
 
 Run `yarn test` (Vitest).
 

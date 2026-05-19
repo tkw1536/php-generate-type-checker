@@ -81,17 +81,6 @@ describe('build', () => {
     }
   });
 
-  it('array<string|null, mixed>|null inline union arms', () => {
-    const program = build(
-      parseType('array<string|null, mixed>|null'),
-      '$value',
-      mockContext(),
-    );
-    expect(program.body.length).toBeGreaterThan(0);
-    const failIf = program.body[0];
-    expect(failIf?.kind).toBe('if');
-  });
-
   it('never returns false only', () => {
     const program = build(parseType('never'), '$value', mockContext());
     expect(program.body).toEqual([

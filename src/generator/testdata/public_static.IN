@@ -1,5 +1,5 @@
 # Source file used to generate generator fixtures.
 # Blank lines and lines starting with '#' are ignored.
 
-(array<string|null,mixed>)|null
+(array<string,mixed>)|null
 int

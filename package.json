@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "update_fixtures:generator": "node ./src/generator/testdata/update-testdata.mjs",
+    "review_fixtures:generator": "node ./src/generator/testdata/review-fixtures.mjs",
     "update_fixtures:parser": "node ./src/parser/testdata/update-testdata.mjs",
     "test:watch": "vitest",
     "spellcheck": "cspell ."

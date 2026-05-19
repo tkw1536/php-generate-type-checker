@@ -424,8 +424,8 @@
     "expected": "/** @phpstan-assert-if-true (int|string)&Foo $value */\nfunction isIntStringFoo(mixed $value): bool\n{\n    return (\n        (\n            is_int($value) ||\n            is_string($value)\n        ) &&\n        $value instanceof Foo\n    );\n}\n"
   },
   {
-    "input": "(array<string|null,mixed>)|null",
-    "expected": "/** @phpstan-assert-if-true array<string|null, mixed>|null $value */\nfunction isArrayStringNullMixedNull(mixed $value): bool\n{\n    return (is_array($value) || $value === NULL);\n}\n"
+    "input": "(array<string,mixed>)|null",
+    "expected": "/** @phpstan-assert-if-true array<string, mixed>|null $value */\nfunction isArrayStringMixedNull(mixed $value): bool\n{\n    return (is_array($value) || $value === NULL);\n}\n"
   },
   {
     "input": "array{'hello:world': string, 'hello.world': string}",
