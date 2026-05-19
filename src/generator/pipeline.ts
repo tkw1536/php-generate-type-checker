@@ -1,12 +1,12 @@
 import type { TypeNode } from '../parser/ast.ts';
 import { GenerationError } from './errors.ts';
 import type { CheckerIR } from './ir/types.ts';
-import { build as buildChecker } from './builder/';
+import { build as buildChecker } from './builder/index.ts';
 import {
   createFunctionNameRegistry,
   type FunctionNameRegistry,
 } from './builder/registry/index.ts';
-import { optimize as optimizeIr } from './optimizer/';
+import { optimize as optimizeIr } from './optimizer/index.ts';
 import type { GenerateCheckerOptions } from './options.ts';
 import { render } from './render/index.ts';
 import { formatTypeForPhpstanDoc } from './render/phpdoc.ts';

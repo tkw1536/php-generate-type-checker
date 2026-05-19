@@ -1,9 +1,0 @@
----
-input: "non-empty-scalar"
-output: function
----
-/** @phpstan-assert-if-true non-empty-scalar $value */
-function isNonEmptyScalar(mixed $value): bool
-{
-    return $value instanceof non-empty-scalar;
-}

@@ -1,9 +1,0 @@
----
-input: "empty"
-output: function
----
-/** @phpstan-assert-if-true empty $value */
-function isEmpty(mixed $value): bool
-{
-    return ($value === FALSE || $value === 0 || $value === 0.0 || $value === '' || $value === '0' || $value === [] || $value === NULL);
-}

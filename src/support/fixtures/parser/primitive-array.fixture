@@ -1,8 +1,0 @@
----
-input: "array"
----
-// json
-{
-  "kind": "keyword",
-  "keyword": "array"
-}

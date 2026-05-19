@@ -1,8 +1,0 @@
----
-input: "non-empty-lowercase-string"
----
-// json
-{
-  "kind": "primitive",
-  "name": "non-empty-lowercase-string"
-}

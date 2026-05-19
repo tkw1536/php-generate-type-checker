@@ -1,8 +1,0 @@
----
-input: "mixed"
----
-// json
-{
-  "kind": "keyword",
-  "keyword": "mixed"
-}

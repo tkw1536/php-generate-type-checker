@@ -1,9 +1,0 @@
----
-input: "negative-int"
-output: function
----
-/** @phpstan-assert-if-true negative-int $value */
-function isNegativeInt(mixed $value): bool
-{
-    return (is_int($value) && $value < 0);
-}

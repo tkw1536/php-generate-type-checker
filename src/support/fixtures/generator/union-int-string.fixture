@@ -1,9 +1,0 @@
----
-input: "int|string"
-output: function
----
-/** @phpstan-assert-if-true int|string $value */
-function isIntString(mixed $value): bool
-{
-    return (is_int($value) || is_string($value));
-}

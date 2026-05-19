@@ -1,5 +1,0 @@
----
-input: "iterable<mixed>"
-error: generation
----
-<?php

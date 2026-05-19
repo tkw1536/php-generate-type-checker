@@ -1,5 +1,0 @@
----
-input: "int extra"
-error: parse
----
-// json

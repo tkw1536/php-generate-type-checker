@@ -1,9 +1,0 @@
----
-input: "non-empty-array"
-output: function
----
-/** @phpstan-assert-if-true non-empty-array $value */
-function isNonEmptyArray(mixed $value): bool
-{
-    return (is_array($value) && $value !== []);
-}

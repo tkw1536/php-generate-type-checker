@@ -1,9 +1,0 @@
----
-input: "array{'hello:world': string, 'hello.world': string}"
-output: function
----
-/** @phpstan-assert-if-true array{'hello:world': string, 'hello.world': string} $value */
-function isArrayHelloWorldStringHelloWorldString(mixed $value): bool
-{
-    return (is_array($value) && array_key_exists('hello:world', $value) && is_string($value['hello:world']) && array_key_exists('hello.world', $value) && is_string($value['hello.world']));
-}

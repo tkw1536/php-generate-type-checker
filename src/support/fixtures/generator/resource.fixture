@@ -1,9 +1,0 @@
----
-input: "resource"
-output: function
----
-/** @phpstan-assert-if-true resource $value */
-function isResource(mixed $value): bool
-{
-    return is_resource($value);
-}

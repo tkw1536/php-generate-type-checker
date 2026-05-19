@@ -1,9 +1,0 @@
----
-input: "never"
-output: function
----
-/** @phpstan-assert-if-true never $value */
-function isNever(mixed $value): bool
-{
-    return FALSE;
-}

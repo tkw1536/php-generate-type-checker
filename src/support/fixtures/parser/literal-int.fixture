@@ -1,9 +1,0 @@
----
-input: "42"
----
-// json
-{
-  "kind": "literal",
-  "type": "number",
-  "value": "42"
-}

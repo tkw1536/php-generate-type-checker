@@ -1,9 +1,0 @@
----
-input: "callable-string"
-output: function
----
-/** @phpstan-assert-if-true callable-string $value */
-function isCallableString(mixed $value): bool
-{
-    return (is_string($value) && is_callable($value));
-}

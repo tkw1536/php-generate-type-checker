@@ -1,9 +1,0 @@
----
-input: "int"
-output: function
----
-/** @phpstan-assert-if-true int $value */
-function isInt(mixed $value): bool
-{
-    return is_int($value);
-}

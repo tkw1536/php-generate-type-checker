@@ -1,0 +1,34 @@
+# Source file used to generate generator fixtures.
+# Blank lines and lines starting with '#' are ignored.
+
+# --- Primitive keywords ---
+void
+literal-string
+non-empty-literal-string
+
+# --- Late static / scope types ---
+static
+self
+parent
+$this
+
+# --- Generic iterables (array / iterable / list) ---
+iterable<string>
+iterable<int, string>
+non-empty-iterable
+non-empty-iterable<string>
+non-empty-iterable<int, string>
+
+# --- User-defined generics ---
+Foo<string>
+Foo<int, Bar>
+Collection<array-key, mixed>
+
+callable(int): void
+closed-resource
+Collection<int>
+iterable<int, string>
+iterable<mixed>
+iterable<string>
+literal-string
+open-resource

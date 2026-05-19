@@ -1,9 +1,0 @@
----
-input: "array{}"
-output: function
----
-/** @phpstan-assert-if-true array{} $value */
-function isArray(mixed $value): bool
-{
-    return $value === [];
-}

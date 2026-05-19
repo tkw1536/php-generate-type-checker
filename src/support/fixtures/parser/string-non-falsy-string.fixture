@@ -1,8 +1,0 @@
----
-input: "non-falsy-string"
----
-// json
-{
-  "kind": "primitive",
-  "name": "non-falsy-string"
-}

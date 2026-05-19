@@ -1,9 +1,0 @@
----
-input: "list<string>|array<mixed>"
-output: function
----
-/** @phpstan-assert-if-true list<string>|array<mixed> $value */
-function isListStringArrayMixed(mixed $value): bool
-{
-    return is_array($value);
-}

@@ -1,9 +1,0 @@
----
-input: "null"
-output: function
----
-/** @phpstan-assert-if-true null $value */
-function isNull(mixed $value): bool
-{
-    return $value === NULL;
-}

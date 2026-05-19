@@ -1,8 +1,0 @@
----
-input: "float"
----
-// json
-{
-  "kind": "keyword",
-  "keyword": "float"
-}

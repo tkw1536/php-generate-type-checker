@@ -1,5 +1,0 @@
----
-input: "iterable<string>"
-error: generation
----
-<?php

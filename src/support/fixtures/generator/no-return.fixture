@@ -1,9 +1,0 @@
----
-input: "no-return"
-output: function
----
-/** @phpstan-assert-if-true no-return $value */
-function isNoReturn(mixed $value): bool
-{
-    return $value instanceof no-return;
-}

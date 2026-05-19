@@ -1,6 +1,7 @@
 {
   "version": "0.2",
   "useGitignore": true,
+  "ignorePaths": ["src/**/testdata/*.json"],
   "words": [
     "alnum",
     "bluesky",
@@ -9,6 +10,7 @@
     "conds",
     "corepack",
     "Cstring",
+    "DateTimeInterface",
     "dedupes",
     "disambiguates",
     "evenodd",

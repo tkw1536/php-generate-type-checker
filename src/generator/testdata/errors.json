@@ -1,0 +1,71 @@
+[
+  {
+    "input": "void"
+  },
+  {
+    "input": "literal-string"
+  },
+  {
+    "input": "non-empty-literal-string"
+  },
+  {
+    "input": "static"
+  },
+  {
+    "input": "self"
+  },
+  {
+    "input": "parent"
+  },
+  {
+    "input": "$this"
+  },
+  {
+    "input": "iterable<string>"
+  },
+  {
+    "input": "iterable<int, string>"
+  },
+  {
+    "input": "non-empty-iterable"
+  },
+  {
+    "input": "non-empty-iterable<string>"
+  },
+  {
+    "input": "non-empty-iterable<int, string>"
+  },
+  {
+    "input": "Foo<string>"
+  },
+  {
+    "input": "Foo<int, Bar>"
+  },
+  {
+    "input": "Collection<array-key, mixed>"
+  },
+  {
+    "input": "callable(int): void"
+  },
+  {
+    "input": "closed-resource"
+  },
+  {
+    "input": "Collection<int>"
+  },
+  {
+    "input": "iterable<int, string>"
+  },
+  {
+    "input": "iterable<mixed>"
+  },
+  {
+    "input": "iterable<string>"
+  },
+  {
+    "input": "literal-string"
+  },
+  {
+    "input": "open-resource"
+  }
+]

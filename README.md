@@ -24,16 +24,17 @@ Types that cannot be checked at runtime (e.g. most `callable` signatures, unsupp
 corepack enable   # once per machine, if Yarn is not available
 yarn install
 yarn dev          # web UI at http://localhost:5173
-yarn test         # vitest
-yarn build        # tsc + production bundle
-yarn spellcheck   # cspell
+yarn test                      # vitest
+yarn build                     # tsc + production bundle
+yarn spellcheck                # cspell
+yarn update_fixtures:parser    # parser.success.IN → parser.success.json
+yarn update_fixtures:generator # generator/testdata/*.IN → *.json
 ```
 
-Helper scripts (optional):
+Golden fixture sources live next to each module under `testdata/`:
 
-- `node scripts/build-parser-fixtures.mjs` — regenerate parser `.fixture` bodies from `parseType`
-- `node scripts/build-generator-fixtures.mjs` — build generator fixtures
-- `node scripts/refresh-generator-fixtures.mjs` — refresh generator fixture expected PHP
+- **Parser** — [`parser.success.IN`](src/parser/testdata/parser.success.IN) (one list; blank lines and `#` comments are ignored)
+- **Generator** — [`function.IN`](src/generator/testdata/function.IN), [`public_static.IN`](src/generator/testdata/public_static.IN), and sibling files per output mode, plus [`errors.IN`](src/generator/testdata/errors.IN) for types that must throw `GenerationError`
 
 ## Web UI
 
@@ -67,10 +68,11 @@ src/
 │   ├── parser.ts            # parseType, parseTypes
 │   ├── lexer.ts, ast.ts, format.ts
 │   ├── parser.test.ts
-│   └── testdata/            # parser.success.json, parser.errors.json
+│   └── testdata/            # parser.success.IN → parser.success.json, parser.errors.json
 ├── generator/
 │   ├── pipeline.ts          # build(), buildMany(), optimize(), renderChecker()
 │   ├── index.ts             # generateChecker()
+│   ├── index.test.ts        # generateChecker golden tests (loads testdata/*.json)
 │   ├── options.ts, errors.ts
 │   ├── ir/                  # CheckerIR, Expr, Stmt, ValueRef, equals, substitute
 │   ├── builder/             # TypeNode → checker IR (per program)
@@ -92,17 +94,12 @@ src/
 │   │   ├── output.ts        # class/function wrappers, visibility
 │   │   └── index.ts
 │   ├── pipeline.test.ts
-│   └── generateChecker.test.ts
-├── support/                 # fixtures + loaders (tests / scripts)
-│   ├── fixtureFormat.ts
-│   ├── loadParserFixture.ts, loadGeneratorFixture.ts
-│   └── fixtures/{parser,generator}/
+│   └── testdata/            # *.IN → *.json (function, public_static, errors, …)
+│       └── update-testdata.mjs
 └── ui/
     ├── errorDisplay.ts      # parse/generation errors with segment index
     └── examples.ts
 ```
-
-Production app code does not import `src/support/`.
 
 ## Generation pipeline
 
@@ -203,8 +200,8 @@ const php = generateChecker('list<int>', {
 ## Tests
 
 - **Unit / integration** — `*.test.ts` next to the module (`src/parser/`, `src/generator/**/`, `src/ui/`)
-- **Parser JSON** — [`src/parser/testdata/`](src/parser/testdata/)
-- **Fixtures** — YAML frontmatter + body under [`src/support/fixtures/`](src/support/fixtures/); loaded by [`loadParserFixture.ts`](src/support/loadParserFixture.ts) and [`loadGeneratorFixture.ts`](src/support/loadGeneratorFixture.ts)
+- **Parser JSON** — [`src/parser/testdata/`](src/parser/testdata/) (`yarn update_fixtures:parser` / `update-testdata.mjs`)
+- **Generator fixtures** — type lists in [`src/generator/testdata/*.IN`](src/generator/testdata/function.IN), golden PHP in matching `*.json`; exercised by [`index.test.ts`](src/generator/index.test.ts) (`yarn update_fixtures:generator` / `update-testdata.mjs`)
 
 Run `yarn test` (Vitest).
 

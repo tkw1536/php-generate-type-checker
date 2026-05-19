@@ -1,5 +1,0 @@
----
-input: "'foo"
-error: lexer
----
-// json

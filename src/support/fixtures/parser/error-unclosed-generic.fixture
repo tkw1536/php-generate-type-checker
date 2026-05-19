@@ -1,5 +1,0 @@
----
-input: "array<string"
-error: parse
----
-// json

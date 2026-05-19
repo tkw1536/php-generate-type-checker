@@ -1,5 +1,0 @@
----
-input: "callable(int): void"
-error: generation
----
-<?php

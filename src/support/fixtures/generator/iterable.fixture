@@ -1,9 +1,0 @@
----
-input: "iterable"
-output: function
----
-/** @phpstan-assert-if-true iterable $value */
-function isIterable(mixed $value): bool
-{
-    return is_iterable($value);
-}

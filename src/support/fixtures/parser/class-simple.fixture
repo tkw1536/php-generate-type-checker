@@ -1,8 +1,0 @@
----
-input: "DateTimeInterface"
----
-// json
-{
-  "kind": "class",
-  "name": "DateTimeInterface"
-}

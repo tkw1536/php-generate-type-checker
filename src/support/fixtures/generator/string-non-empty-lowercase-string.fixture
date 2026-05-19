@@ -1,9 +1,0 @@
----
-input: "non-empty-lowercase-string"
-output: function
----
-/** @phpstan-assert-if-true non-empty-lowercase-string $value */
-function isNonEmptyLowercaseString(mixed $value): bool
-{
-    return (is_string($value) && $value !== '' && strtolower($value) === $value);
-}

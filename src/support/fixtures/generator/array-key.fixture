@@ -1,9 +1,0 @@
----
-input: "array-key"
-output: function
----
-/** @phpstan-assert-if-true array-key $value */
-function isArrayKey(mixed $value): bool
-{
-    return (is_string($value) || is_int($value));
-}

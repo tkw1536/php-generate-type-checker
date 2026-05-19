@@ -1,8 +1,0 @@
----
-input: "int"
----
-// json
-{
-  "kind": "keyword",
-  "keyword": "int"
-}

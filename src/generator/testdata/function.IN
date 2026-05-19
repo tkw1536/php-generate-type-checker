@@ -1,0 +1,159 @@
+# Source file used to generate generator fixtures.
+# Blank lines and lines starting with '#' are ignored.
+
+# --- Primitive keywords ---
+int
+integer
+string
+float
+double
+number
+numeric
+bool
+boolean
+array
+object
+callable
+iterable
+mixed
+null
+resource
+never
+noreturn
+empty
+scalar
+array-key
+
+# --- Boolean / null literals (keyword vs literal forms) ---
+true
+false
+
+# --- Built-in type aliases ---
+positive-int
+negative-int
+non-positive-int
+non-negative-int
+non-zero-int
+class-string
+interface-string
+trait-string
+enum-string
+
+numeric-string
+callable-string
+lowercase-string
+uppercase-string
+non-falsy-string
+truthy-string
+decimal-int-string
+non-decimal-int-string
+non-empty-string
+non-empty-lowercase-string
+non-empty-uppercase-string
+non-empty-mixed
+
+# --- Class names ---
+Foo
+Bar
+DateTimeInterface
+\Foo\Bar
+\Fully\Qualified\ClassName
+
+# --- Numeric and string literals ---
+42
+0
+-1
+69
+69.0
+69.42
+69.420
+'foo'
+"bar"
+'baz'
+'hello world'
+'foo'|'bar'
+42|'foo'|true
+
+# --- int ranges ---
+int<0, 100>
+int<50, max>
+int<min, 100>
+int<min, max>
+integer<0, 5>
+
+# --- Generic iterables (array / iterable / list) ---
+array<int>
+array<string, int>
+array<string, array<int, bool>>
+array<int, Foo>
+non-empty-array
+non-empty-array<string>
+list
+list<int>
+non-empty-list
+non-empty-list<string>
+
+# --- Postfix array syntax ---
+string[]
+string[][]
+int[][]
+(int|string)[]
+
+# --- Array shapes ---
+array{}
+array{count: positive-int}
+array{foo: int, bar?: string}
+array{0: int, 1?: string}
+array{'field-one': int}
+array{'field-one'?: int}
+array{int}
+array{int, int}
+
+# --- List Shapes ---
+list<int>
+non-empty-list<string>
+list{int}
+list{int, string}
+
+# --- Object and List shapes --
+object{}
+object{foo: int, bar?: string}
+object{'a-minus': int, 'b-minus'?: string}
+
+# --- Unions ---
+int|string
+int|string|null
+int|array<string, bool>
+false|null
+true|false
+
+# --- Intersections ---
+Foo&Bar
+A&B&C
+A&B|C
+(array<string, int|null>|null)&Foo
+(int|string)&Foo
+
+# --- Custom Test Cases ---
+(array<string|null,mixed>)|null
+array{'hello:world': string, 'hello.world': string}
+array{'hello': string, 'world': list<string>}
+array{hello: string}
+array{left: array{}, right: never[]}|array{}
+array{x: non-empty-array<string, string>}
+array<array<never>>|array<never>
+array<array<string>>
+array<int|array<int>|array<string>>
+array<mixed>
+array<never>
+array<string, string>
+array<string>|array<int>
+callable-array
+callable-object
+empty-scalar
+list<mixed>|list<string>
+list<string>|array<mixed>
+never-return
+never-returns
+no-return
+non-empty-scalar

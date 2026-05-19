@@ -1,9 +1,0 @@
----
-input: "int<min, 100>"
-output: function
----
-/** @phpstan-assert-if-true int<min, 100> $value */
-function isIntMin100(mixed $value): bool
-{
-    return (is_int($value) && $value <= 100);
-}

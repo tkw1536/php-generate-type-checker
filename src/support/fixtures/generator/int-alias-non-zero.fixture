@@ -1,9 +1,0 @@
----
-input: "non-zero-int"
-output: function
----
-/** @phpstan-assert-if-true non-zero-int $value */
-function isNonZeroInt(mixed $value): bool
-{
-    return (is_int($value) && $value !== 0);
-}
