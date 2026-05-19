@@ -2,6 +2,7 @@ import type { TypeNode } from '../../../parser/ast.ts';
 import type { Block, ValueRef } from '../../ir/types.ts';
 import {
   arrayAccessRef,
+  binExpr,
   callExpr,
   failIfStmt,
   literalArg,
@@ -18,6 +19,13 @@ export function buildShape(
 ): Block {
   const out: Block = [];
   const objectShape = shapeIsObject(node);
+
+  if (!objectShape && node.fields.length === 0) {
+    out.push(
+      failIfStmt(binExpr('===', refArg(base), literalArg('[]'))),
+    );
+    return out;
+  }
 
   if (ctx.includeArrayGuard !== false) {
     if (objectShape) {

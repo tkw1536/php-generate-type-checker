@@ -5,5 +5,14 @@ output: function
 /** @phpstan-assert-if-true array{left: array{}, right: never[]}|array{} $value */
 function isArrayLeftArrayRightNeverArray(mixed $value): bool
 {
-    return is_array($value);
+    return (
+        (
+            is_array($value) &&
+            array_key_exists('left', $value) &&
+            $value['left'] === [] &&
+            array_key_exists('right', $value) &&
+            $value['right'] === []
+        ) ||
+        $value === []
+    );
 }

@@ -116,6 +116,29 @@ describe('build', () => {
     expect(listGuard).toBeDefined();
   });
 
+  it('empty array shape checks value equals empty array', () => {
+    const program = build(parseType('array{}'), '$value', mockContext());
+    const emptyCheck = program.body.find(
+      (s) =>
+        s.kind === 'if' &&
+        s.cond.kind === 'not' &&
+        s.cond.expr.kind === 'bin' &&
+        s.cond.expr.op === '===' &&
+        s.cond.expr.right.kind === 'literal' &&
+        s.cond.expr.right.value === '[]',
+    );
+    expect(emptyCheck).toBeDefined();
+    expect(
+      program.body.some(
+        (s) =>
+          s.kind === 'if' &&
+          s.cond.kind === 'not' &&
+          s.cond.expr.kind === 'call' &&
+          s.cond.expr.name === 'is_array',
+      ),
+    ).toBe(false);
+  });
+
   it('shape non-empty array field checks is_array on field value', () => {
     const program = build(
       parseType('array{x: non-empty-array<string, string>}'),

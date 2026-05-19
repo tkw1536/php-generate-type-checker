@@ -5,5 +5,5 @@ output: function
 /** @phpstan-assert-if-true array{} $value */
 function isArray(mixed $value): bool
 {
-    return is_array($value);
+    return $value === [];
 }
