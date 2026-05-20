@@ -489,7 +489,7 @@
   },
   {
     "input": "list<mixed>|list<string>",
-    "expected": "/** @phpstan-assert-if-true list<mixed>|list<string> $value */\nfunction isListMixedListString(mixed $value): bool\n{\n    return is_array($value);\n}\n"
+    "expected": "/** @phpstan-assert-if-true list<mixed>|list<string> $value */\nfunction isListMixedListString(mixed $value): bool\n{\n    return (is_array($value) && array_is_list($value));\n}\n"
   },
   {
     "input": "list<string>|array<mixed>",

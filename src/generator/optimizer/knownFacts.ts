@@ -1,6 +1,7 @@
 import type { Arg, Block, Expr, Stmt, ValueRef } from '../ir/types.ts';
-import { andExpr, boolLit, notExpr, orExpr } from '../ir/index.ts';
+import { andExpr, binExpr, boolLit, notExpr, orExpr } from '../ir/index.ts';
 import { equals } from '../ir/equals.ts';
+import { negateBinOp } from "./expression.ts";
 
 export type FactEnv = {
   trueFacts: Expr[];
@@ -12,44 +13,76 @@ export function emptyFactEnv(): FactEnv {
   return { trueFacts: [], falseFacts: [], shadowed: new Set() };
 }
 
-function withTrueFact(env: FactEnv, expr: Expr): FactEnv {
+// Environments are immutable.
+// The functions {@link withTrueFact} and {@link withFalseFact} create new environments with new facts.
+//
+// These functions are mutually recursive to expand the set of facts.
+// To prevent infinite recursion, when adding a new fact, these must be careful not increase expression complexity. 
+// Alternative they may add a flag to skip further expansion.
+
+type Flags = {
+  skipDeMorgan?: true;
+}
+
+function withTrueFact(env: FactEnv, expr: Expr, flags?: Flags): FactEnv {
   let next = env;
   if (next.trueFacts.some((f) => equals(f, expr))) {
     return next;
   }
+
+  // add derived facts.
   next = { ...next, trueFacts: [...next.trueFacts, expr] };
-  if (expr.kind === 'and') {
-    for (const conjunct of expr.exprs) {
-      next = withTrueFact(next, conjunct);
-    }
-  } 
-  if (expr.kind === 'not') {
-    next = withFalseFact(next, expr.expr);
-  }
-  if (expr.kind === 'or') {
-    next = withFalseFact(next, orExpr(expr.exprs.map((e) => notExpr(e))));
+  switch (expr.kind) {
+    case 'and':
+      for (const conjunct of expr.exprs) {
+        next = withTrueFact(next, conjunct);
+      }
+      break;
+    case 'bin':
+        next = withTrueFact(next, binExpr(negateBinOp(expr.op), expr.right, expr.left));
+        break;
+    case 'not':
+      next = withFalseFact(next, expr.expr);
+      break;
+    case 'or':
+      if (!(flags?.skipDeMorgan)) {
+        // x || y => !!(x || y) => !(!x && !y)
+        next = withFalseFact(next, andExpr(expr.exprs.map(notExpr)), { skipDeMorgan: true });
+      }
+      break;
+    default:
+      break;
   }
   return next;
 }
 
-function withFalseFact(env: FactEnv, expr: Expr): FactEnv {
+function withFalseFact(env: FactEnv, expr: Expr, flags?: Flags): FactEnv {
   let next = env;
   // if we already added this fact, then we're done.
   if (next.falseFacts.some((f) => equals(f, expr))) {
     return next;
   }
 
-  // add the fact itself and it's negation.
+  // add derived facts.
   next = { ...next, falseFacts: [...next.falseFacts, expr] };
-  next = withTrueFact(next, notExpr(expr));
-  if (expr.kind === 'or') {
-    for (const disjunct of expr.exprs) {
-      next = withFalseFact(next, disjunct);
-    }
-  } else if (expr.kind === 'and') {
-    next = withTrueFact(next, andExpr(expr.exprs.map((e) => notExpr(e))));
-  } else if (expr.kind === 'not') {
-    next = withTrueFact(next, expr.expr);
+  switch (expr.kind) {
+    case 'or':
+      for (const disjunct of expr.exprs) {
+        next = withFalseFact(next, disjunct);
+      }
+      break;
+    case 'bin':
+      next = withFalseFact(next, binExpr(negateBinOp(expr.op), expr.right, expr.left));
+      break;
+    case 'not':
+      next = withTrueFact(next, expr.expr);
+      break;
+    case 'and':
+      if (!(flags?.skipDeMorgan)) {
+        // !(x && y) => !x || !y
+        next = withTrueFact(next, orExpr(expr.exprs.map(notExpr)), { skipDeMorgan: true });
+      }
+      break;
   }
   return next;
 }
@@ -171,7 +204,7 @@ function substituteFactsShallow(
 export function blockAlwaysExitsWhenEntered(block: Block): boolean {
   // Note: Checking only the last statement assumes DCE has run.
   // This may not be true this time, but will be eventually.
-  return block.length > 0 && block[block.length - 1]!.kind === 'return';
+  return block.length > 0 && block[block.length - 1].kind === 'return';
 }
 
 export function applyKnownFacts(

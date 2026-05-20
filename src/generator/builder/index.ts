@@ -877,6 +877,16 @@ export class Builder {
           : listOk;
       }
       if ('value' in type && !isNever(type.value) && isMixed(type.value)) {
+        if (isListKeyword(type.keyword)) {
+          const listCompact = compactListElementTest(
+            type.keyword,
+            type.value,
+            subject,
+          );
+          if (listCompact !== null) {
+            return listCompact;
+          }
+        }
         const guard = isIterableKeyword(type.keyword)
           ? 'is_iterable'
           : 'is_array';

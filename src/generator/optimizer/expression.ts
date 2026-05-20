@@ -327,11 +327,15 @@ function factorOrOfAnds(exprs: Expr[]): Extract<Expr, { kind: 'and' }> | null {
   if (common.length === 0) {
     return null;
   }
-  if (allRemaindersEmpty(armLists, common)) {
+  const remainders = armLists.map((arm) => subtractOperands(arm, common));
+  // When any arm is exactly the shared conjuncts (empty remainder),
+  // (C∧R₁) ∨ … ∨ (C∧Rₖ) ∨ C ≡ C — do not build or(…, true) from empty
+  // remainders or normalizeOr will drop other arms' constraints unsoundly.
+  if (remainders.some((r) => r.length === 0)) {
     return { kind: 'and', exprs: common };
   }
   const remainderOr = orExpr(
-    armLists.map((arm) => remainderAndExpr(subtractOperands(arm, common))),
+    remainders.map((r) => remainderAndExpr(r)),
   );
   return { kind: 'and', exprs: [...common, remainderOr] };
 }
