@@ -126,12 +126,14 @@ array{'field-one': int}
 array{'field-one'?: int}
 array{int}
 array{int, int}
+array{int, foo: string}
 
 # --- List Shapes ---
 list<int>
 non-empty-list<string>
 list{int}
 list{int, string}
+list{int, label: bool}
 
 # --- Object and List shapes --
 object{}

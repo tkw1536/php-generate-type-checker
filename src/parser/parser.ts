@@ -205,20 +205,7 @@ class Parser {
     if (this.check('rbrace')) {
       return { kind: 'shape', fields: [], keyword: 'array' };
     }
-
-    if (!this.isKeyedShapeFieldStart()) {
-      const values: TypeNode[] = [];
-      do {
-        values.push(this.parseUnion());
-      } while (this.match('comma') && !this.check('rbrace'));
-      return { kind: 'collection', values, keyword: 'array' };
-    }
-
-    const fields: ShapeField[] = [];
-    do {
-      fields.push(this.parseShapeField());
-    } while (this.match('comma') && !this.check('rbrace'));
-
+    const fields = this.parseMixedShapeFields();
     return { kind: 'shape', fields, keyword: 'array' };
   }
 
@@ -231,14 +218,9 @@ class Parser {
 
   private parseListShape(): TypeNode {
     this.expect('lbrace');
-    const values: TypeNode[] = [];
-    if (!this.check('rbrace')) {
-      do {
-        values.push(this.parseUnion());
-      } while (this.match('comma') && !this.check('rbrace'));
-    }
+    const fields = this.check('rbrace') ? [] : this.parseMixedShapeFields();
     this.expect('rbrace');
-    return { kind: 'collection', values, keyword: 'list' };
+    return { kind: 'shape', fields, keyword: 'list' };
   }
 
   private isKeyedShapeFieldStart(): boolean {
@@ -266,6 +248,23 @@ class Parser {
       fields.push(field);
     } while (this.match('comma') && !this.check('rbrace'));
 
+    return fields;
+  }
+
+  /** Positional (`key: null`) and keyed (`key: string|number`) fields in one `array{…}` / `list{…}` body. */
+  private parseMixedShapeFields(): ShapeField[] {
+    const fields: ShapeField[] = [];
+    do {
+      if (this.isKeyedShapeFieldStart()) {
+        fields.push(this.parseShapeField());
+      } else {
+        fields.push({
+          key: null,
+          optional: false,
+          value: this.parseUnion(),
+        });
+      }
+    } while (this.match('comma') && !this.check('rbrace'));
     return fields;
   }
 
@@ -417,7 +416,7 @@ class Parser {
       | 'non-empty-iterable',
   ): TypeNode {
     if (typeArgs.length === 0) {
-      return { kind: 'collection', values: [], keyword };
+      return { kind: 'shape', fields: [], keyword };
     }
     if (typeArgs.length === 1) {
       return { kind: 'collection', value: typeArgs[0], keyword };

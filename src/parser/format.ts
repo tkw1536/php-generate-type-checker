@@ -65,19 +65,7 @@ function formatCollection(type: Extract<TypeNode, { kind: 'collection' }>): stri
     return `${type.keyword}<${inner}>`;
   }
 
-  if ('value' in type) {
-    return `${type.keyword}<${formatTypeInner(type.value, 'union')}>`;
-  }
-
-  const inner = type.values
-    .map((value) => formatTypeInner(value, 'union'))
-    .join(', ');
-
-  if (type.values.length === 0) {
-    return `${type.keyword}<>`;
-  }
-
-  return `${type.keyword}{${inner}}`;
+  return `${type.keyword}<${formatTypeInner(type.value, 'union')}>`;
 }
 
 function formatPostfixArray(type: Extract<TypeNode, { kind: 'array' }>): string {
@@ -101,6 +89,9 @@ function formatShape(type: Extract<TypeNode, { kind: 'shape' }>): string {
 }
 
 function formatShapeField(field: ShapeField): string {
+  if (field.key === null) {
+    return formatTypeInner(field.value, 'union');
+  }
   const key = formatShapeKey(field.key);
   const optional = field.optional ? '?' : '';
   return `${key}${optional}: ${formatTypeInner(field.value, 'union')}`;

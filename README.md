@@ -6,7 +6,7 @@ Parse [PHPDoc types as supported by PHPStan](https://phpstan.org/writing-php-cod
 
 ## Features
 
-- **Type parser** — lexer and recursive-descent parser for PHPDoc-style types (primitives, unions, intersections, shapes, generics, callables, int ranges, and common aliases).
+- **Type parser** — lexer and recursive-descent parser for PHPDoc-style types (primitives, unions, intersections, shapes, generics, callables, int ranges, and common aliases). `array{…}` and `list{…}` use a single `shape` AST: tuple-like slots have `ShapeField.key === null`, named slots use `key: type` as before.
 - **Sequential multi-type input** — `parseTypes` splits the input into several top-level types (token boundaries only, e.g. `array<string>array<int>` or `string int`; glued names like `stringint` stay one class).
 - **Runtime checkers** — emits `bool` functions (or class methods) that validate `mixed $value` against each type.
 - **Checker IR pipeline** — `buildMany` → `optimize` → `render`, with JSON IR tabs in the UI for debugging.
@@ -86,7 +86,7 @@ src/
 │   ├── ir/                  # CheckerIR, Expr, Stmt, ValueRef, equals, substitute
 │   ├── builder/             # TypeNode → checker IR (per program)
 │   │   ├── index.ts
-│   │   ├── context.ts, errors.ts
+│   │   ├── errors.ts
 │   │   ├── ast/             # classify, collection helpers
 │   │   └── registry/        # FunctionNameRegistry, name proposers
 │   ├── optimizer/           # modular IR passes (see below)
@@ -219,6 +219,7 @@ Run `yarn test` (Vitest).
 |------|------------|
 | New syntax in type strings | [`src/parser/parser.ts`](src/parser/parser.ts) |
 | Multi-type splitting rules | [`parseTypes`](src/parser/parser.ts) |
+| `array{…}` / `list{…}` shape AST (`ShapeField`, mixed positional + keyed) | [`src/parser/ast.ts`](src/parser/ast.ts), [`src/parser/parser.ts`](src/parser/parser.ts), [`src/parser/format.ts`](src/parser/format.ts) |
 | New primitive / leaf checks | [`builder/expr/`](src/generator/builder/expr/), [`builder/ast/`](src/generator/builder/ast/) |
 | IR for shapes / unions / collections | [`builder/statements/`](src/generator/builder/statements/) |
 | Helper naming / collisions | [`builder/registry/`](src/generator/builder/registry/) |

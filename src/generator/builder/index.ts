@@ -26,7 +26,7 @@ import {
 } from '../ir/index.ts';
 import { GenerationError } from '../errors.ts';
 import {
-  bareEmptyCollectionKeywordAsCollection,
+  bareEmptyCollectionKeywordAsShape,
   isBareEmptyCollectionKeyword,
   isIterableKeyword,
   isListKeyword,
@@ -165,22 +165,6 @@ export class Builder {
     });
   }
 
-  private checkIndexedSlot(
-    type: TypeNode,
-    slotRef: ValueRef,
-    loopOver: ValueRef,
-  ): Block {
-    return this.emitStatements(type, slotRef, {
-      unionRoot: false,
-      skipContainerGuard: true,
-      provenArray: true,
-      provenObject: false,
-      inLoop: false,
-      insideShapeField: true,
-      loopOver,
-    });
-  }
-
   private guardForeachKey(type: TypeNode, keyRef: ValueRef): Block {
     return [failIfStmt(this.booleanForType(type, keyRef))];
   }
@@ -252,8 +236,8 @@ export class Builder {
         return this.emitPostfixArray(type, subject, opts);
       case 'keyword':
         if (isBareEmptyCollectionKeyword(type)) {
-          return this.emitCollection(
-            bareEmptyCollectionKeywordAsCollection(type),
+          return this.emitShape(
+            bareEmptyCollectionKeywordAsShape(type),
             subject,
             opts,
           );
@@ -350,6 +334,20 @@ export class Builder {
     const objectShape = shapeIsObject(node);
 
     if (!objectShape && node.fields.length === 0) {
+      if (isListKeyword(node.keyword)) {
+        this.appendListGuards(out, base, opts, isNonEmptyKeyword(node.keyword));
+        return out;
+      }
+      if (isNonEmptyKeyword(node.keyword)) {
+        this.appendArrayGuards(
+          out,
+          base,
+          opts,
+          true,
+          isIterableKeyword(node.keyword),
+        );
+        return out;
+      }
       out.push(failIfStmt(binExpr('===', refArg(base), literalArg('[]'))));
       return out;
     }
@@ -359,16 +357,31 @@ export class Builder {
         if (!opts.provenObject) {
           out.push(failIfStmt(callExpr('is_object', [refArg(base)])));
         }
+      } else if (isListKeyword(node.keyword)) {
+        this.appendListGuards(out, base, opts, isNonEmptyKeyword(node.keyword));
       } else if (!opts.provenArray) {
         out.push(failIfStmt(callExpr('is_array', [refArg(base)])));
       }
+    } else if (!objectShape && isListKeyword(node.keyword)) {
+      this.appendListGuards(out, base, opts, isNonEmptyKeyword(node.keyword));
     }
 
+    let nextUnkeyedSlot = 0;
     for (const field of node.fields) {
-      const fieldRef = objectShape
-        ? propertyAccessRef(base, String(field.key))
-        : arrayAccessRef(base, field.key);
-      const keyLit = phpKeyLiteral(field.key);
+      let fieldRef: ValueRef;
+      let keyLit: string;
+      if (field.key === null) {
+        const slot = nextUnkeyedSlot++;
+        keyLit = phpKeyLiteral(slot);
+        fieldRef = objectShape
+          ? propertyAccessRef(base, String(slot))
+          : arrayAccessRef(base, slot);
+      } else {
+        keyLit = phpKeyLiteral(field.key);
+        fieldRef = objectShape
+          ? propertyAccessRef(base, String(field.key))
+          : arrayAccessRef(base, field.key);
+      }
 
       if (!field.optional) {
         if (objectShape) {
@@ -423,9 +436,6 @@ export class Builder {
     }
     if (isIterableKeyword(node.keyword) && !('key' in node)) {
       return this.emitBareIterable(node, subject, opts);
-    }
-    if ('values' in node) {
-      return this.emitFixedValues(node, subject, opts);
     }
     if ('key' in node) {
       return this.emitKeyedEntries(node, subject, opts);
@@ -482,13 +492,6 @@ export class Builder {
   ): Block {
     const nonEmpty = isNonEmptyKeyword(node.keyword);
 
-    if ('values' in node && node.values.length > 1) {
-      return this.emitIndexedSlots(node.values, subject, opts, {
-        nonEmpty,
-        listGuards: true,
-      });
-    }
-
     const element = listElementType(node);
     if (isNever(element)) {
       if (nonEmpty) {
@@ -535,39 +538,6 @@ export class Builder {
           out.push(failIfStmt(atom));
         }
       }
-    }
-    return out;
-  }
-
-  private emitFixedValues(
-    node: Extract<TypeNode, { kind: 'collection'; values: TypeNode[] }>,
-    subject: ValueRef,
-    opts: EmitOptions,
-  ): Block {
-    return this.emitIndexedSlots(node.values, subject, opts, {
-      nonEmpty: isNonEmptyKeyword(node.keyword),
-      listGuards: false,
-    });
-  }
-
-  private emitIndexedSlots(
-    values: TypeNode[],
-    subject: ValueRef,
-    opts: EmitOptions,
-    slotOpts: { nonEmpty: boolean; listGuards: boolean },
-  ): Block {
-    const out: Block = [];
-    if (slotOpts.listGuards) {
-      this.appendListGuards(out, subject, opts, slotOpts.nonEmpty);
-    } else {
-      this.appendArrayGuards(out, subject, opts, slotOpts.nonEmpty, false);
-    }
-
-    for (let i = 0; i < values.length; i++) {
-      const slotRef = arrayAccessRef(subject, i);
-      out.push(
-        ...this.checkIndexedSlot(values[i]!, slotRef, slotRef),
-      );
     }
     return out;
   }
@@ -889,7 +859,7 @@ export class Builder {
   ): Expr | null {
     if (isBareEmptyCollectionKeyword(type)) {
       return this.compactCollectionTest(
-        bareEmptyCollectionKeywordAsCollection(type),
+        bareEmptyCollectionKeywordAsShape(type),
         subject,
       );
     }
@@ -927,38 +897,49 @@ export class Builder {
           ? boolLit(false)
           : binExpr('===', refArg(subject), literalArg('[]'));
       }
-      if (
-        'values' in type &&
-        type.values.length === 0 &&
-        isArrayCollectionKeyword(type.keyword)
-      ) {
-        const arrOk = callExpr('is_array', [refArg(subject)]);
-        return isNonEmptyKeyword(type.keyword)
-          ? andExpr([
-              arrOk,
-              binExpr('!==', refArg(subject), literalArg('[]')),
-            ])
-          : arrOk;
-      }
     }
-    if (type.kind === 'collection' && isListKeyword(type.keyword)) {
-      const el = listElementType(type);
-      if (el && isNever(el)) {
-        return isNonEmptyKeyword(type.keyword)
-          ? boolLit(false)
-          : binExpr('===', refArg(subject), literalArg('[]'));
-      }
-      if (el && isMixed(el)) {
-        const listOk = andExpr([
-          callExpr('is_array', [refArg(subject)]),
-          callExpr('array_is_list', [refArg(subject)]),
-        ]);
-        return isNonEmptyKeyword(type.keyword)
-          ? andExpr([
-              listOk,
-              binExpr('!==', refArg(subject), literalArg('[]')),
-            ])
-          : listOk;
+    if (
+      type.kind === 'shape' &&
+      !shapeIsObject(type) &&
+      type.fields.length === 0 &&
+      isArrayCollectionKeyword(type.keyword)
+    ) {
+      const arrOk = callExpr('is_array', [refArg(subject)]);
+      return isNonEmptyKeyword(type.keyword)
+        ? andExpr([
+            arrOk,
+            binExpr('!==', refArg(subject), literalArg('[]')),
+          ])
+        : arrOk;
+    }
+    if (
+      type.kind === 'shape' &&
+      !shapeIsObject(type) &&
+      type.fields.length === 0 &&
+      isListKeyword(type.keyword)
+    ) {
+      const listOk = andExpr([
+        callExpr('is_array', [refArg(subject)]),
+        callExpr('array_is_list', [refArg(subject)]),
+      ]);
+      return isNonEmptyKeyword(type.keyword)
+        ? andExpr([
+            listOk,
+            binExpr('!==', refArg(subject), literalArg('[]')),
+          ])
+        : listOk;
+    }
+    if (
+      (type.kind === 'collection' && isListKeyword(type.keyword)) ||
+      (type.kind === 'shape' && !shapeIsObject(type) && isListKeyword(type.keyword))
+    ) {
+      const el =
+        type.kind === 'collection'
+          ? listElementType(type)
+          : shapeListElementType(type);
+      const listCompact = compactListElementTest(type.keyword, el, subject);
+      if (listCompact !== null) {
+        return listCompact;
       }
     }
     if (type.kind === 'array' && isNever(type.value)) {
@@ -1028,10 +1009,41 @@ function listElementType(
   if ('value' in node) {
     return node.value;
   }
-  if ('values' in node && node.values.length === 1) {
-    return node.values[0]!;
+  return { kind: 'keyword', keyword: 'mixed' };
+}
+
+function shapeListElementType(
+  node: Extract<TypeNode, { kind: 'shape' }>,
+): TypeNode {
+  if (node.fields.length === 1) {
+    return node.fields[0]!.value;
   }
   return { kind: 'keyword', keyword: 'mixed' };
+}
+
+function compactListElementTest(
+  keyword: Extract<TypeNode, { kind: 'collection' }>['keyword'] | Extract<TypeNode, { kind: 'shape' }>['keyword'],
+  el: TypeNode,
+  subject: ValueRef,
+): Expr | null {
+  if (isNever(el)) {
+    return isNonEmptyKeyword(keyword)
+      ? boolLit(false)
+      : binExpr('===', refArg(subject), literalArg('[]'));
+  }
+  if (isMixed(el)) {
+    const listOk = andExpr([
+      callExpr('is_array', [refArg(subject)]),
+      callExpr('array_is_list', [refArg(subject)]),
+    ]);
+    return isNonEmptyKeyword(keyword)
+      ? andExpr([
+          listOk,
+          binExpr('!==', refArg(subject), literalArg('[]')),
+        ])
+      : listOk;
+  }
+  return null;
 }
 
 function isArrayCollectionKeyword(keyword: string): boolean {

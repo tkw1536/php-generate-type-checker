@@ -962,11 +962,15 @@
   {
     "source": "array{int}",
     "ast": {
-      "kind": "collection",
-      "values": [
+      "kind": "shape",
+      "fields": [
         {
-          "kind": "keyword",
-          "keyword": "int"
+          "key": null,
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
         }
       ],
       "keyword": "array"
@@ -975,15 +979,48 @@
   {
     "source": "array{int, int}",
     "ast": {
-      "kind": "collection",
-      "values": [
+      "kind": "shape",
+      "fields": [
         {
-          "kind": "keyword",
-          "keyword": "int"
+          "key": null,
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
         },
         {
-          "kind": "keyword",
-          "keyword": "int"
+          "key": null,
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
+        }
+      ],
+      "keyword": "array"
+    }
+  },
+  {
+    "source": "array{int, foo: string}",
+    "ast": {
+      "kind": "shape",
+      "fields": [
+        {
+          "key": null,
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
+        },
+        {
+          "key": "foo",
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "string"
+          }
         }
       ],
       "keyword": "array"
@@ -1014,11 +1051,15 @@
   {
     "source": "list{int}",
     "ast": {
-      "kind": "collection",
-      "values": [
+      "kind": "shape",
+      "fields": [
         {
-          "kind": "keyword",
-          "keyword": "int"
+          "key": null,
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
         }
       ],
       "keyword": "list"
@@ -1027,15 +1068,48 @@
   {
     "source": "list{int, string}",
     "ast": {
-      "kind": "collection",
-      "values": [
+      "kind": "shape",
+      "fields": [
         {
-          "kind": "keyword",
-          "keyword": "int"
+          "key": null,
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
         },
         {
-          "kind": "keyword",
-          "keyword": "string"
+          "key": null,
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "string"
+          }
+        }
+      ],
+      "keyword": "list"
+    }
+  },
+  {
+    "source": "list{int, label: bool}",
+    "ast": {
+      "kind": "shape",
+      "fields": [
+        {
+          "key": null,
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
+        },
+        {
+          "key": "label",
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "bool"
+          }
         }
       ],
       "keyword": "list"

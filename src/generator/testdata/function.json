@@ -349,11 +349,11 @@
   },
   {
     "input": "array{int}",
-    "expected": "/** @phpstan-assert-if-true array{int} $value */\nfunction isArrayInt(mixed $value): bool\n{\n    return (is_array($value) && is_int($value[0]));\n}\n"
+    "expected": "/** @phpstan-assert-if-true array{int} $value */\nfunction isArrayInt(mixed $value): bool\n{\n    return (is_array($value) && array_key_exists(0, $value) && is_int($value[0]));\n}\n"
   },
   {
     "input": "array{int, int}",
-    "expected": "/** @phpstan-assert-if-true array{int, int} $value */\nfunction isArrayIntInt(mixed $value): bool\n{\n    return (is_array($value) && is_int($value[0]) && is_int($value[1]));\n}\n"
+    "expected": "/** @phpstan-assert-if-true array{int, int} $value */\nfunction isArrayIntInt(mixed $value): bool\n{\n    return (is_array($value) && array_key_exists(0, $value) && is_int($value[0]) && array_key_exists(1, $value) && is_int($value[1]));\n}\n"
   },
   {
     "input": "list<int>",
@@ -365,11 +365,11 @@
   },
   {
     "input": "list{int}",
-    "expected": "/** @phpstan-assert-if-true list{int} $value */\nfunction isListInt(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_is_list($value)\n    ) {\n        return FALSE;\n    }\n    foreach ($value as $var0) {\n        if (!is_int($var0)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true list{int} $value */\nfunction isListInt(mixed $value): bool\n{\n    return (is_array($value) && array_is_list($value) && array_key_exists(0, $value) && is_int($value[0]));\n}\n"
   },
   {
     "input": "list{int, string}",
-    "expected": "/** @phpstan-assert-if-true list{int, string} $value */\nfunction isListIntString(mixed $value): bool\n{\n    return (is_array($value) && array_is_list($value) && is_int($value[0]) && is_string($value[1]));\n}\n"
+    "expected": "/** @phpstan-assert-if-true list{int, string} $value */\nfunction isListIntString(mixed $value): bool\n{\n    return (is_array($value) && array_is_list($value) && array_key_exists(0, $value) && is_int($value[0]) && array_key_exists(1, $value) && is_string($value[1]));\n}\n"
   },
   {
     "input": "object{}",
@@ -441,7 +441,7 @@
   },
   {
     "input": "array{left: array{}, right: never[]}|array{}",
-    "expected": "/** @phpstan-assert-if-true array{left: array{}, right: never[]}|array{} $value */\nfunction isArrayLeftArrayRightNeverArray(mixed $value): bool\n{\n    return (\n        (\n            is_array($value) &&\n            array_key_exists('left', $value) &&\n            $value['left'] === [] &&\n            array_key_exists('right', $value) &&\n            $value['right'] === []\n        ) ||\n        $value === []\n    );\n}\n"
+    "expected": "/** @phpstan-assert-if-true array{left: array{}, right: never[]}|array{} $value */\nfunction isArrayLeftArrayRightNeverArray(mixed $value): bool\n{\n    return is_array($value);\n}\n"
   },
   {
     "input": "array{x: non-empty-array<string, string>}",

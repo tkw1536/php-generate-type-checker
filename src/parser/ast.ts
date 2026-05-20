@@ -19,10 +19,7 @@ export type TypeNode =
   // iterable<key, value> + variants
   | { kind: 'collection'; key: TypeNode; value: TypeNode; keyword: 'array' | 'non-empty-array' | 'iterable' | 'non-empty-iterable'}
 
-  // iterable{value1,value2,...} + variants
-  | { kind: 'collection'; values: TypeNode[], keyword: 'list' | 'non-empty-list' | 'array' | 'non-empty-array' | 'iterable' | 'non-empty-iterable'}
-
-  // iterable{key1: value1, key2: value2} + variants
+  // iterable{…} + variants — positional slots use {@link ShapeField} with `key: null`; named slots use string | number keys
   | { kind: 'shape'; fields: ShapeField[], keyword: 'list' | 'non-empty-list' | 'array' | 'non-empty-array' | 'iterable' | 'non-empty-iterable' | 'object' }
 
   // value[]
@@ -44,7 +41,8 @@ export type TypeNode =
   | { kind: 'unsupported'; raw: string; reason?: string }; 
 
 export interface ShapeField {
-  key: string | number;
+  /** `null` = positional / tuple slot (no `key:` in source); otherwise the shape field name or numeric index. */
+  key: string | number | null;
   optional: boolean;
   value: TypeNode;
 }

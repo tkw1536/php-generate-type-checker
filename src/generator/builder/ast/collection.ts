@@ -17,10 +17,10 @@ export function isBareEmptyCollectionKeyword(
 }
 
 /** Parser emits bare collection keywords; codegen treats them as `keyword<>`. */
-export function bareEmptyCollectionKeywordAsCollection(
+export function bareEmptyCollectionKeywordAsShape(
   node: { kind: 'keyword'; keyword: BareEmptyCollectionKeyword },
-): Extract<TypeNode, { kind: 'collection'; values: TypeNode[] }> {
-  return { kind: 'collection', values: [], keyword: node.keyword };
+): Extract<TypeNode, { kind: 'shape' }> {
+  return { kind: 'shape', fields: [], keyword: node.keyword };
 }
 
 type CollectionKeyword = Extract<
@@ -28,15 +28,23 @@ type CollectionKeyword = Extract<
   { kind: 'collection' }
 >['keyword'];
 
-export function isNonEmptyKeyword(keyword: CollectionKeyword): boolean {
+type ShapeKeyword = Extract<TypeNode, { kind: 'shape' }>['keyword'];
+
+export function isNonEmptyKeyword(
+  keyword: CollectionKeyword | ShapeKeyword,
+): boolean {
   return keyword.startsWith('non-empty-');
 }
 
-export function isIterableKeyword(keyword: CollectionKeyword): boolean {
+export function isIterableKeyword(
+  keyword: CollectionKeyword | ShapeKeyword,
+): boolean {
   return keyword === 'iterable' || keyword === 'non-empty-iterable';
 }
 
-export function isListKeyword(keyword: CollectionKeyword): boolean {
+export function isListKeyword(
+  keyword: CollectionKeyword | ShapeKeyword,
+): boolean {
   return keyword === 'list' || keyword === 'non-empty-list';
 }
 

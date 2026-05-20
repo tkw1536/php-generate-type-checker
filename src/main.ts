@@ -1,12 +1,5 @@
 import './style.css';
 import {
-  buildMany,
-  optimize,
-  parseTypes,
-  render,
-  type CheckerOutputMode,
-} from './index.ts';
-import {
   detectOutputLanguage,
   highlightCode,
   type HighlightLanguage,
@@ -19,6 +12,9 @@ import {
   replaceLocationFragment,
   type AppFragmentState,
 } from './ui/fragmentState.ts';
+import type { CheckerOutputMode } from "./generator/options.ts";
+import { parseTypes } from "./parser/parser.ts";
+import { buildMany, optimize, renderChecker } from "./generator/pipeline.ts";
 
 initTheme();
 
@@ -248,7 +244,7 @@ function runGenerate(panels: {
     }
     setSuccessOutput(
       panels.php,
-      render(irForPhp, {
+      renderChecker(irForPhp, {
         ...genOpts,
         typeString,
         typesByName: built.typesByName,

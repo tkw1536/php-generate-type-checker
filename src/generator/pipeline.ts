@@ -46,12 +46,13 @@ export function buildMany(types: TypeNode[], options?: BuildOptions): BuildResul
       const message = err instanceof Error ? err.message : String(err);
       const typeDescription =
         err instanceof GenerationError ? err.typeDescription : undefined;
+      const cause = err instanceof Error ? err : undefined;
       throw new GenerationError(message, typeDescription, {
         expressionIndex: i,
         segmentSource:
           options?.segmentSources?.[i] ??
           (err instanceof GenerationError ? err.segmentSource : undefined),
-      });
+      }, cause);
     }
   }
   return {
