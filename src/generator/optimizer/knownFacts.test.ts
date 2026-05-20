@@ -196,6 +196,31 @@ describe('applyKnownFacts', () => {
     expect(simplified).toEqual(boolLit(true));
   });
 
+  it('simplifies list guard follow-up when first branch returns true on and', () => {
+    const isList = callExpr('array_is_list', [refArg($v)]);
+    const block: Block = [
+      {
+        kind: 'if',
+        cond: andExpr([isArray, isList]),
+        body: [returnStmt(boolLit(true))],
+      },
+      {
+        kind: 'if',
+        cond: notExpr(andExpr([isArray, isList])),
+        body: [returnStmt(boolLit(false))],
+      },
+      returnStmt(boolLit(true)),
+    ];
+    const result = applyKnownFacts(block, '$value', emptyFactEnv());
+    const secondIf = result[1]!;
+    expect(secondIf.kind).toBe('if');
+    if (secondIf.kind !== 'if') {
+      return;
+    }
+    const simplified = simplifyExpression(secondIf.cond, defaultParams);
+    expect(simplified).toEqual(boolLit(true));
+  });
+
   it('still applies outer facts to parameter inside foreach body', () => {
     const env = { ...emptyFactEnv(), falseFacts: [isArray] };
     const block: Block = [

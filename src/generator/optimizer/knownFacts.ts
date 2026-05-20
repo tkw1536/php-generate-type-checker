@@ -1,5 +1,5 @@
 import type { Arg, Block, Expr, Stmt, ValueRef } from '../ir/types.ts';
-import { boolLit } from '../ir/index.ts';
+import { andExpr, boolLit, notExpr, orExpr } from '../ir/index.ts';
 import { equals } from '../ir/equals.ts';
 
 export type FactEnv = {
@@ -14,28 +14,40 @@ export function emptyFactEnv(): FactEnv {
 
 function withTrueFact(env: FactEnv, expr: Expr): FactEnv {
   let next = env;
-  if (!next.trueFacts.some((f) => equals(f, expr))) {
-    next = { ...next, trueFacts: [...next.trueFacts, expr] };
+  if (next.trueFacts.some((f) => equals(f, expr))) {
+    return next;
   }
+  next = { ...next, trueFacts: [...next.trueFacts, expr] };
   if (expr.kind === 'and') {
     for (const conjunct of expr.exprs) {
       next = withTrueFact(next, conjunct);
     }
-  } else if (expr.kind === 'not') {
+  } 
+  if (expr.kind === 'not') {
     next = withFalseFact(next, expr.expr);
+  }
+  if (expr.kind === 'or') {
+    next = withFalseFact(next, orExpr(expr.exprs.map((e) => notExpr(e))));
   }
   return next;
 }
 
 function withFalseFact(env: FactEnv, expr: Expr): FactEnv {
   let next = env;
-  if (!next.falseFacts.some((f) => equals(f, expr))) {
-    next = { ...next, falseFacts: [...next.falseFacts, expr] };
+  // if we already added this fact, then we're done.
+  if (next.falseFacts.some((f) => equals(f, expr))) {
+    return next;
   }
+
+  // add the fact itself and it's negation.
+  next = { ...next, falseFacts: [...next.falseFacts, expr] };
+  next = withTrueFact(next, notExpr(expr));
   if (expr.kind === 'or') {
     for (const disjunct of expr.exprs) {
       next = withFalseFact(next, disjunct);
     }
+  } else if (expr.kind === 'and') {
+    next = withTrueFact(next, andExpr(expr.exprs.map((e) => notExpr(e))));
   } else if (expr.kind === 'not') {
     next = withTrueFact(next, expr.expr);
   }
@@ -147,11 +159,8 @@ function substituteFactsShallow(
       });
       return changed ? { ...expr, exprs } : expr;
     }
-    default: {
-      const _exhaustive: never = expr;
-      return _exhaustive;
-    }
   }
+  throw new Error("never reached");
 }
 
 /**
