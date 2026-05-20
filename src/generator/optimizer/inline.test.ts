@@ -16,7 +16,7 @@ import {
 } from '../ir/index.ts';
 import { substituteExpr } from '../ir/substitute.ts';
 import type { Block, CheckerIR, Expr } from '../ir/types.ts';
-import { build } from '../pipeline.ts';
+import { buildMany } from '../pipeline.ts';
 import { optimize } from './index.ts';
 import { inlineBlock, negateBlock } from './inline.ts';
 import { prunePrograms } from './prune.ts';
@@ -326,7 +326,7 @@ function blockHasCallChecker(block: Block): boolean {
 describe('optimize integration', () => {
   it('inlines nested array union in foreach and prunes helpers', () => {
     const ast = parseType('array<array{x: string}|array{y: string}>');
-    const { ir: built } = build(ast);
+    const { ir: built } = buildMany([ast]);
     const optimized = optimize(built);
     const entry = optimized.programs[optimized.order[0]!]!;
     expect(blockHasCallChecker(entry.body)).toBe(false);
@@ -335,7 +335,7 @@ describe('optimize integration', () => {
 
   it('inlines shape union and prunes helpers', () => {
     const ast = parseType('array{left: array{}, right: never[]}|array{}');
-    const { ir: built } = build(ast);
+    const { ir: built } = buildMany([ast]);
     const optimized = optimize(built);
     const entry = optimized.programs[optimized.order[0]!]!;
     expect(blockHasCallChecker(entry.body)).toBe(false);

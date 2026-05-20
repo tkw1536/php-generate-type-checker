@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { parseType } from '../../parser/index.ts';
-import { build, renderChecker } from '../pipeline.ts';
+import { buildMany, renderChecker } from '../pipeline.ts';
 
 describe('class output visibility', () => {
   it('protected_static entry is protected and helpers are private static', () => {
     const ast = parseType('array<int>|array<string>');
-    const { ir, typesByName } = build(ast, {
+    const { ir, typesByName } = buildMany([ast], {
       prioritizeReadabilityOverCompactness: true,
     });
     const php = renderChecker(ir, {
@@ -30,7 +30,7 @@ describe('class output visibility', () => {
 
   it('public_static entry is public and helpers stay private static', () => {
     const ast = parseType('array<int>|array<string>');
-    const { ir, typesByName } = build(ast, {
+    const { ir, typesByName } = buildMany([ast], {
       prioritizeReadabilityOverCompactness: true,
     });
     const php = renderChecker(ir, {
@@ -47,7 +47,7 @@ describe('class output visibility', () => {
 
   it('private_static entry is private and helpers are private static', () => {
     const ast = parseType('int');
-    const { ir, typesByName } = build(ast);
+    const { ir, typesByName } = buildMany([ast]);
     const php = renderChecker(ir, {
       typeString: 'int',
       typesByName,

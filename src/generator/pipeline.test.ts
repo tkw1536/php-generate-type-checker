@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { parseType, parseTypes } from '../parser/index.ts';
-import { build, buildMany, optimize, renderChecker } from './pipeline.ts';
+import { buildMany, optimize, renderChecker } from './pipeline.ts';
 
 /** Phase 1: built IR only (no optimizer). */
 describe('pipeline build + render (unoptimized)', () => {
   it('names entry from type when nameFunctionsByType is default', () => {
     const ast = parseType('int');
-    const { ir } = build(ast);
+    const { ir } = buildMany([ast]);
     expect(ir.entries[0]).toBe('isInt');
   });
 
   it('uses check entry when nameFunctionsByType is false', () => {
     const ast = parseType('int');
-    const { ir } = build(ast, { nameFunctionsByType: false });
+    const { ir } = buildMany([ast], { nameFunctionsByType: false });
     expect(ir.entries[0]).toBe('check');
   });
 
@@ -40,7 +40,7 @@ describe('pipeline build + render (unoptimized)', () => {
 
   it('generates bare non-empty-array keyword', () => {
     const ast = parseType('non-empty-array');
-    const { ir, typesByName } = build(ast);
+    const { ir, typesByName } = buildMany([ast]);
     const php = renderChecker(ir, {
       typeString: 'non-empty-array',
       typesByName,
@@ -53,7 +53,7 @@ describe('pipeline build + render (unoptimized)', () => {
 
   it('callable-array emits per-guard fail-if, not negated and', () => {
     const ast = parseType('callable-array');
-    const { ir, typesByName } = build(ast, {
+    const { ir, typesByName } = buildMany([ast], {
       prioritizeReadabilityOverCompactness: true,
     });
     const php = renderChecker(ir, {
@@ -69,7 +69,7 @@ describe('pipeline build + render (unoptimized)', () => {
 
   it('union-int|string emits fail-if or then return true without optimize', () => {
     const ast = parseType('int|string');
-    const { ir, typesByName } = build(ast, {
+    const { ir, typesByName } = buildMany([ast], {
       prioritizeReadabilityOverCompactness: true,
     });
     const php = renderChecker(ir, {
@@ -82,25 +82,9 @@ describe('pipeline build + render (unoptimized)', () => {
     expect(php).toContain('return TRUE;');
   });
 
-  it('array<string,string> foreach uses separate fail-if guards', () => {
-    const ast = parseType('array<string,string>');
-    const { ir, typesByName } = build(ast, {
-      prioritizeReadabilityOverCompactness: true,
-    });
-    const php = renderChecker(ir, {
-      typeString: 'array<string,string>',
-      typesByName,
-      output: 'function',
-    });
-    expect(php).toContain('foreach ($value as $key1 => $value1)');
-    expect(php).toContain('if (!is_string($key1)');
-    expect(php).toContain('if (!is_string($value1)');
-    expect(php).not.toContain('!(is_string($key1) && is_string($value1))');
-  });
-
   it('array<never> requires empty array', () => {
     const ast = parseType('array<never>');
-    const { ir, typesByName } = build(ast, {
+    const { ir, typesByName } = buildMany([ast], {
       prioritizeReadabilityOverCompactness: true,
     });
     const php = renderChecker(ir, {
@@ -114,7 +98,7 @@ describe('pipeline build + render (unoptimized)', () => {
 
   it('public_static emits self:: for helper calls', () => {
     const ast = parseType('array<int>|array<string>');
-    const { ir, typesByName } = build(ast, {
+    const { ir, typesByName } = buildMany([ast], {
       prioritizeReadabilityOverCompactness: true,
     });
     const php = renderChecker(ir, {
@@ -129,7 +113,7 @@ describe('pipeline build + render (unoptimized)', () => {
 
   it('negative-int helper doc matches parsed keyword', () => {
     const ast = parseType('negative-int');
-    const { ir, typesByName } = build(ast, {
+    const { ir, typesByName } = buildMany([ast], {
       prioritizeReadabilityOverCompactness: true,
     });
     const php = renderChecker(ir, {

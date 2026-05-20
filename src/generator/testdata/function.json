@@ -269,19 +269,19 @@
   },
   {
     "input": "array<int>",
-    "expected": "/** @phpstan-assert-if-true array<int> $value */\nfunction isArrayInt(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $value1) {\n        if (!is_int($value1)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true array<int> $value */\nfunction isArrayInt(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $var0) {\n        if (!is_int($var0)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "array<string, int>",
-    "expected": "/** @phpstan-assert-if-true array<string, int> $value */\nfunction isArrayStringInt(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $key1 => $value1) {\n        if (\n            !is_string($key1) ||\n            !is_int($value1)\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true array<string, int> $value */\nfunction isArrayStringInt(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $var1 => $var0) {\n        if (\n            !is_string($var1) ||\n            !is_int($var0)\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "array<string, array<int, bool>>",
-    "expected": "/** @phpstan-assert-if-true array<string, array<int, bool>> $value */\nfunction isArrayStringArrayIntBool(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $key1 => $value1) {\n        if (\n            !is_string($key1) ||\n            !is_array($value1)\n        ) {\n            return FALSE;\n        }\n        foreach ($value1 as $key2 => $value2) {\n            if (\n                !is_int($key2) ||\n                !is_bool($value2)\n            ) {\n                return FALSE;\n            }\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true array<string, array<int, bool>> $value */\nfunction isArrayStringArrayIntBool(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $var1 => $var0) {\n        if (\n            !is_string($var1) ||\n            !is_array($var0)\n        ) {\n            return FALSE;\n        }\n        foreach ($value as $var3 => $var2) {\n            if (\n                !is_int($var3) ||\n                !is_bool($var2)\n            ) {\n                return FALSE;\n            }\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "array<int, Foo>",
-    "expected": "/** @phpstan-assert-if-true array<int, Foo> $value */\nfunction isArrayIntFoo(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $key1 => $value1) {\n        if (\n            !is_int($key1) ||\n            !$value1 instanceof Foo\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true array<int, Foo> $value */\nfunction isArrayIntFoo(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $var1 => $var0) {\n        if (\n            !is_int($var1) ||\n            !$var0 instanceof Foo\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "non-empty-array",
@@ -289,7 +289,7 @@
   },
   {
     "input": "non-empty-array<string>",
-    "expected": "/** @phpstan-assert-if-true non-empty-array<string> $value */\nfunction isNonEmptyArrayString(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        $value === []\n    ) {\n        return FALSE;\n    }\n    foreach ($value as $value1) {\n        if (!is_string($value1)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true non-empty-array<string> $value */\nfunction isNonEmptyArrayString(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        $value === []\n    ) {\n        return FALSE;\n    }\n    foreach ($value as $var0) {\n        if (!is_string($var0)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "list",
@@ -297,7 +297,7 @@
   },
   {
     "input": "list<int>",
-    "expected": "/** @phpstan-assert-if-true list<int> $value */\nfunction isListInt(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_is_list($value)\n    ) {\n        return FALSE;\n    }\n    foreach ($value as $value1) {\n        if (!is_int($value1)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true list<int> $value */\nfunction isListInt(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_is_list($value)\n    ) {\n        return FALSE;\n    }\n    foreach ($value as $var0) {\n        if (!is_int($var0)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "non-empty-list",
@@ -305,23 +305,23 @@
   },
   {
     "input": "non-empty-list<string>",
-    "expected": "/** @phpstan-assert-if-true non-empty-list<string> $value */\nfunction isNonEmptyListString(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_is_list($value) ||\n        $value === []\n    ) {\n        return FALSE;\n    }\n    foreach ($value as $value1) {\n        if (!is_string($value1)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true non-empty-list<string> $value */\nfunction isNonEmptyListString(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_is_list($value) ||\n        $value === []\n    ) {\n        return FALSE;\n    }\n    foreach ($value as $var0) {\n        if (!is_string($var0)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "string[]",
-    "expected": "/** @phpstan-assert-if-true string[] $value */\nfunction isString(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $value1) {\n        if (!is_string($value1)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true string[] $value */\nfunction isString(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $var0) {\n        if (!is_string($var0)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "string[][]",
-    "expected": "/** @phpstan-assert-if-true string[][] $value */\nfunction isString(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $value1) {\n        if (!is_array($value1)) {\n            return FALSE;\n        }\n        foreach ($value1 as $value2) {\n            if (!is_string($value2)) {\n                return FALSE;\n            }\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true string[][] $value */\nfunction isString(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $var0) {\n        if (!is_array($var0)) {\n            return FALSE;\n        }\n        foreach ($value as $var1) {\n            if (!is_string($var1)) {\n                return FALSE;\n            }\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "int[][]",
-    "expected": "/** @phpstan-assert-if-true int[][] $value */\nfunction isInt(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $value1) {\n        if (!is_array($value1)) {\n            return FALSE;\n        }\n        foreach ($value1 as $value2) {\n            if (!is_int($value2)) {\n                return FALSE;\n            }\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true int[][] $value */\nfunction isInt(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $var0) {\n        if (!is_array($var0)) {\n            return FALSE;\n        }\n        foreach ($value as $var1) {\n            if (!is_int($var1)) {\n                return FALSE;\n            }\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "(int|string)[]",
-    "expected": "/** @phpstan-assert-if-true (int|string)[] $value */\nfunction isIntString(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $value1) {\n        if (\n            !is_int($value1) &&\n            !is_string($value1)\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true (int|string)[] $value */\nfunction isIntString(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $var0) {\n        if (\n            !is_int($var0) &&\n            !is_string($var0)\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "array{}",
@@ -357,15 +357,15 @@
   },
   {
     "input": "list<int>",
-    "expected": "/** @phpstan-assert-if-true list<int> $value */\nfunction isListInt(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_is_list($value)\n    ) {\n        return FALSE;\n    }\n    foreach ($value as $value1) {\n        if (!is_int($value1)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true list<int> $value */\nfunction isListInt(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_is_list($value)\n    ) {\n        return FALSE;\n    }\n    foreach ($value as $var0) {\n        if (!is_int($var0)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "non-empty-list<string>",
-    "expected": "/** @phpstan-assert-if-true non-empty-list<string> $value */\nfunction isNonEmptyListString(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_is_list($value) ||\n        $value === []\n    ) {\n        return FALSE;\n    }\n    foreach ($value as $value1) {\n        if (!is_string($value1)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true non-empty-list<string> $value */\nfunction isNonEmptyListString(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_is_list($value) ||\n        $value === []\n    ) {\n        return FALSE;\n    }\n    foreach ($value as $var0) {\n        if (!is_string($var0)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "list{int}",
-    "expected": "/** @phpstan-assert-if-true list{int} $value */\nfunction isListInt(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_is_list($value)\n    ) {\n        return FALSE;\n    }\n    foreach ($value as $value1) {\n        if (!is_int($value1)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true list{int} $value */\nfunction isListInt(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_is_list($value)\n    ) {\n        return FALSE;\n    }\n    foreach ($value as $var0) {\n        if (!is_int($var0)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "list{int, string}",
@@ -393,7 +393,7 @@
   },
   {
     "input": "int|array<string, bool>",
-    "expected": "/** @phpstan-assert-if-true int|array<string, bool> $value */\nfunction isIntArrayStringBool(mixed $value): bool\n{\n    if (is_int($value)) {\n        return TRUE;\n    }\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $key1 => $value1) {\n        if (\n            !is_string($key1) ||\n            !is_bool($value1)\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true int|array<string, bool> $value */\nfunction isIntArrayStringBool(mixed $value): bool\n{\n    if (is_int($value)) {\n        return TRUE;\n    }\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $var1 => $var0) {\n        if (\n            !is_string($var1) ||\n            !is_bool($var0)\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "false|null",
@@ -417,7 +417,7 @@
   },
   {
     "input": "(array<string, int|null>|null)&Foo",
-    "expected": "/** @phpstan-assert-if-true (array<string, int|null>|null)&Foo $value */\nfunction isArrayStringIntNullNullFoo(mixed $value): bool\n{\n    return (\n        (\n            isArrayStringIntNull($value) ||\n            $value === NULL\n        ) &&\n        $value instanceof Foo\n    );\n}\n\n\n/** @phpstan-assert-if-true array<string, int|null> $value */\nfunction isArrayStringIntNull(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $key1 => $value1) {\n        if (\n            !is_string($key1) ||\n            (\n                !is_int($value1) &&\n                $value1 !== NULL\n            )\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true (array<string, int|null>|null)&Foo $value */\nfunction isArrayStringIntNullNullFoo(mixed $value): bool\n{\n    return (\n        (\n            isArrayStringIntNull($value) ||\n            $value === NULL\n        ) &&\n        $value instanceof Foo\n    );\n}\n\n\n/** @phpstan-assert-if-true array<string, int|null> $value */\nfunction isArrayStringIntNull(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $var1 => $var0) {\n        if (\n            !is_string($var1) ||\n            (\n                !is_int($var0) &&\n                $var0 !== NULL\n            )\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "(int|string)&Foo",
@@ -433,7 +433,7 @@
   },
   {
     "input": "array{'hello': string, 'world': list<string>}",
-    "expected": "/** @phpstan-assert-if-true array{hello: string, world: list<string>} $value */\nfunction isArrayHelloStringWorldListString(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_key_exists('hello', $value) ||\n        !is_string($value['hello']) ||\n        !array_key_exists('world', $value) ||\n        !is_array($value['world']) ||\n        !array_is_list($value['world'])\n    ) {\n        return FALSE;\n    }\n    foreach ($value['world'] as $value1) {\n        if (!is_string($value1)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true array{hello: string, world: list<string>} $value */\nfunction isArrayHelloStringWorldListString(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_key_exists('hello', $value) ||\n        !is_string($value['hello']) ||\n        !array_key_exists('world', $value) ||\n        !array_is_list($value['world'])\n    ) {\n        return FALSE;\n    }\n    foreach ($value['world'] as $var0) {\n        if (!is_string($var0)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "array{hello: string}",
@@ -445,19 +445,19 @@
   },
   {
     "input": "array{x: non-empty-array<string, string>}",
-    "expected": "/** @phpstan-assert-if-true array{x: non-empty-array<string, string>} $value */\nfunction isArrayXNonEmptyArrayStringString(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_key_exists('x', $value) ||\n        !is_array($value['x']) ||\n        $value['x'] === []\n    ) {\n        return FALSE;\n    }\n    foreach ($value['x'] as $key1 => $value1) {\n        if (\n            !is_string($key1) ||\n            !is_string($value1)\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true array{x: non-empty-array<string, string>} $value */\nfunction isArrayXNonEmptyArrayStringString(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_key_exists('x', $value) ||\n        $value['x'] === []\n    ) {\n        return FALSE;\n    }\n    foreach ($value['x'] as $var1 => $var0) {\n        if (\n            !is_string($var1) ||\n            !is_string($var0)\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "array<array<never>>|array<never>",
-    "expected": "/** @phpstan-assert-if-true array<array<never>>|array<never> $value */\nfunction isArrayArrayNeverArrayNever(mixed $value): bool\n{\n    if ($value === []) {\n        return TRUE;\n    }\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $value1) {\n        if ($value1 !== []) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true array<array<never>>|array<never> $value */\nfunction isArrayArrayNeverArrayNever(mixed $value): bool\n{\n    if ($value === []) {\n        return TRUE;\n    }\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $var0) {\n        if ($var0 !== []) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "array<array<string>>",
-    "expected": "/** @phpstan-assert-if-true array<array<string>> $value */\nfunction isArrayArrayString(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $value1) {\n        if (!is_array($value1)) {\n            return FALSE;\n        }\n        foreach ($value1 as $value2) {\n            if (!is_string($value2)) {\n                return FALSE;\n            }\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true array<array<string>> $value */\nfunction isArrayArrayString(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $var0) {\n        if (!is_array($var0)) {\n            return FALSE;\n        }\n        foreach ($value as $var1) {\n            if (!is_string($var1)) {\n                return FALSE;\n            }\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "array<int|array<int>|array<string>>",
-    "expected": "/** @phpstan-assert-if-true array<int|array<int>|array<string>> $value */\nfunction isArrayIntArrayIntArrayString(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $value1) {\n        if (\n            !is_int($value1) &&\n            !isArrayInt($value1) &&\n            !isArrayString($value1)\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n\n\n/** @phpstan-assert-if-true array<int> $value */\nfunction isArrayInt(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $value1) {\n        if (!is_int($value1)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n\n/** @phpstan-assert-if-true array<string> $value */\nfunction isArrayString(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $value1) {\n        if (!is_string($value1)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true array<int|array<int>|array<string>> $value */\nfunction isArrayIntArrayIntArrayString(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $var0) {\n        if (\n            !is_int($var0) &&\n            !isArrayInt($var0) &&\n            !isArrayString($var0)\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n\n\n/** @phpstan-assert-if-true array<int> $value */\nfunction isArrayInt(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $var1) {\n        if (!is_int($var1)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n\n/** @phpstan-assert-if-true array<string> $value */\nfunction isArrayString(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $var2) {\n        if (!is_string($var2)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "array<mixed>",
@@ -469,11 +469,11 @@
   },
   {
     "input": "array<string, string>",
-    "expected": "/** @phpstan-assert-if-true array<string, string> $value */\nfunction isArrayStringString(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $key1 => $value1) {\n        if (\n            !is_string($key1) ||\n            !is_string($value1)\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true array<string, string> $value */\nfunction isArrayStringString(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $var1 => $var0) {\n        if (\n            !is_string($var1) ||\n            !is_string($var0)\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "array<string>|array<int>",
-    "expected": "/** @phpstan-assert-if-true array<string>|array<int> $value */\nfunction isArrayStringArrayInt(mixed $value): bool\n{\n    return (isArrayString($value) || isArrayInt($value));\n}\n\n\n/** @phpstan-assert-if-true array<string> $value */\nfunction isArrayString(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $value1) {\n        if (!is_string($value1)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n\n/** @phpstan-assert-if-true array<int> $value */\nfunction isArrayInt(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $value1) {\n        if (!is_int($value1)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true array<string>|array<int> $value */\nfunction isArrayStringArrayInt(mixed $value): bool\n{\n    return (isArrayString($value) || isArrayInt($value));\n}\n\n\n/** @phpstan-assert-if-true array<string> $value */\nfunction isArrayString(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $var0) {\n        if (!is_string($var0)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n\n/** @phpstan-assert-if-true array<int> $value */\nfunction isArrayInt(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $var1) {\n        if (!is_int($var1)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "callable-array",

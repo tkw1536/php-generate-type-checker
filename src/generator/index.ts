@@ -19,18 +19,3 @@ export function generateChecker(
     typesByName,
   });
 }
-
-export { GenerationError } from './errors.ts';
-export {
-  build,
-  buildMany,
-  optimize,
-  renderChecker as render,
-  type BuildResult,
-  type CheckerIR,
-} from './pipeline.ts';
-export {
-  type CheckerOutputMode,
-  type GenerateCheckerOptions,
-  DEFAULT_CHECKER_OUTPUT,
-} from './options.ts';

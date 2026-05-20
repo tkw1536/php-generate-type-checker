@@ -13,10 +13,11 @@ export class IsStyleFunctionNameProposer implements FunctionNameProposer {
 }
 
 export class SequentialCheckNameProposer implements FunctionNameProposer {
-  private next = 1;
+  private next = 0;
 
   name(_type: TypeNode): string {
-    return `check_${this.next++}`;
+    const counter = this.next++;
+    return counter === 0 ? 'check' : `check_${counter}`;
   }
 }
 

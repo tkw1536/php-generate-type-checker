@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { GenerationError, generateChecker } from './index.ts';
-
+import { generateChecker } from './index.ts';
+import { GenerationError } from './errors.ts';
 import type { CheckerOutputMode } from './render/output.ts';
 import errorsCases from './testdata/errors.json';
 import functionCases from './testdata/function.json';

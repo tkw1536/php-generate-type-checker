@@ -49,7 +49,7 @@ describe('IsStyleFunctionNameProposer', () => {
 describe('SequentialCheckNameProposer', () => {
   it('assigns check_N in order, ignoring type', () => {
     const proposer = new SequentialCheckNameProposer();
-    expect(proposer.name(parseType('int'))).toBe('check_1');
-    expect(proposer.name(parseType('string'))).toBe('check_2');
+    expect(proposer.name(parseType('int'))).toBe('check');
+    expect(proposer.name(parseType('string'))).toBe('check_1');
   });
 });

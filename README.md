@@ -88,8 +88,6 @@ src/
 │   │   ├── index.ts
 │   │   ├── context.ts, errors.ts
 │   │   ├── ast/             # classify, collection helpers
-│   │   ├── expr/            # guards, keywords, literals → Expr
-│   │   ├── statements/      # shape, collection, union
 │   │   └── registry/        # FunctionNameRegistry, name proposers
 │   ├── optimizer/           # modular IR passes (see below)
 │   │   ├── index.ts         # optimize() fixpoint + prunePrograms
