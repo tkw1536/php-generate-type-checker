@@ -133,11 +133,7 @@ export class Builder {
     });
   }
 
-  private checkInValueLoop(
-    type: TypeNode,
-    valueRef: ValueRef,
-    loopOver: ValueRef,
-  ): Block {
+  private checkInValueLoop(type: TypeNode, valueRef: ValueRef): Block {
     return this.emitStatements(type, valueRef, {
       unionRoot: false,
       skipContainerGuard: false,
@@ -145,7 +141,6 @@ export class Builder {
       provenObject: false,
       inLoop: true,
       insideShapeField: false,
-      loopOver,
     });
   }
 
@@ -161,7 +156,6 @@ export class Builder {
       provenObject: parentIsObject,
       inLoop: false,
       insideShapeField: true,
-      loopOver: fieldRef,
     });
   }
 
@@ -479,9 +473,8 @@ export class Builder {
     }
 
     const valueRef = this.freshVar();
-    const loopOver = opts.loopOver ?? subject;
-    const body = this.checkInValueLoop(node.value, valueRef, loopOver);
-    this.pushForeach(out, loopOver, valueRef, null, body);
+    const body = this.checkInValueLoop(node.value, valueRef);
+    this.pushForeach(out, subject, valueRef, null, body);
     return out;
   }
 
@@ -510,9 +503,8 @@ export class Builder {
     }
 
     const valueRef = this.freshVar();
-    const loopOver = opts.loopOver ?? subject;
-    const body = this.checkInValueLoop(element, valueRef, loopOver);
-    this.pushForeach(out, loopOver, valueRef, null, body);
+    const body = this.checkInValueLoop(element, valueRef);
+    this.pushForeach(out, subject, valueRef, null, body);
     return out;
   }
 
@@ -615,7 +607,6 @@ export class Builder {
       this.appendArrayGuards(out, subject, opts, nonEmpty, false);
     }
 
-    const loopOver = opts.loopOver ?? subject;
     const valueRef = this.freshVar();
     const keyRef =
       key !== null && !isMixed(key) ? this.freshVar() : null;
@@ -625,22 +616,22 @@ export class Builder {
       body.push(...this.guardForeachKey(key, keyRef));
     }
     if (!isMixed(value)) {
-      body.push(...this.checkInValueLoop(value, valueRef, loopOver));
+      body.push(...this.checkInValueLoop(value, valueRef));
     }
-    this.pushForeach(out, loopOver, valueRef, keyRef, body);
+    this.pushForeach(out, subject, valueRef, keyRef, body);
     return out;
   }
 
   private pushForeach(
     out: Block,
-    loopOver: ValueRef,
+    iterable: ValueRef,
     valueRef: ValueRef,
     keyRef: ValueRef | null,
     body: Block,
   ): void {
     out.push({
       kind: 'foreach',
-      iterable: loopOver,
+      iterable,
       keyVar: keyRef !== null ? this.varName(keyRef) : null,
       valueVar: this.varName(valueRef),
       body: stripTrailingTrueReturn(body),
@@ -970,7 +961,6 @@ type EmitOptions = {
   provenObject: boolean;
   inLoop: boolean;
   insideShapeField: boolean;
-  loopOver?: ValueRef;
 };
 
 const UNCHECKABLE_KEYWORDS = new Set([

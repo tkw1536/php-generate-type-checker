@@ -143,6 +143,7 @@ array{left: array{}, right: never[]}|array{}
 array{x: non-empty-array<string, string>}
 array<array<never>>|array<never>
 array<array<string>>
+array<array<array<array<string>>>>
 array<int|array<int>|array<string>>
 array<mixed>
 array<never>
