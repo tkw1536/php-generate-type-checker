@@ -433,7 +433,11 @@
   },
   {
     "input": "array{'hello': string, 'world': list<string>}",
-    "expected": "/** @phpstan-assert-if-true array{hello: string, world: list<string>} $value */\nfunction isArrayHelloStringWorldListString(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_key_exists('hello', $value) ||\n        !is_string($value['hello']) ||\n        !array_key_exists('world', $value) ||\n        !array_is_list($value['world'])\n    ) {\n        return FALSE;\n    }\n    foreach ($value['world'] as $var0) {\n        if (!is_string($var0)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true array{hello: string, world: list<string>} $value */\nfunction isArrayHelloStringWorldListString(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_key_exists('hello', $value) ||\n        !is_string($value['hello']) ||\n        !array_key_exists('world', $value) ||\n        !is_array($value['world']) ||\n        !array_is_list($value['world'])\n    ) {\n        return FALSE;\n    }\n    foreach ($value['world'] as $var0) {\n        if (!is_string($var0)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+  },
+  {
+    "input": "array{world: list<string>}",
+    "expected": "/** @phpstan-assert-if-true array{world: list<string>} $value */\nfunction isArrayWorldListString(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_key_exists('world', $value) ||\n        !is_array($value['world']) ||\n        !array_is_list($value['world'])\n    ) {\n        return FALSE;\n    }\n    foreach ($value['world'] as $var0) {\n        if (!is_string($var0)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "array{hello: string}",
@@ -445,7 +449,7 @@
   },
   {
     "input": "array{x: non-empty-array<string, string>}",
-    "expected": "/** @phpstan-assert-if-true array{x: non-empty-array<string, string>} $value */\nfunction isArrayXNonEmptyArrayStringString(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_key_exists('x', $value) ||\n        $value['x'] === []\n    ) {\n        return FALSE;\n    }\n    foreach ($value['x'] as $var1 => $var0) {\n        if (\n            !is_string($var1) ||\n            !is_string($var0)\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true array{x: non-empty-array<string, string>} $value */\nfunction isArrayXNonEmptyArrayStringString(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_key_exists('x', $value) ||\n        !is_array($value['x']) ||\n        $value['x'] === []\n    ) {\n        return FALSE;\n    }\n    foreach ($value['x'] as $var1 => $var0) {\n        if (\n            !is_string($var1) ||\n            !is_string($var0)\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "array<array<never>>|array<never>",

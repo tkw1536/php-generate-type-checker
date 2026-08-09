@@ -144,16 +144,12 @@ export class Builder {
     });
   }
 
-  private checkShapeField(
-    type: TypeNode,
-    fieldRef: ValueRef,
-    parentIsObject: boolean,
-  ): Block {
+  private checkShapeField(type: TypeNode, fieldRef: ValueRef): Block {
     return this.emitStatements(type, fieldRef, {
       unionRoot: false,
       skipContainerGuard: true,
-      provenArray: !parentIsObject,
-      provenObject: parentIsObject,
+      provenArray: false,
+      provenObject: false,
       inLoop: false,
       insideShapeField: true,
     });
@@ -396,11 +392,7 @@ export class Builder {
         }
       }
 
-      const fieldBody = this.checkShapeField(
-        field.value,
-        fieldRef,
-        objectShape,
-      );
+      const fieldBody = this.checkShapeField(field.value, fieldRef);
 
       if (field.optional) {
         const exists = objectShape
