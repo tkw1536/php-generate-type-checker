@@ -5,6 +5,20 @@ export {
   type TypeSegment,
   type ParseTypesResult,
 } from './parser.ts';
+export {
+  extractPhpstanTypes,
+  isDocblockInput,
+  formatPhpstanTypeAliasesBlock,
+  PhpstanTypeExtractError,
+  type PhpstanTypeDef,
+  type PhpstanTypeAlias,
+} from './phpstanTypeDocblock.ts';
+export {
+  parsePhpstanTypesFromDocblock,
+  resolveTypeAliases,
+  TypeAliasResolveError,
+  type ResolvedPhpstanType,
+} from './resolveTypeAliases.ts';
 export { LexerError, tokenize } from './lexer.ts';
 export type {
   TypeNode,

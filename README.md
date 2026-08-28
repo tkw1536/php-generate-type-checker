@@ -8,13 +8,14 @@ Parse [PHPDoc types as supported by PHPStan](https://phpstan.org/writing-php-cod
 
 - **Type parser** — lexer and recursive-descent parser for PHPDoc-style types (primitives, unions, intersections, shapes, generics, callables, int ranges, and common aliases). `array{…}` and `list{…}` use a single `shape` AST: tuple-like slots have `ShapeField.key === null`, named slots use `key: type` as before.
 - **Sequential multi-type input** — `parseTypes` splits the input into several top-level types (token boundaries only, e.g. `array<string>array<int>` or `string int`; glued names like `stringint` stay one class).
+- **Docblock `@phpstan-type` input** — paste a PHPDoc block; when input starts with `/*`, extract named aliases, resolve cross-references, and emit one entry checker per alias (`is{AliasName}` or `check` / `check_N` per **Name from type**). Entry `@phpstan-assert-if-true` annotations use the alias name (e.g. `PostListResponse`), not the expanded type definition.
 - **Runtime checkers** — emits `bool` functions (or class methods) that validate `mixed $value` against each type.
 - **Checker IR pipeline** — `buildMany` → `optimize` → `render`, with JSON IR tabs in the UI for debugging.
 - **Deduped checker functions** — nested or repeated types share one helper per canonical type (e.g. `array<int>` inside a shape and inside a union).
 - **Output shapes** — standalone `function`, or `public` / `protected` / `private` `static` entry methods on a `TypeChecker` class (helpers are always `private static` in class modes).
 - **Naming** — default `is{TypeSlug}` entry and helper names from the type AST; optional legacy `check` / `check_N`.
 - **Layout** — compact optimized IR (default) or readable one-`if`-per-guard mode (**Readable layout** skips the optimizer).
-- **Web UI** — type input, example presets, generate options, and tabbed pipeline output with syntax highlighting and light/dark theme.
+- **Web UI** — types or docblock input, example presets, generate options, and tabbed pipeline output with syntax highlighting and light/dark theme.
 
 Types that cannot be checked at runtime (e.g. most `callable` signatures, unsupported generics, `literal-string`) fail with `GenerationError`.
 
@@ -47,20 +48,30 @@ For every fixture it prints the type string and expected PHP (or `GenerationErro
 
 ## Web UI
 
-Single workspace: **types input** on the left, **pipeline output** on the right. Output refreshes automatically when the input or options change (debounced).
+Single workspace: **types or docblock input** on the left, **pipeline output** on the right. Output refreshes automatically when the input or options change (debounced).
+
+**Input modes** (auto-detected from the textarea):
+
+| Mode             | Trigger                            | Behavior                                                                       |
+| ---------------- | ---------------------------------- | ------------------------------------------------------------------------------ |
+| Type expressions | default (does not start with `/*`) | `parseTypes` — one or more sequential types                                    |
+| Docblock aliases | input starts with `/*`             | Extract `@phpstan-type` tags → parse → resolve aliases → one checker per alias |
+
+The examples dropdown includes **Post list API (docblock)** — a PHPDoc block with three cross-referencing `@phpstan-type` aliases.
 
 **Generate options** (footer of the input panel):
 
-| Control | Effect |
-|--------|--------|
-| **Name from type** | `is{TypeSlug}` names (on) vs legacy `check` / `check_N` (off) |
-| **Optimize** | Run optimizer; PHP from **IR (optimized)** (on) vs **IR (build)** (off) |
-| **Emit as** | Standalone function, or entry as `public` / `protected` / `private` `static` on `TypeChecker` |
+| Control            | Effect                                                                                        |
+| ------------------ | --------------------------------------------------------------------------------------------- |
+| **Name from type** | `is{TypeSlug}` or `is{AliasName}` (on) vs legacy `check` / `check_N` (off)                    |
+| **Optimize**       | Run optimizer; PHP from **IR (optimized)** (on) vs **IR (build)** (off)                       |
+| **Emit aliases**   | Docblock mode only: prepend `@phpstan-type` definitions to generated PHP (off by default)     |
+| **Emit as**        | Standalone function, or entry as `public` / `protected` / `private` `static` on `TypeChecker` |
 
 **Output tabs** (left → right):
 
-1. **Type AST** — parsed segments (`start`, `end`, `ast`) as JSON
-2. **IR (build)** — checker IR after `buildMany`
+1. **Type AST** — parsed types as JSON: `{ start, end, ast }` segments in type mode; `{ name, typeString, ast }` per alias in docblock mode
+2. **IR (build)** — checker IR after `buildMany` / `buildManyNamed`
 3. **IR (optimized)** — IR after optimizer passes (or a note when optimize is off)
 4. **PHP Code** — final generated PHP
 
@@ -75,11 +86,13 @@ src/
 ├── theme.ts, style.css, highlight.ts
 ├── parser/                  # PHPDoc type → AST
 │   ├── parser.ts            # parseType, parseTypes
+│   ├── phpstanTypeDocblock.ts   # extract @phpstan-type from docblocks
+│   ├── resolveTypeAliases.ts    # parse + resolve alias cross-refs
 │   ├── lexer.ts, ast.ts, format.ts
 │   ├── parser.test.ts
 │   └── testdata/            # parser.success.IN → parser.success.json, parser.errors.json
 ├── generator/
-│   ├── pipeline.ts          # build(), buildMany(), optimize(), renderChecker()
+│   ├── pipeline.ts          # build(), buildMany(), buildManyNamed(), optimize(), renderChecker()
 │   ├── index.ts             # generateChecker()
 │   ├── index.test.ts        # generateChecker golden tests (loads testdata/*.json)
 │   ├── options.ts, errors.ts
@@ -130,11 +143,11 @@ There is no per-type optimize/render loop: all segments share one IR, one optimi
 
 Each **`CheckerProgram`** body uses:
 
-| Stmt | Role |
-|------|------|
-| `if` | Condition + body (fail-if, optional shape field checks) |
-| `foreach` | Loop with nested body |
-| `return` | Boolean expression |
+| Stmt      | Role                                                    |
+| --------- | ------------------------------------------------------- |
+| `if`      | Condition + body (fail-if, optional shape field checks) |
+| `foreach` | Loop with nested body                                   |
+| `return`  | Boolean expression                                      |
 
 **`Expr`** kinds: `bool`, `not`, `and`, `or`, `call`, `bin`, `instanceof`, `call_checker`. **`ValueRef`**: `$value`, array/property access.
 
@@ -160,9 +173,9 @@ import {
   optimize,
   render,
   GenerationError,
-} from './src/index.ts';
+} from "./src/index.ts";
 
-const { segments, source } = parseTypes('array<string>array<int>');
+const { segments, source } = parseTypes("array<string>array<int>");
 const types = segments.map((s) => s.ast);
 
 const { ir: built, typesByName } = buildMany(types, {
@@ -173,37 +186,70 @@ const ir = optimize(built);
 const php = render(ir, {
   typeString: source,
   typesByName,
-  output: 'function',
+  output: "function",
+});
+```
+
+Docblock with `@phpstan-type` aliases:
+
+```ts
+import { parsePhpstanTypesFromDocblock } from "./src/parser/index.ts";
+import {
+  buildManyNamed,
+  optimize,
+  renderChecker,
+} from "./src/generator/pipeline.ts";
+
+const docblock = `/**
+ * @phpstan-type PostSummary array{id: int, title: string}
+ * @phpstan-type PostListResponse array{posts: list<PostSummary>}
+ */`;
+
+const defs = parsePhpstanTypesFromDocblock(docblock);
+const {
+  ir: built,
+  typesByName,
+  docStringsByName,
+} = buildManyNamed(
+  defs.map((d) => ({ name: d.name, type: d.ast, typeString: d.typeString })),
+  { segmentSources: defs.map((d) => d.typeString) },
+);
+const ir = optimize(built);
+const php = renderChecker(ir, {
+  typeString: docblock,
+  typesByName,
+  docStringsByName,
+  output: "function",
 });
 ```
 
 Single-type convenience (must consume full input):
 
 ```ts
-import { parseType, build } from './src/index.ts';
+import { parseType, build } from "./src/index.ts";
 
-const { ir, typesByName } = build(parseType('int'));
+const { ir, typesByName } = build(parseType("int"));
 ```
 
 Wrapper used by fixtures:
 
 ```ts
-import { generateChecker } from './src/generator/index.ts';
+import { generateChecker } from "./src/generator/index.ts";
 
-const php = generateChecker('list<int>', {
-  output: 'public_static',
+const php = generateChecker("list<int>", {
+  output: "public_static",
   prioritizeReadabilityOverCompactness: false,
 });
 ```
 
 ### Options reference
 
-| Option | Default | Meaning |
-|--------|---------|---------|
-| `output` | `'function'` | Standalone function or class static entry visibility |
-| `nameFunctionsByType` | `true` | `is{TypeSlug}` vs `check` / `check_N` |
-| `mainFunctionName` | derived | Entry function/method name (first segment only in `buildMany`) |
-| `prioritizeReadabilityOverCompactness` | `false` | When true, skip optimizer |
+| Option                                 | Default      | Meaning                                                        |
+| -------------------------------------- | ------------ | -------------------------------------------------------------- |
+| `output`                               | `'function'` | Standalone function or class static entry visibility           |
+| `nameFunctionsByType`                  | `true`       | `is{TypeSlug}` vs `check` / `check_N`                          |
+| `mainFunctionName`                     | derived      | Entry function/method name (first segment only in `buildMany`) |
+| `prioritizeReadabilityOverCompactness` | `false`      | When true, skip optimizer                                      |
 
 ## Tests
 
@@ -215,16 +261,17 @@ Run `yarn test` (Vitest).
 
 ## Where to extend
 
-| Goal | Start here |
-|------|------------|
-| New syntax in type strings | [`src/parser/parser.ts`](src/parser/parser.ts) |
-| Multi-type splitting rules | [`parseTypes`](src/parser/parser.ts) |
-| `array{…}` / `list{…}` shape AST (`ShapeField`, mixed positional + keyed) | [`src/parser/ast.ts`](src/parser/ast.ts), [`src/parser/parser.ts`](src/parser/parser.ts), [`src/parser/format.ts`](src/parser/format.ts) |
-| New primitive / leaf checks | [`builder/expr/`](src/generator/builder/expr/), [`builder/ast/`](src/generator/builder/ast/) |
-| IR for shapes / unions / collections | [`builder/statements/`](src/generator/builder/statements/) |
-| Helper naming / collisions | [`builder/registry/`](src/generator/builder/registry/) |
-| IR passes (inline, facts, DCE, …) | [`optimizer/`](src/generator/optimizer/) |
-| PHP formatting (`if`, `foreach`, precedence) | [`render/php.ts`](src/generator/render/php.ts) |
-| PHPDoc type strings | [`render/phpdoc.ts`](src/generator/render/phpdoc.ts) |
-| Class layout / method visibility | [`render/output.ts`](src/generator/render/output.ts) |
-| Segment-aware errors in the UI | [`ui/errorDisplay.ts`](src/ui/errorDisplay.ts) |
+| Goal                                                                      | Start here                                                                                                                                       |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| New syntax in type strings                                                | [`src/parser/parser.ts`](src/parser/parser.ts)                                                                                                   |
+| Multi-type splitting rules                                                | [`parseTypes`](src/parser/parser.ts)                                                                                                             |
+| Docblock extraction / alias resolution                                    | [`src/parser/phpstanTypeDocblock.ts`](src/parser/phpstanTypeDocblock.ts), [`src/parser/resolveTypeAliases.ts`](src/parser/resolveTypeAliases.ts) |
+| `array{…}` / `list{…}` shape AST (`ShapeField`, mixed positional + keyed) | [`src/parser/ast.ts`](src/parser/ast.ts), [`src/parser/parser.ts`](src/parser/parser.ts), [`src/parser/format.ts`](src/parser/format.ts)         |
+| New primitive / leaf checks                                               | [`builder/expr/`](src/generator/builder/expr/), [`builder/ast/`](src/generator/builder/ast/)                                                     |
+| IR for shapes / unions / collections                                      | [`builder/statements/`](src/generator/builder/statements/)                                                                                       |
+| Helper naming / collisions                                                | [`builder/registry/`](src/generator/builder/registry/)                                                                                           |
+| IR passes (inline, facts, DCE, …)                                         | [`optimizer/`](src/generator/optimizer/)                                                                                                         |
+| PHP formatting (`if`, `foreach`, precedence)                              | [`render/php.ts`](src/generator/render/php.ts)                                                                                                   |
+| PHPDoc type strings                                                       | [`render/phpdoc.ts`](src/generator/render/phpdoc.ts)                                                                                             |
+| Class layout / method visibility                                          | [`render/output.ts`](src/generator/render/output.ts)                                                                                             |
+| Segment-aware errors in the UI                                            | [`ui/errorDisplay.ts`](src/ui/errorDisplay.ts)                                                                                                   |

@@ -4,6 +4,7 @@ export interface AppFragmentState {
   nameFromType: boolean;
   optimize: boolean;
   emit: CheckerOutputMode;
+  emitAliases: boolean;
   input: string;
 }
 
@@ -42,6 +43,7 @@ export function encodeFragmentState(state: AppFragmentState): string {
   params.set('name', state.nameFromType ? '1' : '0');
   params.set('optimize', state.optimize ? '1' : '0');
   params.set('emit', state.emit);
+  params.set('aliases', state.emitAliases ? '1' : '0');
   params.set('input', state.input);
   return params.toString();
 }
@@ -58,12 +60,14 @@ export function decodeFragmentState(
   const nameFromType = parseBoolParam(params.get('name'));
   const optimize = parseBoolParam(params.get('optimize'));
   const emit = parseEmitParam(params.get('emit'));
+  const emitAliases = parseBoolParam(params.get('aliases'));
   const input = params.get('input');
 
   if (
     nameFromType === undefined &&
     optimize === undefined &&
     emit === undefined &&
+    emitAliases === undefined &&
     input === null
   ) {
     return null;
@@ -78,6 +82,9 @@ export function decodeFragmentState(
   }
   if (emit !== undefined) {
     state.emit = emit;
+  }
+  if (emitAliases !== undefined) {
+    state.emitAliases = emitAliases;
   }
   if (input !== null) {
     state.input = input;

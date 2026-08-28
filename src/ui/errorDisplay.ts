@@ -1,6 +1,8 @@
 import { GenerationError } from '../generator/errors.ts';
 import { LexerError } from '../parser/lexer.ts';
 import { ParseError } from '../parser/parser.ts';
+import { PhpstanTypeExtractError } from '../parser/phpstanTypeDocblock.ts';
+import { TypeAliasResolveError } from '../parser/resolveTypeAliases.ts';
 
 export interface PositionedError {
   kind: 'parse' | 'lexer' | 'generation' | 'unknown';
@@ -20,6 +22,22 @@ export function describeError(err: unknown): PositionedError {
       message: err.message,
       pos: err.pos,
       expressionIndex: err.expressionIndex,
+    };
+  }
+  if (err instanceof PhpstanTypeExtractError) {
+    return {
+      kind: 'parse',
+      title: 'Docblock extract error',
+      message: err.message,
+      pos: err.pos,
+    };
+  }
+  if (err instanceof TypeAliasResolveError) {
+    return {
+      kind: 'parse',
+      title: 'Alias resolve error',
+      message: err.message,
+      detail: err.aliasName,
     };
   }
   if (err instanceof LexerError) {

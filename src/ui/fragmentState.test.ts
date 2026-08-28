@@ -9,6 +9,7 @@ const sample: AppFragmentState = {
   nameFromType: true,
   optimize: false,
   emit: 'public_static',
+  emitAliases: true,
   input: 'array{x: list<string>}',
 };
 
@@ -18,6 +19,7 @@ describe('fragmentState', () => {
     expect(encoded).toContain('name=1');
     expect(encoded).toContain('optimize=0');
     expect(encoded).toContain('emit=public_static');
+    expect(encoded).toContain('aliases=1');
     expect(encoded).toContain('input=array%7Bx%3A+list%3Cstring%3E%7D');
 
     expect(decodeFragmentState(`#${encoded}`)).toEqual(sample);

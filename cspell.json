@@ -13,6 +13,7 @@
     "DateTimeInterface",
     "dedupes",
     "disambiguates",
+    "docblocks",
     "evenodd",
     "expressibility",
     "fixpoint",

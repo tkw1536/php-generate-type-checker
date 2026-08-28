@@ -62,6 +62,16 @@ export class Builder {
     return name;
   }
 
+  /** Add a root entry with an explicit function name (always promoted, even when types dedupe). */
+  addEntry(explicitName: string, type: TypeNode): string {
+    this.registry.reserveName(explicitName);
+    if (typeof this.programs[explicitName] === 'undefined') {
+      this.emit(explicitName, type);
+    }
+    this.promote(explicitName);
+    return explicitName;
+  }
+
   build(): CheckerIR {
     return {
       programs: { ...this.programs },

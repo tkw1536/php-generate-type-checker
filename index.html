@@ -16,7 +16,7 @@
       <div class="panel-grid">
         <div class="panel panel-input">
           <div class="panel-header panel-header--with-actions">
-            <label for="type-input">Types</label>
+            <label for="type-input" id="type-input-label">Types or docblock</label>
             <div class="panel-header-actions">
               <select id="type-example" class="panel-header-select" aria-label="Load example type">
                 <option value="">Load example…</option>
@@ -24,7 +24,7 @@
             </div>
           </div>
           <div class="panel-body">
-            <textarea id="type-input" spellcheck="false" placeholder="One or multiple types to generate checkers for"></textarea>
+            <textarea id="type-input" spellcheck="false" placeholder="Type expressions, or a PHPDoc block with @phpstan-type aliases (starting with /*)"></textarea>
           </div>
           <div class="panel-footer panel-footer--generate">
             <div class="panel-footer-options">
@@ -47,15 +47,25 @@
                 <span>Optimize</span>
               </label>
             </div>
-            <label class="panel-footer-emit" for="generate-output-mode">
-              <span class="panel-footer-emit-label">Emit as</span>
-              <select id="generate-output-mode" class="panel-footer-select" aria-label="Emitted PHP shape">
-                <option value="function" selected>Function</option>
-                <option value="public_static">public static</option>
-                <option value="protected_static">protected static</option>
-                <option value="private_static">private static</option>
-              </select>
-            </label>
+            <div class="panel-footer-emit-group">
+              <label class="panel-footer-emit" for="generate-output-mode">
+                <span class="panel-footer-emit-label">Emit as</span>
+                <select id="generate-output-mode" class="panel-footer-select" aria-label="Emitted PHP shape">
+                  <option value="function" selected>Function</option>
+                  <option value="public_static">public static</option>
+                  <option value="protected_static">protected static</option>
+                  <option value="private_static">private static</option>
+                </select>
+              </label>
+              <label class="panel-footer-option" for="generate-emit-aliases" id="generate-emit-aliases-label" hidden>
+                <input
+                  type="checkbox"
+                  id="generate-emit-aliases"
+                  aria-label="Re-emit @phpstan-type aliases at the top of generated PHP"
+                >
+                <span>Emit aliases</span>
+              </label>
+            </div>
           </div>
         </div>
         <div class="panel panel-output">
@@ -169,9 +179,9 @@
         <a href="https://github.com/tkw1536/php-generate-type-checker" target="_blank" rel="noopener noreferrer">GitHub</a>.
       </p>
       <p>
-        Edit the type or options on the left; output updates automatically. Tabs follow the pipeline left to right:
+        Edit the input or options on the left; output updates automatically. Paste <strong>type expressions</strong> (one or more) or a full <strong>PHPDoc block</strong> containing <code>@phpstan-type</code> aliases — when the input starts with <code>/*</code>, aliases are extracted, cross-references resolved, and one checker is generated per alias. Tabs follow the pipeline left to right:
         <strong>Type AST</strong> → <strong>IR (build)</strong> → <strong>IR (optimized)</strong> → <strong>PHP Code</strong>.
-        With <strong>Optimize</strong> on, PHP uses <strong>IR (optimized)</strong>. With it off, the optimizer is skipped and PHP is rendered from <strong>IR (build)</strong>.
+        With <strong>Optimize</strong> on, PHP uses <strong>IR (optimized)</strong>; with it off, PHP is rendered from <strong>IR (build)</strong>.
         Some types cannot be validated at runtime (for example <code>callable(int): void</code> or unhandled generics) and report a generation error.
       </p>
       <p class="site-footer-warning" role="note">

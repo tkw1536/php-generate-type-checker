@@ -13,8 +13,15 @@ import {
   type AppFragmentState,
 } from './ui/fragmentState.ts';
 import type { CheckerOutputMode } from "./generator/options.ts";
+import {
+  buildMany,
+  buildManyNamed,
+  optimize,
+  renderChecker,
+} from "./generator/pipeline.ts";
+import { isDocblockInput } from "./parser/phpstanTypeDocblock.ts";
 import { parseTypes } from "./parser/parser.ts";
-import { buildMany, optimize, renderChecker } from "./generator/pipeline.ts";
+import { parsePhpstanTypesFromDocblock } from "./parser/resolveTypeAliases.ts";
 
 initTheme();
 
@@ -139,6 +146,11 @@ function getOptimize(): boolean {
   return el?.checked === true;
 }
 
+function getEmitPhpstanTypeAliases(): boolean {
+  const el = document.querySelector<HTMLInputElement>('#generate-emit-aliases');
+  return el?.checked === true;
+}
+
 function getPrioritizeReadabilityOverCompactness(): boolean {
   return !getOptimize();
 }
@@ -152,6 +164,7 @@ function readUiFragmentState(): AppFragmentState {
     nameFromType: getNameFunctionsByType(),
     optimize: getOptimize(),
     emit: getGenerateOutputMode(),
+    emitAliases: getEmitPhpstanTypeAliases(),
     input: document.querySelector<HTMLTextAreaElement>('#type-input')!.value,
   };
 }
@@ -169,6 +182,10 @@ function applyFragmentState(fragment: Partial<AppFragmentState>): void {
   if (fragment.emit !== undefined) {
     document.querySelector<HTMLSelectElement>('#generate-output-mode')!.value =
       fragment.emit;
+  }
+  if (fragment.emitAliases !== undefined) {
+    document.querySelector<HTMLInputElement>('#generate-emit-aliases')!.checked =
+      fragment.emitAliases;
   }
   if (fragment.input !== undefined) {
     document.querySelector<HTMLTextAreaElement>('#type-input')!.value =
@@ -188,6 +205,72 @@ function getGenerateOptions() {
   };
 }
 
+function syncInputLabel(): void {
+  const label = document.querySelector<HTMLLabelElement>('#type-input-label');
+  const emitAliasesLabel = document.querySelector<HTMLLabelElement>(
+    '#generate-emit-aliases-label',
+  );
+  const raw = document.querySelector<HTMLTextAreaElement>('#type-input')!.value;
+  const docblock = isDocblockInput(raw);
+  if (label) {
+    label.textContent = docblock ? 'Docblock (@phpstan-type)' : 'Types or docblock';
+  }
+  if (emitAliasesLabel) {
+    emitAliasesLabel.hidden = !docblock;
+  }
+}
+
+function runBuildPipeline(
+  panels: {
+    ast: OutputPanel;
+    irBuild: OutputPanel;
+    irOptimized: OutputPanel;
+    php: OutputPanel;
+  },
+  typeString: string,
+  genOpts: ReturnType<typeof getGenerateOptions>,
+  built: {
+    ir: ReturnType<typeof buildMany>['ir'];
+    typesByName: ReturnType<typeof buildMany>['typesByName'];
+    docStringsByName?: ReturnType<typeof buildMany>['docStringsByName'];
+    phpstanTypeAliases?: ReturnType<typeof buildManyNamed>['phpstanTypeAliases'];
+  },
+  renderExtras?: {
+    emitPhpstanTypeAliases?: boolean;
+    phpstanTypeAliases?: ReturnType<typeof buildManyNamed>['phpstanTypeAliases'];
+  },
+): void {
+  try {
+    const builtJson = JSON.stringify(built.ir, null, 2);
+    setSuccessOutput(panels.irBuild, builtJson);
+    const irForPhp = wouldRunOptimizer() ? optimize(built.ir) : built.ir;
+    if (wouldRunOptimizer()) {
+      setSuccessOutput(panels.irOptimized, JSON.stringify(irForPhp, null, 2));
+    } else {
+      setSuccessOutput(
+        panels.irOptimized,
+        'Optimizer skipped (Optimize is off).\nIR (optimized) matches IR (build).',
+      );
+    }
+    setSuccessOutput(
+      panels.php,
+      renderChecker(irForPhp, {
+        ...genOpts,
+        typeString,
+        typesByName: built.typesByName,
+        docStringsByName: built.docStringsByName,
+        emitPhpstanTypeAliases: renderExtras?.emitPhpstanTypeAliases,
+        phpstanTypeAliases:
+          renderExtras?.phpstanTypeAliases ?? built.phpstanTypeAliases,
+      }),
+    );
+  } catch (err) {
+    setErrorOutput(panels.irBuild, err, typeString);
+    setErrorOutput(panels.irOptimized, err, typeString);
+    setErrorOutput(panels.php, err, typeString);
+  }
+}
+
 function runGenerate(panels: {
   ast: OutputPanel;
   irBuild: OutputPanel;
@@ -196,6 +279,58 @@ function runGenerate(panels: {
 }): void {
   const typeString = getTypeInput();
   const genOpts = getGenerateOptions();
+  syncInputLabel();
+
+  if (isDocblockInput(typeString)) {
+    let defs: ReturnType<typeof parsePhpstanTypesFromDocblock> | undefined;
+    try {
+      defs = parsePhpstanTypesFromDocblock(typeString);
+      setSuccessOutput(
+        panels.ast,
+        JSON.stringify(
+          defs.map((d) => ({
+            name: d.name,
+            typeString: d.typeString,
+            ast: d.ast,
+          })),
+          null,
+          2,
+        ),
+      );
+    } catch (err) {
+      setErrorOutput(panels.ast, err, typeString);
+    }
+
+    if (defs === undefined) {
+      setErrorOutput(panels.irBuild, new Error('Parse failed'), typeString);
+      setErrorOutput(panels.irOptimized, new Error('Parse failed'), typeString);
+      setErrorOutput(panels.php, new Error('Parse failed'), typeString);
+      return;
+    }
+
+    try {
+      const built = buildManyNamed(
+        defs.map((d) => ({
+          name: d.name,
+          type: d.ast,
+          typeString: d.typeString,
+        })),
+        {
+          ...genOpts,
+          segmentSources: defs.map((d) => d.typeString),
+        },
+      );
+      runBuildPipeline(panels, typeString, genOpts, built, {
+        emitPhpstanTypeAliases: getEmitPhpstanTypeAliases(),
+        phpstanTypeAliases: built.phpstanTypeAliases,
+      });
+    } catch (err) {
+      setErrorOutput(panels.irBuild, err, typeString);
+      setErrorOutput(panels.irOptimized, err, typeString);
+      setErrorOutput(panels.php, err, typeString);
+    }
+    return;
+  }
 
   let parsed: ReturnType<typeof parseTypes> | undefined;
   try {
@@ -231,31 +366,12 @@ function runGenerate(panels: {
       parsed.segments.map((s) => s.ast),
       { ...genOpts, segmentSources },
     );
-    const builtJson = JSON.stringify(built.ir, null, 2);
-    setSuccessOutput(panels.irBuild, builtJson);
-    const irForPhp = wouldRunOptimizer() ? optimize(built.ir) : built.ir;
-    if (wouldRunOptimizer()) {
-      setSuccessOutput(panels.irOptimized, JSON.stringify(irForPhp, null, 2));
-    } else {
-      setSuccessOutput(
-        panels.irOptimized,
-        'Optimizer skipped (Optimize is off).\nIR (optimized) matches IR (build).',
-      );
-    }
-    setSuccessOutput(
-      panels.php,
-      renderChecker(irForPhp, {
-        ...genOpts,
-        typeString,
-        typesByName: built.typesByName,
-      }),
-    );
+    runBuildPipeline(panels, typeString, genOpts, built);
   } catch (err) {
     setErrorOutput(panels.irBuild, err, typeString);
     setErrorOutput(panels.irOptimized, err, typeString);
     setErrorOutput(panels.php, err, typeString);
   }
-
 }
 
 function onGenerateInputChanged(): void {
@@ -338,6 +454,8 @@ const nameByTypeCheckbox =
 const prioritizeReadabilityCheckbox = document.querySelector<HTMLInputElement>(
   '#generate-prioritize-readability',
 )!;
+const emitAliasesCheckbox =
+  document.querySelector<HTMLInputElement>('#generate-emit-aliases')!;
 
 copyBtn.addEventListener('click', async () => {
   const panel = getActiveOutputPanel();
@@ -357,6 +475,7 @@ typeInput.addEventListener('input', onGenerateInputChanged);
 outputModeSelect.addEventListener('change', onGenerateInputChanged);
 nameByTypeCheckbox.addEventListener('change', onGenerateInputChanged);
 prioritizeReadabilityCheckbox.addEventListener('change', onGenerateInputChanged);
+emitAliasesCheckbox.addEventListener('change', onGenerateInputChanged);
 
 document.querySelector<HTMLButtonElement>('#theme-toggle')!.addEventListener('click', () => {
   toggleTheme();

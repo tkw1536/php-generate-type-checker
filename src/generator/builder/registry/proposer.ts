@@ -34,3 +34,16 @@ function slugToIsName(formatted: string): string {
   }
   return `is${slug}`;
 }
+
+/** Map a @phpstan-type alias name to an `is{Name}` entry function name. */
+export function aliasToIsName(aliasName: string): string {
+  const base = aliasName.replace(/^\\+/, '').split('\\').pop() ?? aliasName;
+  const slug = base.replace(/[^a-zA-Z0-9]+/g, '');
+  if (slug.length === 0) {
+    return 'isType';
+  }
+  const normalized =
+    slug[0]!.toUpperCase() + slug.slice(1);
+  const withPrefix = /^[0-9]/.test(normalized) ? `T${normalized}` : normalized;
+  return `is${withPrefix}`;
+}

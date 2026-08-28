@@ -374,6 +374,13 @@ body {
   flex-shrink: 0;
 }
 
+.panel-footer-emit-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
 .panel-footer-emit {
   display: flex;
   align-items: center;

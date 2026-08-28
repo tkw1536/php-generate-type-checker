@@ -4,6 +4,25 @@ export interface TypeExample {
 }
 
 /** Built-in types for the UI examples dropdown (common PHPStan shapes from APIs, config, and persistence). */
+export const POST_LIST_DOCBLOCK_EXAMPLE = `/**
+ * Types for a paginated blog post list API response.
+ *
+ * @phpstan-type PostSummary array{
+ *   id: positive-int,
+ *   slug: non-empty-string,
+ *   title: string
+ * }
+ * @phpstan-type PaginationMeta array{
+ *   page: positive-int,
+ *   perPage: positive-int,
+ *   total: int
+ * }
+ * @phpstan-type PostListResponse array{
+ *   posts: list<PostSummary>,
+ *   meta: PaginationMeta
+ * }
+ */`;
+
 export const TYPE_EXAMPLES: readonly TypeExample[] = [
   {
     label: 'Paginated list response',
@@ -35,5 +54,9 @@ export const TYPE_EXAMPLES: readonly TypeExample[] = [
   {
     label: 'Two sequential types (no separator)',
     type: 'array<string>array<int>',
+  },
+  {
+    label: 'Post list API (docblock)',
+    type: POST_LIST_DOCBLOCK_EXAMPLE,
   },
 ];
