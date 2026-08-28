@@ -15,13 +15,13 @@
     "spellcheck": "cspell ."
   },
   "devDependencies": {
-    "cspell": "^10.0.1",
+    "cspell": "^10.1.1",
     "typescript": "^7.0.2",
-    "vite": "^8.2.1",
-    "vitest": "^4.1.10"
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11"
   },
   "dependencies": {
-    "highlight.js": "^11.11.1"
+    "highlight.js": "^11.12.0"
   },
   "packageManager": "yarn@4.18.0"
 }
