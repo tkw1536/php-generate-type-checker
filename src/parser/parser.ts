@@ -83,12 +83,16 @@ class Parser {
   }
 
   private parsePostfix(): TypeNode {
+    const nullable = this.match('question');
     let node = this.parsePrimary();
     while (this.match('lbracket')) {
       if (!this.match('rbracket')) {
         throw new ParseError('Expected ] after [', this.peek().pos);
       }
       node = { kind: 'array', value: node };
+    }
+    if (nullable) {
+      return this.mergeUnion(node, { kind: 'keyword', keyword: 'null' });
     }
     return node;
   }

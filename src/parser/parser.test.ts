@@ -42,6 +42,31 @@ describe('parseTypes', () => {
 });
 
 describe('parseType', () => {
+  describe('nullable ? prefix', () => {
+    const cases: [string, string][] = [
+      ['?int', 'int|null'],
+      ['?int|string', 'int|null|string'],
+      ['?(int|string)', '(int|string)|null'],
+      ['?int[]', '(int[])|null'],
+      ['array{foo: ?int}', 'array{foo: int|null}'],
+      ['array{?int}', 'array{int|null}'],
+      ['array{bar?: ?string}', 'array{bar?: string|null}'],
+      ['list{?int}', 'list{int|null}'],
+    ];
+
+    for (const [source, expectedSource] of cases) {
+      it(source, () => {
+        expect(parseType(source)).toEqual(parseType(expectedSource));
+      });
+    }
+
+    it('array{bar?: string} still parses optional shape fields', () => {
+      expect(parseType('array{bar?: string}')).toEqual(
+        parseType('array{bar?: string}'),
+      );
+    });
+  });
+
   describe('success', () => {
     for (const { source, ast } of successCases as ParseSuccessCase[]) {
       it(source, () => {
