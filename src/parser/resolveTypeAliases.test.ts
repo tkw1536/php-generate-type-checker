@@ -6,6 +6,10 @@ import {
   TypeAliasResolveError,
 } from './resolveTypeAliases.ts';
 
+function aliasNames(defs: { name: string }[]): string[] {
+  return defs.map((d) => d.name);
+}
+
 const POST_LIST_DOCBLOCK = `/**
  * @phpstan-type PostSummary array{
  *   id: positive-int,
@@ -56,10 +60,19 @@ describe('parsePhpstanTypesFromDocblock', () => {
     const defs = parsePhpstanTypesFromDocblock(FORWARD_REF_DOCBLOCK);
     expect(defs).toHaveLength(2);
     const outer = defs.find((d) => d.name === 'Outer')!;
-    expect(namedAliasReferences(outer.ast, ['Inner', 'Outer'])).toEqual([
+    expect(namedAliasReferences(outer.ast, aliasNames(defs))).toEqual([
       'Inner',
     ]);
     expect(outer.ast).toEqual(parseType('array{inner: Inner}'));
+  });
+
+  it('inlines alias cross-references when resolveAliases is true', () => {
+    const defs = parsePhpstanTypesFromDocblock(FORWARD_REF_DOCBLOCK, {
+      resolveAliases: true,
+    });
+    const outer = defs.find((d) => d.name === 'Outer')!;
+    expect(namedAliasReferences(outer.ast, aliasNames(defs))).toEqual([]);
+    expect(outer.ast).toEqual(parseType('array{inner: int}'));
   });
 
   it('keeps post list cross-references as named nodes', () => {

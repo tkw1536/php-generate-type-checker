@@ -15,9 +15,11 @@ export {
 } from './phpstanTypeDocblock.ts';
 export {
   parsePhpstanTypesFromDocblock,
+  resolveTypeAliases,
   TypeAliasResolveError,
   namedAliasReferences,
   type ResolvedPhpstanType,
+  type ParsePhpstanTypesFromDocblockOptions,
 } from './resolveTypeAliases.ts';
 export { LexerError, tokenize } from './lexer.ts';
 export type {

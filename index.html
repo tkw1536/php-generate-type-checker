@@ -8,46 +8,101 @@
   </head>
   <body>
     <header class="site-header">
-      <h1>PHP Type Checker Generator</h1>
+      <div class="site-header-title">
+        <h1>PHP Type Checker Generator</h1>
+        <button
+          type="button"
+          class="option-help site-help"
+          aria-label="About this tool"
+          data-tooltip="Left: paste PHPStan type expressions (one or more) or a PHPDoc block starting with /*. Docblocks extract @phpstan-type aliases and generate one checker per alias. Options under the input control naming, optimization, alias handling, and PHP shape — hover each ? for details. Right: tabs follow the pipeline Type AST → IR (build) → IR (optimized) → PHP Code; output updates as you edit. Some types cannot be checked at runtime (for example callable signatures or unhandled generics) and report a generation error."
+        >?</button>
+      </div>
       <button id="theme-toggle" type="button" class="btn btn-theme" aria-label="Switch to dark mode" title="Dark mode">☾</button>
     </header>
 
     <main class="workspace">
       <div class="panel-grid">
         <div class="panel panel-input">
-          <div class="panel-header panel-header--with-actions">
-            <label for="type-input" id="type-input-label">Types or docblock</label>
-            <div class="panel-header-actions">
-              <select id="type-example" class="panel-header-select" aria-label="Load example type">
-                <option value="">Load example…</option>
-              </select>
-            </div>
+          <div class="panel-header panel-header--input">
+            <select id="type-example" class="panel-header-select" aria-label="Load example type">
+              <option value="">Load example…</option>
+            </select>
           </div>
           <div class="panel-body">
-            <textarea id="type-input" spellcheck="false" placeholder="Type expressions, or a PHPDoc block with @phpstan-type aliases (starting with /*)"></textarea>
+            <textarea id="type-input" spellcheck="false" aria-label="Types or docblock" placeholder="Type expressions, or a PHPDoc block with @phpstan-type aliases (starting with /*)"></textarea>
           </div>
           <div class="panel-footer panel-footer--generate">
             <div class="panel-footer-options">
-              <label class="panel-footer-option" for="generate-name-by-type">
-                <input
-                  type="checkbox"
-                  id="generate-name-by-type"
-                  checked
-                  aria-label="Name functions according to their type"
-                >
-                <span>Name from type</span>
-              </label>
-              <label class="panel-footer-option" for="generate-prioritize-readability">
-                <input
-                  type="checkbox"
-                  id="generate-prioritize-readability"
-                  checked
-                  aria-label="Run optimizer for compact IR and PHP"
-                >
-                <span>Optimize</span>
-              </label>
+              <div class="panel-footer-option-row">
+                <label class="panel-footer-option" for="generate-name-by-type">
+                  <input
+                    type="checkbox"
+                    id="generate-name-by-type"
+                    checked
+                    aria-label="Name functions according to their type"
+                  >
+                  <span>Name from type</span>
+                </label>
+                <button
+                  type="button"
+                  class="option-help"
+                  aria-label="About Name from type"
+                  data-tooltip="When on, checkers are named from the type (e.g. isPostListResponse). When off, they use check / check_1 / …."
+                >?</button>
+              </div>
+              <div class="panel-footer-option-row">
+                <label class="panel-footer-option" for="generate-prioritize-readability">
+                  <input
+                    type="checkbox"
+                    id="generate-prioritize-readability"
+                    checked
+                    aria-label="Run optimizer for compact IR and PHP"
+                  >
+                  <span>Optimize</span>
+                </label>
+                <button
+                  type="button"
+                  class="option-help"
+                  aria-label="About Optimize"
+                  data-tooltip="When on, the IR optimizer runs before PHP is rendered for more compact output. When off, PHP is rendered from IR (build)."
+                >?</button>
+              </div>
             </div>
-            <div class="panel-footer-emit-group">
+            <div class="panel-footer-options" id="generate-docblock-options" hidden>
+              <div class="panel-footer-option-row">
+                <label class="panel-footer-option" for="generate-resolve-aliases">
+                  <input
+                    type="checkbox"
+                    id="generate-resolve-aliases"
+                    aria-label="Inline alias cross-references instead of calling entry checkers"
+                  >
+                  <span>Resolve aliases</span>
+                </label>
+                <button
+                  type="button"
+                  class="option-help"
+                  aria-label="About Resolve aliases"
+                  data-tooltip="When on, @phpstan-type cross-references are inlined into each alias body. When off (default), they stay as named references and call the matching entry checker."
+                >?</button>
+              </div>
+              <div class="panel-footer-option-row">
+                <label class="panel-footer-option" for="generate-emit-aliases">
+                  <input
+                    type="checkbox"
+                    id="generate-emit-aliases"
+                    aria-label="Re-emit @phpstan-type aliases at the top of generated PHP"
+                  >
+                  <span>Emit aliases</span>
+                </label>
+                <button
+                  type="button"
+                  class="option-help"
+                  aria-label="About Emit aliases"
+                  data-tooltip="When on, re-emits the @phpstan-type definitions at the top of the generated PHP output."
+                >?</button>
+              </div>
+            </div>
+            <div class="panel-footer-option-row panel-footer-emit-row">
               <label class="panel-footer-emit" for="generate-output-mode">
                 <span class="panel-footer-emit-label">Emit as</span>
                 <select id="generate-output-mode" class="panel-footer-select" aria-label="Emitted PHP shape">
@@ -57,14 +112,12 @@
                   <option value="private_static">private static</option>
                 </select>
               </label>
-              <label class="panel-footer-option" for="generate-emit-aliases" id="generate-emit-aliases-label" hidden>
-                <input
-                  type="checkbox"
-                  id="generate-emit-aliases"
-                  aria-label="Re-emit @phpstan-type aliases at the top of generated PHP"
-                >
-                <span>Emit aliases</span>
-              </label>
+              <button
+                type="button"
+                class="option-help"
+                aria-label="About Emit as"
+                data-tooltip="Shape of the emitted PHP: top-level functions, or static methods with the chosen visibility."
+              >?</button>
             </div>
           </div>
         </div>
@@ -167,6 +220,10 @@
               </div>
             </div>
           </div>
+          <div class="panel-footer panel-footer--warning" role="note">
+            <span><strong>Warning:</strong> Always review generated PHP before using it in production.
+            Output may be incorrect or incomplete for edge cases.</span>
+          </div>
         </div>
       </div>
     </main>
@@ -177,16 +234,6 @@
         <a href="https://phpstan.org/writing-php-code/phpdoc-types" target="_blank" rel="noopener noreferrer">PHPDoc types as supported by PHPStan</a> with <code>@phpstan-assert-if-true</code>.
         Source on
         <a href="https://github.com/tkw1536/php-generate-type-checker" target="_blank" rel="noopener noreferrer">GitHub</a>.
-      </p>
-      <p>
-        Edit the input or options on the left; output updates automatically. Paste <strong>type expressions</strong> (one or more) or a full <strong>PHPDoc block</strong> containing <code>@phpstan-type</code> aliases — when the input starts with <code>/*</code>, aliases are extracted, cross-references resolved, and one checker is generated per alias. Tabs follow the pipeline left to right:
-        <strong>Type AST</strong> → <strong>IR (build)</strong> → <strong>IR (optimized)</strong> → <strong>PHP Code</strong>.
-        With <strong>Optimize</strong> on, PHP uses <strong>IR (optimized)</strong>; with it off, PHP is rendered from <strong>IR (build)</strong>.
-        Some types cannot be validated at runtime (for example <code>callable(int): void</code> or unhandled generics) and report a generation error.
-      </p>
-      <p class="site-footer-warning" role="note">
-        <strong>Warning:</strong> Always review generated PHP before using it in production.
-        Output may be incorrect or incomplete for edge cases.
       </p>
     </footer>
 

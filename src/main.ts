@@ -151,6 +151,13 @@ function getEmitPhpstanTypeAliases(): boolean {
   return el?.checked === true;
 }
 
+function getResolveAliases(): boolean {
+  const el = document.querySelector<HTMLInputElement>(
+    '#generate-resolve-aliases',
+  );
+  return el?.checked === true;
+}
+
 function getPrioritizeReadabilityOverCompactness(): boolean {
   return !getOptimize();
 }
@@ -165,6 +172,7 @@ function readUiFragmentState(): AppFragmentState {
     optimize: getOptimize(),
     emit: getGenerateOutputMode(),
     emitAliases: getEmitPhpstanTypeAliases(),
+    resolveAliases: getResolveAliases(),
     input: document.querySelector<HTMLTextAreaElement>('#type-input')!.value,
   };
 }
@@ -187,6 +195,11 @@ function applyFragmentState(fragment: Partial<AppFragmentState>): void {
     document.querySelector<HTMLInputElement>('#generate-emit-aliases')!.checked =
       fragment.emitAliases;
   }
+  if (fragment.resolveAliases !== undefined) {
+    document.querySelector<HTMLInputElement>(
+      '#generate-resolve-aliases',
+    )!.checked = fragment.resolveAliases;
+  }
   if (fragment.input !== undefined) {
     document.querySelector<HTMLTextAreaElement>('#type-input')!.value =
       fragment.input;
@@ -205,18 +218,13 @@ function getGenerateOptions() {
   };
 }
 
-function syncInputLabel(): void {
-  const label = document.querySelector<HTMLLabelElement>('#type-input-label');
-  const emitAliasesLabel = document.querySelector<HTMLLabelElement>(
-    '#generate-emit-aliases-label',
+function syncDocblockOptions(): void {
+  const docblockOptions = document.querySelector<HTMLElement>(
+    '#generate-docblock-options',
   );
   const raw = document.querySelector<HTMLTextAreaElement>('#type-input')!.value;
-  const docblock = isDocblockInput(raw);
-  if (label) {
-    label.textContent = docblock ? 'Docblock (@phpstan-type)' : 'Types or docblock';
-  }
-  if (emitAliasesLabel) {
-    emitAliasesLabel.hidden = !docblock;
+  if (docblockOptions) {
+    docblockOptions.hidden = !isDocblockInput(raw);
   }
 }
 
@@ -279,12 +287,14 @@ function runGenerate(panels: {
 }): void {
   const typeString = getTypeInput();
   const genOpts = getGenerateOptions();
-  syncInputLabel();
+  syncDocblockOptions();
 
   if (isDocblockInput(typeString)) {
     let defs: ReturnType<typeof parsePhpstanTypesFromDocblock> | undefined;
     try {
-      defs = parsePhpstanTypesFromDocblock(typeString);
+      defs = parsePhpstanTypesFromDocblock(typeString, {
+        resolveAliases: getResolveAliases(),
+      });
       setSuccessOutput(
         panels.ast,
         JSON.stringify(
@@ -456,6 +466,9 @@ const prioritizeReadabilityCheckbox = document.querySelector<HTMLInputElement>(
 )!;
 const emitAliasesCheckbox =
   document.querySelector<HTMLInputElement>('#generate-emit-aliases')!;
+const resolveAliasesCheckbox = document.querySelector<HTMLInputElement>(
+  '#generate-resolve-aliases',
+)!;
 
 copyBtn.addEventListener('click', async () => {
   const panel = getActiveOutputPanel();
@@ -476,6 +489,7 @@ outputModeSelect.addEventListener('change', onGenerateInputChanged);
 nameByTypeCheckbox.addEventListener('change', onGenerateInputChanged);
 prioritizeReadabilityCheckbox.addEventListener('change', onGenerateInputChanged);
 emitAliasesCheckbox.addEventListener('change', onGenerateInputChanged);
+resolveAliasesCheckbox.addEventListener('change', onGenerateInputChanged);
 
 document.querySelector<HTMLButtonElement>('#theme-toggle')!.addEventListener('click', () => {
   toggleTheme();

@@ -9,6 +9,8 @@ import { parsePhpstanTypesFromDocblock, parseTypes } from '../parser/index.ts';
 
 export type GenerateDocblockCheckerOptions = GenerateCheckerOptions & {
   emitPhpstanTypeAliases?: boolean;
+  /** Inline alias cross-references instead of calling entry checkers. Default: false. */
+  resolveAliases?: boolean;
 };
 
 /** Composed pipeline; used by fixture tests. */
@@ -34,7 +36,9 @@ export function generateDocblockChecker(
   docblock: string,
   options?: GenerateDocblockCheckerOptions,
 ): string {
-  const defs = parsePhpstanTypesFromDocblock(docblock);
+  const defs = parsePhpstanTypesFromDocblock(docblock, {
+    resolveAliases: options?.resolveAliases,
+  });
   const {
     ir: built,
     typesByName,
