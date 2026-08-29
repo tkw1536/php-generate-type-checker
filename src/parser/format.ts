@@ -16,7 +16,7 @@ function formatTypeInner(type: TypeNode, parent: Precedence): string {
   switch (type.kind) {
     case 'keyword':
       return type.keyword;
-    case 'class':
+    case 'named':
       return type.name;
     case 'literal':
       return formatLiteral(type);

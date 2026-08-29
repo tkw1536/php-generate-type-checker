@@ -1,0 +1,18 @@
+/**
+ * Types for a paginated blog post list API response.
+ *
+ * @phpstan-type PostSummary array{
+ *   id: positive-int,
+ *   slug: non-empty-string,
+ *   title: string
+ * }
+ * @phpstan-type PaginationMeta array{
+ *   page: positive-int,
+ *   perPage: positive-int,
+ *   total: int
+ * }
+ * @phpstan-type PostListResponse array{
+ *   posts: list<PostSummary>,
+ *   meta: PaginationMeta
+ * }
+ */

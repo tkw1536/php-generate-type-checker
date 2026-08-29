@@ -359,35 +359,35 @@
   {
     "source": "Foo",
     "ast": {
-      "kind": "class",
+      "kind": "named",
       "name": "Foo"
     }
   },
   {
     "source": "Bar",
     "ast": {
-      "kind": "class",
+      "kind": "named",
       "name": "Bar"
     }
   },
   {
     "source": "DateTimeInterface",
     "ast": {
-      "kind": "class",
+      "kind": "named",
       "name": "DateTimeInterface"
     }
   },
   {
     "source": "\\Foo\\Bar",
     "ast": {
-      "kind": "class",
+      "kind": "named",
       "name": "\\Foo\\Bar"
     }
   },
   {
     "source": "\\Fully\\Qualified\\ClassName",
     "ast": {
-      "kind": "class",
+      "kind": "named",
       "name": "\\Fully\\Qualified\\ClassName"
     }
   },
@@ -629,7 +629,7 @@
         "keyword": "int"
       },
       "value": {
-        "kind": "class",
+        "kind": "named",
         "name": "Foo"
       },
       "keyword": "array"
@@ -772,7 +772,7 @@
           "keyword": "int"
         },
         {
-          "kind": "class",
+          "kind": "named",
           "name": "Bar"
         }
       ]
@@ -1271,11 +1271,11 @@
       "kind": "intersection",
       "types": [
         {
-          "kind": "class",
+          "kind": "named",
           "name": "Foo"
         },
         {
-          "kind": "class",
+          "kind": "named",
           "name": "Bar"
         }
       ]
@@ -1287,15 +1287,15 @@
       "kind": "intersection",
       "types": [
         {
-          "kind": "class",
+          "kind": "named",
           "name": "A"
         },
         {
-          "kind": "class",
+          "kind": "named",
           "name": "B"
         },
         {
-          "kind": "class",
+          "kind": "named",
           "name": "C"
         }
       ]
@@ -1310,17 +1310,17 @@
           "kind": "intersection",
           "types": [
             {
-              "kind": "class",
+              "kind": "named",
               "name": "A"
             },
             {
-              "kind": "class",
+              "kind": "named",
               "name": "B"
             }
           ]
         },
         {
-          "kind": "class",
+          "kind": "named",
           "name": "C"
         }
       ]
@@ -1362,7 +1362,7 @@
           ]
         },
         {
-          "kind": "class",
+          "kind": "named",
           "name": "Foo"
         }
       ]
@@ -1387,7 +1387,7 @@
           ]
         },
         {
-          "kind": "class",
+          "kind": "named",
           "name": "Foo"
         }
       ]

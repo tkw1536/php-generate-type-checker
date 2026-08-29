@@ -93,17 +93,26 @@ export function buildManyNamed(
     nameFunctionsByType: nameByType,
     reservedNames: options?.reservedNames ?? [],
   });
-  const builder = new Builder(registry);
+  const aliasCheckerByName = new Map<string, string>();
   const docStringsByName: Record<string, string> = {};
   let sequentialIndex = 0;
 
-  for (const [i, entry] of entries.entries()) {
+  for (const entry of entries) {
     const fnName = nameByType
       ? aliasToIsName(entry.name)
       : sequentialIndex === 0
         ? 'check'
         : `check_${sequentialIndex}`;
     sequentialIndex++;
+    aliasCheckerByName.set(entry.name, fnName);
+    registry.set(entry.type, fnName);
+  }
+
+  const builder = new Builder(registry, { aliasCheckerByName });
+  sequentialIndex = 0;
+
+  for (const [i, entry] of entries.entries()) {
+    const fnName = aliasCheckerByName.get(entry.name)!;
 
     try {
       builder.addEntry(fnName, entry.type);

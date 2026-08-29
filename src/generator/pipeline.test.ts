@@ -130,6 +130,27 @@ describe('pipeline build + render (unoptimized)', () => {
     expect(php).toContain('$value < 0');
   });
 
+  it('buildManyNamed delegates to entry checkers for alias cross-references', () => {
+    const defs = parsePhpstanTypesFromDocblock(`/**
+ * @phpstan-type PostSummary array{id: int, title: string}
+ * @phpstan-type PostListResponse array{posts: list<PostSummary>}
+ */`);
+    const { ir, typesByName, docStringsByName } = buildManyNamed(
+      defs.map((d) => ({
+        name: d.name,
+        type: d.ast,
+        typeString: d.typeString,
+      })),
+    );
+    const php = renderChecker(optimize(ir), {
+      typeString: 'docblock',
+      typesByName,
+      docStringsByName,
+      output: 'function',
+    });
+    expect(php).toContain('isPostSummary(');
+  });
+
   it('buildManyNamed names entries from @phpstan-type aliases', () => {
     const defs = parsePhpstanTypesFromDocblock(`/**
  * @phpstan-type PostSummary array{id: int, title: string}
@@ -205,6 +226,17 @@ describe('pipeline build + render (unoptimized)', () => {
       output: 'function',
     });
     expect(php.startsWith('/** @phpstan-assert-if-true Foo $value */')).toBe(true);
+  });
+
+  it('buildMany uses instanceof for named types without alias map', () => {
+    const ast = parseType('Foo');
+    const { ir, typesByName } = buildMany([ast]);
+    const php = renderChecker(optimize(ir), {
+      typeString: 'Foo',
+      typesByName,
+      output: 'function',
+    });
+    expect(php).toContain('$value instanceof Foo');
   });
 
   it('buildManyNamed uses sequential check names when nameFunctionsByType is false', () => {

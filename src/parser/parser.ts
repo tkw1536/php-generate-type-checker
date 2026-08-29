@@ -455,9 +455,9 @@ class Parser {
       return { kind: 'keyword', keyword: name };
     }
     if (name.startsWith('\\') || name.includes('\\')) {
-      return { kind: 'class', name };
+      return { kind: 'named', name };
     }
-    return { kind: 'class', name };
+    return { kind: 'named', name };
   }
 
   private mergeUnion(left: TypeNode, right: TypeNode): TypeNode {

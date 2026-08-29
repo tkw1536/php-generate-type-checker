@@ -1,6 +1,15 @@
-import { buildMany, optimize, renderChecker } from './pipeline.ts';
+import {
+  buildMany,
+  buildManyNamed,
+  optimize,
+  renderChecker,
+} from './pipeline.ts';
 import type { GenerateCheckerOptions } from './options.ts';
-import { parseTypes } from '../parser/index.ts';
+import { parsePhpstanTypesFromDocblock, parseTypes } from '../parser/index.ts';
+
+export type GenerateDocblockCheckerOptions = GenerateCheckerOptions & {
+  emitPhpstanTypeAliases?: boolean;
+};
 
 /** Composed pipeline; used by fixture tests. */
 export function generateChecker(
@@ -17,5 +26,37 @@ export function generateChecker(
     ...options,
     typeString: typeString.trim(),
     typesByName,
+  });
+}
+
+/** Docblock pipeline; mirrors the UI docblock path. */
+export function generateDocblockChecker(
+  docblock: string,
+  options?: GenerateDocblockCheckerOptions,
+): string {
+  const defs = parsePhpstanTypesFromDocblock(docblock);
+  const {
+    ir: built,
+    typesByName,
+    docStringsByName,
+    phpstanTypeAliases,
+  } = buildManyNamed(
+    defs.map((d) => ({
+      name: d.name,
+      type: d.ast,
+      typeString: d.typeString,
+    })),
+    { segmentSources: defs.map((d) => d.typeString) },
+  );
+  const ir = options?.prioritizeReadabilityOverCompactness
+    ? built
+    : optimize(built);
+  return renderChecker(ir, {
+    ...options,
+    typeString: docblock.trim(),
+    typesByName,
+    docStringsByName,
+    phpstanTypeAliases,
+    emitPhpstanTypeAliases: options?.emitPhpstanTypeAliases,
   });
 }

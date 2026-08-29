@@ -49,8 +49,14 @@ export class Builder {
   private varCounter = 0;
   private readonly registry: FunctionNameRegistry;
 
-  constructor(registry: FunctionNameRegistry) {
+  private readonly aliasCheckerByName?: ReadonlyMap<string, string>;
+
+  constructor(
+    registry: FunctionNameRegistry,
+    options?: { aliasCheckerByName?: ReadonlyMap<string, string> },
+  ) {
     this.registry = registry;
+    this.aliasCheckerByName = options?.aliasCheckerByName;
   }
 
   add(type: TypeNode): string {
@@ -243,7 +249,7 @@ export class Builder {
           );
         }
         return this.emitKeywordStatements(type, subject);
-      case 'class':
+      case 'named':
       case 'literal':
       case 'range':
         return this.emitAtomicStatements(type, subject);
@@ -739,8 +745,8 @@ export class Builder {
     switch (type.kind) {
       case 'keyword':
         return this.booleanForKeyword(type.keyword, subject);
-      case 'class':
-        return this.booleanForClass(type, subject);
+      case 'named':
+        return this.booleanForNamed(type, subject);
       case 'literal':
         return this.booleanForLiteral(type, subject);
       case 'range':
@@ -791,10 +797,14 @@ export class Builder {
     return expr;
   }
 
-  private booleanForClass(
-    node: Extract<TypeNode, { kind: 'class' }>,
+  private booleanForNamed(
+    node: Extract<TypeNode, { kind: 'named' }>,
     subject: ValueRef,
   ): Expr {
+    const checker = this.aliasCheckerByName?.get(node.name);
+    if (checker !== undefined) {
+      return callCheckerExpr(checker, subject);
+    }
     if (node.name === 'closed-resource' || node.name === 'open-resource') {
       cannotBuild(
         node,

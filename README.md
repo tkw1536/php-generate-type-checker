@@ -8,7 +8,7 @@ Parse [PHPDoc types as supported by PHPStan](https://phpstan.org/writing-php-cod
 
 - **Type parser** — lexer and recursive-descent parser for PHPDoc-style types (primitives, unions, intersections, shapes, generics, callables, int ranges, and common aliases). `array{…}` and `list{…}` use a single `shape` AST: tuple-like slots have `ShapeField.key === null`, named slots use `key: type` as before.
 - **Sequential multi-type input** — `parseTypes` splits the input into several top-level types (token boundaries only, e.g. `array<string>array<int>` or `string int`; glued names like `stringint` stay one class).
-- **Docblock `@phpstan-type` input** — paste a PHPDoc block; when input starts with `/*`, extract named aliases, resolve cross-references, and emit one entry checker per alias (`is{AliasName}` or `check` / `check_N` per **Name from type**). Entry `@phpstan-assert-if-true` annotations use the alias name (e.g. `PostListResponse`), not the expanded type definition.
+- **Docblock `@phpstan-type` input** — paste a PHPDoc block; when input starts with `/*`, extract named aliases, validate alias cross-reference cycles, and emit one entry checker per alias (`is{AliasName}` or `check` / `check_N` per **Name from type**). Cross-references stay as `named` nodes in the AST; at runtime they delegate to the matching entry checker (e.g. `isPostSummary($var)`). Entry `@phpstan-assert-if-true` annotations use the alias name (e.g. `PostListResponse`), not the expanded type definition.
 - **Runtime checkers** — emits `bool` functions (or class methods) that validate `mixed $value` against each type.
 - **Checker IR pipeline** — `buildMany` → `optimize` → `render`, with JSON IR tabs in the UI for debugging.
 - **Deduped checker functions** — nested or repeated types share one helper per canonical type (e.g. `array<int>` inside a shape and inside a union).
@@ -36,7 +36,7 @@ yarn review_fixtures:generator  # interactively review generator golden output (
 Golden fixture sources live next to each module under `testdata/`:
 
 - **Parser** — [`parser.success.IN`](src/parser/testdata/parser.success.IN) (one list; blank lines and `#` comments are ignored)
-- **Generator** — [`function.IN`](src/generator/testdata/function.IN), [`public_static.IN`](src/generator/testdata/public_static.IN), and sibling files per output mode, plus [`errors.IN`](src/generator/testdata/errors.IN) for types that must throw `GenerationError`
+- **Generator** — [`function.IN`](src/generator/testdata/function.IN), [`public_static.IN`](src/generator/testdata/public_static.IN), and sibling files per output mode, plus [`docblock.IN`](src/generator/testdata/docblock.IN) / [`docblock_emit_aliases.IN`](src/generator/testdata/docblock_emit_aliases.IN) for full docblock golden PHP, and [`errors.IN`](src/generator/testdata/errors.IN) for types that must throw `GenerationError`
 
 After regenerating generator fixtures, you can walk through each case interactively:
 
@@ -55,7 +55,7 @@ Single workspace: **types or docblock input** on the left, **pipeline output** o
 | Mode             | Trigger                            | Behavior                                                                       |
 | ---------------- | ---------------------------------- | ------------------------------------------------------------------------------ |
 | Type expressions | default (does not start with `/*`) | `parseTypes` — one or more sequential types                                    |
-| Docblock aliases | input starts with `/*`             | Extract `@phpstan-type` tags → parse → resolve aliases → one checker per alias |
+| Docblock aliases | input starts with `/*`             | Extract `@phpstan-type` tags → parse → validate alias graph → one checker per alias (cross-refs call entry checkers) |
 
 The examples dropdown includes **Post list API (docblock)** — a PHPDoc block with three cross-referencing `@phpstan-type` aliases.
 
@@ -87,7 +87,7 @@ src/
 ├── parser/                  # PHPDoc type → AST
 │   ├── parser.ts            # parseType, parseTypes
 │   ├── phpstanTypeDocblock.ts   # extract @phpstan-type from docblocks
-│   ├── resolveTypeAliases.ts    # parse + resolve alias cross-refs
+│   ├── resolveTypeAliases.ts    # parse docblock aliases + validate alias graph
 │   ├── lexer.ts, ast.ts, format.ts
 │   ├── parser.test.ts
 │   └── testdata/            # parser.success.IN → parser.success.json, parser.errors.json
@@ -255,7 +255,7 @@ const php = generateChecker("list<int>", {
 
 - **Unit / integration** — `*.test.ts` next to the module (`src/parser/`, `src/generator/**/`, `src/ui/`)
 - **Parser JSON** — [`src/parser/testdata/`](src/parser/testdata/) (`yarn update_fixtures:parser` / `update-testdata.mjs`)
-- **Generator fixtures** — type lists in [`src/generator/testdata/*.IN`](src/generator/testdata/function.IN), golden PHP in matching `*.json`; exercised by [`index.test.ts`](src/generator/index.test.ts) (`yarn update_fixtures:generator` / `update-testdata.mjs`; optional human review via `yarn review_fixtures:generator` / `review-fixtures.mjs`)
+- **Generator fixtures** — type lists in [`src/generator/testdata/*.IN`](src/generator/testdata/function.IN), docblock cases in [`docblock.IN`](src/generator/testdata/docblock.IN) (multiline, split on `---`), golden PHP in matching `*.json`; exercised by [`index.test.ts`](src/generator/index.test.ts) (`yarn update_fixtures:generator` / `update-testdata.mjs`; optional human review via `yarn review_fixtures:generator` / `review-fixtures.mjs`)
 
 Run `yarn test` (Vitest).
 
@@ -265,7 +265,7 @@ Run `yarn test` (Vitest).
 | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | New syntax in type strings                                                | [`src/parser/parser.ts`](src/parser/parser.ts)                                                                                                   |
 | Multi-type splitting rules                                                | [`parseTypes`](src/parser/parser.ts)                                                                                                             |
-| Docblock extraction / alias resolution                                    | [`src/parser/phpstanTypeDocblock.ts`](src/parser/phpstanTypeDocblock.ts), [`src/parser/resolveTypeAliases.ts`](src/parser/resolveTypeAliases.ts) |
+| Docblock extraction / alias validation                                    | [`src/parser/phpstanTypeDocblock.ts`](src/parser/phpstanTypeDocblock.ts), [`src/parser/resolveTypeAliases.ts`](src/parser/resolveTypeAliases.ts) |
 | `array{…}` / `list{…}` shape AST (`ShapeField`, mixed positional + keyed) | [`src/parser/ast.ts`](src/parser/ast.ts), [`src/parser/parser.ts`](src/parser/parser.ts), [`src/parser/format.ts`](src/parser/format.ts)         |
 | New primitive / leaf checks                                               | [`builder/expr/`](src/generator/builder/expr/), [`builder/ast/`](src/generator/builder/ast/)                                                     |
 | IR for shapes / unions / collections                                      | [`builder/statements/`](src/generator/builder/statements/)                                                                                       |

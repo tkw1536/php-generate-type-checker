@@ -56,8 +56,12 @@ function canInline(
   calleeName: string,
   callee: CheckerProgram,
   currentProgram: string,
+  ir: CheckerIR,
 ): boolean {
   if (calleeName === currentProgram) {
+    return false;
+  }
+  if (ir.entries.includes(calleeName)) {
     return false;
   }
   if (wouldRecurse(callee, currentProgram)) {
@@ -72,7 +76,7 @@ function inlineCallCheckerExpr(
   programName: string,
 ): Expr | null {
   const callee = getCallee(ir, expr.name);
-  if (callee === null || !canInline(expr.name, callee, programName)) {
+  if (callee === null || !canInline(expr.name, callee, programName, ir)) {
     return null;
   }
   if (!isSingleReturn(callee)) {
@@ -135,7 +139,7 @@ function peelOrReturn(
     return null;
   }
   const callee = getCallee(ir, hit.call.name);
-  if (callee === null || !canInline(hit.call.name, callee, programName)) {
+  if (callee === null || !canInline(hit.call.name, callee, programName, ir)) {
     return null;
   }
   const other = stmt.expr.exprs.filter((_, i) => i !== hit.index);
@@ -166,7 +170,7 @@ function peelAndReturn(
     return null;
   }
   const callee = getCallee(ir, hit.call.name);
-  if (callee === null || !canInline(hit.call.name, callee, programName)) {
+  if (callee === null || !canInline(hit.call.name, callee, programName, ir)) {
     return null;
   }
   const other = stmt.expr.exprs.filter((_, i) => i !== hit.index);
@@ -205,7 +209,7 @@ function inlineReturnStmt(
 
   if (stmt.expr.kind === 'call_checker') {
     const callee = getCallee(ir, stmt.expr.name);
-    if (callee === null || !canInline(stmt.expr.name, callee, programName)) {
+    if (callee === null || !canInline(stmt.expr.name, callee, programName, ir)) {
       return null;
     }
     return substituteProgramBody(callee, stmt.expr.subject);
@@ -214,7 +218,7 @@ function inlineReturnStmt(
   if (stmt.expr.kind === 'not' && stmt.expr.expr.kind === 'call_checker') {
     const call = stmt.expr.expr;
     const callee = getCallee(ir, call.name);
-    if (callee === null || !canInline(call.name, callee, programName)) {
+    if (callee === null || !canInline(call.name, callee, programName, ir)) {
       return null;
     }
     let body = substituteProgramBody(callee, call.subject);

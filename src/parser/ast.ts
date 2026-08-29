@@ -2,8 +2,8 @@ export type TypeNode =
   // known keyword
   | { kind: 'keyword'; keyword: Keyword }
 
-  // classname (non-keyword)
-  | { kind: 'class'; name: string }
+  // class name or alias reference — resolved at codegen (alias entry checker vs instanceof)
+  | { kind: 'named'; name: string }
 
   // string literals "hello world", 'hello world'
   | { kind: 'literal'; type: 'string'; value: string, quotes: 'single' | 'double' }

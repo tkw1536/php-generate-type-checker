@@ -15,7 +15,7 @@ export function describeNode(node: TypeNode): string {
       return describeRange(node);
     case 'literal':
       return node.type === 'number' ? node.value : JSON.stringify(node.value);
-    case 'class':
+    case 'named':
       return node.name;
     case 'collection':
       return node.keyword;

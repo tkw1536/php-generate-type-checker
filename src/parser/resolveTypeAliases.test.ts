@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { parseType } from './parser.ts';
 import {
+  namedAliasReferences,
   parsePhpstanTypesFromDocblock,
   TypeAliasResolveError,
-  unresolvedAliasReferences,
 } from './resolveTypeAliases.ts';
 
 const POST_LIST_DOCBLOCK = `/**
@@ -52,39 +52,68 @@ const FORWARD_REF_DOCBLOCK = `/**
  */`;
 
 describe('parsePhpstanTypesFromDocblock', () => {
-  it('resolves forward references between aliases', () => {
+  it('keeps forward alias references as named nodes', () => {
     const defs = parsePhpstanTypesFromDocblock(FORWARD_REF_DOCBLOCK);
     expect(defs).toHaveLength(2);
     const outer = defs.find((d) => d.name === 'Outer')!;
-    expect(unresolvedAliasReferences(outer.ast, ['Inner', 'Outer'])).toEqual([]);
-    expect(outer.ast).toEqual(
-      parseType('array{inner: int}'),
-    );
+    expect(namedAliasReferences(outer.ast, ['Inner', 'Outer'])).toEqual([
+      'Inner',
+    ]);
+    expect(outer.ast).toEqual(parseType('array{inner: Inner}'));
   });
 
-  it('resolves post list cross-references', () => {
+  it('keeps post list cross-references as named nodes', () => {
     const defs = parsePhpstanTypesFromDocblock(POST_LIST_DOCBLOCK);
     const response = defs.find((d) => d.name === 'PostListResponse')!;
-    expect(
-      unresolvedAliasReferences(response.ast, defs.map((d) => d.name)),
-    ).toEqual([]);
+    expect(namedAliasReferences(response.ast, defs.map((d) => d.name))).toEqual([
+      'PaginationMeta',
+      'PostSummary',
+    ]);
     expect(response.ast.kind).toBe('shape');
+    const postsField = (
+      response.ast as Extract<typeof response.ast, { kind: 'shape' }>
+    ).fields.find((f) => f.key === 'posts');
+    expect(postsField?.value).toEqual({
+      kind: 'collection',
+      keyword: 'list',
+      value: { kind: 'named', name: 'PostSummary' },
+    });
   });
 
-  it('resolves annotation intersection shapes without bare alias class nodes', () => {
+  it('keeps annotation alias references as named nodes inside intersection shapes', () => {
     const defs = parsePhpstanTypesFromDocblock(ANNOTATION_DOCBLOCK);
     const input = defs.find((d) => d.name === 'AnnotationInput')!;
-    expect(
-      unresolvedAliasReferences(input.ast, defs.map((d) => d.name)),
-    ).toEqual([]);
+    expect(namedAliasReferences(input.ast, defs.map((d) => d.name))).toEqual([
+      'AnnotationBody',
+      'AnnotationTarget',
+    ]);
     expect(input.ast.kind).toBe('intersection');
+    const intersection = input.ast as Extract<
+      typeof input.ast,
+      { kind: 'intersection' }
+    >;
+    const shape = intersection.types[1] as Extract<
+      (typeof intersection.types)[number],
+      { kind: 'shape' }
+    >;
+    const bodyField = shape.fields.find((f) => f.key === 'body');
+    expect(bodyField?.value).toEqual({
+      kind: 'named',
+      name: 'AnnotationBody',
+    });
   });
 
   it('preserves real class names with leading backslash', () => {
     const defs = parsePhpstanTypesFromDocblock(ANNOTATION_DOCBLOCK);
     const body = defs.find((d) => d.name === 'AnnotationBody')!;
-    const intersection = body.ast as Extract<typeof body.ast, { kind: 'intersection' }>;
-    expect(intersection.types[0]).toEqual({ kind: 'class', name: '\\stdClass' });
+    const intersection = body.ast as Extract<
+      typeof body.ast,
+      { kind: 'intersection' }
+    >;
+    expect(intersection.types[0]).toEqual({
+      kind: 'named',
+      name: '\\stdClass',
+    });
     const shape = intersection.types[1] as Extract<
       typeof intersection.types[1],
       { kind: 'shape' }
@@ -93,7 +122,7 @@ describe('parsePhpstanTypesFromDocblock', () => {
     expect(elementsField?.value).toEqual({
       kind: 'collection',
       keyword: 'list',
-      value: { kind: 'class', name: '\\DOMElement' },
+      value: { kind: 'named', name: '\\DOMElement' },
     });
   });
 
