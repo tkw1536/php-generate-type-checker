@@ -7,22 +7,27 @@
     <link rel="stylesheet" href="/src/style.css">
   </head>
   <body>
+    <a class="skip-link" href="#workspace">Skip to main content</a>
+
     <header class="site-header">
       <div class="site-header-title">
         <h1>PHP Type Checker Generator</h1>
         <button
           type="button"
           class="option-help site-help"
-          aria-label="About this tool"
+          aria-label="Help: About this tool"
+          aria-describedby="help-about-tool"
           data-tooltip="Left: paste PHPStan type expressions (one or more) or a PHPDoc block starting with /*. Docblocks extract @phpstan-type aliases and generate one checker per alias. Options under the input control naming, optimization, alias handling, and PHP shape — hover each ? for details. Right: tabs follow the pipeline Type AST → IR (build) → IR (optimized) → PHP Code; output updates as you edit. Some types cannot be checked at runtime (for example callable signatures or unhandled generics) and report a generation error."
         >?</button>
+        <span id="help-about-tool" class="visually-hidden">Left: paste PHPStan type expressions (one or more) or a PHPDoc block starting with /*. Docblocks extract @phpstan-type aliases and generate one checker per alias. Options under the input control naming, optimization, alias handling, and PHP shape — hover each ? for details. Right: tabs follow the pipeline Type AST → IR (build) → IR (optimized) → PHP Code; output updates as you edit. Some types cannot be checked at runtime (for example callable signatures or unhandled generics) and report a generation error.</span>
       </div>
       <button id="theme-toggle" type="button" class="btn btn-theme" aria-label="Switch to dark mode" title="Dark mode">☾</button>
     </header>
 
-    <main class="workspace">
+    <main id="workspace" class="workspace">
       <div class="panel-grid">
-        <div class="panel panel-input">
+        <section class="panel panel-input" aria-labelledby="input-panel-heading">
+          <h2 id="input-panel-heading" class="visually-hidden">Type input</h2>
           <div class="panel-header panel-header--input">
             <select id="type-example" class="panel-header-select" aria-label="Load example type">
               <option value="">Load example…</option>
@@ -39,16 +44,17 @@
                     type="checkbox"
                     id="generate-name-by-type"
                     checked
-                    aria-label="Name functions according to their type"
                   >
                   <span>Name from type</span>
                 </label>
                 <button
                   type="button"
                   class="option-help"
-                  aria-label="About Name from type"
+                  aria-label="Help: Name from type"
+                  aria-describedby="help-name-from-type"
                   data-tooltip="When on, checkers are named from the type (e.g. isPostListResponse). When off, they use check / check_1 / …."
                 >?</button>
+                <span id="help-name-from-type" class="visually-hidden">When on, checkers are named from the type (e.g. isPostListResponse). When off, they use check / check_1 / ….</span>
               </div>
               <div class="panel-footer-option-row">
                 <label class="panel-footer-option" for="generate-prioritize-readability">
@@ -56,16 +62,17 @@
                     type="checkbox"
                     id="generate-prioritize-readability"
                     checked
-                    aria-label="Run optimizer for compact IR and PHP"
                   >
                   <span>Optimize</span>
                 </label>
                 <button
                   type="button"
                   class="option-help"
-                  aria-label="About Optimize"
+                  aria-label="Help: Optimize"
+                  aria-describedby="help-optimize"
                   data-tooltip="When on, the IR optimizer runs before PHP is rendered for more compact output. When off, PHP is rendered from IR (build)."
                 >?</button>
+                <span id="help-optimize" class="visually-hidden">When on, the IR optimizer runs before PHP is rendered for more compact output. When off, PHP is rendered from IR (build).</span>
               </div>
             </div>
             <div class="panel-footer-options" id="generate-docblock-options" hidden>
@@ -74,38 +81,40 @@
                   <input
                     type="checkbox"
                     id="generate-resolve-aliases"
-                    aria-label="Inline alias cross-references instead of calling entry checkers"
                   >
                   <span>Resolve aliases</span>
                 </label>
                 <button
                   type="button"
                   class="option-help"
-                  aria-label="About Resolve aliases"
+                  aria-label="Help: Resolve aliases"
+                  aria-describedby="help-resolve-aliases"
                   data-tooltip="When on, @phpstan-type cross-references are inlined into each alias body. When off (default), they stay as named references and call the matching entry checker."
                 >?</button>
+                <span id="help-resolve-aliases" class="visually-hidden">When on, @phpstan-type cross-references are inlined into each alias body. When off (default), they stay as named references and call the matching entry checker.</span>
               </div>
               <div class="panel-footer-option-row">
                 <label class="panel-footer-option" for="generate-emit-aliases">
                   <input
                     type="checkbox"
                     id="generate-emit-aliases"
-                    aria-label="Re-emit @phpstan-type aliases at the top of generated PHP"
                   >
                   <span>Emit aliases</span>
                 </label>
                 <button
                   type="button"
                   class="option-help"
-                  aria-label="About Emit aliases"
+                  aria-label="Help: Emit aliases"
+                  aria-describedby="help-emit-aliases"
                   data-tooltip="When on, re-emits the @phpstan-type definitions at the top of the generated PHP output."
                 >?</button>
+                <span id="help-emit-aliases" class="visually-hidden">When on, re-emits the @phpstan-type definitions at the top of the generated PHP output.</span>
               </div>
             </div>
             <div class="panel-footer-option-row panel-footer-emit-row">
               <label class="panel-footer-emit" for="generate-output-mode">
-                <span class="panel-footer-emit-label">Emit as</span>
-                <select id="generate-output-mode" class="panel-footer-select" aria-label="Emitted PHP shape">
+                <span id="emit-as-label" class="panel-footer-emit-label">Emit as</span>
+                <select id="generate-output-mode" class="panel-footer-select" aria-labelledby="emit-as-label">
                   <option value="function" selected>Function</option>
                   <option value="public_static">public static</option>
                   <option value="protected_static">protected static</option>
@@ -115,13 +124,16 @@
               <button
                 type="button"
                 class="option-help"
-                aria-label="About Emit as"
+                aria-label="Help: Emit as"
+                aria-describedby="help-emit-as"
                 data-tooltip="Shape of the emitted PHP: top-level functions, or static methods with the chosen visibility."
               >?</button>
+              <span id="help-emit-as" class="visually-hidden">Shape of the emitted PHP: top-level functions, or static methods with the chosen visibility.</span>
             </div>
           </div>
-        </div>
-        <div class="panel panel-output">
+        </section>
+        <section class="panel panel-output" aria-labelledby="output-panel-heading">
+          <h2 id="output-panel-heading" class="visually-hidden">Generated output</h2>
           <div class="panel-header output-toolbar">
             <div class="output-tabs" role="tablist" aria-label="Pipeline output (type to PHP)">
               <button
@@ -131,6 +143,7 @@
                 class="output-tab"
                 aria-selected="false"
                 aria-controls="output-panel-ast"
+                tabindex="-1"
                 data-output-tab="ast"
               >
                 Type AST
@@ -142,6 +155,7 @@
                 class="output-tab"
                 aria-selected="false"
                 aria-controls="output-panel-ir-build"
+                tabindex="-1"
                 data-output-tab="ir-build"
               >
                 IR (build)
@@ -153,6 +167,7 @@
                 class="output-tab"
                 aria-selected="false"
                 aria-controls="output-panel-ir-optimized"
+                tabindex="-1"
                 data-output-tab="ir-optimized"
               >
                 IR (optimized)
@@ -164,12 +179,20 @@
                 class="output-tab active"
                 aria-selected="true"
                 aria-controls="output-panel-php"
+                tabindex="0"
                 data-output-tab="php"
               >
                 PHP Code
               </button>
             </div>
-            <button id="output-copy" type="button" class="btn btn-copy" disabled>Copy</button>
+            <span
+              id="output-generating"
+              class="output-generating"
+              hidden
+              aria-live="polite"
+            ><span class="visually-hidden">Updating output</span></span>
+            <button id="output-copy" type="button" class="btn btn-copy" aria-label="Copy output to clipboard" disabled>Copy</button>
+            <span id="copy-status" class="visually-hidden" aria-live="polite" aria-atomic="true"></span>
           </div>
           <div class="panel-body panel-body--output panel-body--tabbed">
             <div
@@ -177,11 +200,12 @@
               class="output-tab-panel"
               role="tabpanel"
               aria-labelledby="output-tab-ast"
+              tabindex="-1"
               data-output-panel="ast"
               hidden
             >
               <div class="output-tab-panel-inner" id="ast-output-body">
-                <pre class="output-pre" id="ast-output"><code class="output-empty">Run generate to see output</code></pre>
+                <pre class="output-pre" id="ast-output" aria-label="Type AST output"><code class="output-empty">Run generate to see output</code></pre>
               </div>
             </div>
             <div
@@ -189,11 +213,12 @@
               class="output-tab-panel"
               role="tabpanel"
               aria-labelledby="output-tab-ir-build"
+              tabindex="-1"
               data-output-panel="ir-build"
               hidden
             >
               <div class="output-tab-panel-inner" id="ir-build-output-body">
-                <pre class="output-pre" id="ir-build-output"><code class="output-empty">Run generate to see output</code></pre>
+                <pre class="output-pre" id="ir-build-output" aria-label="IR (build) output"><code class="output-empty">Run generate to see output</code></pre>
               </div>
             </div>
             <div
@@ -201,11 +226,12 @@
               class="output-tab-panel"
               role="tabpanel"
               aria-labelledby="output-tab-ir-optimized"
+              tabindex="-1"
               data-output-panel="ir-optimized"
               hidden
             >
               <div class="output-tab-panel-inner" id="ir-optimized-output-body">
-                <pre class="output-pre" id="ir-optimized-output"><code class="output-empty">Run generate to see output</code></pre>
+                <pre class="output-pre" id="ir-optimized-output" aria-label="IR (optimized) output"><code class="output-empty">Run generate to see output</code></pre>
               </div>
             </div>
             <div
@@ -213,10 +239,11 @@
               class="output-tab-panel active"
               role="tabpanel"
               aria-labelledby="output-tab-php"
+              tabindex="0"
               data-output-panel="php"
             >
               <div class="output-tab-panel-inner" id="php-output-body">
-                <pre class="output-pre" id="php-output"><code class="output-empty">Run generate to see output</code></pre>
+                <pre class="output-pre" id="php-output" aria-label="PHP Code output"><code class="output-empty">Run generate to see output</code></pre>
               </div>
             </div>
           </div>
@@ -224,16 +251,16 @@
             <span><strong>Warning:</strong> Always review generated PHP before using it in production.
             Output may be incorrect or incomplete for edge cases.</span>
           </div>
-        </div>
+        </section>
       </div>
     </main>
 
     <footer class="site-footer">
       <p>
         Generate PHP 8+ type checking code for
-        <a href="https://phpstan.org/writing-php-code/phpdoc-types" target="_blank" rel="noopener noreferrer">PHPDoc types as supported by PHPStan</a> with <code>@phpstan-assert-if-true</code>.
+        <a href="https://phpstan.org/writing-php-code/phpdoc-types" target="_blank" rel="noopener noreferrer">PHPDoc types as supported by PHPStan<span class="visually-hidden"> (opens in new tab)</span></a> with <code>@phpstan-assert-if-true</code>.
         Source on
-        <a href="https://github.com/tkw1536/php-generate-type-checker" target="_blank" rel="noopener noreferrer">GitHub</a>.
+        <a href="https://github.com/tkw1536/php-generate-type-checker" target="_blank" rel="noopener noreferrer">GitHub<span class="visually-hidden"> (opens in new tab)</span></a>.
       </p>
     </footer>
 

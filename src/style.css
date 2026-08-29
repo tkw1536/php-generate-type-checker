@@ -92,6 +92,40 @@
   box-sizing: border-box;
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 100;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-150%);
+  transition: transform 0.15s ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 html {
   height: 100%;
   overflow: hidden;
@@ -242,6 +276,11 @@ body {
   border-radius: 6px;
 }
 
+.panel-header-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .panel-header.output-toolbar {
   justify-content: space-between;
   gap: 0.5rem;
@@ -254,6 +293,34 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;
+}
+
+.output-generating {
+  flex-shrink: 0;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-right: auto;
+  border: 1.5px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: output-generating-spin 0.6s linear infinite;
+}
+
+.output-generating[hidden] {
+  display: none;
+}
+
+@keyframes output-generating-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .output-generating {
+    animation: none;
+    border-color: var(--accent);
+  }
 }
 
 .output-tab {
@@ -276,6 +343,11 @@ body {
   color: var(--text);
 }
 
+.output-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .output-tab.active {
   color: var(--text);
   background: var(--bg);
@@ -293,6 +365,13 @@ body {
   padding: 0;
 }
 
+.panel-body--pending {
+  filter: blur(2.5px);
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
+}
+
 .output-tab-panel {
   display: none;
   flex: 1;
@@ -303,6 +382,11 @@ body {
 .output-tab-panel.active {
   display: flex;
   flex-direction: column;
+}
+
+.output-tab-panel:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 .output-tab-panel[hidden] {
@@ -401,6 +485,11 @@ body {
   flex-shrink: 0;
 }
 
+.panel-footer-option input[type='checkbox']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .panel-footer-emit {
   display: flex;
   align-items: center;
@@ -427,6 +516,11 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 6px;
+}
+
+.panel-footer-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .option-help {
@@ -530,6 +624,11 @@ body {
 
 .btn:hover {
   background: var(--bg);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .btn:disabled {
@@ -800,6 +899,12 @@ body {
 
 .site-footer a:hover {
   color: var(--accent-hover);
+}
+
+.site-footer a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .site-footer code {

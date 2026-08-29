@@ -5,6 +5,7 @@ import {
   type HighlightLanguage,
 } from './highlight.ts';
 import { initTheme, toggleTheme } from './theme.ts';
+import { setupHelpTooltips } from './ui/accessibility.ts';
 import { describeError, renderErrorHtml } from './ui/errorDisplay.ts';
 import { TYPE_EXAMPLES } from './ui/examples.ts';
 import {
@@ -27,7 +28,7 @@ initTheme();
 
 const DEFAULT_TYPE =
   'array{id: int, email: non-empty-string, name?: string}';
-const INPUT_DEBOUNCE_MS = 300;
+const INPUT_DEBOUNCE_MS = 250;
 
 /** Left → right in the tab bar: AST → IR build → IR optimized → PHP */
 type OutputTabId = 'ast' | 'ir-build' | 'ir-optimized' | 'php';
@@ -44,6 +45,14 @@ const outputPanels: OutputPanel[] = [];
 let activeOutputTab: OutputTabId = 'php';
 
 const copyBtn = document.querySelector<HTMLButtonElement>('#output-copy')!;
+const copyStatus = document.querySelector<HTMLElement>('#copy-status');
+let copyStatusTimeoutId: ReturnType<typeof setTimeout> | undefined;
+const OUTPUT_PRE_LABELS: Record<string, string> = {
+  'ast-output': 'Type AST output',
+  'ir-build-output': 'IR (build) output',
+  'ir-optimized-output': 'IR (optimized) output',
+  'php-output': 'PHP Code output',
+};
 
 function getPreAndCode(bodyEl: HTMLElement, preId: string): {
   pre: HTMLPreElement;
@@ -51,7 +60,9 @@ function getPreAndCode(bodyEl: HTMLElement, preId: string): {
 } {
   let pre = bodyEl.querySelector<HTMLPreElement>(`#${preId}`);
   if (!pre) {
-    bodyEl.innerHTML = `<pre class="output-pre" id="${preId}"><code></code></pre>`;
+    const label = OUTPUT_PRE_LABELS[preId];
+    const labelAttr = label ? ` aria-label="${label}"` : '';
+    bodyEl.innerHTML = `<pre class="output-pre" id="${preId}"${labelAttr}><code></code></pre>`;
     pre = bodyEl.querySelector<HTMLPreElement>(`#${preId}`)!;
   }
   const code = pre.querySelector('code')!;
@@ -389,22 +400,85 @@ function onGenerateInputChanged(): void {
   scheduleGenerate();
 }
 
-function debounce(fn: () => void, ms: number): () => void {
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  return () => {
-    if (timeoutId !== undefined) {
-      clearTimeout(timeoutId);
+function generateNow(): void {
+  cancelScheduledGenerate();
+  syncFragmentToLocation();
+  runGenerate(outputPanelSet);
+}
+
+const generatingIndicator =
+  document.querySelector<HTMLElement>('#output-generating');
+const outputBody = document.querySelector<HTMLElement>(
+  '.panel-body--output',
+);
+
+function setGeneratingIndicator(pending: boolean): void {
+  if (generatingIndicator) {
+    generatingIndicator.hidden = !pending;
+  }
+  outputBody?.classList.toggle('panel-body--pending', pending);
+}
+
+let generateTimeoutId: ReturnType<typeof setTimeout> | undefined;
+
+function cancelScheduledGenerate(): void {
+  if (generateTimeoutId !== undefined) {
+    clearTimeout(generateTimeoutId);
+    generateTimeoutId = undefined;
+  }
+  setGeneratingIndicator(false);
+}
+
+function scheduleGenerate(): void {
+  if (generateTimeoutId !== undefined) {
+    clearTimeout(generateTimeoutId);
+  }
+  setGeneratingIndicator(true);
+  generateTimeoutId = setTimeout(() => {
+    generateTimeoutId = undefined;
+    setGeneratingIndicator(false);
+    runGenerate(outputPanelSet);
+  }, INPUT_DEBOUNCE_MS);
+}
+
+function activateOutputTab(
+  tabId: OutputTabId,
+  options?: { focus?: boolean },
+): void {
+  const tabButtons = document.querySelectorAll<HTMLButtonElement>(
+    '.output-tab[data-output-tab]',
+  );
+  const tabPanels = document.querySelectorAll<HTMLElement>(
+    '.output-tab-panel[data-output-panel]',
+  );
+
+  activeOutputTab = tabId;
+
+  tabButtons.forEach((btn) => {
+    const active = btn.dataset.outputTab === tabId;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    btn.tabIndex = active ? 0 : -1;
+    if (active && options?.focus) {
+      btn.focus();
     }
-    timeoutId = setTimeout(() => {
-      timeoutId = undefined;
-      fn();
-    }, ms);
-  };
+  });
+
+  tabPanels.forEach((panel) => {
+    const active = panel.dataset.outputPanel === tabId;
+    panel.classList.toggle('active', active);
+    panel.hidden = !active;
+    panel.tabIndex = active ? 0 : -1;
+  });
+
+  syncCopyButton();
 }
 
 function setupOutputTabs(): void {
-  const tabButtons = document.querySelectorAll<HTMLButtonElement>('.output-tab[data-output-tab]');
-  const tabPanels = document.querySelectorAll<HTMLElement>('.output-tab-panel[data-output-panel]');
+  const tablist = document.querySelector<HTMLElement>('.output-tabs');
+  const tabButtons = [
+    ...document.querySelectorAll<HTMLButtonElement>('.output-tab[data-output-tab]'),
+  ];
 
   tabButtons.forEach((button) => {
     button.addEventListener('click', () => {
@@ -412,26 +486,65 @@ function setupOutputTabs(): void {
       if (!tabId) {
         return;
       }
-
-      activeOutputTab = tabId;
-
-      tabButtons.forEach((btn) => {
-        const active = btn === button;
-        btn.classList.toggle('active', active);
-        btn.setAttribute('aria-selected', active ? 'true' : 'false');
-      });
-
-      tabPanels.forEach((panel) => {
-        const active = panel.dataset.outputPanel === tabId;
-        panel.classList.toggle('active', active);
-        panel.hidden = !active;
-      });
-
-      syncCopyButton();
+      activateOutputTab(tabId);
     });
   });
-}
 
+  tablist?.addEventListener('keydown', (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement) || !target.dataset.outputTab) {
+      return;
+    }
+
+    const currentIndex = tabButtons.indexOf(target);
+    if (currentIndex < 0) {
+      return;
+    }
+
+    let nextIndex: number | undefined;
+
+    switch (event.key) {
+      case 'ArrowLeft':
+        nextIndex = (currentIndex - 1 + tabButtons.length) % tabButtons.length;
+        break;
+      case 'ArrowRight':
+        nextIndex = (currentIndex + 1) % tabButtons.length;
+        break;
+      case 'Home':
+        nextIndex = 0;
+        break;
+      case 'End':
+        nextIndex = tabButtons.length - 1;
+        break;
+      case 'Enter':
+      case ' ': {
+        event.preventDefault();
+        const tabId = target.dataset.outputTab as OutputTabId | undefined;
+        if (tabId) {
+          activateOutputTab(tabId);
+        }
+        return;
+      }
+      default:
+        return;
+    }
+
+    if (nextIndex === undefined) {
+      return;
+    }
+
+    event.preventDefault();
+    const nextTab = tabButtons[nextIndex];
+    if (!nextTab) {
+      return;
+    }
+    // Manual activation: move focus only; activate with Enter/Space or click.
+    nextTab.focus();
+  });
+
+  // Sync initial roving tabindex from markup / activeOutputTab.
+  activateOutputTab(activeOutputTab);
+}
 const astPanel = setupOutputPanel('ast', 'ast-output-body', 'ast-output', 'json');
 const irBuildPanel = setupOutputPanel(
   'ir-build',
@@ -453,8 +566,6 @@ const outputPanelSet = {
   irOptimized: irOptimizedPanel,
   php: phpPanel,
 };
-
-const scheduleGenerate = debounce(() => runGenerate(outputPanelSet), INPUT_DEBOUNCE_MS);
 
 const typeInput = document.querySelector<HTMLTextAreaElement>('#type-input')!;
 const outputModeSelect =
@@ -478,18 +589,28 @@ copyBtn.addEventListener('click', async () => {
   await navigator.clipboard.writeText(panel.rawText);
   copyBtn.textContent = 'Copied!';
   copyBtn.classList.add('copied');
-  window.setTimeout(() => {
+  if (copyStatus) {
+    copyStatus.textContent = 'Copied to clipboard';
+  }
+  if (copyStatusTimeoutId !== undefined) {
+    clearTimeout(copyStatusTimeoutId);
+  }
+  copyStatusTimeoutId = window.setTimeout(() => {
+    copyStatusTimeoutId = undefined;
     copyBtn.textContent = 'Copy';
     copyBtn.classList.remove('copied');
+    if (copyStatus) {
+      copyStatus.textContent = '';
+    }
   }, 1500);
 });
 
 typeInput.addEventListener('input', onGenerateInputChanged);
-outputModeSelect.addEventListener('change', onGenerateInputChanged);
-nameByTypeCheckbox.addEventListener('change', onGenerateInputChanged);
-prioritizeReadabilityCheckbox.addEventListener('change', onGenerateInputChanged);
-emitAliasesCheckbox.addEventListener('change', onGenerateInputChanged);
-resolveAliasesCheckbox.addEventListener('change', onGenerateInputChanged);
+outputModeSelect.addEventListener('change', generateNow);
+nameByTypeCheckbox.addEventListener('change', generateNow);
+prioritizeReadabilityCheckbox.addEventListener('change', generateNow);
+emitAliasesCheckbox.addEventListener('change', generateNow);
+resolveAliasesCheckbox.addEventListener('change', generateNow);
 
 document.querySelector<HTMLButtonElement>('#theme-toggle')!.addEventListener('click', () => {
   toggleTheme();
@@ -517,10 +638,11 @@ function setupExamples(): void {
     }
     input.value = type;
     select.value = '';
-    onGenerateInputChanged();
+    generateNow();
   });
 }
 
+setupHelpTooltips();
 setupOutputTabs();
 setupExamples();
 
