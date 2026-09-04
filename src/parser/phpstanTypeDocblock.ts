@@ -40,7 +40,7 @@ export function extractPhpstanTypes(source: string): PhpstanTypeDef[] {
 
   let i = 0;
   while (i < lines.length) {
-    const line = lines[i]!;
+    const line = lines[i];
     const tagMatch = line.content.match(
       /^\s*(?:\*+\s*)?@phpstan-type(?:\s+(.*))?$/,
     );
@@ -67,7 +67,7 @@ export function extractPhpstanTypes(source: string): PhpstanTypeDef[] {
       );
     }
 
-    const name = nameMatch[1]!;
+    const name = nameMatch[1];
     if (!ALIAS_NAME_PATTERN.test(name)) {
       throw new PhpstanTypeExtractError(
         `Invalid alias name "${name}"`,
@@ -93,7 +93,7 @@ export function extractPhpstanTypes(source: string): PhpstanTypeDef[] {
     i++;
 
     while (i < lines.length) {
-      const next = lines[i]!;
+      const next = lines[i];
       if (DOC_TAG_LINE_PATTERN.test(next.content)) {
         break;
       }
@@ -112,7 +112,7 @@ export function extractPhpstanTypes(source: string): PhpstanTypeDef[] {
       );
     }
 
-    const defEnd = i > 0 ? lines[i - 1]!.end : line.end;
+    const defEnd = i > 0 ? lines[i - 1].end : line.end;
     defs.push({ name, typeString, start: defStart, end: defEnd });
   }
 
@@ -138,7 +138,7 @@ function splitDocblockLines(source: string): DocLine[] {
   const rawLines = source.split('\n');
 
   for (let lineIndex = 0; lineIndex < rawLines.length; lineIndex++) {
-    const raw = rawLines[lineIndex]!;
+    const raw = rawLines[lineIndex];
     const lineStart = offset;
     let content = raw;
 

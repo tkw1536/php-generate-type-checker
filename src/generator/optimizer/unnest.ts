@@ -11,12 +11,12 @@ function unnestStmt(stmt: Stmt): Stmt {
     case 'if': {
       const conds = [stmt.cond];
       let body: Block = stmt.body;
-      while (body.length === 1 && body[0]!.kind === 'if') {
-        const inner = body[0]!;
+      while (body.length === 1 && body[0].kind === 'if') {
+        const inner = body[0];
         conds.push(inner.cond);
         body = inner.body;
       }
-      const cond = conds.length === 1 ? conds[0]! : andExpr(conds);
+      const cond = conds.length === 1 ? conds[0] : andExpr(conds);
       return { kind: 'if', cond, body: unnest(body) };
     }
     case 'foreach':

@@ -14,7 +14,7 @@ function isSingleReturn(program: CheckerProgram): program is CheckerProgram & {
   body: [{ kind: 'return'; expr: Expr }];
 } {
   return (
-    program.body.length === 1 && program.body[0]!.kind === 'return'
+    program.body.length === 1 && program.body[0].kind === 'return'
   );
 }
 
@@ -82,14 +82,14 @@ function inlineCallCheckerExpr(
   if (!isSingleReturn(callee)) {
     return null;
   }
-  return substituteExpr(callee.body[0]!.expr, callee.parameter, expr.subject);
+  return substituteExpr(callee.body[0].expr, callee.parameter, expr.subject);
 }
 
 function findFirstCallChecker(
   exprs: Expr[],
 ): { index: number; call: Extract<Expr, { kind: 'call_checker' }> } | null {
   for (let i = 0; i < exprs.length; i++) {
-    const e = exprs[i]!;
+    const e = exprs[i];
     if (e.kind === 'call_checker') {
       return { index: i, call: e };
     }
@@ -118,7 +118,7 @@ function inlineOrOfSingleReturnCalls(
   }
   return [
     returnStmt(
-      inlined.length === 1 ? inlined[0]! : { kind: 'or', exprs: inlined },
+      inlined.length === 1 ? inlined[0] : { kind: 'or', exprs: inlined },
     ),
   ];
 }

@@ -75,7 +75,7 @@ describe('inlineBlock', () => {
   );
 
   it('inlines return call_checker into callee body', () => {
-    const result = inlineBlock(helperIr.programs.main!.body, helperIr, 'main');
+    const result = inlineBlock(helperIr.programs.main.body, helperIr, 'main');
     expect(result.length).toBeGreaterThan(1);
     expect(
       result.some(
@@ -99,7 +99,7 @@ describe('inlineBlock', () => {
       ['main', 'isInt'],
     );
     const result = inlineBlock(
-      singleReturnIr.programs.main!.body,
+      singleReturnIr.programs.main.body,
       singleReturnIr,
       'main',
     );
@@ -153,7 +153,7 @@ describe('inlineBlock', () => {
       ['main', 'isArrayXString', 'isArrayYString'],
     );
     const result = inlineBlock(
-      nestedUnionIr.programs.main!.body,
+      nestedUnionIr.programs.main.body,
       nestedUnionIr,
       'main',
     );
@@ -201,7 +201,7 @@ describe('inlineBlock', () => {
       },
       ['main', 'helper'],
     );
-    const result = inlineBlock(peelIr.programs.main!.body, peelIr, 'main');
+    const result = inlineBlock(peelIr.programs.main.body, peelIr, 'main');
     expect(result).toEqual([
       returnStmt(
         orExpr([notExpr(helperExpr), callExpr('is_string', [refArg($v)])]),
@@ -227,7 +227,7 @@ describe('inlineBlock', () => {
       },
       ['main', 'helper'],
     );
-    const result = inlineBlock(orIr.programs.main!.body, orIr, 'main');
+    const result = inlineBlock(orIr.programs.main.body, orIr, 'main');
     expect(result).toEqual([
       {
         kind: 'if',
@@ -328,7 +328,7 @@ describe('optimize integration', () => {
     const ast = parseType('array<array{x: string}|array{y: string}>');
     const { ir: built } = buildMany([ast]);
     const optimized = optimize(built);
-    const entry = optimized.programs[optimized.order[0]!]!;
+    const entry = optimized.programs[optimized.order[0]];
     expect(blockHasCallChecker(entry.body)).toBe(false);
     expect(optimized.order.length).toBeLessThan(built.order.length);
   });
@@ -337,7 +337,7 @@ describe('optimize integration', () => {
     const ast = parseType('array{left: array{}, right: never[]}|array{}');
     const { ir: built } = buildMany([ast]);
     const optimized = optimize(built);
-    const entry = optimized.programs[optimized.order[0]!]!;
+    const entry = optimized.programs[optimized.order[0]];
     expect(blockHasCallChecker(entry.body)).toBe(false);
     expect(optimized.order.length).toBeLessThan(built.order.length);
   });

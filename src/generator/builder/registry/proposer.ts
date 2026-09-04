@@ -24,7 +24,7 @@ export class SequentialCheckNameProposer implements FunctionNameProposer {
 function slugToIsName(formatted: string): string {
   const parts = formatted.split(/[^a-zA-Z0-9]+/).filter((p) => p.length > 0);
   let slug = parts
-    .map((p) => p[0]!.toUpperCase() + p.slice(1).toLowerCase())
+    .map((p) => p[0].toUpperCase() + p.slice(1).toLowerCase())
     .join('');
   if (slug.length === 0) {
     slug = 'Type';
@@ -43,7 +43,7 @@ export function aliasToIsName(aliasName: string): string {
     return 'isType';
   }
   const normalized =
-    slug[0]!.toUpperCase() + slug.slice(1);
+    slug[0].toUpperCase() + slug.slice(1);
   const withPrefix = /^[0-9]/.test(normalized) ? `T${normalized}` : normalized;
   return `is${withPrefix}`;
 }

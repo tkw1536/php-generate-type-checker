@@ -6,7 +6,7 @@ export function combine(block: Block): Block {
   const out: Stmt[] = [];
   let i = 0;
   while (i < block.length) {
-    const stmt = block[i]!;
+    const stmt = block[i];
     if (stmt.kind !== 'if') {
       out.push(stmt);
       i++;
@@ -16,7 +16,7 @@ export function combine(block: Block): Block {
     const conds = [stmt.cond];
     let j = i + 1;
     while (j < block.length) {
-      const next = block[j]!;
+      const next = block[j];
       if (next.kind !== 'if' || !blockEquals(next.body, sharedBody)) {
         break;
       }

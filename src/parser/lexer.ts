@@ -200,7 +200,7 @@ export function tokenize(input: string): Token[] {
           }
           continue;
         }
-        if (/[a-zA-Z0-9_$\-]/.test(c)) {
+        if (/[a-zA-Z0-9_$-]/.test(c)) {
           value += c;
           i++;
           continue;

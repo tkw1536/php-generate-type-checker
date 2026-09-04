@@ -70,7 +70,7 @@ function getPreAndCode(bodyEl: HTMLElement, preId: string): {
 }
 
 function getActiveOutputPanel(): OutputPanel {
-  return outputPanels.find((p) => p.tabId === activeOutputTab) ?? outputPanels[0]!;
+  return outputPanels.find((p) => p.tabId === activeOutputTab) ?? outputPanels[0];
 }
 
 function syncCopyButton(): void {
@@ -381,7 +381,7 @@ function runGenerate(panels: {
 
   try {
     const segmentSources = parsed.segments.map((s) =>
-      parsed!.source.slice(s.start, s.end),
+      parsed.source.slice(s.start, s.end),
     );
     const built = buildMany(
       parsed.segments.map((s) => s.ast),

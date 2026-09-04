@@ -42,11 +42,11 @@ export function ifBlockMultilineOr(
     return [];
   }
   if (orParts.length === 1) {
-    return ifBlock(depth, orParts[0]!, body);
+    return ifBlock(depth, orParts[0], body);
   }
   const head: PhpLine[] = [line(depth, 'if (')];
   for (let i = 0; i < orParts.length; i++) {
-    const part = orParts[i]!.trim();
+    const part = orParts[i].trim();
     const suffix = i < orParts.length - 1 ? ' ||' : '';
     head.push(line(depth + 1, `${part}${suffix}`));
   }
@@ -62,9 +62,9 @@ export function returnMultilineAnd(depth: number, andParts: string[]): PhpLine[]
     return [line(depth, `return ${andParts[0]};`)];
   }
   const out: PhpLine[] = [line(depth, 'return (')];
-  out.push(line(depth + 1, andParts[0]!.trim()));
+  out.push(line(depth + 1, andParts[0].trim()));
   for (let i = 1; i < andParts.length; i++) {
-    out.push(line(depth + 1, `&& ${andParts[i]!.trim()}`));
+    out.push(line(depth + 1, `&& ${andParts[i].trim()}`));
   }
   out.push(line(depth, ');'));
   return out;

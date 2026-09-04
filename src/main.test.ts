@@ -280,7 +280,7 @@ describe('app UI (main.ts)', () => {
     await copyBtn.click();
 
     expect(writeText).toHaveBeenCalledOnce();
-    const copied = writeText.mock.calls[0]![0] as string;
+    const copied = writeText.mock.calls[0][0] as string;
     expect(copied).toContain('"ast"');
     expect(copied).not.toMatch(/^function /m);
     expect(copyBtn.textContent).toBe('Copied!');
@@ -364,7 +364,7 @@ describe('app UI (main.ts)', () => {
     await copyBtn.click();
 
     expect(writeText).toHaveBeenCalledOnce();
-    expect(writeText.mock.calls[0]![0]).toContain('function');
+    expect(writeText.mock.calls[0][0]).toContain('function');
     expect(copyBtn.textContent).toBe('Copied!');
     expect(document.querySelector('#copy-status')!.textContent).toBe(
       'Copied to clipboard',

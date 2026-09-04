@@ -60,7 +60,7 @@ function appendTrailingOperator(lines: PhpLine[], suffix: string): void {
   if (lines.length === 0) {
     return;
   }
-  const last = lines[lines.length - 1]!;
+  const last = lines[lines.length - 1];
   lines[lines.length - 1] = { depth: last.depth, text: last.text + suffix };
 }
 
@@ -77,7 +77,7 @@ function renderArg(arg: Arg, opts: RenderPhpOptions): string {
       return renderPhpScalarLiteral(arg.value);
     case 'call': {
       if (arg.name === '' && arg.args.length === 1) {
-        return renderArg(arg.args[0]!, opts);
+        return renderArg(arg.args[0], opts);
       }
       const args = arg.args.map((a) => renderArg(a, opts)).join(', ');
       return `${arg.name}(${args})`;
@@ -116,7 +116,7 @@ export function renderExpr(expr: Expr, opts: RenderPhpOptions = {}): string {
       return expr.exprs.map((e) => renderOperand(e, opts)).join(' || ');
     case 'call': {
       if (expr.name === '' && expr.args.length === 1) {
-        return renderArg(expr.args[0]!, opts);
+        return renderArg(expr.args[0], opts);
       }
       const args = expr.args.map((a) => renderArg(a, opts)).join(', ');
       return `${expr.name}(${args})`;
@@ -146,7 +146,7 @@ function renderCompoundOperandLines(
   }
   const inner = renderExprLayout(expr, depth, opts, true);
   if (inner.length === 1) {
-    return [line(depth, `(${inner[0]!.text})`)];
+    return [line(depth, `(${inner[0].text})`)];
   }
   return [
     line(depth, '('),
@@ -169,7 +169,7 @@ function renderJunctionLines(
     if (i > 0) {
       appendTrailingOperator(lines, suffix);
     }
-    const e = expr.exprs[i]!;
+    const e = expr.exprs[i];
     if (isLeaf(e)) {
       lines.push(line(partDepth, renderExpr(e, opts)));
     } else {
@@ -212,7 +212,7 @@ function renderExprLayout(
     case 'and':
     case 'or':
       if (expr.exprs.length === 1) {
-        return renderExprLayout(expr.exprs[0]!, depth, opts, groupParens);
+        return renderExprLayout(expr.exprs[0], depth, opts, groupParens);
       }
       if (expr.exprs.every(isLeaf)) {
         return renderJunctionLines(expr, depth, opts, false);

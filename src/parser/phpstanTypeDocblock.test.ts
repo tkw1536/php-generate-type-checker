@@ -74,10 +74,10 @@ describe('extractPhpstanTypes', () => {
       'PaginationMeta',
       'PostListResponse',
     ]);
-    expect(defs[0]!.typeString).toBe(
+    expect(defs[0].typeString).toBe(
       'array{ id: positive-int, slug: non-empty-string, title: string }',
     );
-    expect(defs[2]!.typeString).toBe(
+    expect(defs[2].typeString).toBe(
       'array{ posts: list<PostSummary>, meta: PaginationMeta }',
     );
   });
@@ -91,9 +91,9 @@ describe('extractPhpstanTypes', () => {
       'AnnotationInput',
       'Annotation',
     ]);
-    expect(defs[0]!.typeString).toContain('\\stdClass&object{');
-    expect(defs[0]!.typeString).toContain('list<\\DOMElement>');
-    expect(defs[2]!.typeString).toContain('body: AnnotationBody');
+    expect(defs[0].typeString).toContain('\\stdClass&object{');
+    expect(defs[0].typeString).toContain('list<\\DOMElement>');
+    expect(defs[2].typeString).toContain('body: AnnotationBody');
   });
 
   it('extracts single-line @phpstan-type', () => {
@@ -113,7 +113,7 @@ describe('extractPhpstanTypes', () => {
  * @phpstan-type Bar string
  */`);
     expect(defs).toHaveLength(1);
-    expect(defs[0]!.name).toBe('Bar');
+    expect(defs[0].name).toBe('Bar');
   });
 
   it('throws when input is not a docblock', () => {

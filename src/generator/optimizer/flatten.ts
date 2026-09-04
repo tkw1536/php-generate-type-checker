@@ -6,12 +6,12 @@ export function flatten(block: Block): Block {
   if (block.length < 2) {
     return block;
   }
-  const last = block[block.length - 1]!;
-  const prev = block[block.length - 2]!;
+  const last = block[block.length - 1];
+  const prev = block[block.length - 2];
   if (last.kind !== 'return' || prev.kind !== 'if' || prev.body.length !== 1) {
     return block;
   }
-  const inner = prev.body[0]!;
+  const inner = prev.body[0];
   if (inner.kind !== 'return') {
     return block;
   }

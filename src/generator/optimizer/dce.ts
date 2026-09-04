@@ -8,7 +8,7 @@ function blockMayFallThrough(block: Block): boolean {
   if (block.length === 0) {
     return true;
   }
-  return block[block.length - 1]!.kind !== 'return';
+  return block[block.length - 1].kind !== 'return';
 }
 
 export function dce(block: Block): Block {

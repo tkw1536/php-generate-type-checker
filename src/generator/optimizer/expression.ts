@@ -174,7 +174,7 @@ function normalizeAnd(exprs: Expr[]): Expr {
     return boolLit(false);
   }
   if (flat.length === 1) {
-    return flat[0]!;
+    return flat[0];
   }
   return { kind: 'and', exprs: flat };
 }
@@ -197,7 +197,7 @@ function normalizeOr(exprs: Expr[]): Expr {
     return boolLit(true);
   }
   if (flat.length === 1) {
-    return flat[0]!;
+    return flat[0];
   }
   return { kind: 'or', exprs: flat };
 }
@@ -219,8 +219,8 @@ function negatedInner(expr: Expr): Expr | null {
 function hasContradiction(exprs: Expr[]): boolean {
   for (let i = 0; i < exprs.length; i++) {
     for (let j = i + 1; j < exprs.length; j++) {
-      const a = exprs[i]!;
-      const b = exprs[j]!;
+      const a = exprs[i];
+      const b = exprs[j];
       const na = negatedInner(a);
       const nb = negatedInner(b);
       if (na !== null && equals(na, b)) {
@@ -285,7 +285,7 @@ function intersectOperands(armLists: Expr[][]): Expr[] {
     return [];
   }
   const [first, ...rest] = armLists;
-  return first!.filter((operand) =>
+  return first.filter((operand) =>
     rest.every((arm) => exprInList(operand, arm)),
   );
 }
@@ -299,7 +299,7 @@ function remainderAndExpr(remainder: Expr[]): Expr {
     return boolLit(true);
   }
   if (remainder.length === 1) {
-    return remainder[0]!;
+    return remainder[0];
   }
   return andExpr(remainder);
 }
@@ -309,7 +309,7 @@ function remainderOrExpr(remainder: Expr[]): Expr {
     return boolLit(false);
   }
   if (remainder.length === 1) {
-    return remainder[0]!;
+    return remainder[0];
   }
   return orExpr(remainder);
 }

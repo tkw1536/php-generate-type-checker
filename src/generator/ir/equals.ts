@@ -13,13 +13,13 @@ export function equals(a: Expr, b: Expr): boolean {
       return (
         b.kind === 'and' &&
         a.exprs.length === b.exprs.length &&
-        a.exprs.every((e, i) => equals(e, b.exprs[i]!))
+        a.exprs.every((e, i) => equals(e, b.exprs[i]))
       );
     case 'or':
       return (
         b.kind === 'or' &&
         a.exprs.length === b.exprs.length &&
-        a.exprs.every((e, i) => equals(e, b.exprs[i]!))
+        a.exprs.every((e, i) => equals(e, b.exprs[i]))
       );
     case 'call':
       return (
@@ -55,7 +55,7 @@ function argsEqual(a: Arg[], b: Arg[]): boolean {
   if (a.length !== b.length) {
     return false;
   }
-  return a.every((arg, i) => argEquals(arg, b[i]!));
+  return a.every((arg, i) => argEquals(arg, b[i]));
 }
 
 function argEquals(a: Arg, b: Arg): boolean {
@@ -107,7 +107,7 @@ export function blockEquals(a: Block, b: Block): boolean {
   if (a.length !== b.length) {
     return false;
   }
-  return a.every((stmt, i) => stmtEquals(stmt, b[i]!));
+  return a.every((stmt, i) => stmtEquals(stmt, b[i]));
 }
 
 export function stmtEquals(a: Stmt, b: Stmt): boolean {

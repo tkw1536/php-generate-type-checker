@@ -73,13 +73,13 @@ function errorsToFixtures(cases: ErrorCase[]): GeneratorFixture[] {
 /** All generator golden fixtures from `generator/testdata/*.json`. */
 export function loadFixtures(): GeneratorFixture[] {
   return [
-    ...successToFixtures(functionCases as SuccessCase[], 'function'),
-    ...successToFixtures(publicStaticCases as SuccessCase[], 'public_static'),
-    ...successToFixtures(protectedStaticCases as SuccessCase[], 'protected_static'),
-    ...successToFixtures(privateStaticCases as SuccessCase[], 'private_static'),
+    ...successToFixtures(functionCases, 'function'),
+    ...successToFixtures(publicStaticCases, 'public_static'),
+    ...successToFixtures(protectedStaticCases, 'protected_static'),
+    ...successToFixtures(privateStaticCases, 'private_static'),
     ...docblockToFixtures(docblockCases as DocblockCase[]),
     ...docblockToFixtures(docblockEmitAliasesCases as DocblockCase[]),
-    ...errorsToFixtures(errorsCases as ErrorCase[]),
+    ...errorsToFixtures(errorsCases),
   ].sort((a, b) => a.name.localeCompare(b.name));
 }
 

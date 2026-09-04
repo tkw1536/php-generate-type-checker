@@ -42,12 +42,12 @@ describe('substituteFacts', () => {
       },
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const outerIf = result[0]!;
+    const outerIf = result[0];
     expect(outerIf.kind).toBe('if');
     if (outerIf.kind !== 'if') {
       return;
     }
-    const ret = outerIf.body[0]!;
+    const ret = outerIf.body[0];
     expect(ret.kind).toBe('return');
     if (ret.kind !== 'return') {
       return;
@@ -66,7 +66,7 @@ describe('substituteFacts', () => {
       { kind: 'if', cond: orExpr([isArray, isInt]), body: [returnStmt(boolLit(false))] },
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const secondIf = result[1]!;
+    const secondIf = result[1];
     expect(secondIf.kind).toBe('if');
     if (secondIf.kind !== 'if') {
       return;
@@ -85,12 +85,12 @@ describe('substituteFacts', () => {
       },
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const outerIf = result[0]!;
+    const outerIf = result[0];
     expect(outerIf.kind).toBe('if');
     if (outerIf.kind !== 'if') {
       return;
     }
-    const innerIf = outerIf.body[0]!;
+    const innerIf = outerIf.body[0];
     expect(innerIf.kind).toBe('if');
     if (innerIf.kind !== 'if') {
       return;
@@ -108,12 +108,12 @@ describe('substituteFacts', () => {
       },
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const outerIf = result[0]!;
+    const outerIf = result[0];
     expect(outerIf.kind).toBe('if');
     if (outerIf.kind !== 'if') {
       return;
     }
-    const ret = outerIf.body[0]!;
+    const ret = outerIf.body[0];
     expect(ret.kind).toBe('return');
     if (ret.kind !== 'return') {
       return;
@@ -187,7 +187,7 @@ describe('applyKnownFacts', () => {
       },
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const secondIf = result[1]!;
+    const secondIf = result[1];
     expect(secondIf.kind).toBe('if');
     if (secondIf.kind !== 'if') {
       return;
@@ -212,7 +212,7 @@ describe('applyKnownFacts', () => {
       returnStmt(boolLit(true)),
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const secondIf = result[1]!;
+    const secondIf = result[1];
     expect(secondIf.kind).toBe('if');
     if (secondIf.kind !== 'if') {
       return;
@@ -239,12 +239,12 @@ describe('applyKnownFacts', () => {
       },
     ];
     const result = applyKnownFacts(block, '$value', env);
-    const foreachStmt = result[0]!;
+    const foreachStmt = result[0];
     expect(foreachStmt.kind).toBe('foreach');
     if (foreachStmt.kind !== 'foreach') {
       return;
     }
-    const innerIf = foreachStmt.body[0]!;
+    const innerIf = foreachStmt.body[0];
     expect(innerIf.kind).toBe('if');
     if (innerIf.kind !== 'if') {
       return;
@@ -258,7 +258,7 @@ describe('applyKnownFacts', () => {
       { kind: 'if', cond: isArray, body: [returnStmt(boolLit(false))] },
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const secondIf = result[1]!;
+    const secondIf = result[1];
     expect(secondIf.kind).toBe('if');
     if (secondIf.kind !== 'if') {
       return;
@@ -277,7 +277,7 @@ describe('applyKnownFacts', () => {
       { kind: 'if', cond: isArray, body: [returnStmt(boolLit(false))] },
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const secondIf = result[1]!;
+    const secondIf = result[1];
     expect(secondIf.kind).toBe('if');
     if (secondIf.kind !== 'if') {
       return;
@@ -297,12 +297,12 @@ describe('applyKnownFacts', () => {
       },
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const outerIf = result[0]!;
+    const outerIf = result[0];
     expect(outerIf.kind).toBe('if');
     if (outerIf.kind !== 'if') {
       return;
     }
-    const innerIf = outerIf.body[0]!;
+    const innerIf = outerIf.body[0];
     expect(innerIf.kind).toBe('if');
     if (innerIf.kind !== 'if') {
       return;
@@ -316,7 +316,7 @@ describe('applyKnownFacts', () => {
       failIfStmt(isArray),
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const secondIf = result[1]!;
+    const secondIf = result[1];
     expect(secondIf.kind).toBe('if');
     if (secondIf.kind !== 'if') {
       return;

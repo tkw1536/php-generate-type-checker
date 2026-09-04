@@ -61,7 +61,7 @@ class Renderer {
       return '';
     }
     if (entrySpecs.length === 1) {
-      const entry = entrySpecs[0]!;
+      const entry = entrySpecs[0];
       return wrapChecker(
         entry.docType,
         entry.body,

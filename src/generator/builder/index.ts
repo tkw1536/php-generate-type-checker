@@ -780,7 +780,7 @@ export class Builder {
       keyword === 'non-empty-literal-string'
     ) {
       cannotBuild(
-        { kind: 'keyword', keyword } as TypeNode,
+        { kind: 'keyword', keyword },
         'Cannot generate a runtime check for literal-string types: PHP cannot verify PHPStan literal-string semantics at runtime',
       );
     }
@@ -851,7 +851,7 @@ export class Builder {
       parts.push(binExpr('<=', s, literalArg(String(node.max))));
     }
     if (parts.length === 1) {
-      return parts[0]!;
+      return parts[0];
     }
     return andExpr(parts);
   }
@@ -1028,7 +1028,7 @@ function shapeListElementType(
   node: Extract<TypeNode, { kind: 'shape' }>,
 ): TypeNode {
   if (node.fields.length === 1) {
-    return node.fields[0]!.value;
+    return node.fields[0].value;
   }
   return { kind: 'keyword', keyword: 'mixed' };
 }
