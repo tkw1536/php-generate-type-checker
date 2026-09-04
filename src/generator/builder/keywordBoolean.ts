@@ -9,11 +9,15 @@ import {
   orExpr,
   refArg,
 } from '../ir/index.ts';
+import { enumStringKeywordBoolean } from './classString.ts';
 
 export function keywordToBoolean(
   keyword: string,
   subject: ValueRef,
 ): Expr | null {
+  if (keyword === 'enum-string') {
+    return enumStringKeywordBoolean(subject);
+  }
   const s = refArg(subject);
   return (
     primitiveKeyword(keyword, s) ??
@@ -125,11 +129,6 @@ function stringKeywordSimple(keyword: string, s: Arg): Expr | null {
       return andExpr([
         callExpr('is_string', [s]),
         callExpr('class_exists', [s]),
-      ]);
-    case 'enum-string':
-      return andExpr([
-        callExpr('is_string', [s]),
-        callExpr('enum_exists', [s]),
       ]);
     case 'numeric-string':
       return andExpr([

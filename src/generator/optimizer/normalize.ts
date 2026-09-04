@@ -1,6 +1,7 @@
 import type { Expr } from '../ir/types.ts';
 import { andExpr, boolLit, notExpr, orExpr } from '../ir/index.ts';
 import { equals } from '../ir/equals.ts';
+import { absorbImpliedOperands } from './implies.ts';
 import { sortOperands } from './normalize.order.ts';
 
 export function normalizeExpr(expr: Expr): Expr {
@@ -52,6 +53,7 @@ function normalizeAnd(exprs: readonly Expr[]): Expr {
   if (flat.length === 0) {
     return boolLit(true);
   }
+  flat = absorbImpliedOperands(flat, 'and');
   flat = sortOperands(dedupeOperands(flat));
   if (hasContradiction(flat)) {
     return boolLit(false);
@@ -75,6 +77,7 @@ function normalizeOr(exprs: readonly Expr[]): Expr {
   if (flat.length === 0) {
     return boolLit(false);
   }
+  flat = absorbImpliedOperands(flat, 'or');
   flat = sortOperands(dedupeOperands(flat));
   if (hasTautology(flat)) {
     return boolLit(true);

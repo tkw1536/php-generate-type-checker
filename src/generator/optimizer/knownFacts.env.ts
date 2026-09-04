@@ -8,6 +8,7 @@ import {
 } from '../ir/index.ts';
 import { equals } from '../ir/equals.ts';
 import { negateBinOp } from './expression.ts';
+import { isAAllowStringSubject } from './implies.ts';
 
 export type FactEnv = {
   readonly trueFacts: readonly Expr[];
@@ -36,43 +37,50 @@ export function withTrueFact(env: FactEnv, expr: Expr, flags?: Flags): FactEnv {
     return next;
   }
 
-  // add derived facts.
   next = { ...next, trueFacts: [...next.trueFacts, expr] };
+  return deriveTrueFacts(next, expr, flags);
+}
+
+function deriveTrueFacts(env: FactEnv, expr: Expr, flags?: Flags): FactEnv {
+  let next = env;
   switch (expr.kind) {
     case 'and':
       for (const conjunct of expr.exprs) {
         next = withTrueFact(next, conjunct);
       }
-      break;
+      return next;
     case 'bin':
-      next = withTrueFact(
+      return withTrueFact(
         next,
         binExpr(negateBinOp(expr.op), expr.right, expr.left),
       );
-      break;
     case 'not':
-      next = withFalseFact(next, expr.expr);
-      break;
+      return withFalseFact(next, expr.expr);
     case 'or':
       if (flags?.skipDeMorgan !== true) {
         // x || y => !!(x || y) => !(!x && !y)
-        next = withFalseFact(next, andExpr(expr.exprs.map(notExpr)), {
+        return withFalseFact(next, andExpr(expr.exprs.map(notExpr)), {
           skipDeMorgan: true,
         });
       }
-      break;
+      return next;
     case 'instanceof':
       // `$x instanceof T` implies `is_object($x)`.
-      next = withTrueFact(next, callExpr('is_object', [expr.subject]));
-      break;
+      return withTrueFact(next, callExpr('is_object', [expr.subject]));
+    case 'call': {
+      const subject = isAAllowStringSubject(expr);
+      if (subject !== null) {
+        // `is_a($x, T::class, TRUE)` implies `class_exists($x)`.
+        return withTrueFact(next, callExpr('class_exists', [subject]));
+      }
+      return next;
+    }
     case 'bool':
-    case 'call':
     case 'call_checker':
-      break;
+      return next;
     default:
       throw new Error('never reached');
   }
-  return next;
 }
 
 export function withFalseFact(

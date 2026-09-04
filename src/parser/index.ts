@@ -42,3 +42,8 @@ export type {
   CallableParam,
 } from './ast.ts';
 export { isKeyword as isPrimitiveName } from './ast.ts';
+export {
+  isAllowedNamedType,
+  isPseudoNamedType,
+  isValidPhpClassName,
+} from './phpClassName.ts';

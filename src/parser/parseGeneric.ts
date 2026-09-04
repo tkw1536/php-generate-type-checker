@@ -1,6 +1,7 @@
 import type { TypeNode } from './ast.ts';
 import { isKeyword } from './ast.ts';
 import { ParseError } from './parseError.ts';
+import { isAllowedNamedType } from './phpClassName.ts';
 import type { TokenReader } from './tokenReader.ts';
 
 /** Host methods required to parse generics and int ranges. */
@@ -125,15 +126,15 @@ function genericCollectionToNode(
   };
 }
 
-export function identifierToNode(name: string): TypeNode {
+export function identifierToNode(name: string, pos: number): TypeNode {
   if (name === 'null') {
     return { kind: 'keyword', keyword: 'null' };
   }
   if (isKeyword(name)) {
     return { kind: 'keyword', keyword: name };
   }
-  if (name.startsWith('\\') || name.includes('\\')) {
-    return { kind: 'named', name };
+  if (!isAllowedNamedType(name)) {
+    throw new ParseError(`Invalid PHP class name: "${name}"`, pos);
   }
   return { kind: 'named', name };
 }

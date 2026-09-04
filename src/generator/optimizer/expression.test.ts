@@ -160,15 +160,12 @@ const SIMPLIFY_CASES = [
     andExpr([isInt, isString]),
   ],
   [
-    'reorder is_object before instanceof to instanceof first',
+    'absorb is_object under instanceof in and',
     andExpr([
       callExpr('is_object', [refArg($v)]),
       instanceofExpr(refArg($v), 'Foo'),
     ]),
-    andExpr([
-      instanceofExpr(refArg($v), 'Foo'),
-      callExpr('is_object', [refArg($v)]),
-    ]),
+    instanceofExpr(refArg($v), 'Foo'),
   ],
   [
     'reorder property_exists after instanceof',
@@ -182,7 +179,7 @@ const SIMPLIFY_CASES = [
     ]),
   ],
   [
-    'flatten nested and then reorder type proofs first',
+    'absorb is_object after flatten with instanceof and property_exists',
     andExpr([
       andExpr([
         callExpr('is_object', [refArg($v)]),
@@ -192,9 +189,51 @@ const SIMPLIFY_CASES = [
     ]),
     andExpr([
       instanceofExpr(refArg($v), 'Foo'),
-      callExpr('is_object', [refArg($v)]),
       callExpr('property_exists', [refArg($v), literalArg("'a'")]),
     ]),
+  ],
+  [
+    'absorb is_a under class_exists in or',
+    orExpr([
+      callExpr('is_a', [
+        refArg($v),
+        literalArg('MyClass::class'),
+        literalArg('true'),
+      ]),
+      callExpr('class_exists', [refArg($v)]),
+    ]),
+    callExpr('class_exists', [refArg($v)]),
+  ],
+  [
+    'absorb is_a under class_exists in and',
+    andExpr([
+      callExpr('is_a', [
+        refArg($v),
+        literalArg('MyClass::class'),
+        literalArg('true'),
+      ]),
+      callExpr('class_exists', [refArg($v)]),
+    ]),
+    callExpr('is_a', [
+      refArg($v),
+      literalArg('MyClass::class'),
+      literalArg('true'),
+    ]),
+  ],
+  [
+    'factor is_string then absorb is_a under class_exists',
+    andExpr([
+      isString,
+      orExpr([
+        callExpr('is_a', [
+          refArg($v),
+          literalArg('IAmValid::class'),
+          literalArg('true'),
+        ]),
+        callExpr('class_exists', [refArg($v)]),
+      ]),
+    ]),
+    andExpr([isString, callExpr('class_exists', [refArg($v)])]),
   ],
 ] as [string, Expr, Expr][];
 

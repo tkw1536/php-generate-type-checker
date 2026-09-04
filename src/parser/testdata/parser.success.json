@@ -392,6 +392,155 @@
     }
   },
   {
+    "source": "class-string<Test>",
+    "ast": {
+      "kind": "generic",
+      "name": "class-string",
+      "typeArgs": [
+        {
+          "kind": "named",
+          "name": "Test"
+        }
+      ]
+    }
+  },
+  {
+    "source": "class-string<\\Foo\\Bar>",
+    "ast": {
+      "kind": "generic",
+      "name": "class-string",
+      "typeArgs": [
+        {
+          "kind": "named",
+          "name": "\\Foo\\Bar"
+        }
+      ]
+    }
+  },
+  {
+    "source": "class-string<A|B>",
+    "ast": {
+      "kind": "generic",
+      "name": "class-string",
+      "typeArgs": [
+        {
+          "kind": "union",
+          "types": [
+            {
+              "kind": "named",
+              "name": "A"
+            },
+            {
+              "kind": "named",
+              "name": "B"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "source": "class-string<A&B>",
+    "ast": {
+      "kind": "generic",
+      "name": "class-string",
+      "typeArgs": [
+        {
+          "kind": "intersection",
+          "types": [
+            {
+              "kind": "named",
+              "name": "A"
+            },
+            {
+              "kind": "named",
+              "name": "B"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "source": "class-string<(A|B)&C>",
+    "ast": {
+      "kind": "generic",
+      "name": "class-string",
+      "typeArgs": [
+        {
+          "kind": "intersection",
+          "types": [
+            {
+              "kind": "union",
+              "types": [
+                {
+                  "kind": "named",
+                  "name": "A"
+                },
+                {
+                  "kind": "named",
+                  "name": "B"
+                }
+              ]
+            },
+            {
+              "kind": "named",
+              "name": "C"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "source": "interface-string<Test>",
+    "ast": {
+      "kind": "generic",
+      "name": "interface-string",
+      "typeArgs": [
+        {
+          "kind": "named",
+          "name": "Test"
+        }
+      ]
+    }
+  },
+  {
+    "source": "enum-string<MyEnum>",
+    "ast": {
+      "kind": "generic",
+      "name": "enum-string",
+      "typeArgs": [
+        {
+          "kind": "named",
+          "name": "MyEnum"
+        }
+      ]
+    }
+  },
+  {
+    "source": "enum-string<A|B>",
+    "ast": {
+      "kind": "generic",
+      "name": "enum-string",
+      "typeArgs": [
+        {
+          "kind": "union",
+          "types": [
+            {
+              "kind": "named",
+              "name": "A"
+            },
+            {
+              "kind": "named",
+              "name": "B"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
     "source": "42",
     "ast": {
       "kind": "literal",

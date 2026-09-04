@@ -146,7 +146,7 @@ class Parser extends TokenCursor {
     if (this.check('lt')) {
       return parseGeneric(this, name);
     }
-    return identifierToNode(name);
+    return identifierToNode(name, this.previous().pos);
   }
 
   mergeUnion(left: TypeNode, right: TypeNode): TypeNode {

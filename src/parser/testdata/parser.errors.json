@@ -14,5 +14,33 @@
   {
     "input": "int<5, 2>",
     "messageContains": "Invalid int range"
+  },
+  {
+    "input": "i-am-not-a-valid-class",
+    "messageContains": "Invalid PHP class name"
+  },
+  {
+    "input": "class-string<i-am-not-a-valid-class>",
+    "messageContains": "Invalid PHP class name"
+  },
+  {
+    "input": "empty-scalar",
+    "messageContains": "Invalid PHP class name"
+  },
+  {
+    "input": "never-return",
+    "messageContains": "Invalid PHP class name"
+  },
+  {
+    "input": "never-returns",
+    "messageContains": "Invalid PHP class name"
+  },
+  {
+    "input": "no-return",
+    "messageContains": "Invalid PHP class name"
+  },
+  {
+    "input": "non-empty-scalar",
+    "messageContains": "Invalid PHP class name"
   }
 ]

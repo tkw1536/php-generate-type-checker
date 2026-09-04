@@ -5,6 +5,7 @@ import {
   callExpr,
   failIfStmt,
   instanceofExpr,
+  literalArg,
   notExpr,
   orExpr,
   refArg,
@@ -112,6 +113,18 @@ function instanceofImpliesIsObjectInAnd(): void {
   ).toEqual(andExpr([isInstance, boolLit(true)]));
 }
 
+function isAImpliesClassExistsInAnd(): void {
+  const isA = callExpr('is_a', [
+    refArg($v),
+    literalArg('MyClass::class'),
+    literalArg('true'),
+  ]);
+  const classExists = callExpr('class_exists', [refArg($v)]);
+  expect(substituteFacts(andExpr([isA, classExists]), emptyFactEnv())).toEqual(
+    andExpr([isA, boolLit(true)]),
+  );
+}
+
 const EXIT_CASES = [
   ['return only', [returnStmt(boolLit(true))], true],
   [
@@ -177,6 +190,10 @@ describe('substituteFacts', () => {
   it(
     'replaces is_object with true after instanceof in and',
     instanceofImpliesIsObjectInAnd,
+  );
+  it(
+    'replaces class_exists with true after is_a in and',
+    isAImpliesClassExistsInAnd,
   );
 });
 

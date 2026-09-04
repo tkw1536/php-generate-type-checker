@@ -35,9 +35,20 @@ non-positive-int
 non-negative-int
 non-zero-int
 class-string
+class-string<MyClass>
+class-string<\Foo\Bar>
+class-string<A|B>
+class-string<A&B>
+class-string<(A|B)&C>
+class-string<IAmValid>|class-string
+class-string|class-string<IAmValid>
 interface-string
+interface-string<MyInterface>
+interface-string<A|B>
 trait-string
 enum-string
+enum-string<MyEnum>
+enum-string<A|B>
 
 numeric-string
 callable-string
@@ -154,10 +165,5 @@ array<string, string>
 array<string>|array<int>
 callable-array
 callable-object
-empty-scalar
 list<mixed>|list<string>
 list<string>|array<mixed>
-never-return
-never-returns
-no-return
-non-empty-scalar

@@ -116,8 +116,44 @@
     "expected": "/** @phpstan-assert-if-true class-string $value */\nfunction isClassString(mixed $value): bool\n{\n    return (is_string($value) && class_exists($value));\n}\n"
   },
   {
+    "input": "class-string<MyClass>",
+    "expected": "/** @phpstan-assert-if-true class-string<MyClass> $value */\nfunction isClassStringMyclass(mixed $value): bool\n{\n    return (is_string($value) && is_a($value, MyClass::class, TRUE));\n}\n"
+  },
+  {
+    "input": "class-string<\\Foo\\Bar>",
+    "expected": "/** @phpstan-assert-if-true class-string<\\Foo\\Bar> $value */\nfunction isClassStringFooBar(mixed $value): bool\n{\n    return (is_string($value) && is_a($value, \\Foo\\Bar::class, TRUE));\n}\n"
+  },
+  {
+    "input": "class-string<A|B>",
+    "expected": "/** @phpstan-assert-if-true class-string<A|B> $value */\nfunction isClassStringAB(mixed $value): bool\n{\n    return (\n        is_string($value) &&\n        (\n            is_a($value, A::class, TRUE) ||\n            is_a($value, B::class, TRUE)\n        )\n    );\n}\n"
+  },
+  {
+    "input": "class-string<A&B>",
+    "expected": "/** @phpstan-assert-if-true class-string<A&B> $value */\nfunction isClassStringAB(mixed $value): bool\n{\n    return (is_string($value) && is_a($value, A::class, TRUE) && is_a($value, B::class, TRUE));\n}\n"
+  },
+  {
+    "input": "class-string<(A|B)&C>",
+    "expected": "/** @phpstan-assert-if-true class-string<(A|B)&C> $value */\nfunction isClassStringABC(mixed $value): bool\n{\n    return (\n        is_string($value) &&\n        is_a($value, C::class, TRUE) &&\n        (\n            is_a($value, A::class, TRUE) ||\n            is_a($value, B::class, TRUE)\n        )\n    );\n}\n"
+  },
+  {
+    "input": "class-string<IAmValid>|class-string",
+    "expected": "/** @phpstan-assert-if-true class-string<IAmValid>|class-string $value */\nfunction isClassStringIamvalidClassString(mixed $value): bool\n{\n    return (is_string($value) && class_exists($value));\n}\n"
+  },
+  {
+    "input": "class-string|class-string<IAmValid>",
+    "expected": "/** @phpstan-assert-if-true class-string|class-string<IAmValid> $value */\nfunction isClassStringClassStringIamvalid(mixed $value): bool\n{\n    return (is_string($value) && class_exists($value));\n}\n"
+  },
+  {
     "input": "interface-string",
     "expected": "/** @phpstan-assert-if-true interface-string $value */\nfunction isInterfaceString(mixed $value): bool\n{\n    return (is_string($value) && class_exists($value));\n}\n"
+  },
+  {
+    "input": "interface-string<MyInterface>",
+    "expected": "/** @phpstan-assert-if-true interface-string<MyInterface> $value */\nfunction isInterfaceStringMyinterface(mixed $value): bool\n{\n    return (is_string($value) && is_a($value, MyInterface::class, TRUE));\n}\n"
+  },
+  {
+    "input": "interface-string<A|B>",
+    "expected": "/** @phpstan-assert-if-true interface-string<A|B> $value */\nfunction isInterfaceStringAB(mixed $value): bool\n{\n    return (\n        is_string($value) &&\n        (\n            is_a($value, A::class, TRUE) ||\n            is_a($value, B::class, TRUE)\n        )\n    );\n}\n"
   },
   {
     "input": "trait-string",
@@ -125,7 +161,15 @@
   },
   {
     "input": "enum-string",
-    "expected": "/** @phpstan-assert-if-true enum-string $value */\nfunction isEnumString(mixed $value): bool\n{\n    return (is_string($value) && enum_exists($value));\n}\n"
+    "expected": "/** @phpstan-assert-if-true enum-string $value */\nfunction isEnumString(mixed $value): bool\n{\n    return (is_string($value) && is_a($value, \\UnitEnum::class, TRUE));\n}\n"
+  },
+  {
+    "input": "enum-string<MyEnum>",
+    "expected": "/** @phpstan-assert-if-true enum-string<MyEnum> $value */\nfunction isEnumStringMyenum(mixed $value): bool\n{\n    return (is_string($value) && is_a($value, \\UnitEnum::class, TRUE) && is_a($value, MyEnum::class, TRUE));\n}\n"
+  },
+  {
+    "input": "enum-string<A|B>",
+    "expected": "/** @phpstan-assert-if-true enum-string<A|B> $value */\nfunction isEnumStringAB(mixed $value): bool\n{\n    return (\n        is_string($value) &&\n        is_a($value, \\UnitEnum::class, TRUE) &&\n        (\n            is_a($value, A::class, TRUE) ||\n            is_a($value, B::class, TRUE)\n        )\n    );\n}\n"
   },
   {
     "input": "numeric-string",
@@ -500,31 +544,11 @@
     "expected": "/** @phpstan-assert-if-true callable-object $value */\nfunction isCallableObject(mixed $value): bool\n{\n    return (is_object($value) && is_callable($value));\n}\n"
   },
   {
-    "input": "empty-scalar",
-    "expected": "/** @phpstan-assert-if-true empty-scalar $value */\nfunction isEmptyScalar(mixed $value): bool\n{\n    return $value instanceof empty-scalar;\n}\n"
-  },
-  {
     "input": "list<mixed>|list<string>",
     "expected": "/** @phpstan-assert-if-true list<mixed>|list<string> $value */\nfunction isListMixedListString(mixed $value): bool\n{\n    return (is_array($value) && array_is_list($value));\n}\n"
   },
   {
     "input": "list<string>|array<mixed>",
     "expected": "/** @phpstan-assert-if-true list<string>|array<mixed> $value */\nfunction isListStringArrayMixed(mixed $value): bool\n{\n    return is_array($value);\n}\n"
-  },
-  {
-    "input": "never-return",
-    "expected": "/** @phpstan-assert-if-true never-return $value */\nfunction isNeverReturn(mixed $value): bool\n{\n    return $value instanceof never-return;\n}\n"
-  },
-  {
-    "input": "never-returns",
-    "expected": "/** @phpstan-assert-if-true never-returns $value */\nfunction isNeverReturns(mixed $value): bool\n{\n    return $value instanceof never-returns;\n}\n"
-  },
-  {
-    "input": "no-return",
-    "expected": "/** @phpstan-assert-if-true no-return $value */\nfunction isNoReturn(mixed $value): bool\n{\n    return $value instanceof no-return;\n}\n"
-  },
-  {
-    "input": "non-empty-scalar",
-    "expected": "/** @phpstan-assert-if-true non-empty-scalar $value */\nfunction isNonEmptyScalar(mixed $value): bool\n{\n    return $value instanceof non-empty-scalar;\n}\n"
   }
 ]

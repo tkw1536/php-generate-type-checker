@@ -45,6 +45,27 @@
     "input": "Collection<array-key, mixed>"
   },
   {
+    "input": "class-string<>"
+  },
+  {
+    "input": "class-string<object>"
+  },
+  {
+    "input": "class-string<int, string>"
+  },
+  {
+    "input": "trait-string<MyTrait>"
+  },
+  {
+    "input": "trait-string<A|B>"
+  },
+  {
+    "input": "enum-string<>"
+  },
+  {
+    "input": "interface-string<>"
+  },
+  {
     "input": "callable(int): void"
   },
   {

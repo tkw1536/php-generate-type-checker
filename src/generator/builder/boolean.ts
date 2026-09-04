@@ -1,9 +1,9 @@
 import type { Keyword, TypeNode } from '../../parser/ast.ts';
+import { isValidPhpClassName } from '../../parser/phpClassName.ts';
 import type { Expr, ValueRef } from '../ir/types.ts';
 import {
   andExpr,
   binExpr,
-  boolLit,
   callCheckerExpr,
   callExpr,
   instanceofExpr,
@@ -11,26 +11,10 @@ import {
   orExpr,
   refArg,
 } from '../ir/index.ts';
-import {
-  bareEmptyCollectionKeywordAsShape,
-  isBareEmptyCollectionKeyword,
-  isIterableKeyword,
-  isListKeyword,
-  isNonEmptyKeyword,
-  shapeIsObject,
-} from './ast/collection.ts';
-import { isMixed, isNever } from './ast/classify.ts';
 import { cannotBuild, describeNode } from './errors.ts';
 import type { EmitCtx } from './emitCtx.ts';
-import {
-  UNCHECKABLE_KEYWORDS,
-  compactListElementTest,
-  exprAtoms,
-  isArrayCollectionKeyword,
-  listElementType,
-  phpLiteralFromNode,
-  shapeListElementType,
-} from './helpers.ts';
+import { UNCHECKABLE_KEYWORDS, exprAtoms, phpLiteralFromNode } from './helpers.ts';
+import { classStringGenericBoolean } from './classString.ts';
 import { keywordToBoolean } from './keywordBoolean.ts';
 
 export function booleanAtoms(
@@ -54,7 +38,14 @@ export function booleanForType(
   if (compact !== null) {
     return compact;
   }
+  return booleanForTypeKind(ctx, type, subject);
+}
 
+function booleanForTypeKind(
+  ctx: EmitCtx,
+  type: TypeNode,
+  subject: ValueRef,
+): Expr {
   switch (type.kind) {
     case 'keyword':
       return booleanForKeyword(type.keyword, subject);
@@ -82,13 +73,25 @@ export function booleanForType(
       break;
     case 'unsupported':
     case 'callable':
-    case 'generic':
       cannotBuild(type);
       break;
+    case 'generic':
+      return booleanForGeneric(type, subject);
     default:
       throw new Error('never reached');
   }
   throw new Error('never reached');
+}
+
+function booleanForGeneric(
+  type: Extract<TypeNode, { kind: 'generic' }>,
+  subject: ValueRef,
+): Expr {
+  const classString = classStringGenericBoolean(type, subject);
+  if (classString !== null) {
+    return classString;
+  }
+  return cannotBuild(type);
 }
 
 function booleanForKeyword(keyword: Keyword, subject: ValueRef): Expr {
@@ -139,6 +142,12 @@ function booleanForNamed(
       callExpr('is_object', [s]),
     ]);
   }
+  if (!isValidPhpClassName(node.name)) {
+    cannotBuild(
+      node,
+      `Cannot generate a runtime check for the type ${node.name}: "${node.name}" is not a valid PHP class name`,
+    );
+  }
   return instanceofExpr(s, node.name);
 }
 
@@ -172,122 +181,4 @@ function booleanForRange(
     return parts[0];
   }
   return andExpr(parts);
-}
-
-export function compactCollectionTest(
-  ctx: EmitCtx,
-  type: TypeNode,
-  subject: ValueRef,
-): Expr | null {
-  if (isBareEmptyCollectionKeyword(type)) {
-    return ctx.compactCollectionTest(
-      bareEmptyCollectionKeywordAsShape(type),
-      subject,
-    );
-  }
-  if (isMixed(type)) {
-    return boolLit(true);
-  }
-  return (
-    compactCollectionKind(type, subject) ??
-    compactEmptyShape(type, subject) ??
-    compactListLike(type, subject) ??
-    (type.kind === 'array' && isNever(type.value)
-      ? binExpr('===', refArg(subject), literalArg('[]'))
-      : null)
-  );
-}
-
-function compactCollectionKind(
-  type: TypeNode,
-  subject: ValueRef,
-): Expr | null {
-  if (type.kind !== 'collection') {
-    return null;
-  }
-  if (isIterableKeyword(type.keyword) && !('key' in type)) {
-    const listOk = callExpr('is_iterable', [refArg(subject)]);
-    return isNonEmptyKeyword(type.keyword)
-      ? andExpr([
-          listOk,
-          binExpr('!==', refArg(subject), literalArg('[]')),
-        ])
-      : listOk;
-  }
-  if ('value' in type && !isNever(type.value) && isMixed(type.value)) {
-    if (isListKeyword(type.keyword)) {
-      const listCompact = compactListElementTest(
-        type.keyword,
-        type.value,
-        subject,
-      );
-      if (listCompact !== null) {
-        return listCompact;
-      }
-    }
-    const guard = isIterableKeyword(type.keyword) ? 'is_iterable' : 'is_array';
-    const arrOk = callExpr(guard, [refArg(subject)]);
-    return isNonEmptyKeyword(type.keyword)
-      ? andExpr([
-          arrOk,
-          binExpr('!==', refArg(subject), literalArg('[]')),
-        ])
-      : arrOk;
-  }
-  if (
-    'value' in type &&
-    isNever(type.value) &&
-    !isIterableKeyword(type.keyword)
-  ) {
-    return isNonEmptyKeyword(type.keyword)
-      ? boolLit(false)
-      : binExpr('===', refArg(subject), literalArg('[]'));
-  }
-  return null;
-}
-
-function compactEmptyShape(type: TypeNode, subject: ValueRef): Expr | null {
-  if (type.kind !== 'shape' || shapeIsObject(type) || type.fields.length > 0) {
-    return null;
-  }
-  if (isArrayCollectionKeyword(type.keyword)) {
-    const arrOk = callExpr('is_array', [refArg(subject)]);
-    return isNonEmptyKeyword(type.keyword)
-      ? andExpr([
-          arrOk,
-          binExpr('!==', refArg(subject), literalArg('[]')),
-        ])
-      : arrOk;
-  }
-  if (isListKeyword(type.keyword)) {
-    const listOk = andExpr([
-      callExpr('is_array', [refArg(subject)]),
-      callExpr('array_is_list', [refArg(subject)]),
-    ]);
-    return isNonEmptyKeyword(type.keyword)
-      ? andExpr([
-          listOk,
-          binExpr('!==', refArg(subject), literalArg('[]')),
-        ])
-      : listOk;
-  }
-  return null;
-}
-
-function compactListLike(type: TypeNode, subject: ValueRef): Expr | null {
-  if (
-    !(
-      (type.kind === 'collection' && isListKeyword(type.keyword)) ||
-      (type.kind === 'shape' &&
-        !shapeIsObject(type) &&
-        isListKeyword(type.keyword))
-    )
-  ) {
-    return null;
-  }
-  const el =
-    type.kind === 'collection'
-      ? listElementType(type)
-      : shapeListElementType(type);
-  return compactListElementTest(type.keyword, el, subject);
 }

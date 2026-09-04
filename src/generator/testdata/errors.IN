@@ -24,6 +24,15 @@ Foo<string>
 Foo<int, Bar>
 Collection<array-key, mixed>
 
+# --- class-string generics (invalid args) ---
+class-string<>
+class-string<object>
+class-string<int, string>
+trait-string<MyTrait>
+trait-string<A|B>
+enum-string<>
+interface-string<>
+
 callable(int): void
 closed-resource
 Collection<int>

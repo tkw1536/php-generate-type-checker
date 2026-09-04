@@ -13,8 +13,8 @@ import {
 import {
   booleanAtoms,
   booleanForType,
-  compactCollectionTest,
 } from './boolean.ts';
+import { compactCollectionTest } from './compactCollection.ts';
 import type { EmitCtx } from './emitCtx.ts';
 import { arrayGuards, listGuards } from './emitGuards.ts';
 import { emitStatements } from './emitStatements.ts';

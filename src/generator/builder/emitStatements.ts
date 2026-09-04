@@ -16,6 +16,7 @@ import { cannotBuild } from './errors.ts';
 import type { EmitCtx } from './emitCtx.ts';
 import { emitCollection, emitPostfixArray } from './emitCollection.ts';
 import { emitShape } from './emitShape.ts';
+import { isClassStringLikeGenericName } from './classString.ts';
 import {
   type EmitOptions,
   flattenAlternatives,
@@ -60,7 +61,12 @@ export function emitStatements(
   switch (type.kind) {
     case 'unsupported':
     case 'callable':
+      return emitUncheckable(type);
     case 'generic':
+      // Includes trait-string<…>, which must fail via classStringGenericBoolean.
+      if (isClassStringLikeGenericName(type.name)) {
+        return emitAtomicStatements(ctx, type, subject);
+      }
       return emitUncheckable(type);
     case 'union':
       if (opts.unionRoot) {

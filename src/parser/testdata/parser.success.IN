@@ -67,6 +67,16 @@ DateTimeInterface
 \Foo\Bar
 \Fully\Qualified\ClassName
 
+# --- class-string generics ---
+class-string<Test>
+class-string<\Foo\Bar>
+class-string<A|B>
+class-string<A&B>
+class-string<(A|B)&C>
+interface-string<Test>
+enum-string<MyEnum>
+enum-string<A|B>
+
 # --- Numeric and string literals ---
 42
 0
