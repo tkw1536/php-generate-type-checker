@@ -4,6 +4,7 @@ import {
   boolLit,
   callExpr,
   failIfStmt,
+  instanceofExpr,
   notExpr,
   orExpr,
   refArg,
@@ -158,6 +159,29 @@ function doesNotRecordFalseWhenBodyFallsThrough(): void {
   expect(equals(expectIf(result[1]).cond, notExpr(isArray))).toBe(true);
 }
 
+function dropsIsObjectAfterInstanceofFailIf(): void {
+  const isInstance = instanceofExpr(refArg($v), 'Foo');
+  const isObject = callExpr('is_object', [refArg($v)]);
+  const block: Block = [failIfStmt(isInstance), failIfStmt(isObject)];
+  const result = applyKnownFacts(block, '$value', emptyFactEnv());
+  expect(expectIf(result[1]).cond).toEqual(boolLit(false));
+}
+
+function dropsIsObjectInsideInstanceofBody(): void {
+  const isInstance = instanceofExpr(refArg($v), 'Foo');
+  const isObject = callExpr('is_object', [refArg($v)]);
+  const block: Block = [
+    {
+      kind: 'if',
+      cond: isInstance,
+      body: [{ kind: 'if', cond: isObject, body: [returnStmt(boolLit(true))] }],
+    },
+  ];
+  const result = applyKnownFacts(block, '$value', emptyFactEnv());
+  const innerIf = expectIf(expectIf(result[0]).body[0]);
+  expect(innerIf.cond).toEqual(boolLit(true));
+}
+
 describe('applyKnownFacts', () => {
   it(
     'records false guard after early return on array check',
@@ -186,5 +210,13 @@ describe('applyKnownFacts', () => {
   it(
     'does not record false fact when if body can fall through',
     doesNotRecordFalseWhenBodyFallsThrough,
+  );
+  it(
+    'drops is_object after instanceof fail-if records true fact',
+    dropsIsObjectAfterInstanceofFailIf,
+  );
+  it(
+    'drops is_object inside instanceof if body',
+    dropsIsObjectInsideInstanceofBody,
   );
 });

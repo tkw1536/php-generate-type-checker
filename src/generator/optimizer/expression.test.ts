@@ -4,6 +4,7 @@ import {
   binExpr,
   boolLit,
   callExpr,
+  instanceofExpr,
   literalArg,
   notExpr,
   orExpr,
@@ -134,16 +135,16 @@ const SIMPLIFY_CASES = [
       callExpr('is_array', [refArg($v)]),
       orExpr([
         andExpr([
-          callExpr('array_key_exists', [literalArg('x'), refArg($v)]),
           isString,
+          callExpr('array_key_exists', [literalArg('x'), refArg($v)]),
         ]),
         andExpr([
-          callExpr('array_key_exists', [literalArg('y'), refArg($v)]),
           isInt,
+          callExpr('array_key_exists', [literalArg('y'), refArg($v)]),
         ]),
         andExpr([
-          callExpr('array_key_exists', [literalArg('z'), refArg($v)]),
           callExpr('is_bool', [refArg($v)]),
+          callExpr('array_key_exists', [literalArg('z'), refArg($v)]),
         ]),
       ]),
     ]),
@@ -157,6 +158,43 @@ const SIMPLIFY_CASES = [
     'factor equivalent and arms with different conjunct order',
     orExpr([andExpr([isInt, isString]), andExpr([isString, isInt])]),
     andExpr([isInt, isString]),
+  ],
+  [
+    'reorder is_object before instanceof to instanceof first',
+    andExpr([
+      callExpr('is_object', [refArg($v)]),
+      instanceofExpr(refArg($v), 'Foo'),
+    ]),
+    andExpr([
+      instanceofExpr(refArg($v), 'Foo'),
+      callExpr('is_object', [refArg($v)]),
+    ]),
+  ],
+  [
+    'reorder property_exists after instanceof',
+    andExpr([
+      callExpr('property_exists', [refArg($v), literalArg("'a'")]),
+      instanceofExpr(refArg($v), 'Foo'),
+    ]),
+    andExpr([
+      instanceofExpr(refArg($v), 'Foo'),
+      callExpr('property_exists', [refArg($v), literalArg("'a'")]),
+    ]),
+  ],
+  [
+    'flatten nested and then reorder type proofs first',
+    andExpr([
+      andExpr([
+        callExpr('is_object', [refArg($v)]),
+        callExpr('property_exists', [refArg($v), literalArg("'a'")]),
+      ]),
+      instanceofExpr(refArg($v), 'Foo'),
+    ]),
+    andExpr([
+      instanceofExpr(refArg($v), 'Foo'),
+      callExpr('is_object', [refArg($v)]),
+      callExpr('property_exists', [refArg($v), literalArg("'a'")]),
+    ]),
   ],
 ] as [string, Expr, Expr][];
 

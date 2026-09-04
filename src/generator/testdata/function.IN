@@ -129,6 +129,8 @@ true|false
 
 # --- Intersections ---
 Foo&Bar
+\stdClass&object{a: int}
+object{a: int}&\stdClass
 A&B&C
 A&B|C
 (array<string, int|null>|null)&Foo

@@ -32,6 +32,7 @@ yarn spellcheck
 - Whole-UI: `src/main.test.ts` (happy-dom)
 - Parser fixtures: edit `src/parser/testdata/*.IN` → `yarn update_fixtures:parser` → commit matching `*.json`
 - Generator fixtures: edit `src/generator/testdata/*.IN` → `yarn update_fixtures:generator` → commit matching `*.json`
+- When changing generator output behavior, always add a generator golden for the new/changed case unless an equivalent `*.IN` case already exists
 - Optional: `yarn review_fixtures:generator` (interactive golden review)
 
 ## Code style

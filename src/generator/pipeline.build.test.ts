@@ -135,6 +135,35 @@ function buildManyUsesInstanceofWithoutAliasMap(): void {
   expect(php).toContain('$value instanceof Foo');
 }
 
+function classAndObjectShapeDropsRedundantIsObject(): void {
+  const ast = parseType('\\stdClass&object{a: int}');
+  const { ir, typesByName } = buildMany([ast]);
+  const php = renderChecker(optimize(ir), {
+    typeString: '\\stdClass&object{a: int}',
+    typesByName,
+    output: 'function',
+  });
+  expect(php).toContain('$value instanceof \\stdClass');
+  expect(php).toContain("property_exists($value, 'a')");
+  expect(php).toContain('is_int($value->a)');
+  expect(php).not.toContain('is_object($value)');
+}
+
+function objectShapeAndClassDropsRedundantIsObject(): void {
+  const ast = parseType('object{a: int}&\\stdClass');
+  const { ir, typesByName } = buildMany([ast]);
+  const php = renderChecker(optimize(ir), {
+    typeString: 'object{a: int}&\\stdClass',
+    typesByName,
+    output: 'function',
+  });
+  expect(php).toContain('$value instanceof \\stdClass');
+  expect(php).toContain("property_exists($value, 'a')");
+  expect(php).toContain('is_int($value->a)');
+  expect(php).not.toContain('is_object($value)');
+  expect(php.indexOf('instanceof')).toBeLessThan(php.indexOf('property_exists'));
+}
+
 describe('pipeline build + render', () => {
   it(
     'names entry from type when nameFunctionsByType is default',
@@ -173,5 +202,13 @@ describe('pipeline build + render', () => {
   it(
     'buildMany uses instanceof for named types without alias map',
     buildManyUsesInstanceofWithoutAliasMap,
+  );
+  it(
+    'class&object shape drops redundant is_object after instanceof',
+    classAndObjectShapeDropsRedundantIsObject,
+  );
+  it(
+    'object shape&class reorders instanceof before props and drops is_object',
+    objectShapeAndClassDropsRedundantIsObject,
   );
 });

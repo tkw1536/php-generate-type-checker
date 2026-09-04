@@ -4,6 +4,7 @@ import {
   boolLit,
   callExpr,
   failIfStmt,
+  instanceofExpr,
   notExpr,
   orExpr,
   refArg,
@@ -103,6 +104,14 @@ function appliesDeMorganViaNotThenOr(): void {
   expect(ret.expr).toEqual(boolLit(false));
 }
 
+function instanceofImpliesIsObjectInAnd(): void {
+  const isInstance = instanceofExpr(refArg($v), 'Foo');
+  const isObject = callExpr('is_object', [refArg($v)]);
+  expect(
+    substituteFacts(andExpr([isInstance, isObject]), emptyFactEnv()),
+  ).toEqual(andExpr([isInstance, boolLit(true)]));
+}
+
 const EXIT_CASES = [
   ['return only', [returnStmt(boolLit(true))], true],
   [
@@ -164,6 +173,10 @@ describe('substituteFacts', () => {
   it(
     'applies De Morgan via not then or on true fact',
     appliesDeMorganViaNotThenOr,
+  );
+  it(
+    'replaces is_object with true after instanceof in and',
+    instanceofImpliesIsObjectInAnd,
   );
 });
 

@@ -1,113 +1,14 @@
 import type { Arg, Block, Expr, Stmt, ValueRef } from '../ir/types.ts';
-import { andExpr, binExpr, boolLit, notExpr, orExpr } from '../ir/index.ts';
+import { boolLit } from '../ir/index.ts';
 import { equals } from '../ir/equals.ts';
-import { negateBinOp } from "./expression.ts";
+import {
+  type FactEnv,
+  withFalseFact,
+  withTrueFact,
+} from './knownFacts.env.ts';
 
-export type FactEnv = {
-  readonly trueFacts: readonly Expr[];
-  readonly falseFacts: readonly Expr[];
-  readonly shadowed: ReadonlySet<string>;
-};
-
-export function emptyFactEnv(): FactEnv {
-  return { trueFacts: [], falseFacts: [], shadowed: new Set() };
-}
-
-// Environments are immutable.
-// The functions {@link withTrueFact} and {@link withFalseFact} create new environments with new facts.
-//
-// These functions are mutually recursive to expand the set of facts.
-// To prevent infinite recursion, when adding a new fact, these must be careful not increase expression complexity. 
-// Alternative they may add a flag to skip further expansion.
-
-type Flags = {
-  readonly skipDeMorgan?: true;
-}
-
-function withTrueFact(env: FactEnv, expr: Expr, flags?: Flags): FactEnv {
-  let next = env;
-  if (next.trueFacts.some((f) => equals(f, expr))) {
-    return next;
-  }
-
-  // add derived facts.
-  next = { ...next, trueFacts: [...next.trueFacts, expr] };
-  switch (expr.kind) {
-    case 'and':
-      for (const conjunct of expr.exprs) {
-        next = withTrueFact(next, conjunct);
-      }
-      break;
-    case 'bin':
-      next = withTrueFact(
-        next,
-        binExpr(negateBinOp(expr.op), expr.right, expr.left),
-      );
-      break;
-    case 'not':
-      next = withFalseFact(next, expr.expr);
-      break;
-    case 'or':
-      if (flags?.skipDeMorgan !== true) {
-        // x || y => !!(x || y) => !(!x && !y)
-        next = withFalseFact(next, andExpr(expr.exprs.map(notExpr)), {
-          skipDeMorgan: true,
-        });
-      }
-      break;
-    case 'bool':
-    case 'call':
-    case 'call_checker':
-    case 'instanceof':
-      break;
-    default:
-      throw new Error('never reached');
-  }
-  return next;
-}
-
-function withFalseFact(env: FactEnv, expr: Expr, flags?: Flags): FactEnv {
-  let next = env;
-  // if we already added this fact, then we're done.
-  if (next.falseFacts.some((f) => equals(f, expr))) {
-    return next;
-  }
-
-  // add derived facts.
-  next = { ...next, falseFacts: [...next.falseFacts, expr] };
-  switch (expr.kind) {
-    case 'or':
-      for (const disjunct of expr.exprs) {
-        next = withFalseFact(next, disjunct);
-      }
-      break;
-    case 'bin':
-      next = withFalseFact(
-        next,
-        binExpr(negateBinOp(expr.op), expr.right, expr.left),
-      );
-      break;
-    case 'not':
-      next = withTrueFact(next, expr.expr);
-      break;
-    case 'and':
-      if (flags?.skipDeMorgan !== true) {
-        // !(x && y) => !x || !y
-        next = withTrueFact(next, orExpr(expr.exprs.map(notExpr)), {
-          skipDeMorgan: true,
-        });
-      }
-      break;
-    case 'bool':
-    case 'call':
-    case 'call_checker':
-    case 'instanceof':
-      break;
-    default:
-      throw new Error('never reached');
-  }
-  return next;
-}
+export type { FactEnv } from './knownFacts.env.ts';
+export { emptyFactEnv } from './knownFacts.env.ts';
 
 function valueRefUsesShadowed(
   ref: ValueRef,
@@ -199,7 +100,20 @@ function substituteFactsShallow(
       }
       return inner === expr.expr ? expr : { kind: 'not', expr: inner };
     }
-    case 'and':
+    case 'and': {
+      // Left-to-right: reaching a later conjunct means earlier ones were true.
+      let changed = false;
+      let currentEnv = env;
+      const exprs = expr.exprs.map((e) => {
+        const next = substituteFacts(e, currentEnv);
+        if (next !== e) {
+          changed = true;
+        }
+        currentEnv = withTrueFact(currentEnv, e);
+        return next;
+      });
+      return changed ? { ...expr, exprs } : expr;
+    }
     case 'or': {
       let changed = false;
       const exprs = expr.exprs.map((e) => {
@@ -212,7 +126,7 @@ function substituteFactsShallow(
       return changed ? { ...expr, exprs } : expr;
     }
   }
-  throw new Error("never reached");
+  throw new Error('never reached');
 }
 
 /**
