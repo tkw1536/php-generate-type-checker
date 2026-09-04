@@ -25,16 +25,18 @@ function installMatchMedia(matches = false): void {
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
     writable: true,
-    value: vi.fn().mockImplementation((query: string) => ({
-      matches,
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    })),
+    value: vi.fn<(query: string) => MediaQueryList>().mockImplementation(
+      (query: string) => ({
+        matches,
+        media: query,
+        onchange: null,
+        addListener: vi.fn<() => void>(),
+        removeListener: vi.fn<() => void>(),
+        addEventListener: vi.fn<() => void>(),
+        removeEventListener: vi.fn<() => void>(),
+        dispatchEvent: vi.fn<() => boolean>(),
+      }),
+    ),
   });
 }
 
@@ -67,8 +69,12 @@ function installLocalStorage(): void {
   });
 }
 
-function installClipboard(): ReturnType<typeof vi.fn> {
-  const writeText = vi.fn().mockResolvedValue(undefined);
+function installClipboard(): ReturnType<
+  typeof vi.fn<(text: string) => Promise<void>>
+> {
+  const writeText = vi
+    .fn<(text: string) => Promise<void>>()
+    .mockResolvedValue(undefined);
   Object.defineProperty(navigator, 'clipboard', {
     configurable: true,
     writable: true,
@@ -80,7 +86,9 @@ function installClipboard(): ReturnType<typeof vi.fn> {
 async function bootApp(options?: {
   hash?: string;
   fakeTimers?: boolean;
-}): Promise<{ writeText: ReturnType<typeof vi.fn> }> {
+}): Promise<{
+  writeText: ReturnType<typeof vi.fn<(text: string) => Promise<void>>>;
+}> {
   vi.resetModules();
 
   if (options?.fakeTimers) {
@@ -349,11 +357,9 @@ describe('app UI (main.ts)', () => {
 
     const after = document.documentElement.dataset.theme;
     expect(after).not.toBe(before);
-    if (after === 'dark') {
-      expect(toggle.getAttribute('aria-label')).toBe('Switch to light mode');
-    } else {
-      expect(toggle.getAttribute('aria-label')).toBe('Switch to dark mode');
-    }
+    expect(toggle.getAttribute('aria-label')).toBe(
+      after === 'dark' ? 'Switch to light mode' : 'Switch to dark mode',
+    );
   });
 
   it('copies PHP from the active tab and announces status', async () => {

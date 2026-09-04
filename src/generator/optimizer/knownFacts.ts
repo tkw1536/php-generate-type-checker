@@ -96,8 +96,8 @@ function valueRefUsesShadowed(ref: ValueRef, shadowed: Set<string>): boolean {
     case 'property_access':
       return valueRefUsesShadowed(ref.object, shadowed);
     default: {
-      const _exhaustive: never = ref;
-      return _exhaustive;
+      const exhaustive: never = ref;
+      return exhaustive;
     }
   }
 }
@@ -111,8 +111,8 @@ function argUsesShadowed(arg: Arg, shadowed: Set<string>): boolean {
     case 'call':
       return arg.args.some((a) => argUsesShadowed(a, shadowed));
     default: {
-      const _exhaustive: never = arg;
-      return _exhaustive;
+      const exhaustive: never = arg;
+      return exhaustive;
     }
   }
 }
@@ -138,8 +138,8 @@ function exprUsesShadowed(expr: Expr, shadowed: Set<string>): boolean {
     case 'call_checker':
       return valueRefUsesShadowed(expr.subject, shadowed);
     default: {
-      const _exhaustive: never = expr;
-      return _exhaustive;
+      const exhaustive: never = expr;
+      return exhaustive;
     }
   }
 }
@@ -254,8 +254,8 @@ export function applyKnownFacts(
         });
         return out;
       default: {
-        const _exhaustive: never = stmt;
-        out.push(_exhaustive);
+        const exhaustive: never = stmt;
+        out.push(exhaustive);
       }
     }
   }

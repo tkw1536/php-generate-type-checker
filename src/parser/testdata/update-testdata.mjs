@@ -3,9 +3,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseType } from '../index.ts';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const inputPath = path.join(__dirname, 'parser.success.IN');
-const fixturePath = path.join(__dirname, 'parser.success.json');
+const here = path.dirname(fileURLToPath(import.meta.url));
+const inputPath = path.join(here, 'parser.success.IN');
+const fixturePath = path.join(here, 'parser.success.json');
 
 const sources = readFileSync(inputPath, 'utf8')
   .split('\n')

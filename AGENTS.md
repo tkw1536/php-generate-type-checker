@@ -43,6 +43,13 @@ import { generateChecker } from './index.ts';
 
 Lint standard: Oxlint [`correctness`](https://oxc.rs/docs/guide/usage/linter/config.html#enable-groups-of-rules-with-categories) + `suspicious` as errors, `perf` as warnings, type-aware on, Vitest plugin enabled (see [`.oxlintrc.json`](.oxlintrc.json)). Rule list: [Oxlint Rules](https://oxc.rs/docs/guide/usage/linter/rules.html). Do not invent rule lists or mass-fix with `yarn lint:fix` unless asked.
 
+For switch exhaustiveness (or other “impossible” paths), do **not** use `const x: never = …`. Throw instead, like Go’s `panic("never reached")`:
+
+```ts
+default:
+  throw new Error('never reached');
+```
+
 ## Git workflow
 
 - No special branch or commit format.

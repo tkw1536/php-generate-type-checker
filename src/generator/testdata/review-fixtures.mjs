@@ -78,7 +78,11 @@ const pending = fixtures.filter((f) => !done.has(f.name));
 
 let bail = false;
 
-for (const f of pending) {
+async function reviewRemaining(index) {
+  if (index >= pending.length) {
+    return;
+  }
+  const f = pending[index];
   console.log('\n---');
   console.log(JSON.stringify({
     'input': f.input,
@@ -92,12 +96,15 @@ for (const f of pending) {
   if (ch === 'e') {
     bail = true;
     saveState(state);
-    break;
+    return;
   }
   if (ch === 'y') state.good.push(f.name);
   else state.bad.push(f.name);
   saveState(state);
+  await reviewRemaining(index + 1);
 }
+
+await reviewRemaining(0);
 
 console.log(bail ? '\n=== stopped early ===' : '\n=== done ===');
 console.log('good:', state.good.length);

@@ -9,12 +9,12 @@ export interface AppFragmentState {
   input: string;
 }
 
-const EMIT_MODES: readonly CheckerOutputMode[] = [
+const EMIT_MODES: ReadonlySet<string> = new Set([
   'function',
   'public_static',
   'protected_static',
   'private_static',
-];
+]);
 
 function parseBoolParam(value: string | null): boolean | undefined {
   if (value === null) {
@@ -29,13 +29,15 @@ function parseBoolParam(value: string | null): boolean | undefined {
   return undefined;
 }
 
+function isCheckerOutputMode(value: string): value is CheckerOutputMode {
+  return EMIT_MODES.has(value);
+}
+
 function parseEmitParam(value: string | null): CheckerOutputMode | undefined {
-  if (value === null) {
+  if (value === null || !isCheckerOutputMode(value)) {
     return undefined;
   }
-  return EMIT_MODES.includes(value as CheckerOutputMode)
-    ? (value as CheckerOutputMode)
-    : undefined;
+  return value;
 }
 
 /** Query-string-style payload for the URL fragment (no leading `#`). */

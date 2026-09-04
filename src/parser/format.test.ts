@@ -5,22 +5,37 @@ import successCases from './testdata/parser.success.json';
 
 type ParseSuccessCase = { source: string; ast: TypeNode };
 
+function isParseSuccessCase(value: unknown): value is ParseSuccessCase {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'source' in value &&
+    'ast' in value &&
+    typeof value.source === 'string'
+  );
+}
+
+function readSuccessCases(data: unknown): ParseSuccessCase[] {
+  if (!Array.isArray(data) || !data.every(isParseSuccessCase)) {
+    throw new Error('invalid parser success fixture JSON');
+  }
+  return data;
+}
+
+const parsedSuccessCases = readSuccessCases(successCases);
+
 describe('formatType', () => {
   describe('formatType(ast) equals source', () => {
-    for (const { source, ast } of (successCases as ParseSuccessCase[])) {
-      it(source, () => {
-        const formatted = formatType(ast);
-        expect(formatted).toEqual(source);
-      });
-    }
+    it.each(parsedSuccessCases)('$source', ({ source, ast }) => {
+      const formatted = formatType(ast);
+      expect(formatted).toEqual(source);
+    });
   });
 
   describe('parseType(formatType(ast)) equals ast', () => {
-    for (const { source, ast } of (successCases as ParseSuccessCase[])) {
-      it(source, () => {
-        const reParsed = parseType(formatType(ast));
-        expect(reParsed).toEqual(ast);
-      });
-    }
+    it.each(parsedSuccessCases)('$source', ({ ast }) => {
+      const reParsed = parseType(formatType(ast));
+      expect(reParsed).toEqual(ast);
+    });
   });
 });

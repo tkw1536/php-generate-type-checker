@@ -1,4 +1,4 @@
-import type { TypeNode } from '../../parser/ast.ts';
+import type { Keyword, TypeNode } from '../../parser/ast.ts';
 import type {
   Block,
   CheckerIR,
@@ -210,19 +210,19 @@ export class Builder {
   ): Block {
     switch (type.kind) {
       case 'unsupported':
-        cannotBuild(
+        return cannotBuild(
           type,
           `Cannot generate a runtime check for unsupported type: ${type.raw}`,
           type.raw,
         );
       case 'callable':
-        cannotBuild(
+        return cannotBuild(
           type,
           'Cannot generate a runtime check for callable with parameter or return types: parameter and return types cannot be verified without invoking the callable',
           'callable(...)',
         );
       case 'generic':
-        cannotBuild(
+        return cannotBuild(
           type,
           `Cannot generate a runtime check for the generic type ${type.name}: not a supported generic for codegen`,
           `${type.name}<...>`,
@@ -253,8 +253,9 @@ export class Builder {
       case 'literal':
       case 'range':
         return this.emitAtomicStatements(type, subject);
+      default:
+        throw new Error('never reached');
     }
-    throw new Error('never reached');
   }
 
   private emitKeywordStatements(
@@ -276,7 +277,6 @@ export class Builder {
         return out;
       }
     }
-    throw new Error('never reached');
   }
 
   private emitAtomicStatements(type: TypeNode, subject: ValueRef): Block {
@@ -774,7 +774,7 @@ export class Builder {
     throw new Error('never reached');
   }
 
-  private booleanForKeyword(keyword: string, subject: ValueRef): Expr {
+  private booleanForKeyword(keyword: Keyword, subject: ValueRef): Expr {
     if (
       keyword === 'literal-string' ||
       keyword === 'non-empty-literal-string'
@@ -786,13 +786,13 @@ export class Builder {
     }
     if (UNCHECKABLE_KEYWORDS.has(keyword)) {
       cannotBuild(
-        { kind: 'keyword', keyword } as TypeNode,
+        { kind: 'keyword', keyword },
         `Cannot generate a runtime check for the type ${keyword}: this built-in is not supported for codegen`,
       );
     }
     const expr = keywordToBoolean(keyword, subject);
     if (expr === null) {
-      cannotBuild({ kind: 'keyword', keyword } as TypeNode);
+      cannotBuild({ kind: 'keyword', keyword });
     }
     return expr;
   }
@@ -1260,5 +1260,4 @@ function keywordToBoolean(keyword: string, subject: ValueRef): Expr | null {
     default:
       return null;
   }
-  throw new Error('never reached');
 }

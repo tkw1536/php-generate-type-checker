@@ -33,6 +33,17 @@ const INPUT_DEBOUNCE_MS = 250;
 /** Left → right in the tab bar: AST → IR build → IR optimized → PHP */
 type OutputTabId = 'ast' | 'ir-build' | 'ir-optimized' | 'php';
 
+const OUTPUT_TAB_IDS: ReadonlySet<string> = new Set([
+  'ast',
+  'ir-build',
+  'ir-optimized',
+  'php',
+]);
+
+function isOutputTabId(value: string): value is OutputTabId {
+  return OUTPUT_TAB_IDS.has(value);
+}
+
 interface OutputPanel {
   tabId: OutputTabId;
   bodyEl: HTMLElement;
@@ -482,8 +493,8 @@ function setupOutputTabs(): void {
 
   tabButtons.forEach((button) => {
     button.addEventListener('click', () => {
-      const tabId = button.dataset.outputTab as OutputTabId | undefined;
-      if (!tabId) {
+      const tabId = button.dataset.outputTab;
+      if (!tabId || !isOutputTabId(tabId)) {
         return;
       }
       activateOutputTab(tabId);
@@ -519,8 +530,8 @@ function setupOutputTabs(): void {
       case 'Enter':
       case ' ': {
         event.preventDefault();
-        const tabId = target.dataset.outputTab as OutputTabId | undefined;
-        if (tabId) {
+        const tabId = target.dataset.outputTab;
+        if (tabId && isOutputTabId(tabId)) {
           activateOutputTab(tabId);
         }
         return;

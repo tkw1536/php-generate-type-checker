@@ -66,6 +66,10 @@ export function negateBinOp(op: BinOp): BinOp {
       return '<';
     case '<=':
       return '>';
+    default: {
+      const exhaustive: never = op;
+      return exhaustive;
+    }
   }
 }
 

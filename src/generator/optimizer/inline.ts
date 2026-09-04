@@ -31,8 +31,8 @@ function negateStmt(stmt: Stmt): Stmt {
     case 'foreach':
       return { ...stmt, body: negateBlock(stmt.body) };
     default: {
-      const _exhaustive: never = stmt;
-      return _exhaustive;
+      const exhaustive: never = stmt;
+      return exhaustive;
     }
   }
 }
@@ -280,8 +280,8 @@ function inlineStmt(stmt: Stmt, ir: CheckerIR, programName: string): Stmt[] {
         },
       ];
     default: {
-      const _exhaustive: never = stmt;
-      return [_exhaustive];
+      const exhaustive: never = stmt;
+      return [exhaustive];
     }
   }
 }

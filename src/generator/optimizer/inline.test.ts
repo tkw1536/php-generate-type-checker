@@ -315,8 +315,8 @@ function blockHasCallChecker(block: Block): boolean {
         }
         break;
       default: {
-        const _exhaustive: never = stmt;
-        return _exhaustive;
+        const exhaustive: never = stmt;
+        return exhaustive;
       }
     }
   }

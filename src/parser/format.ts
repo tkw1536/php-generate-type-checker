@@ -38,6 +38,10 @@ function formatTypeInner(type: TypeNode, parent: Precedence): string {
       return `${type.name}<${type.typeArgs.map((arg) => formatTypeInner(arg, 'union')).join(', ')}>`;
     case 'unsupported':
       return type.raw;
+    default: {
+      const exhaustive: never = type;
+      return exhaustive;
+    }
   }
 }
 

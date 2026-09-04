@@ -7,8 +7,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { generateChecker, generateDocblockChecker } from '../index.ts';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const testdataDir = __dirname;
+const here = path.dirname(fileURLToPath(import.meta.url));
+const testdataDir = here;
 
 const OUTPUT_MODES = [
   'function',

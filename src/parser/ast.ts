@@ -61,8 +61,8 @@ export interface CallableSig {
 }
 
 
-export type Keyword = typeof keywords extends Set<infer U> ? U : never;
-const keywords = new Set([
+export type Keyword = (typeof KEYWORD_VALUES)[number];
+const KEYWORD_VALUES = [
   '$this',
   'array-key',
   'array',
@@ -118,8 +118,9 @@ const keywords = new Set([
   'truthy-string',
   'uppercase-string',
   'void',
-] as const);
+] as const;
+const keywords: ReadonlySet<string> = new Set(KEYWORD_VALUES);
 
 export function isKeyword(candidate: string): candidate is Keyword {
-  return keywords.has(candidate as Keyword);
+  return keywords.has(candidate);
 }

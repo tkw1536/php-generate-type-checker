@@ -18,8 +18,8 @@ function cloneValueRef(ref: ValueRef): ValueRef {
         name: ref.name,
       };
     default: {
-      const _exhaustive: never = ref;
-      return _exhaustive;
+      const exhaustive: never = ref;
+      return exhaustive;
     }
   }
 }
@@ -56,8 +56,8 @@ export function substituteValueRef(
         ref.name,
       );
     default: {
-      const _exhaustive: never = ref;
-      return _exhaustive;
+      const exhaustive: never = ref;
+      return exhaustive;
     }
   }
 }
@@ -75,8 +75,8 @@ function substituteArg(arg: Arg, parameter: string, subject: ValueRef): Arg {
         args: arg.args.map((a) => substituteArg(a, parameter, subject)),
       };
     default: {
-      const _exhaustive: never = arg;
-      return _exhaustive;
+      const exhaustive: never = arg;
+      return exhaustive;
     }
   }
 }
@@ -130,8 +130,8 @@ export function substituteExpr(
         subject: substituteValueRef(expr.subject, parameter, subject),
       };
     default: {
-      const _exhaustive: never = expr;
-      return _exhaustive;
+      const exhaustive: never = expr;
+      return exhaustive;
     }
   }
 }
@@ -160,8 +160,8 @@ export function substituteStmt(
         expr: substituteExpr(stmt.expr, parameter, subject),
       };
     default: {
-      const _exhaustive: never = stmt;
-      return _exhaustive;
+      const exhaustive: never = stmt;
+      return exhaustive;
     }
   }
 }
@@ -207,8 +207,8 @@ function walkStmt(stmt: Stmt, names: Set<string>): void {
       walkExpr(stmt.expr, names);
       break;
     default: {
-      const _exhaustive: never = stmt;
-      return _exhaustive;
+      const exhaustive: never = stmt;
+      return exhaustive;
     }
   }
 }
@@ -228,28 +228,28 @@ function walkExpr(expr: Expr, names: Set<string>): void {
       return;
     case 'call':
       for (const a of expr.args) {
-        walkArg(a, names);
+        walkArg(a);
       }
       return;
     case 'bin':
-      walkArg(expr.left, names);
-      walkArg(expr.right, names);
+      walkArg(expr.left);
+      walkArg(expr.right);
       return;
     case 'instanceof':
-      walkArg(expr.subject, names);
+      walkArg(expr.subject);
       return;
     case 'call_checker':
       names.add(expr.name);
       walkValueRef(expr.subject);
       return;
     default: {
-      const _exhaustive: never = expr;
-      return _exhaustive;
+      const exhaustive: never = expr;
+      return exhaustive;
     }
   }
 }
 
-function walkArg(arg: Arg, names: Set<string>): void {
+function walkArg(arg: Arg): void {
   switch (arg.kind) {
     case 'ref':
       walkValueRef(arg.ref);
@@ -258,12 +258,12 @@ function walkArg(arg: Arg, names: Set<string>): void {
       return;
     case 'call':
       for (const a of arg.args) {
-        walkArg(a, names);
+        walkArg(a);
       }
       return;
     default: {
-      const _exhaustive: never = arg;
-      return _exhaustive;
+      const exhaustive: never = arg;
+      return exhaustive;
     }
   }
 }
@@ -279,8 +279,8 @@ function walkValueRef(ref: ValueRef): void {
       walkValueRef(ref.object);
       return;
     default: {
-      const _exhaustive: never = ref;
-      return _exhaustive;
+      const exhaustive: never = ref;
+      return exhaustive;
     }
   }
 }

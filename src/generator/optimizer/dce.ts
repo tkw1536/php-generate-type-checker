@@ -52,8 +52,8 @@ export function dce(block: Block): Block {
         reachable = false;
         break;
       default: {
-        const _exhaustive: never = stmt;
-        out.push(_exhaustive);
+        const exhaustive: never = stmt;
+        out.push(exhaustive);
       }
     }
   }

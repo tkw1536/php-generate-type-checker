@@ -193,8 +193,8 @@ function substituteAliases(
         ),
       };
     default: {
-      const _exhaustive: never = node;
-      return _exhaustive;
+      const exhaustive: never = node;
+      return exhaustive;
     }
   }
 }
@@ -303,8 +303,8 @@ function walkNamedAliasReferences(
       }
       return;
     default: {
-      const _exhaustive: never = node;
-      return _exhaustive;
+      const exhaustive: never = node;
+      return exhaustive;
     }
   }
 }

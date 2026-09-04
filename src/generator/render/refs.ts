@@ -78,8 +78,8 @@ export function renderValueRef(ref: ValueRef): string {
       return `${object}->${ref.name}`;
     }
     default: {
-      const _exhaustive: never = ref;
-      return _exhaustive;
+      const exhaustive: never = ref;
+      return exhaustive;
     }
   }
 }

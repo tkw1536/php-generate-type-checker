@@ -83,9 +83,10 @@ describe('parsePhpstanTypesFromDocblock', () => {
       'PostSummary',
     ]);
     expect(response.ast.kind).toBe('shape');
-    const postsField = (
-      response.ast as Extract<typeof response.ast, { kind: 'shape' }>
-    ).fields.find((f) => f.key === 'posts');
+    if (response.ast.kind !== 'shape') {
+      throw new Error('expected shape');
+    }
+    const postsField = response.ast.fields.find((f) => f.key === 'posts');
     expect(postsField?.value).toEqual({
       kind: 'collection',
       keyword: 'list',
@@ -101,15 +102,15 @@ describe('parsePhpstanTypesFromDocblock', () => {
       'AnnotationTarget',
     ]);
     expect(input.ast.kind).toBe('intersection');
-    const intersection = input.ast as Extract<
-      typeof input.ast,
-      { kind: 'intersection' }
-    >;
-    const shape = intersection.types[1] as Extract<
-      (typeof intersection.types)[number],
-      { kind: 'shape' }
-    >;
-    const bodyField = shape.fields.find((f) => f.key === 'body');
+    if (input.ast.kind !== 'intersection') {
+      throw new Error('expected intersection');
+    }
+    const shapeNode = input.ast.types[1];
+    expect(shapeNode.kind).toBe('shape');
+    if (shapeNode.kind !== 'shape') {
+      throw new Error('expected shape');
+    }
+    const bodyField = shapeNode.fields.find((f) => f.key === 'body');
     expect(bodyField?.value).toEqual({
       kind: 'named',
       name: 'AnnotationBody',
@@ -119,19 +120,20 @@ describe('parsePhpstanTypesFromDocblock', () => {
   it('preserves real class names with leading backslash', () => {
     const defs = parsePhpstanTypesFromDocblock(ANNOTATION_DOCBLOCK);
     const body = defs.find((d) => d.name === 'AnnotationBody')!;
-    const intersection = body.ast as Extract<
-      typeof body.ast,
-      { kind: 'intersection' }
-    >;
-    expect(intersection.types[0]).toEqual({
+    expect(body.ast.kind).toBe('intersection');
+    if (body.ast.kind !== 'intersection') {
+      throw new Error('expected intersection');
+    }
+    expect(body.ast.types[0]).toEqual({
       kind: 'named',
       name: '\\stdClass',
     });
-    const shape = intersection.types[1] as Extract<
-      typeof intersection.types[1],
-      { kind: 'shape' }
-    >;
-    const elementsField = shape.fields.find((f) => f.key === 'elements');
+    const shapeNode = body.ast.types[1];
+    expect(shapeNode.kind).toBe('shape');
+    if (shapeNode.kind !== 'shape') {
+      throw new Error('expected shape');
+    }
+    const elementsField = shapeNode.fields.find((f) => f.key === 'elements');
     expect(elementsField?.value).toEqual({
       kind: 'collection',
       keyword: 'list',

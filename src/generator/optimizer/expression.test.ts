@@ -156,8 +156,11 @@ describe('expandBinOp / absorbBinOp', () => {
   const ne = binExpr('!==', refArg($v), empty);
 
   it('expandBinOp wraps !==', () => {
-    const bin = ne as Extract<Expr, { kind: 'bin' }>;
-    expect(expandBinOp(bin)).toEqual(notExpr(binExpr('===', refArg($v), empty)));
+    expect(ne.kind).toBe('bin');
+    if (ne.kind !== 'bin') {
+      throw new Error('expected bin expression');
+    }
+    expect(expandBinOp(ne)).toEqual(notExpr(binExpr('===', refArg($v), empty)));
   });
 
   it('absorbBinOp unwraps not(===)', () => {

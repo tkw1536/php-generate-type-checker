@@ -7,6 +7,45 @@ import successCases from './testdata/parser.success.json';
 type ParseSuccessCase = { source: string; ast: TypeNode };
 type ParseErrorCase = { input: string; messageContains?: string };
 
+function isParseSuccessCase(value: unknown): value is ParseSuccessCase {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'source' in value &&
+    'ast' in value &&
+    typeof value.source === 'string'
+  );
+}
+
+function isParseErrorCase(value: unknown): value is ParseErrorCase {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'input' in value &&
+    typeof value.input === 'string' &&
+    (!('messageContains' in value) ||
+      typeof value.messageContains === 'string' ||
+      value.messageContains === undefined)
+  );
+}
+
+function readSuccessCases(data: unknown): ParseSuccessCase[] {
+  if (!Array.isArray(data) || !data.every(isParseSuccessCase)) {
+    throw new Error('invalid parser success fixture JSON');
+  }
+  return data;
+}
+
+function readErrorCases(data: unknown): ParseErrorCase[] {
+  if (!Array.isArray(data) || !data.every(isParseErrorCase)) {
+    throw new Error('invalid parser error fixture JSON');
+  }
+  return data;
+}
+
+const parsedSuccessCases = readSuccessCases(successCases);
+const parsedErrorCases = readErrorCases(errorCases);
+
 describe('parseTypes', () => {
   it('splits array<string>array<int> into two segments', () => {
     const result = parseTypes('array<string>array<int>');
@@ -43,7 +82,7 @@ describe('parseTypes', () => {
 
 describe('parseType', () => {
   describe('nullable ? prefix', () => {
-    const cases: [string, string][] = [
+    it.each([
       ['?int', 'int|null'],
       ['?int|string', 'int|null|string'],
       ['?(int|string)', '(int|string)|null'],
@@ -52,13 +91,9 @@ describe('parseType', () => {
       ['array{?int}', 'array{int|null}'],
       ['array{bar?: ?string}', 'array{bar?: string|null}'],
       ['list{?int}', 'list{int|null}'],
-    ];
-
-    for (const [source, expectedSource] of cases) {
-      it(source, () => {
-        expect(parseType(source)).toEqual(parseType(expectedSource));
-      });
-    }
+    ] as const)('%s', (source, expectedSource) => {
+      expect(parseType(source)).toEqual(parseType(expectedSource));
+    });
 
     it('array{bar?: string} still parses optional shape fields', () => {
       expect(parseType('array{bar?: string}')).toEqual(
@@ -68,24 +103,37 @@ describe('parseType', () => {
   });
 
   describe('success', () => {
-    for (const { source, ast } of successCases as ParseSuccessCase[]) {
-      it(source, () => {
-        expect(parseType(source)).toEqual(ast);
-      });
-    }
+    it.each(parsedSuccessCases)('$source', ({ source, ast }) => {
+      expect(parseType(source)).toEqual(ast);
+    });
   });
 
   describe('errors', () => {
-    for (const { input, messageContains } of errorCases as ParseErrorCase[]) {
-      const label = input === '' ? '(empty)' : input;
-      it(label, () => {
-        const run = () => parseType(input);
-        if (messageContains !== undefined) {
-          expect(run).toThrow(new RegExp(messageContains));
-        } else {
-          expect(run).toThrow();
-        }
-      });
-    }
+    const withMessage = parsedErrorCases.filter(
+      (c): c is ParseErrorCase & { messageContains: string } =>
+        typeof c.messageContains === 'string',
+    );
+    const withoutMessage = parsedErrorCases.filter(
+      (c) => c.messageContains === undefined,
+    );
+
+    it.each(
+      withMessage.map(({ input, messageContains }) => ({
+        label: input === '' ? '(empty)' : input,
+        input,
+        messageContains,
+      })),
+    )('$label', ({ input, messageContains }) => {
+      expect(() => parseType(input)).toThrow(new RegExp(messageContains));
+    });
+
+    it.each(
+      withoutMessage.map(({ input }) => ({
+        label: input === '' ? '(empty)' : input,
+        input,
+      })),
+    )('$label', ({ input }) => {
+      expect(() => parseType(input)).toThrow(Error);
+    });
   });
 });
