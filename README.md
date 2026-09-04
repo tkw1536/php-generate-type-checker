@@ -106,7 +106,11 @@ yarn install
 yarn dev          # http://localhost:5173
 yarn test
 yarn build
+yarn lint
+yarn lint:fix
 yarn spellcheck
 ```
+
+Linting uses [Oxlint](https://oxc.rs/docs/guide/usage/linter.html) with `correctness` and `suspicious` as errors, `perf` as warnings, type-aware rules, and the Vitest plugin — see [`.oxlintrc.json`](.oxlintrc.json) and the [rules reference](https://oxc.rs/docs/guide/usage/linter/rules.html).
 
 Contributor / agent notes (fixtures, warnings, CI): see [AGENTS.md](AGENTS.md).

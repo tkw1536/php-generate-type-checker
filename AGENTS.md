@@ -12,15 +12,19 @@ yarn install
 yarn dev      # local UI (prefer https://check.guys.wtf to try)
 yarn build    # tsc + Vite production bundle
 yarn preview
+yarn lint
+yarn lint:fix
 ```
 
-Stack: TypeScript ^7, Vite ^8, Vitest ^4, Yarn 4.18.0 (Corepack), Node latest (CI). PHP is generated output only.
+Stack: TypeScript ^7, Vite ^8, Vitest ^4, Oxlint + oxlint-tsgolint (type-aware), Yarn 4.18.0 (Corepack), Node latest (CI). PHP is generated output only.
 
 ## Testing
 
 ```bash
 yarn test
 yarn test:watch
+yarn lint
+yarn lint:fix
 yarn spellcheck
 ```
 
@@ -37,6 +41,8 @@ import { describe, expect, it } from 'vitest';
 import { generateChecker } from './index.ts';
 ```
 
+Lint standard: Oxlint [`correctness`](https://oxc.rs/docs/guide/usage/linter/config.html#enable-groups-of-rules-with-categories) + `suspicious` as errors, `perf` as warnings, type-aware on, Vitest plugin enabled (see [`.oxlintrc.json`](.oxlintrc.json)). Rule list: [Oxlint Rules](https://oxc.rs/docs/guide/usage/linter/rules.html). Do not invent rule lists or mass-fix with `yarn lint:fix` unless asked.
+
 ## Git workflow
 
 - No special branch or commit format.
@@ -45,6 +51,7 @@ import { generateChecker } from './index.ts';
 ```bash
 yarn test
 yarn build
+yarn lint
 yarn spellcheck
 ```
 

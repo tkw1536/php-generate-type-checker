@@ -12,11 +12,15 @@
     "review_fixtures:generator": "node ./src/generator/testdata/review-fixtures.mjs",
     "update_fixtures:parser": "node ./src/parser/testdata/update-testdata.mjs",
     "test:watch": "vitest",
-    "spellcheck": "cspell ."
+    "spellcheck": "cspell .",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix"
   },
   "devDependencies": {
     "cspell": "^10.2.0",
     "happy-dom": "^20.13.2",
+    "oxlint": "^1.81.0",
+    "oxlint-tsgolint": "^7.0.2001",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^4.1.11"
