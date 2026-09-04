@@ -14,17 +14,36 @@ import {
   returnStmt,
   variableRef,
 } from '../ir/index.ts';
-import { substituteExpr } from '../ir/substitute.ts';
-import type { Block, CheckerIR, Expr } from '../ir/types.ts';
+import { substituteExpr, substituteValueRef } from '../ir/substitute.ts';
+import type { Block, CheckerIR, Expr, Stmt } from '../ir/types.ts';
 import { buildMany } from '../pipeline.ts';
 import { optimize } from './index.ts';
+import { createOptimizerParams } from './params.ts';
 import { inlineBlock, negateBlock } from './inline.ts';
 import { prunePrograms } from './prune.ts';
-import { createOptimizerParams } from './params.ts';
-import { substituteValueRef } from '../ir/substitute.ts';
 
 const $v = variableRef('$value');
 const $elem = variableRef('$value1');
+
+function expectForeach(stmt: Stmt | undefined): Extract<Stmt, { kind: 'foreach' }> {
+  expect(stmt?.kind).toBe('foreach');
+  if (stmt?.kind !== 'foreach') {
+    throw new Error('expected foreach');
+  }
+  return stmt;
+}
+
+function expectIf(stmt: Stmt | undefined): Extract<Stmt, { kind: 'if' }> {
+  expect(stmt?.kind).toBe('if');
+  if (stmt?.kind !== 'if') {
+    throw new Error('expected if');
+  }
+  return stmt;
+}
+
+function isNotGuardIf(stmt: Stmt): boolean {
+  return stmt.kind === 'if' && stmt.cond.kind === 'not';
+}
 
 function ir(
   programs: CheckerIR['programs'],
@@ -77,11 +96,7 @@ describe('inlineBlock', () => {
   it('inlines return call_checker into callee body', () => {
     const result = inlineBlock(helperIr.programs.main.body, helperIr, 'main');
     expect(result.length).toBeGreaterThan(1);
-    expect(
-      result.some(
-        (s) => s.kind === 'if' && s.cond.kind === 'not',
-      ),
-    ).toBe(true);
+    expect(result.some((s) => isNotGuardIf(s))).toBe(true);
   });
 
   it('inlines single-return helper into return expression', () => {
@@ -157,16 +172,8 @@ describe('inlineBlock', () => {
       nestedUnionIr,
       'main',
     );
-    const foreachStmt = result.find((s) => s.kind === 'foreach');
-    expect(foreachStmt?.kind).toBe('foreach');
-    if (foreachStmt?.kind !== 'foreach') {
-      return;
-    }
-    const failIf = foreachStmt.body[0];
-    expect(failIf?.kind).toBe('if');
-    if (failIf?.kind !== 'if') {
-      return;
-    }
+    const foreachStmt = expectForeach(result.find((s) => s.kind === 'foreach'));
+    const failIf = expectIf(foreachStmt.body[0]);
     expect(failIf.cond).toEqual(
       notExpr(
         orExpr([
@@ -290,9 +297,14 @@ function exprHasCallChecker(expr: Expr): boolean {
       return exprHasCallChecker(expr.expr);
     case 'and':
     case 'or':
-      return expr.exprs.some(exprHasCallChecker);
-    default:
+      return expr.exprs.some((child) => exprHasCallChecker(child));
+    case 'bin':
+    case 'bool':
+    case 'call':
+    case 'instanceof':
       return false;
+    default:
+      throw new Error('never reached');
   }
 }
 

@@ -14,11 +14,19 @@ const DEFAULT_TYPE =
   'array{id: int, email: non-empty-string, name?: string}';
 
 function extractBodyHtml(html: string): string {
-  const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-  if (!bodyMatch?.[1]) {
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/iu);
+  const body = bodyMatch?.[1];
+  if (body === undefined || body === '') {
     throw new Error('index.html has no <body>');
   }
-  return bodyMatch[1].replace(/<script\b[\s\S]*?<\/script>/gi, '');
+  return body.replaceAll(/<script\b[\s\S]*?<\/script>/giu, '');
+}
+
+function themeToggleLabel(theme: string | undefined): string {
+  if (theme === 'dark') {
+    return 'Switch to light mode';
+  }
+  return 'Switch to dark mode';
 }
 
 function installMatchMedia(matches = false): void {
@@ -26,18 +34,29 @@ function installMatchMedia(matches = false): void {
     configurable: true,
     writable: true,
     value: vi.fn<(query: string) => MediaQueryList>().mockImplementation(
-      (query: string) => ({
-        matches,
-        media: query,
-        onchange: null,
-        addListener: vi.fn<() => void>(),
-        removeListener: vi.fn<() => void>(),
-        addEventListener: vi.fn<() => void>(),
-        removeEventListener: vi.fn<() => void>(),
-        dispatchEvent: vi.fn<() => boolean>(),
-      }),
+      (query: string): MediaQueryList => createMatchMediaList(query, matches),
     ),
   });
+}
+
+function createMatchMediaList(query: string, matches: boolean): MediaQueryList {
+  const addEventListener = vi.fn<() => void>();
+  const removeEventListener = vi.fn<() => void>();
+  const dispatchEvent = vi.fn<() => boolean>().mockReturnValue(false);
+  return Object.assign(
+    {
+      matches,
+      media: query,
+      onchange: null as MediaQueryList['onchange'],
+      addEventListener,
+      removeEventListener,
+      dispatchEvent,
+    },
+    {
+      addListener: addEventListener,
+      removeListener: removeEventListener,
+    },
+  );
 }
 
 function installLocalStorage(): void {
@@ -74,7 +93,8 @@ function installClipboard(): ReturnType<
 > {
   const writeText = vi
     .fn<(text: string) => Promise<void>>()
-    .mockResolvedValue(undefined);
+    .mockResolvedValue();
+
   Object.defineProperty(navigator, 'clipboard', {
     configurable: true,
     writable: true,
@@ -102,10 +122,10 @@ async function bootApp(options?: {
   const writeText = installClipboard();
 
   window.history.replaceState(null, '', '/');
-  if (options?.hash !== undefined) {
-    window.location.hash = options.hash;
-  } else {
+  if (options?.hash === undefined) {
     window.location.hash = '';
+  } else {
+    window.location.hash = options.hash;
   }
 
   document.body.innerHTML = extractBodyHtml(indexHtml);
@@ -196,7 +216,7 @@ describe('app UI (main.ts)', () => {
 
     const php = phpCodeText();
     expect(php).toContain('public static function');
-    expect(php).toMatch(/function check\b/);
+    expect(php).toMatch(/function check\b/u);
   });
 
   it('debounces input: shows generating, then updates PHP and hash', async () => {
@@ -232,14 +252,14 @@ describe('app UI (main.ts)', () => {
     )!;
     nameByType.checked = false;
     nameByType.dispatchEvent(new Event('change', { bubbles: true }));
-    expect(phpCodeText()).toMatch(/function check\b/);
+    expect(phpCodeText()).toMatch(/function check\b/u);
 
     const optimize = document.querySelector<HTMLInputElement>(
       '#generate-prioritize-readability',
     )!;
     optimize.checked = false;
     optimize.dispatchEvent(new Event('change', { bubbles: true }));
-    expect(irOptimizedText()).toMatch(/Optimizer skipped/i);
+    expect(irOptimizedText()).toMatch(/Optimizer skipped/iu);
 
     const emit = document.querySelector<HTMLSelectElement>(
       '#generate-output-mode',
@@ -265,7 +285,7 @@ describe('app UI (main.ts)', () => {
     expect(select.value).toBe('');
     expect(phpCodeText()).toContain('function');
     expect(window.location.hash).toContain(
-      encodeURIComponent('array<string, string>').replace(/%20/g, '+'),
+      encodeURIComponent('array<string, string>').replaceAll('%20', '+'),
     );
   });
 
@@ -292,7 +312,7 @@ describe('app UI (main.ts)', () => {
 
     expect(writeText).toHaveBeenCalledOnce();
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining('"ast"'));
-    expect(writeText.mock.calls[0][0]).not.toMatch(/^function /m);
+    expect(writeText.mock.calls[0][0]).not.toMatch(/^function /mu);
     expect(document.querySelector('#copy-status')!.textContent).toBe(
       'Copied to clipboard',
     );
@@ -351,14 +371,14 @@ describe('app UI (main.ts)', () => {
 
     const toggle = document.querySelector<HTMLButtonElement>('#theme-toggle')!;
     const before = document.documentElement.dataset.theme;
-    expect(before === 'light' || before === 'dark').toBe(true);
+    expect(['light', 'dark']).toContain(before);
 
     toggle.click();
 
     const after = document.documentElement.dataset.theme;
     expect(after).not.toBe(before);
     expect(toggle.getAttribute('aria-label')).toBe(
-      after === 'dark' ? 'Switch to light mode' : 'Switch to dark mode',
+      themeToggleLabel(after),
     );
   });
 

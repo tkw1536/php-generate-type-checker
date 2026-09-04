@@ -165,8 +165,8 @@ class Parser {
     if (this.match('number')) {
       const prev = this.previous();
       const num = prev.value.includes('.')
-        ? parseFloat(prev.value)
-        : parseInt(prev.value, 10);
+        ? Number(prev.value)
+        : Math.trunc(Number(prev.value));
       if (!Number.isInteger(num)) {
         throw new ParseError('int range bounds must be integers', this.peek().pos);
       }
@@ -267,7 +267,7 @@ class Parser {
     let optional = false;
 
     if (this.check('number')) {
-      key = parseInt(this.advance().value, 10);
+      key = Math.trunc(Number(this.advance().value));
     } else if (this.check('string')) {
       key = this.advance().value;
     } else if (this.check('identifier')) {
@@ -493,7 +493,15 @@ class Parser {
   }
 
   private peek(): Token {
-    return this.tokens[this.index] ?? this.tokens[this.tokens.length - 1]!;
+    const current = this.tokens.at(this.index);
+    if (current !== undefined) {
+      return current;
+    }
+    const last = this.tokens.at(-1);
+    if (last === undefined) {
+      throw new Error('never reached');
+    }
+    return last;
   }
 
   private previous(): Token {

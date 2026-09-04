@@ -124,7 +124,7 @@ describe('extractPhpstanTypes', () => {
 
   it('throws when no @phpstan-type tags are present', () => {
     expect(() => extractPhpstanTypes('/** just a comment */')).toThrow(
-      /No @phpstan-type definitions/,
+      /No @phpstan-type definitions/u,
     );
   });
 
@@ -134,18 +134,18 @@ describe('extractPhpstanTypes', () => {
  * @phpstan-type Foo int
  * @phpstan-type Foo string
  */`),
-    ).toThrow(/Duplicate @phpstan-type alias "Foo"/);
+    ).toThrow(/Duplicate @phpstan-type alias "Foo"/u);
   });
 
   it('throws when alias name is missing', () => {
     expect(() => extractPhpstanTypes('/** @phpstan-type */')).toThrow(
-      /Expected alias name/,
+      /Expected alias name/u,
     );
   });
 
   it('throws when type string is missing', () => {
     expect(() => extractPhpstanTypes('/** @phpstan-type Foo */')).toThrow(
-      /Missing type definition/,
+      /Missing type definition/u,
     );
   });
 });

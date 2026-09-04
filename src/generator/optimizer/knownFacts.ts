@@ -223,7 +223,8 @@ function substituteFactsShallow(
 export function blockAlwaysExitsWhenEntered(block: Block): boolean {
   // Note: Checking only the last statement assumes DCE has run.
   // This may not be true this time, but will be eventually.
-  return block.length > 0 && block[block.length - 1].kind === 'return';
+  const last = block.at(-1);
+  return last !== undefined && last.kind === 'return';
 }
 
 export function applyKnownFacts(
@@ -250,7 +251,7 @@ export function applyKnownFacts(
         const innerShadowed = new Set([
           ...currentEnv.shadowed,
           stmt.valueVar,
-          ...(stmt.keyVar !== null ? [stmt.keyVar] : []),
+          ...(stmt.keyVar === null ? [] : [stmt.keyVar]),
         ]);
         const bodyEnv: FactEnv =
           stmt.valueVar === parameter

@@ -33,7 +33,7 @@ class Renderer {
       }
       const program = ir.programs[name];
       const docType = options.docsByName[name];
-      if (!program || !docType) {
+      if (program === undefined || docType === undefined) {
         continue;
       }
       const body = renderProgramBody(program, { useSelfCalls });
@@ -43,7 +43,7 @@ class Renderer {
     const entrySpecs: EntryRenderSpec[] = [];
     for (const name of entryNames) {
       const program = ir.programs[name];
-      if (!program) {
+      if (program === undefined) {
         continue;
       }
       const docType =

@@ -64,8 +64,10 @@ export function returnMultilineAnd(
   if (andParts.length === 1) {
     return [line(depth, `return ${andParts[0]};`)];
   }
-  const out: PhpLine[] = [line(depth, 'return (')];
-  out.push(line(depth + 1, andParts[0].trim()));
+  const out: PhpLine[] = [
+    line(depth, 'return ('),
+    line(depth + 1, andParts[0].trim()),
+  ];
   for (let i = 1; i < andParts.length; i++) {
     out.push(line(depth + 1, `&& ${andParts[i].trim()}`));
   }

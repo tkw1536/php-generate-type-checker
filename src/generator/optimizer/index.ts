@@ -98,7 +98,9 @@ function optimizeStmt(
         ...stmt,
         body: optimizeBlock(stmt.body, ir, programName, params),
       };
-    default:
+    case 'return':
       return stmt;
+    default:
+      throw new Error('never reached');
   }
 }

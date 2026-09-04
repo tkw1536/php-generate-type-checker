@@ -38,10 +38,8 @@ function formatTypeInner(type: TypeNode, parent: Precedence): string {
       return `${type.name}<${type.typeArgs.map((arg) => formatTypeInner(arg, 'union')).join(', ')}>`;
     case 'unsupported':
       return type.raw;
-    default: {
-      const exhaustive: never = type;
-      return exhaustive;
-    }
+    default:
+      throw new Error('never reached');
   }
 }
 
@@ -50,10 +48,14 @@ function formatLiteral(literal: Extract<TypeNode, { kind: 'literal' }>): string 
     return literal.value;
   }
   if (literal.quotes === 'double') {
-    const escaped = literal.value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    const escaped = literal.value
+      .replaceAll('\\', '\\\\')
+      .replaceAll('"', '\\"');
     return `"${escaped}"`;
   }
-  const escaped = literal.value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  const escaped = literal.value
+    .replaceAll('\\', '\\\\')
+    .replaceAll("'", "\\'");
   return `'${escaped}'`;
 }
 
@@ -108,7 +110,7 @@ function formatShapeKey(key: string | number): string {
   if (/^[a-zA-Z_][a-zA-Z0-9_]*$/u.test(key)) {
     return key;
   }
-  return `'${key.replaceAll(/\\/gu, '\\\\').replaceAll(/'/gu, "\\'")}'`;
+  return `'${key.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`;
 }
 
 function formatUnion(
@@ -142,13 +144,11 @@ function formatCallableParam(param: CallableParam): string {
   let s = formatTypeInner(param.type, 'union');
 
   if (param.variadic) {
-    s = param.name ? `${s} ...${param.name}` : `${s}...`;
-  } else {
-    if (param.byRef) {
-      s += param.name ? ` &${param.name}` : ' &';
-    } else if (param.name) {
-      s += ` ${param.name}`;
-    }
+    s = param.name === undefined ? `${s}...` : `${s} ...${param.name}`;
+  } else if (param.byRef) {
+    s += param.name === undefined ? ' &' : ` &${param.name}`;
+  } else if (param.name !== undefined) {
+    s += ` ${param.name}`;
   }
 
   if (param.optional) {

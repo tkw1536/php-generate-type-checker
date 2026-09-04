@@ -18,13 +18,13 @@ describe('class output visibility', () => {
     );
     expect(php).toContain('private static function isArrayInt(');
     expect(php).toContain('private static function isArrayString(');
-    expect(php).not.toMatch(/protected static function isArrayInt\(/);
-    expect(php).not.toMatch(/public static function isArrayInt\(/);
+    expect(php).not.toMatch(/protected static function isArrayInt\(/u);
+    expect(php).not.toMatch(/public static function isArrayInt\(/u);
     expect(php).toMatch(
-      /^\s{4}\/\*\* @phpstan-assert-if-true array<int> \$value \*\/$/m,
+      /^\s{4}\/\*\* @phpstan-assert-if-true array<int> \$value \*\/$/mu,
     );
     expect(php).toMatch(
-      /^\s{4}\/\*\* @phpstan-assert-if-true array<string> \$value \*\/$/m,
+      /^\s{4}\/\*\* @phpstan-assert-if-true array<string> \$value \*\/$/mu,
     );
   });
 

@@ -5,15 +5,8 @@ export function isMixed(node: TypeNode): boolean {
 }
 
 export function isNever(node: TypeNode): boolean {
-  if (node.kind !== 'keyword') {
-    return false;
-  }
-  switch (node.keyword) {
-    case 'never':
-    case 'noreturn':
-      return true;
-    default:
-      return false;
-  }
+  return (
+    node.kind === 'keyword' &&
+    (node.keyword === 'never' || node.keyword === 'noreturn')
+  );
 }
-

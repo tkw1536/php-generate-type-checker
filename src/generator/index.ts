@@ -21,9 +21,10 @@ export function generateChecker(
   const { segments } = parseTypes(typeString);
   const types = segments.map((s) => s.ast);
   const { ir: built, typesByName } = buildMany(types, options);
-  const ir = options?.prioritizeReadabilityOverCompactness
-    ? built
-    : optimize(built);
+  const ir =
+    options?.prioritizeReadabilityOverCompactness === true
+      ? built
+      : optimize(built);
   return renderChecker(ir, {
     ...options,
     typeString: typeString.trim(),
@@ -52,9 +53,10 @@ export function generateDocblockChecker(
     })),
     { segmentSources: defs.map((d) => d.typeString) },
   );
-  const ir = options?.prioritizeReadabilityOverCompactness
-    ? built
-    : optimize(built);
+  const ir =
+    options?.prioritizeReadabilityOverCompactness === true
+      ? built
+      : optimize(built);
   return renderChecker(ir, {
     ...options,
     typeString: docblock.trim(),

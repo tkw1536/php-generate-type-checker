@@ -250,8 +250,13 @@ function inlineExpr(expr: Expr, ir: CheckerIR, programName: string): Expr | null
       });
       return changed ? { ...expr, exprs } : null;
     }
-    default:
+    case 'bin':
+    case 'bool':
+    case 'call':
+    case 'instanceof':
       return null;
+    default:
+      throw new Error('never reached');
   }
 }
 

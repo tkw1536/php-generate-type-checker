@@ -32,6 +32,13 @@ function isParseErrorCase(value: unknown): value is ParseErrorCase {
   );
 }
 
+function caseLabel(input: string): string {
+  if (input === '') {
+    return '(empty)';
+  }
+  return input;
+}
+
 function readSuccessCases(data: unknown): ParseSuccessCase[] {
   if (!Array.isArray(data) || !data.every((item) => isParseSuccessCase(item))) {
     throw new Error('invalid parser success fixture JSON');
@@ -122,7 +129,7 @@ describe('parseType', () => {
 
     it.each(
       withMessage.map(({ input, messageContains }) => ({
-        label: input === '' ? '(empty)' : input,
+        label: caseLabel(input),
         input,
         messageContains,
       })),
@@ -142,7 +149,7 @@ describe('parseType', () => {
 
     it.each(
       withoutMessage.map(({ input }) => ({
-        label: input === '' ? '(empty)' : input,
+        label: caseLabel(input),
         input,
       })),
     )(

@@ -4,12 +4,11 @@
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { generateChecker, generateDocblockChecker } from '../index.ts';
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const testdataDir = here;
+const testdataDir = import.meta.dirname;
 
+/** @type {readonly string[]} */
 const OUTPUT_MODES = [
   'function',
   'public_static',
@@ -17,54 +16,119 @@ const OUTPUT_MODES = [
   'private_static',
 ];
 
+/**
+ * @param {string} line
+ * @returns {string}
+ */
+function trimLine(line) {
+  return line.trim();
+}
+
+/**
+ * @param {string} line
+ * @returns {boolean}
+ */
+function isSourceLine(line) {
+  return line.length > 0 && !line.startsWith('#');
+}
+
+/**
+ * @param {string} block
+ * @returns {string}
+ */
+function trimBlock(block) {
+  return block.trim();
+}
+
+/**
+ * @param {string} block
+ * @returns {boolean}
+ */
+function isNonEmptyBlock(block) {
+  return block.length > 0;
+}
+
+/**
+ * @param {string} inPath
+ * @returns {string[]}
+ */
 function readSources(inPath) {
   return readFileSync(inPath, 'utf8')
     .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0 && !line.startsWith('#'));
+    .map((line) => trimLine(line))
+    .filter((line) => isSourceLine(line));
 }
 
+/**
+ * @typedef {{
+ *   readonly input: string;
+ *   readonly output: string;
+ *   readonly emitPhpstanTypeAliases: boolean;
+ * }} MultilineCase
+ */
+
+/**
+ * @param {string} inPath
+ * @returns {MultilineCase[]}
+ */
 function readMultilineCases(inPath) {
   return readFileSync(inPath, 'utf8')
     .split('\n---\n')
-    .map((block) => block.trim())
-    .filter((block) => block.length > 0)
-    .map(parseMultilineCase);
+    .map((block) => trimBlock(block))
+    .filter((block) => isNonEmptyBlock(block))
+    .map((block) => parseMultilineCase(block));
 }
 
+/**
+ * @param {string} block
+ * @returns {MultilineCase}
+ */
 function parseMultilineCase(block) {
   const lines = block.split('\n');
-  const options = { output: 'function', emitPhpstanTypeAliases: false };
+  let output = 'function';
+  let emitPhpstanTypeAliases = false;
   let start = 0;
 
   while (start < lines.length && lines[start].startsWith('#')) {
     const line = lines[start].trim();
-    const outputMatch = /^#\s*output:\s*(\S+)/.exec(line);
+    const outputMatch = /^#\s*output:\s*(\S+)/u.exec(line);
     if (outputMatch) {
-      options.output = outputMatch[1];
+      output = outputMatch[1];
     }
-    const emitMatch = /^#\s*emitAliases:\s*1/.exec(line);
+    const emitMatch = /^#\s*emitAliases:\s*1/u.exec(line);
     if (emitMatch) {
-      options.emitPhpstanTypeAliases = true;
+      emitPhpstanTypeAliases = true;
     }
     start++;
   }
 
   const input = lines.slice(start).join('\n').trim();
-  return { input, ...options };
+  return { input, output, emitPhpstanTypeAliases };
+}
+
+/**
+ * @param {string} input
+ * @returns {{ input: string }}
+ */
+function toErrorCase(input) {
+  return { input };
 }
 
 for (const output of OUTPUT_MODES) {
   const inPath = path.join(testdataDir, `${output}.IN`);
-  if (!existsSync(inPath)) continue;
+  if (!existsSync(inPath)) {
+    continue;
+  }
   const sources = readSources(inPath);
+  /** @type {{ input: string; expected: string }[]} */
   const out = [];
   for (const input of sources) {
     try {
       const expected = generateChecker(input, { output });
       out.push({ input, expected });
     } catch (err) {
-      console.warn('skip', output, JSON.stringify(input), err?.message ?? err);
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn('skip', output, JSON.stringify(input), message);
     }
   }
   const fixturePath = path.resolve(testdataDir, `${output}.json`);
@@ -79,26 +143,28 @@ const DOCBlock_FIXTURES = [
 
 for (const { name, emitPhpstanTypeAliases: defaultEmit } of DOCBlock_FIXTURES) {
   const inPath = path.join(testdataDir, `${name}.IN`);
-  if (!existsSync(inPath)) continue;
+  if (!existsSync(inPath)) {
+    continue;
+  }
   const cases = readMultilineCases(inPath);
+  /** @type {{ input: string; output: string; expected: string; emitPhpstanTypeAliases?: boolean }[]} */
   const out = [];
   for (const { input, output, emitPhpstanTypeAliases } of cases) {
-    const emit =
-      emitPhpstanTypeAliases !== undefined
-        ? emitPhpstanTypeAliases
-        : defaultEmit;
+    const emit = emitPhpstanTypeAliases || defaultEmit;
     try {
       const expected = generateDocblockChecker(input, {
         output,
         emitPhpstanTypeAliases: emit,
       });
+      /** @type {{ input: string; output: string; expected: string; emitPhpstanTypeAliases?: boolean }} */
       const entry = { input, output, expected };
       if (emit) {
         entry.emitPhpstanTypeAliases = true;
       }
       out.push(entry);
     } catch (err) {
-      console.warn('skip', name, err?.message ?? err);
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn('skip', name, message);
     }
   }
   const fixturePath = path.resolve(testdataDir, `${name}.json`);
@@ -109,7 +175,7 @@ for (const { name, emitPhpstanTypeAliases: defaultEmit } of DOCBlock_FIXTURES) {
 const errorsIn = path.join(testdataDir, 'errors.IN');
 if (existsSync(errorsIn)) {
   const sources = readSources(errorsIn);
-  const out = sources.map((input) => ({ input }));
+  const out = sources.map((input) => toErrorCase(input));
   const fixturePath = path.resolve(testdataDir, 'errors.json');
   writeFileSync(fixturePath, `${JSON.stringify(out, null, 2)}\n`);
   console.log(`Wrote ${out.length} cases to ${fixturePath}`);

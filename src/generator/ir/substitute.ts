@@ -253,18 +253,16 @@ function walkArg(arg: Arg): void {
   switch (arg.kind) {
     case 'ref':
       walkValueRef(arg.ref);
-      return;
+      break;
     case 'literal':
-      return;
+      break;
     case 'call':
       for (const a of arg.args) {
         walkArg(a);
       }
-      return;
-    default: {
-      const exhaustive: never = arg;
-      return exhaustive;
-    }
+      break;
+    default:
+      throw new Error('never reached');
   }
 }
 

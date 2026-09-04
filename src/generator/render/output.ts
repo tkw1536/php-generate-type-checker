@@ -145,8 +145,11 @@ export function wrapMultipleEntries(
       formatCheckerOutput(e.docType, e.body, 'function', e.functionName),
     );
     const combined = parts.join('\n\n');
-    const helperText = helpers.map(formatTopLevelFunction).join('\n\n');
-    const withHelpers = helperText ? `${combined}\n\n${helperText}` : combined;
+    const helperText = helpers
+      .map((helper) => formatTopLevelFunction(helper))
+      .join('\n\n');
+    const withHelpers =
+      helperText === '' ? combined : `${combined}\n\n${helperText}`;
     return normalizeEndingNewline(withHelpers);
   }
   return normalizeEndingNewline(
@@ -169,8 +172,10 @@ export function wrapChecker(
       'function',
       mainFunctionName,
     );
-    const helperText = helpers.map(formatTopLevelFunction).join('\n\n');
-    const combined = helperText ? `${core}\n\n${helperText}` : core;
+    const helperText = helpers
+      .map((helper) => formatTopLevelFunction(helper))
+      .join('\n\n');
+    const combined = helperText === '' ? core : `${core}\n\n${helperText}`;
     return normalizeEndingNewline(combined);
   }
   return normalizeEndingNewline(

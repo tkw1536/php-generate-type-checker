@@ -7,7 +7,7 @@ export function setupHelpTooltips(): void {
 
   for (const button of helpButtons) {
     const describedBy = button.getAttribute('aria-describedby');
-    if (!describedBy) {
+    if (describedBy === null || describedBy === '') {
       console.warn(
         'Accessibility: .option-help button is missing aria-describedby',
         button,
@@ -16,7 +16,7 @@ export function setupHelpTooltips(): void {
     }
 
     const description = document.querySelector(`#${describedBy}`);
-    if (!description) {
+    if (description === null) {
       console.warn(
         `Accessibility: aria-describedby="#${describedBy}" target not found`,
         button,
@@ -26,7 +26,7 @@ export function setupHelpTooltips(): void {
 
     // Prefer data-tooltip as the single source of truth for description text.
     const tooltip = button.dataset.tooltip;
-    if (tooltip && description.textContent !== tooltip) {
+    if (tooltip !== undefined && tooltip !== '' && description.textContent !== tooltip) {
       description.textContent = tooltip;
     }
   }

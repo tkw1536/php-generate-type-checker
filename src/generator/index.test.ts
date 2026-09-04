@@ -45,9 +45,9 @@ function successToFixtures(
 function docblockToFixtures(cases: readonly DocblockCase[]): GeneratorFixture[] {
   return cases.map(({ input, output, expected, emitPhpstanTypeAliases }) => {
     const label =
-      output === 'function' && !emitPhpstanTypeAliases
+      output === 'function' && emitPhpstanTypeAliases !== true
         ? 'docblock: post list API'
-        : `docblock: ${output}${emitPhpstanTypeAliases ? ' + aliases' : ''}`;
+        : `docblock: ${output}${emitPhpstanTypeAliases === true ? ' + aliases' : ''}`;
     return {
       name: label,
       input,
@@ -104,21 +104,21 @@ function isErrorCase(value: unknown): value is ErrorCase {
 }
 
 function readSuccessCases(data: unknown): SuccessCase[] {
-  if (!Array.isArray(data) || !data.every(isSuccessCase)) {
+  if (!Array.isArray(data) || !data.every((item) => isSuccessCase(item))) {
     throw new Error('invalid success fixture JSON');
   }
   return data;
 }
 
 function readDocblockCases(data: unknown): DocblockCase[] {
-  if (!Array.isArray(data) || !data.every(isDocblockCase)) {
+  if (!Array.isArray(data) || !data.every((item) => isDocblockCase(item))) {
     throw new Error('invalid docblock fixture JSON');
   }
   return data;
 }
 
 function readErrorCases(data: unknown): ErrorCase[] {
-  if (!Array.isArray(data) || !data.every(isErrorCase)) {
+  if (!Array.isArray(data) || !data.every((item) => isErrorCase(item))) {
     throw new Error('invalid error fixture JSON');
   }
   return data;
@@ -143,6 +143,12 @@ export function loadFixtures(): GeneratorFixture[] {
 const fixtures = loadFixtures();
 const errorFixtures = fixtures.filter((fixture) => fixture.expectsError);
 const successFixtures = fixtures.filter((fixture) => !fixture.expectsError);
+const docblockSuccessFixtures = successFixtures.filter(
+  (fixture) => fixture.docblock === true,
+);
+const typeSuccessFixtures = successFixtures.filter(
+  (fixture) => fixture.docblock !== true,
+);
 
 describe('generateChecker fixtures', () => {
   it.each(errorFixtures)('$name', (fixture) => {
@@ -151,24 +157,18 @@ describe('generateChecker fixtures', () => {
     ).toThrow(GenerationError);
   });
 
-  it.each(successFixtures.filter((fixture) => fixture.docblock))(
-    '$name',
-    (fixture) => {
-      expect(
-        generateDocblockChecker(fixture.input, {
-          output: fixture.output,
-          emitPhpstanTypeAliases: fixture.emitPhpstanTypeAliases,
-        }),
-      ).toBe(fixture.expected);
-    },
-  );
+  it.each(docblockSuccessFixtures)('$name', (fixture) => {
+    expect(
+      generateDocblockChecker(fixture.input, {
+        output: fixture.output,
+        emitPhpstanTypeAliases: fixture.emitPhpstanTypeAliases,
+      }),
+    ).toBe(fixture.expected);
+  });
 
-  it.each(successFixtures.filter((fixture) => !fixture.docblock))(
-    '$name',
-    (fixture) => {
-      expect(generateChecker(fixture.input, { output: fixture.output })).toBe(
-        fixture.expected,
-      );
-    },
-  );
+  it.each(typeSuccessFixtures)('$name', (fixture) => {
+    expect(generateChecker(fixture.input, { output: fixture.output })).toBe(
+      fixture.expected,
+    );
+  });
 });

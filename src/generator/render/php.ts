@@ -51,8 +51,14 @@ function preferMultiline(expr: Expr): boolean {
       );
     case 'not':
       return preferMultiline(expr.expr);
-    default:
+    case 'bin':
+    case 'bool':
+    case 'call':
+    case 'call_checker':
+    case 'instanceof':
       return false;
+    default:
+      throw new Error('never reached');
   }
 }
 
@@ -63,7 +69,10 @@ function appendTrailingOperator(
   if (lines.length === 0) {
     return [...lines];
   }
-  const last = lines[lines.length - 1];
+  const last = lines.at(-1);
+  if (last === undefined) {
+    return [...lines];
+  }
   return [
     ...lines.slice(0, -1),
     { depth: last.depth, text: last.text + suffix },
@@ -133,7 +142,7 @@ export function renderExpr(expr: Expr, opts: RenderPhpOptions = {}): string {
       return `${renderArg(expr.subject)} instanceof ${expr.className}`;
     case 'call_checker': {
       const path = renderValueRef(expr.subject);
-      const name = opts.useSelfCalls ? `self::${expr.name}` : expr.name;
+      const name = opts.useSelfCalls === true ? `self::${expr.name}` : expr.name;
       return `${name}(${path})`;
     }
     default:
@@ -321,9 +330,10 @@ function renderStmt(stmt: Stmt, depth: number, opts: RenderPhpOptions): PhpLine[
       return renderIfStmt(stmt, depth, opts);
     case 'foreach': {
       const iterable = renderValueRef(stmt.iterable);
-      const bind = stmt.keyVar
-        ? `foreach (${iterable} as ${stmt.keyVar} => ${stmt.valueVar}) {`
-        : `foreach (${iterable} as ${stmt.valueVar}) {`;
+      const bind =
+        stmt.keyVar === null
+          ? `foreach (${iterable} as ${stmt.valueVar}) {`
+          : `foreach (${iterable} as ${stmt.keyVar} => ${stmt.valueVar}) {`;
       const body = renderBlock(stmt.body, 0, opts);
       return [line(depth, bind), ...shiftLines(1, body), line(depth, '}')];
     }

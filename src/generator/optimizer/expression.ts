@@ -348,7 +348,7 @@ function factorOrOfAnds(exprs: readonly Expr[]): Extract<Expr, { kind: 'and' }> 
   if (exprs.length < 2) {
     return null;
   }
-  const armLists = exprs.map(conjunctsOf);
+  const armLists = exprs.map((expr) => conjunctsOf(expr));
   const common = intersectOperands(armLists);
   if (common.length === 0) {
     return null;
@@ -370,7 +370,7 @@ function factorAndOfOrs(exprs: readonly Expr[]): Extract<Expr, { kind: 'or' }> |
   if (exprs.length < 2) {
     return null;
   }
-  const armLists = exprs.map(disjunctsOf);
+  const armLists = exprs.map((expr) => disjunctsOf(expr));
   const common = intersectOperands(armLists);
   if (common.length === 0) {
     return null;

@@ -175,7 +175,7 @@ export function renderChecker(
   });
 
   if (
-    input.emitPhpstanTypeAliases &&
+    input.emitPhpstanTypeAliases === true &&
     input.phpstanTypeAliases !== undefined &&
     input.phpstanTypeAliases.length > 0
   ) {

@@ -21,7 +21,9 @@ function unnestStmt(stmt: Stmt): Stmt {
     }
     case 'foreach':
       return { ...stmt, body: unnest(stmt.body) };
-    default:
+    case 'return':
       return stmt;
+    default:
+      throw new Error('never reached');
   }
 }

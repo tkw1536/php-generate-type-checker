@@ -32,7 +32,9 @@ describe('FunctionNameRegistry', () => {
     const r = new FunctionNameRegistry(new SequentialCheckNameProposer());
     const root = parseType('array<int>|array<string>');
     r.set(root, 'check');
-    expect(r.get(parseType('int'))).toBe('check_2'); // because check is already taken!
-    expect(r.get(parseType('string'))).toBe('check_1'); // continue counting from above
+    expect(r.get(parseType('int'))).toBe('check_2');
+    // because check is already taken!
+    expect(r.get(parseType('string'))).toBe('check_1');
+    // continue counting from above
   });
 });

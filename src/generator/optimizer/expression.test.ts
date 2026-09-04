@@ -27,6 +27,14 @@ const isInt = callExpr('is_int', [refArg($v)]);
 const isString = callExpr('is_string', [refArg($v)]);
 const empty = literalArg('[]');
 
+function expectBin(expr: Expr): Extract<Expr, { kind: 'bin' }> {
+  expect(expr.kind).toBe('bin');
+  if (expr.kind !== 'bin') {
+    throw new Error('expected bin expression');
+  }
+  return expr;
+}
+
 describe('simplifyExpression', () => {
   it.each([
     ['double not', notExpr(notExpr(isInt)), isInt],
@@ -156,11 +164,9 @@ describe('expandBinOp / absorbBinOp', () => {
   const ne = binExpr('!==', refArg($v), empty);
 
   it('expandBinOp wraps !==', () => {
-    expect(ne.kind).toBe('bin');
-    if (ne.kind !== 'bin') {
-      throw new Error('expected bin expression');
-    }
-    expect(expandBinOp(ne)).toEqual(notExpr(binExpr('===', refArg($v), empty)));
+    expect(expandBinOp(expectBin(ne))).toEqual(
+      notExpr(binExpr('===', refArg($v), empty)),
+    );
   });
 
   it('absorbBinOp unwraps not(===)', () => {

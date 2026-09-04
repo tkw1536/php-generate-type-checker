@@ -262,21 +262,18 @@ export class Builder {
     node: Extract<TypeNode, { kind: 'keyword' }>,
     subject: ValueRef,
   ): Block {
-    switch (node.keyword) {
-      case 'mixed':
-        return [];
-      case 'never':
-      case 'noreturn':
-        return [returnStmt(boolLit(false))];
-      default: {
-        const atoms = this.booleanAtoms(node, subject);
-        const out: Stmt[] = [];
-        for (const atom of atoms) {
-          out.push(failIfStmt(atom));
-        }
-        return out;
-      }
+    if (node.keyword === 'mixed') {
+      return [];
     }
+    if (node.keyword === 'never' || node.keyword === 'noreturn') {
+      return [returnStmt(boolLit(false))];
+    }
+    const atoms = this.booleanAtoms(node, subject);
+    const out: Stmt[] = [];
+    for (const atom of atoms) {
+      out.push(failIfStmt(atom));
+    }
+    return out;
   }
 
   private emitAtomicStatements(type: TypeNode, subject: ValueRef): Block {
@@ -510,8 +507,7 @@ export class Builder {
       ];
     }
 
-    const out: Stmt[] = [];
-    out.push(...this.listGuards(subject, opts, nonEmpty));
+    const out = [...this.listGuards(subject, opts, nonEmpty)];
 
     if (element.kind === 'keyword' && element.keyword === 'mixed') {
       return out;
@@ -773,10 +769,14 @@ export class Builder {
           type,
           `Cannot generate a runtime check for ${describeNode(type)}: not representable as a single boolean PHP expression`,
         );
+        break;
       case 'unsupported':
       case 'callable':
       case 'generic':
         cannotBuild(type);
+        break;
+      default:
+        throw new Error('never reached');
     }
     throw new Error('never reached');
   }

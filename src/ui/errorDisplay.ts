@@ -87,13 +87,21 @@ export function renderErrorHtml(error: PositionedError, sourceText: string): str
     typeLabel === null
       ? ''
       : `<p class="error-detail">${escapeHtml(typeLabel)}</p>`,
-    error.detail
+    error.detail !== undefined && error.detail !== ''
       ? `<p class="error-detail">Type: <code>${escapeHtml(error.detail)}</code></p>`
       : '',
   ].join('');
 
-  const snippetHtml = snippet
-    ? `
+  const snippetHtml =
+    snippet === null
+      ? snippetSource === ''
+        ? ''
+        : `
+    <div class="error-snippet">
+      <div class="error-snippet-label">${typeLabel === null ? 'Input' : escapeHtml(typeLabel)}</div>
+      <pre class="error-source-plain">${escapeHtml(snippetSource)}</pre>
+    </div>`
+      : `
     <div class="error-snippet">
       <div class="error-snippet-label">In your input</div>
       <div class="error-source-wrap">
@@ -104,14 +112,7 @@ export function renderErrorHtml(error: PositionedError, sourceText: string): str
         </table>
       </div>
       <p class="error-location">${escapeHtml(typeLabel === null ? snippet.locationLabel : `${typeLabel} — ${snippet.locationLabel}`)}</p>
-    </div>`
-    : snippetSource
-      ? `
-    <div class="error-snippet">
-      <div class="error-snippet-label">${typeLabel === null ? 'Input' : escapeHtml(typeLabel)}</div>
-      <pre class="error-source-plain">${escapeHtml(snippetSource)}</pre>
-    </div>`
-      : '';
+    </div>`;
 
   return `
 <div class="error-display" role="alert">

@@ -10,7 +10,7 @@ import {
   returnStmt,
   variableRef,
 } from '../ir/index.ts';
-import type { Block } from '../ir/types.ts';
+import type { Block, Stmt } from '../ir/types.ts';
 import { simplifyExpression } from './expression.ts';
 import { createOptimizerParams } from './params.ts';
 import {
@@ -25,6 +25,32 @@ const defaultParams = createOptimizerParams({ programs: {}, order: [], entries: 
 
 const $v = variableRef('$value');
 const isArray = callExpr('is_array', [refArg($v)]);
+
+function expectIf(stmt: Stmt | undefined): Extract<Stmt, { kind: 'if' }> {
+  expect(stmt?.kind).toBe('if');
+  if (stmt?.kind !== 'if') {
+    throw new Error('expected if');
+  }
+  return stmt;
+}
+
+function expectReturn(stmt: Stmt | undefined): Extract<Stmt, { kind: 'return' }> {
+  expect(stmt?.kind).toBe('return');
+  if (stmt?.kind !== 'return') {
+    throw new Error('expected return');
+  }
+  return stmt;
+}
+
+function expectForeach(
+  stmt: Stmt | undefined,
+): Extract<Stmt, { kind: 'foreach' }> {
+  expect(stmt?.kind).toBe('foreach');
+  if (stmt?.kind !== 'foreach') {
+    throw new Error('expected foreach');
+  }
+  return stmt;
+}
 
 describe('substituteFacts', () => {
   it('replaces expr known false', () => {
@@ -42,16 +68,7 @@ describe('substituteFacts', () => {
       },
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const outerIf = result[0];
-    expect(outerIf.kind).toBe('if');
-    if (outerIf.kind !== 'if') {
-      return;
-    }
-    const ret = outerIf.body[0];
-    expect(ret.kind).toBe('return');
-    if (ret.kind !== 'return') {
-      return;
-    }
+    const ret = expectReturn(expectIf(result[0]).body[0]);
     expect(ret.expr).toEqual(boolLit(true));
   });
 
@@ -66,12 +83,7 @@ describe('substituteFacts', () => {
       { kind: 'if', cond: orExpr([isArray, isInt]), body: [returnStmt(boolLit(false))] },
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const secondIf = result[1];
-    expect(secondIf.kind).toBe('if');
-    if (secondIf.kind !== 'if') {
-      return;
-    }
-    expect(secondIf.cond).toEqual(boolLit(false));
+    expect(expectIf(result[1]).cond).toEqual(boolLit(false));
   });
 
   it('flips true not fact into false on inner expr', () => {
@@ -85,16 +97,7 @@ describe('substituteFacts', () => {
       },
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const outerIf = result[0];
-    expect(outerIf.kind).toBe('if');
-    if (outerIf.kind !== 'if') {
-      return;
-    }
-    const innerIf = outerIf.body[0];
-    expect(innerIf.kind).toBe('if');
-    if (innerIf.kind !== 'if') {
-      return;
-    }
+    const innerIf = expectIf(expectIf(result[0]).body[0]);
     expect(innerIf.cond).toEqual(boolLit(false));
   });
 
@@ -108,16 +111,7 @@ describe('substituteFacts', () => {
       },
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const outerIf = result[0];
-    expect(outerIf.kind).toBe('if');
-    if (outerIf.kind !== 'if') {
-      return;
-    }
-    const ret = outerIf.body[0];
-    expect(ret.kind).toBe('return');
-    if (ret.kind !== 'return') {
-      return;
-    }
+    const ret = expectReturn(expectIf(result[0]).body[0]);
     expect(ret.expr).toEqual(boolLit(false));
   });
 });
@@ -187,12 +181,7 @@ describe('applyKnownFacts', () => {
       },
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const secondIf = result[1];
-    expect(secondIf.kind).toBe('if');
-    if (secondIf.kind !== 'if') {
-      return;
-    }
-    const simplified = simplifyExpression(secondIf.cond, defaultParams);
+    const simplified = simplifyExpression(expectIf(result[1]).cond, defaultParams);
     expect(simplified).toEqual(boolLit(true));
   });
 
@@ -212,12 +201,7 @@ describe('applyKnownFacts', () => {
       returnStmt(boolLit(true)),
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const secondIf = result[1];
-    expect(secondIf.kind).toBe('if');
-    if (secondIf.kind !== 'if') {
-      return;
-    }
-    const simplified = simplifyExpression(secondIf.cond, defaultParams);
+    const simplified = simplifyExpression(expectIf(result[1]).cond, defaultParams);
     expect(simplified).toEqual(boolLit(true));
   });
 
@@ -239,16 +223,7 @@ describe('applyKnownFacts', () => {
       },
     ];
     const result = applyKnownFacts(block, '$value', env);
-    const foreachStmt = result[0];
-    expect(foreachStmt.kind).toBe('foreach');
-    if (foreachStmt.kind !== 'foreach') {
-      return;
-    }
-    const innerIf = foreachStmt.body[0];
-    expect(innerIf.kind).toBe('if');
-    if (innerIf.kind !== 'if') {
-      return;
-    }
+    const innerIf = expectIf(expectForeach(result[0]).body[0]);
     expect(innerIf.cond).toEqual(boolLit(false));
   });
 
@@ -258,12 +233,7 @@ describe('applyKnownFacts', () => {
       { kind: 'if', cond: isArray, body: [returnStmt(boolLit(false))] },
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const secondIf = result[1];
-    expect(secondIf.kind).toBe('if');
-    if (secondIf.kind !== 'if') {
-      return;
-    }
-    expect(secondIf.cond).toEqual(boolLit(true));
+    expect(expectIf(result[1]).cond).toEqual(boolLit(true));
   });
 
   it('records each disjunct as false after if on or with exiting body', () => {
@@ -277,12 +247,7 @@ describe('applyKnownFacts', () => {
       { kind: 'if', cond: isArray, body: [returnStmt(boolLit(false))] },
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const secondIf = result[1];
-    expect(secondIf.kind).toBe('if');
-    if (secondIf.kind !== 'if') {
-      return;
-    }
-    expect(secondIf.cond).toEqual(boolLit(false));
+    expect(expectIf(result[1]).cond).toEqual(boolLit(false));
   });
 
   it('records each conjunct as true inside if with and condition', () => {
@@ -297,16 +262,7 @@ describe('applyKnownFacts', () => {
       },
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const outerIf = result[0];
-    expect(outerIf.kind).toBe('if');
-    if (outerIf.kind !== 'if') {
-      return;
-    }
-    const innerIf = outerIf.body[0];
-    expect(innerIf.kind).toBe('if');
-    if (innerIf.kind !== 'if') {
-      return;
-    }
+    const innerIf = expectIf(expectIf(result[0]).body[0]);
     expect(innerIf.cond).toEqual(boolLit(true));
   });
 
@@ -316,11 +272,6 @@ describe('applyKnownFacts', () => {
       failIfStmt(isArray),
     ];
     const result = applyKnownFacts(block, '$value', emptyFactEnv());
-    const secondIf = result[1];
-    expect(secondIf.kind).toBe('if');
-    if (secondIf.kind !== 'if') {
-      return;
-    }
-    expect(equals(secondIf.cond, notExpr(isArray))).toBe(true);
+    expect(equals(expectIf(result[1]).cond, notExpr(isArray))).toBe(true);
   });
 });

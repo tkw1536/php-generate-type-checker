@@ -184,29 +184,8 @@ export function tokenize(input: string): Token[] {
     }
 
     if (ch === '$' || ch === '\\' || /[a-zA-Z_]/u.test(ch)) {
-      let value = '';
-      if (ch === '\\') {
-        value += ch;
-        i++;
-      }
-      while (i < input.length) {
-        const c = input[i];
-        if (c === '\\') {
-          value += c;
-          i++;
-          if (i < input.length && /[a-zA-Z_]/u.test(input[i])) {
-            value += input[i];
-            i++;
-          }
-          continue;
-        }
-        if (/[a-zA-Z0-9_$-]/u.test(c)) {
-          value += c;
-          i++;
-          continue;
-        }
-        break;
-      }
+      const { value, nextIndex } = readIdentifier(input, i);
+      i = nextIndex;
       tokens.push({ type: 'identifier', value, pos: start });
       continue;
     }
@@ -216,4 +195,35 @@ export function tokenize(input: string): Token[] {
 
   tokens.push({ type: 'eof', value: '', pos: i });
   return tokens;
+}
+
+function readIdentifier(
+  input: string,
+  startIndex: number,
+): { value: string; nextIndex: number } {
+  let i = startIndex;
+  let value = '';
+  if (input[i] === '\\') {
+    value += '\\';
+    i++;
+  }
+  while (i < input.length) {
+    const c = input[i];
+    if (c === '\\') {
+      value += c;
+      i++;
+      if (i < input.length && /[a-zA-Z_]/u.test(input[i])) {
+        value += input[i];
+        i++;
+      }
+      continue;
+    }
+    if (/[a-zA-Z0-9_$-]/u.test(c)) {
+      value += c;
+      i++;
+      continue;
+    }
+    break;
+  }
+  return { value, nextIndex: i };
 }

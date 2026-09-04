@@ -148,7 +148,10 @@ function setupOutputPanel(
 
 function refreshAllHighlights(): void {
   for (const panel of outputPanels) {
-    if (panel.rawText && !panel.bodyEl.classList.contains('panel-body--error')) {
+    if (
+      panel.rawText !== '' &&
+      !panel.bodyEl.classList.contains('panel-body--error')
+    ) {
       panel.setSuccess(panel.rawText);
     }
   }
@@ -157,15 +160,15 @@ function refreshAllHighlights(): void {
 function getGenerateOutputMode(): CheckerOutputMode {
   const el = document.querySelector<HTMLSelectElement>('#generate-output-mode');
   const v = el?.value;
-  switch (v) {
-    case 'function':
-    case 'public_static':
-    case 'protected_static':
-    case 'private_static':
-      return v;
-    default:
-      return 'function';
+  if (
+    v === 'function' ||
+    v === 'public_static' ||
+    v === 'protected_static' ||
+    v === 'private_static'
+  ) {
+    return v;
   }
+  return 'function';
 }
 
 function getTypeInput(): string {
@@ -481,7 +484,7 @@ function activateOutputTab(
     btn.classList.toggle('active', active);
     btn.setAttribute('aria-selected', active ? 'true' : 'false');
     btn.tabIndex = active ? 0 : -1;
-    if (active && options?.focus) {
+    if (active && options?.focus === true) {
       btn.focus();
     }
   });
@@ -505,7 +508,7 @@ function setupOutputTabs(): void {
   tabButtons.forEach((button) => {
     button.addEventListener('click', () => {
       const tabId = button.dataset.outputTab;
-      if (!tabId || !isOutputTabId(tabId)) {
+      if (tabId === undefined || tabId === '' || !isOutputTabId(tabId)) {
         return;
       }
       activateOutputTab(tabId);
@@ -514,7 +517,11 @@ function setupOutputTabs(): void {
 
   tablist?.addEventListener('keydown', (event) => {
     const target = event.target;
-    if (!(target instanceof HTMLButtonElement) || !target.dataset.outputTab) {
+    if (
+      !(target instanceof HTMLButtonElement) ||
+      target.dataset.outputTab === undefined ||
+      target.dataset.outputTab === ''
+    ) {
       return;
     }
 
@@ -542,7 +549,7 @@ function setupOutputTabs(): void {
       case ' ': {
         event.preventDefault();
         const tabId = target.dataset.outputTab;
-        if (tabId && isOutputTabId(tabId)) {
+        if (tabId !== undefined && tabId !== '' && isOutputTabId(tabId)) {
           activateOutputTab(tabId);
         }
         return;
@@ -557,7 +564,7 @@ function setupOutputTabs(): void {
 
     event.preventDefault();
     const nextTab = tabButtons[nextIndex];
-    if (!nextTab) {
+    if (nextTab === undefined) {
       return;
     }
     // Manual activation: move focus only; activate with Enter/Space or click.
@@ -603,28 +610,30 @@ const resolveAliasesCheckbox = document.querySelector<HTMLInputElement>(
   '#generate-resolve-aliases',
 )!;
 
-copyBtn.addEventListener('click', async () => {
-  const panel = getActiveOutputPanel();
-  if (!panel.rawText) {
-    return;
-  }
-  await navigator.clipboard.writeText(panel.rawText);
-  copyBtn.textContent = 'Copied!';
-  copyBtn.classList.add('copied');
-  if (copyStatus) {
-    copyStatus.textContent = 'Copied to clipboard';
-  }
-  if (copyStatusTimeoutId !== undefined) {
-    clearTimeout(copyStatusTimeoutId);
-  }
-  copyStatusTimeoutId = window.setTimeout(() => {
-    copyStatusTimeoutId = undefined;
-    copyBtn.textContent = 'Copy';
-    copyBtn.classList.remove('copied');
-    if (copyStatus) {
-      copyStatus.textContent = '';
+copyBtn.addEventListener('click', () => {
+  void (async () => {
+    const panel = getActiveOutputPanel();
+    if (panel.rawText === '') {
+      return;
     }
-  }, 1500);
+    await navigator.clipboard.writeText(panel.rawText);
+    copyBtn.textContent = 'Copied!';
+    copyBtn.classList.add('copied');
+    if (copyStatus !== null) {
+      copyStatus.textContent = 'Copied to clipboard';
+    }
+    if (copyStatusTimeoutId !== undefined) {
+      clearTimeout(copyStatusTimeoutId);
+    }
+    copyStatusTimeoutId = window.setTimeout(() => {
+      copyStatusTimeoutId = undefined;
+      copyBtn.textContent = 'Copy';
+      copyBtn.classList.remove('copied');
+      if (copyStatus !== null) {
+        copyStatus.textContent = '';
+      }
+    }, 1500);
+  })();
 });
 
 typeInput.addEventListener('input', onGenerateInputChanged);

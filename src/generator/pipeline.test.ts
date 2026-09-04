@@ -68,7 +68,7 @@ describe('pipeline build + render (unoptimized)', () => {
     expect(php).toContain('if (!is_array($value))');
     expect(php).toContain('if (!is_callable($value))');
     expect(php).toContain('return TRUE;');
-    expect(php).not.toMatch(/return !\(/);
+    expect(php).not.toMatch(/return !\(/u);
   });
 
   it('union-int|string emits fail-if or then return true without optimize', () => {
@@ -97,7 +97,7 @@ describe('pipeline build + render (unoptimized)', () => {
       output: 'function',
     });
     expect(php).toContain('/** @phpstan-assert-if-true array<never> $value */');
-    expect(php).toMatch(/\$value === \[\]/);
+    expect(php).toMatch(/\$value === \[\]/u);
   });
 
   it('public_static emits self:: for helper calls', () => {

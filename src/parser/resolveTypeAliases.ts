@@ -48,7 +48,7 @@ export function parsePhpstanTypesFromDocblock(
     })),
   );
 
-  if (!options?.resolveAliases) {
+  if (options?.resolveAliases !== true) {
     return defs.map((def) => ({
       name: def.name,
       typeString: def.typeString,

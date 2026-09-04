@@ -16,7 +16,7 @@ function isParseSuccessCase(value: unknown): value is ParseSuccessCase {
 }
 
 function readSuccessCases(data: unknown): ParseSuccessCase[] {
-  if (!Array.isArray(data) || !data.every(isParseSuccessCase)) {
+  if (!Array.isArray(data) || !data.every((item) => isParseSuccessCase(item))) {
     throw new Error('invalid parser success fixture JSON');
   }
   return data;
