@@ -80,7 +80,7 @@ export function loadFixtures(): GeneratorFixture[] {
     ...docblockToFixtures(docblockCases as DocblockCase[]),
     ...docblockToFixtures(docblockEmitAliasesCases as DocblockCase[]),
     ...errorsToFixtures(errorsCases),
-  ].sort((a, b) => a.name.localeCompare(b.name));
+  ].toSorted((a, b) => a.name.localeCompare(b.name));
 }
 
 

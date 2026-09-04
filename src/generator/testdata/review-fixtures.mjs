@@ -33,7 +33,7 @@ function loadFixtures() {
       });
     }
   }
-  return fixtures.sort((a, b) => a.name.localeCompare(b.name));
+  return fixtures.toSorted((a, b) => a.name.localeCompare(b.name));
 }
 
 function loadState() {

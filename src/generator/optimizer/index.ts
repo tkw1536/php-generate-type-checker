@@ -23,7 +23,7 @@ export function optimize(ir: CheckerIR): CheckerIR {
     const nextPrograms: CheckerIR['programs'] = {};
     let changed = false;
 
-    for (const name of [...current.order].reverse()) {
+    for (const name of [...current.order].toReversed()) {
       const program = current.programs[name];
       const nextBody = optimizeBlock(program.body, current, name, params);
       nextPrograms[name] = { ...program, body: nextBody };

@@ -323,5 +323,5 @@ export function namedAliasReferences(
 ): string[] {
   const aliasSet = new Set(aliasNames);
   const refs = collectNamedAliasReferences(ast, aliasSet);
-  return [...refs].sort();
+  return [...refs].toSorted();
 }

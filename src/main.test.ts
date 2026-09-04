@@ -277,13 +277,14 @@ describe('app UI (main.ts)', () => {
     expect(astCodeText().length).toBeGreaterThan(0);
 
     const copyBtn = document.querySelector<HTMLButtonElement>('#output-copy')!;
-    await copyBtn.click();
+    copyBtn.click();
+    await vi.waitFor(() => {
+      expect(copyBtn.textContent).toBe('Copied!');
+    });
 
     expect(writeText).toHaveBeenCalledOnce();
-    const copied = writeText.mock.calls[0][0] as string;
-    expect(copied).toContain('"ast"');
-    expect(copied).not.toMatch(/^function /m);
-    expect(copyBtn.textContent).toBe('Copied!');
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('"ast"'));
+    expect(writeText.mock.calls[0][0]).not.toMatch(/^function /m);
     expect(document.querySelector('#copy-status')!.textContent).toBe(
       'Copied to clipboard',
     );
@@ -361,11 +362,13 @@ describe('app UI (main.ts)', () => {
     const copyBtn = document.querySelector<HTMLButtonElement>('#output-copy')!;
     expect(copyBtn.disabled).toBe(false);
 
-    await copyBtn.click();
+    copyBtn.click();
+    await vi.waitFor(() => {
+      expect(copyBtn.textContent).toBe('Copied!');
+    });
 
     expect(writeText).toHaveBeenCalledOnce();
-    expect(writeText.mock.calls[0][0]).toContain('function');
-    expect(copyBtn.textContent).toBe('Copied!');
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('function'));
     expect(document.querySelector('#copy-status')!.textContent).toBe(
       'Copied to clipboard',
     );

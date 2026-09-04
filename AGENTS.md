@@ -57,6 +57,7 @@ yarn spellcheck
 
 ## Warnings
 
+- ABSOLUTELY NO LINT IGNORES (`oxlint-disable`, `eslint-disable`, or equivalents). Fix the code or adjust shared config — never suppress.
 - Never invent `package.json` scripts; only use scripts that exist.
 - Keep URL fragment state backwards compatible (`src/ui/fragmentState.ts`).
 - Do not hand-edit golden `*.json`; regenerate from `*.IN`.
