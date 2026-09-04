@@ -5,13 +5,13 @@ import { PhpstanTypeExtractError } from '../parser/phpstanTypeDocblock.ts';
 import { TypeAliasResolveError } from '../parser/resolveTypeAliases.ts';
 
 export interface PositionedError {
-  kind: 'parse' | 'lexer' | 'generation' | 'unknown';
-  title: string;
-  message: string;
-  pos?: number;
-  detail?: string;
-  expressionIndex?: number;
-  segmentSource?: string;
+  readonly kind: 'parse' | 'lexer' | 'generation' | 'unknown';
+  readonly title: string;
+  readonly message: string;
+  readonly pos?: number;
+  readonly detail?: string;
+  readonly expressionIndex?: number;
+  readonly segmentSource?: string;
 }
 
 export function describeError(err: unknown): PositionedError {
@@ -76,17 +76,17 @@ export function renderErrorHtml(error: PositionedError, sourceText: string): str
   const snippetSource = error.segmentSource ?? sourceText;
   const hasPosition =
     error.pos !== undefined && error.pos >= 0 && snippetSource.length > 0;
-  const snippet = hasPosition ? buildSnippet(snippetSource, error.pos!) : null;
+  const snippet = hasPosition ? buildSnippet(snippetSource, error.pos) : null;
 
   const typeLabel =
-    error.expressionIndex !== undefined
-      ? `Type ${error.expressionIndex + 1}`
-      : null;
+    error.expressionIndex === undefined
+      ? null
+      : `Type ${error.expressionIndex + 1}`;
 
   const detailHtml = [
-    typeLabel !== null
-      ? `<p class="error-detail">${escapeHtml(typeLabel)}</p>`
-      : '',
+    typeLabel === null
+      ? ''
+      : `<p class="error-detail">${escapeHtml(typeLabel)}</p>`,
     error.detail
       ? `<p class="error-detail">Type: <code>${escapeHtml(error.detail)}</code></p>`
       : '',
@@ -103,12 +103,12 @@ export function renderErrorHtml(error: PositionedError, sourceText: string): str
           </tbody>
         </table>
       </div>
-      <p class="error-location">${escapeHtml(typeLabel !== null ? `${typeLabel} — ${snippet.locationLabel}` : snippet.locationLabel)}</p>
+      <p class="error-location">${escapeHtml(typeLabel === null ? snippet.locationLabel : `${typeLabel} — ${snippet.locationLabel}`)}</p>
     </div>`
     : snippetSource
       ? `
     <div class="error-snippet">
-      <div class="error-snippet-label">${typeLabel !== null ? escapeHtml(typeLabel) : 'Input'}</div>
+      <div class="error-snippet-label">${typeLabel === null ? 'Input' : escapeHtml(typeLabel)}</div>
       <pre class="error-source-plain">${escapeHtml(snippetSource)}</pre>
     </div>`
       : '';
@@ -202,8 +202,8 @@ function renderCaret(col: number): string {
 
 function escapeHtml(text: string): string {
   return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
 }

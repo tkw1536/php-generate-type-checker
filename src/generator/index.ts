@@ -8,9 +8,9 @@ import type { GenerateCheckerOptions } from './options.ts';
 import { parsePhpstanTypesFromDocblock, parseTypes } from '../parser/index.ts';
 
 export type GenerateDocblockCheckerOptions = GenerateCheckerOptions & {
-  emitPhpstanTypeAliases?: boolean;
+  readonly emitPhpstanTypeAliases?: boolean;
   /** Inline alias cross-references instead of calling entry checkers. Default: false. */
-  resolveAliases?: boolean;
+  readonly resolveAliases?: boolean;
 };
 
 /** Composed pipeline; used by fixture tests. */

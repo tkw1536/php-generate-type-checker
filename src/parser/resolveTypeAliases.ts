@@ -13,14 +13,14 @@ export class TypeAliasResolveError extends Error {
 }
 
 export type ResolvedPhpstanType = {
-  name: string;
-  typeString: string;
-  ast: TypeNode;
+  readonly name: string;
+  readonly typeString: string;
+  readonly ast: TypeNode;
 };
 
 export type ParsePhpstanTypesFromDocblockOptions = {
   /** When true, inline alias cross-references into each alias body. Default: false (keep named nodes). */
-  resolveAliases?: boolean;
+  readonly resolveAliases?: boolean;
 };
 
 export function parsePhpstanTypesFromDocblock(
@@ -212,7 +212,7 @@ function substituteShapeField(
 }
 
 function validateAliasGraph(
-  defs: { name: string; ast: TypeNode }[],
+  defs: readonly { readonly name: string; readonly ast: TypeNode }[],
 ): void {
   const aliasNames = new Set(defs.map((def) => def.name));
   const graph = new Map<string, Set<string>>();

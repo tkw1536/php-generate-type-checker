@@ -16,38 +16,41 @@ import {
 } from '../parser/phpstanTypeDocblock.ts';
 
 export type BuildOptions = GenerateCheckerOptions & {
-  parameter?: string;
-  reservedNames?: string[];
+  readonly parameter?: string;
+  readonly reservedNames?: readonly string[];
   /** Source text per root type (for error reporting in {@link buildMany}). */
-  segmentSources?: string[];
+  readonly segmentSources?: readonly string[];
 };
 
 export type BuildResult = {
-  ir: CheckerIR;
-  typesByName: Record<string, TypeNode>;
+  readonly ir: CheckerIR;
+  readonly typesByName: Readonly<Record<string, TypeNode>>;
   /** Original type strings for entry checkers (e.g. @phpstan-type source text). */
-  docStringsByName?: Record<string, string>;
+  readonly docStringsByName?: Readonly<Record<string, string>>;
   /** @phpstan-type alias definitions from docblock input (for optional re-emission). */
-  phpstanTypeAliases?: PhpstanTypeAlias[];
+  readonly phpstanTypeAliases?: readonly PhpstanTypeAlias[];
 };
 
 export type RenderCheckerInput = GenerateCheckerOptions & {
-  typeString: string;
-  typesByName: Record<string, TypeNode>;
-  docStringsByName?: Record<string, string>;
+  readonly typeString: string;
+  readonly typesByName: Readonly<Record<string, TypeNode>>;
+  readonly docStringsByName?: Readonly<Record<string, string>>;
   /** When true, prepend a PHPDoc block of {@link phpstanTypeAliases} to the output. */
-  emitPhpstanTypeAliases?: boolean;
-  phpstanTypeAliases?: PhpstanTypeAlias[];
+  readonly emitPhpstanTypeAliases?: boolean;
+  readonly phpstanTypeAliases?: readonly PhpstanTypeAlias[];
 };
 
 export type NamedTypeEntry = {
-  name: string;
-  type: TypeNode;
-  typeString?: string;
+  readonly name: string;
+  readonly type: TypeNode;
+  readonly typeString?: string;
 };
 
 /** Build one combined IR for multiple root types (shared helpers, all entries never pruned). */
-export function buildMany(types: TypeNode[], options?: BuildOptions): BuildResult {
+export function buildMany(
+  types: readonly TypeNode[],
+  options?: BuildOptions,
+): BuildResult {
   if (types.length === 0) {
     throw new GenerationError('No types to build');
   }
@@ -82,7 +85,7 @@ export function buildMany(types: TypeNode[], options?: BuildOptions): BuildResul
 
 /** Build one combined IR for named @phpstan-type aliases (explicit entry function names). */
 export function buildManyNamed(
-  entries: NamedTypeEntry[],
+  entries: readonly NamedTypeEntry[],
   options?: BuildOptions,
 ): BuildResult {
   if (entries.length === 0) {
@@ -137,8 +140,9 @@ export function buildManyNamed(
     typesByName: builder.getTypesByName(),
     docStringsByName,
     phpstanTypeAliases: entries
-      .filter((entry): entry is NamedTypeEntry & { typeString: string } =>
-        entry.typeString !== undefined,
+      .filter(
+        (entry): entry is NamedTypeEntry & { readonly typeString: string } =>
+          entry.typeString !== undefined,
       )
       .map((entry) => ({ name: entry.name, typeString: entry.typeString })),
   };
@@ -162,7 +166,7 @@ export function renderChecker(
   const firstEntry = ir.entries[0] ?? ir.order[0] ?? 'check';
   const entryDocType =
     docsByName[firstEntry] ??
-    input.typeString.trim().replace(/\*\//g, '* /');
+    input.typeString.trim().replaceAll('*/', '* /');
 
   const php = render(ir, {
     ...input,

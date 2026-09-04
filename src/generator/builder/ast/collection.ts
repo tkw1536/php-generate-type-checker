@@ -18,7 +18,10 @@ export function isBareEmptyCollectionKeyword(
 
 /** Parser emits bare collection keywords; codegen treats them as `keyword<>`. */
 export function bareEmptyCollectionKeywordAsShape(
-  node: { kind: 'keyword'; keyword: BareEmptyCollectionKeyword },
+  node: {
+    readonly kind: 'keyword';
+    readonly keyword: BareEmptyCollectionKeyword;
+  },
 ): Extract<TypeNode, { kind: 'shape' }> {
   return { kind: 'shape', fields: [], keyword: node.keyword };
 }

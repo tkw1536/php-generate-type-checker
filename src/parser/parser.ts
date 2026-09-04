@@ -1,36 +1,26 @@
 import type { CallableParam, CallableSig, ShapeField, TypeNode } from './ast.ts';
 import { isKeyword } from './ast.ts';
 import { LexerError, type Token, tokenize } from './lexer.ts';
+import { ParseError } from './parseError.ts';
 
-export class ParseError extends Error {
-  readonly pos: number;
-  /** 0-based index of the type expression being parsed when {@link parseTypes} fails. */
-  readonly expressionIndex?: number;
-
-  constructor(message: string, pos: number, expressionIndex?: number) {
-    super(message);
-    this.name = 'ParseError';
-    this.pos = pos;
-    this.expressionIndex = expressionIndex;
-  }
-}
+export { ParseError } from './parseError.ts';
 
 export type TypeSegment = {
-  ast: TypeNode;
-  start: number;
-  end: number;
+  readonly ast: TypeNode;
+  readonly start: number;
+  readonly end: number;
 };
 
 export type ParseTypesResult = {
-  source: string;
-  segments: TypeSegment[];
+  readonly source: string;
+  readonly segments: readonly TypeSegment[];
 };
 
 class Parser {
   private index = 0;
-  private readonly tokens: Token[];
+  private readonly tokens: readonly Token[];
 
-  constructor(tokens: Token[]) {
+  constructor(tokens: readonly Token[]) {
     this.tokens = tokens;
   }
 
@@ -410,7 +400,7 @@ class Parser {
   }
 
   private genericCollectionToNode(
-    typeArgs: TypeNode[],
+    typeArgs: readonly TypeNode[],
     keyword:
       | 'list'
       | 'non-empty-list'
@@ -477,8 +467,8 @@ class Parser {
   }
 
   private expect(type: Token['type']): Token {
-    if (this.match(type)) {
-      return this.previous();
+    if (this.check(type)) {
+      return this.advance();
     }
     throw new ParseError(`Expected ${type}, got ${this.peek().type}`, this.peek().pos);
   }
@@ -503,7 +493,7 @@ class Parser {
   }
 
   private peek(): Token {
-    return this.tokens[this.index] ?? this.tokens[this.tokens.length - 1];
+    return this.tokens[this.index] ?? this.tokens[this.tokens.length - 1]!;
   }
 
   private previous(): Token {

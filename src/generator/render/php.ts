@@ -7,7 +7,7 @@ import { type PhpLine, formatBody, ifBlock, line, shiftLines } from './context.t
 
 export type RenderPhpOptions = {
   /** When true, `call_checker` prints as `self::Name(...)`. */
-  useSelfCalls?: boolean;
+  readonly useSelfCalls?: boolean;
 };
 
 /** PHP scalar keywords in generated checker output. */
@@ -56,12 +56,18 @@ function preferMultiline(expr: Expr): boolean {
   }
 }
 
-function appendTrailingOperator(lines: PhpLine[], suffix: string): void {
+function appendTrailingOperator(
+  lines: readonly PhpLine[],
+  suffix: string,
+): PhpLine[] {
   if (lines.length === 0) {
-    return;
+    return [...lines];
   }
   const last = lines[lines.length - 1];
-  lines[lines.length - 1] = { depth: last.depth, text: last.text + suffix };
+  return [
+    ...lines.slice(0, -1),
+    { depth: last.depth, text: last.text + suffix },
+  ];
 }
 
 function renderOperand(expr: Expr, opts: RenderPhpOptions): string {
@@ -162,12 +168,12 @@ function renderJunctionLines(
   groupParens: boolean,
 ): PhpLine[] {
   const suffix = expr.kind === 'and' ? ' &&' : ' ||';
-  const lines: PhpLine[] = groupParens ? [line(depth, '(')] : [];
+  let lines: PhpLine[] = groupParens ? [line(depth, '(')] : [];
   const partDepth = groupParens ? depth + 1 : depth;
 
   for (let i = 0; i < expr.exprs.length; i++) {
     if (i > 0) {
-      appendTrailingOperator(lines, suffix);
+      lines = appendTrailingOperator(lines, suffix);
     }
     const e = expr.exprs[i];
     if (isLeaf(e)) {
@@ -227,7 +233,7 @@ function renderConditionBlock(
   expr: Expr,
   depth: number,
   opts: RenderPhpOptions,
-  body: PhpLine[],
+  body: readonly PhpLine[],
 ): PhpLine[] {
   if (
     (expr.kind === 'and' || expr.kind === 'or') &&

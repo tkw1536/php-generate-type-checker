@@ -4,9 +4,9 @@ import { equals } from '../ir/equals.ts';
 import { negateBinOp } from "./expression.ts";
 
 export type FactEnv = {
-  trueFacts: Expr[];
-  falseFacts: Expr[];
-  shadowed: Set<string>;
+  readonly trueFacts: readonly Expr[];
+  readonly falseFacts: readonly Expr[];
+  readonly shadowed: ReadonlySet<string>;
 };
 
 export function emptyFactEnv(): FactEnv {
@@ -21,7 +21,7 @@ export function emptyFactEnv(): FactEnv {
 // Alternative they may add a flag to skip further expansion.
 
 type Flags = {
-  skipDeMorgan?: true;
+  readonly skipDeMorgan?: true;
 }
 
 function withTrueFact(env: FactEnv, expr: Expr, flags?: Flags): FactEnv {
@@ -39,19 +39,29 @@ function withTrueFact(env: FactEnv, expr: Expr, flags?: Flags): FactEnv {
       }
       break;
     case 'bin':
-        next = withTrueFact(next, binExpr(negateBinOp(expr.op), expr.right, expr.left));
-        break;
+      next = withTrueFact(
+        next,
+        binExpr(negateBinOp(expr.op), expr.right, expr.left),
+      );
+      break;
     case 'not':
       next = withFalseFact(next, expr.expr);
       break;
     case 'or':
-      if (!(flags?.skipDeMorgan)) {
+      if (flags?.skipDeMorgan !== true) {
         // x || y => !!(x || y) => !(!x && !y)
-        next = withFalseFact(next, andExpr(expr.exprs.map(notExpr)), { skipDeMorgan: true });
+        next = withFalseFact(next, andExpr(expr.exprs.map(notExpr)), {
+          skipDeMorgan: true,
+        });
       }
       break;
-    default:
+    case 'bool':
+    case 'call':
+    case 'call_checker':
+    case 'instanceof':
       break;
+    default:
+      throw new Error('never reached');
   }
   return next;
 }
@@ -72,22 +82,37 @@ function withFalseFact(env: FactEnv, expr: Expr, flags?: Flags): FactEnv {
       }
       break;
     case 'bin':
-      next = withFalseFact(next, binExpr(negateBinOp(expr.op), expr.right, expr.left));
+      next = withFalseFact(
+        next,
+        binExpr(negateBinOp(expr.op), expr.right, expr.left),
+      );
       break;
     case 'not':
       next = withTrueFact(next, expr.expr);
       break;
     case 'and':
-      if (!(flags?.skipDeMorgan)) {
+      if (flags?.skipDeMorgan !== true) {
         // !(x && y) => !x || !y
-        next = withTrueFact(next, orExpr(expr.exprs.map(notExpr)), { skipDeMorgan: true });
+        next = withTrueFact(next, orExpr(expr.exprs.map(notExpr)), {
+          skipDeMorgan: true,
+        });
       }
       break;
+    case 'bool':
+    case 'call':
+    case 'call_checker':
+    case 'instanceof':
+      break;
+    default:
+      throw new Error('never reached');
   }
   return next;
 }
 
-function valueRefUsesShadowed(ref: ValueRef, shadowed: Set<string>): boolean {
+function valueRefUsesShadowed(
+  ref: ValueRef,
+  shadowed: ReadonlySet<string>,
+): boolean {
   switch (ref.kind) {
     case 'variable':
       return shadowed.has(ref.name);
@@ -95,14 +120,12 @@ function valueRefUsesShadowed(ref: ValueRef, shadowed: Set<string>): boolean {
       return valueRefUsesShadowed(ref.object, shadowed);
     case 'property_access':
       return valueRefUsesShadowed(ref.object, shadowed);
-    default: {
-      const exhaustive: never = ref;
-      return exhaustive;
-    }
+    default:
+      throw new Error('never reached');
   }
 }
 
-function argUsesShadowed(arg: Arg, shadowed: Set<string>): boolean {
+function argUsesShadowed(arg: Arg, shadowed: ReadonlySet<string>): boolean {
   switch (arg.kind) {
     case 'ref':
       return valueRefUsesShadowed(arg.ref, shadowed);
@@ -110,14 +133,12 @@ function argUsesShadowed(arg: Arg, shadowed: Set<string>): boolean {
       return false;
     case 'call':
       return arg.args.some((a) => argUsesShadowed(a, shadowed));
-    default: {
-      const exhaustive: never = arg;
-      return exhaustive;
-    }
+    default:
+      throw new Error('never reached');
   }
 }
 
-function exprUsesShadowed(expr: Expr, shadowed: Set<string>): boolean {
+function exprUsesShadowed(expr: Expr, shadowed: ReadonlySet<string>): boolean {
   switch (expr.kind) {
     case 'bool':
       return false;
@@ -137,14 +158,12 @@ function exprUsesShadowed(expr: Expr, shadowed: Set<string>): boolean {
       return argUsesShadowed(expr.subject, shadowed);
     case 'call_checker':
       return valueRefUsesShadowed(expr.subject, shadowed);
-    default: {
-      const exhaustive: never = expr;
-      return exhaustive;
-    }
+    default:
+      throw new Error('never reached');
   }
 }
 
-function matchesFact(expr: Expr, facts: Expr[]): boolean {
+function matchesFact(expr: Expr, facts: readonly Expr[]): boolean {
   return facts.some((f) => equals(f, expr));
 }
 
@@ -228,19 +247,22 @@ export function applyKnownFacts(
         break;
       }
       case 'foreach': {
-        const innerShadowed = new Set(currentEnv.shadowed);
-        innerShadowed.add(stmt.valueVar);
-        if (stmt.keyVar !== null) {
-          innerShadowed.add(stmt.keyVar);
-        }
-        const bodyEnv: FactEnv = {
-          ...currentEnv,
-          shadowed: innerShadowed,
-        };
-        if (stmt.valueVar === parameter) {
-          bodyEnv.trueFacts = [];
-          bodyEnv.falseFacts = [];
-        }
+        const innerShadowed = new Set([
+          ...currentEnv.shadowed,
+          stmt.valueVar,
+          ...(stmt.keyVar !== null ? [stmt.keyVar] : []),
+        ]);
+        const bodyEnv: FactEnv =
+          stmt.valueVar === parameter
+            ? {
+                trueFacts: [],
+                falseFacts: [],
+                shadowed: innerShadowed,
+              }
+            : {
+                ...currentEnv,
+                shadowed: innerShadowed,
+              };
         out.push({
           ...stmt,
           body: applyKnownFacts(stmt.body, parameter, bodyEnv),
@@ -253,10 +275,8 @@ export function applyKnownFacts(
           expr: substituteFacts(stmt.expr, currentEnv),
         });
         return out;
-      default: {
-        const exhaustive: never = stmt;
-        out.push(exhaustive);
-      }
+      default:
+        throw new Error('never reached');
     }
   }
 

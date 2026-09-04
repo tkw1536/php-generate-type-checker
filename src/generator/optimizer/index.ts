@@ -1,4 +1,4 @@
-import type { Block, CheckerIR, Stmt } from '../ir/types.ts';
+import type { Block, CheckerIR, CheckerProgram, Stmt } from '../ir/types.ts';
 import { blockEquals } from '../ir/equals.ts';
 import { combine } from './combine.ts';
 import { dedupe } from './dedupe.ts';
@@ -20,7 +20,7 @@ export function optimize(ir: CheckerIR): CheckerIR {
   };
 
   for (let iter = 0; iter < params.maxOptimizationLoops; iter++) {
-    const nextPrograms: CheckerIR['programs'] = {};
+    const nextPrograms: Record<string, CheckerProgram> = {};
     let changed = false;
 
     for (const name of [...current.order].toReversed()) {
@@ -67,7 +67,7 @@ function optimizeBlock(
   programName: string,
   params: OptimizerParams,
 ): Block {
-  let current = block.map((s) => optimizeStmt(s, ir, programName, params));
+  let current: Block = block.map((s) => optimizeStmt(s, ir, programName, params));
 
   for (let iter = 0; iter < params.maxOptimizationLoops; iter++) {
     const inlined = inlineBlock(current, ir, programName);

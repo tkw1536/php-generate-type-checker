@@ -15,7 +15,7 @@ export function setupHelpTooltips(): void {
       continue;
     }
 
-    const description = document.getElementById(describedBy);
+    const description = document.querySelector(`#${describedBy}`);
     if (!description) {
       console.warn(
         `Accessibility: aria-describedby="#${describedBy}" target not found`,
@@ -25,7 +25,7 @@ export function setupHelpTooltips(): void {
     }
 
     // Prefer data-tooltip as the single source of truth for description text.
-    const tooltip = button.getAttribute('data-tooltip');
+    const tooltip = button.dataset.tooltip;
     if (tooltip && description.textContent !== tooltip) {
       description.textContent = tooltip;
     }

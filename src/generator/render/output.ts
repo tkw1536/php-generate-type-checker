@@ -31,9 +31,9 @@ function visibilityForMode(mode: CheckerOutputMode): 'public' | 'protected' | 'p
 }
 
 export type MethodRenderSpec = {
-  functionName: string;
-  docType: string;
-  body: string;
+  readonly functionName: string;
+  readonly docType: string;
+  readonly body: string;
 };
 
 export type EntryRenderSpec = MethodRenderSpec;
@@ -54,7 +54,7 @@ ${indentedBody}
     }`;
 }
 
-function formatClassHelpers(helpers: HelperRenderSpec[]): string {
+function formatClassHelpers(helpers: readonly HelperRenderSpec[]): string {
   return helpers
     .map((h) => formatClassStaticMethod(h, 'private'))
     .join('\n\n');
@@ -81,7 +81,7 @@ ${inner}
 
 function formatClassCheckerOutput(
   entry: MethodRenderSpec,
-  helpers: HelperRenderSpec[],
+  helpers: readonly HelperRenderSpec[],
   mode: CheckerOutputMode,
 ): string {
   const entryMethod = formatClassStaticMethod(entry, visibilityForMode(mode));
@@ -90,8 +90,8 @@ function formatClassCheckerOutput(
 }
 
 function formatClassMultipleEntries(
-  entries: EntryRenderSpec[],
-  helpers: HelperRenderSpec[],
+  entries: readonly EntryRenderSpec[],
+  helpers: readonly HelperRenderSpec[],
   mode: CheckerOutputMode,
 ): string {
   const visibility = visibilityForMode(mode);
@@ -132,9 +132,9 @@ ${body}
 }
 
 export function wrapMultipleEntries(
-  entries: EntryRenderSpec[],
+  entries: readonly EntryRenderSpec[],
   options?: GenerateCheckerOptions,
-  helpers: HelperRenderSpec[] = [],
+  helpers: readonly HelperRenderSpec[] = [],
 ): string {
   const mode = options?.output ?? DEFAULT_CHECKER_OUTPUT;
   if (entries.length === 0) {
@@ -158,7 +158,7 @@ export function wrapChecker(
   typeString: string,
   body: string,
   options?: GenerateCheckerOptions,
-  helpers: HelperRenderSpec[] = [],
+  helpers: readonly HelperRenderSpec[] = [],
 ): string {
   const mode = options?.output ?? DEFAULT_CHECKER_OUTPUT;
   const mainFunctionName = options?.mainFunctionName ?? 'check';

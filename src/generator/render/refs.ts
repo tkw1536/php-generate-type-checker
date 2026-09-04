@@ -41,7 +41,7 @@ const PHP_RESERVED_OBJECT_PROPERTIES = new Set([
 ]);
 
 function phpQuotedString(value: string): string {
-  return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+  return `'${value.replaceAll('\\', '\\\\').replaceAll('\'', "\\'")}'`;
 }
 
 function arrayIndexExpr(key: string | number): string {

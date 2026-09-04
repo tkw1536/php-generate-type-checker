@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseType } from '../index.ts';
 
-const here = path.dirname(fileURLToPath(import.meta.url));
+const here = import.meta.dirname;
 const inputPath = path.join(here, 'parser.success.IN');
 const fixturePath = path.join(here, 'parser.success.json');
 

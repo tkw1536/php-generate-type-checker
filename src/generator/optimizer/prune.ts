@@ -1,4 +1,4 @@
-import type { CheckerIR } from '../ir/types.ts';
+import type { CheckerIR, CheckerProgram } from '../ir/types.ts';
 import { collectCallCheckerNames } from '../ir/substitute.ts';
 import type { OptimizerParams } from './params.ts';
 
@@ -18,7 +18,7 @@ export function prunePrograms(
     keep.add(name);
   }
 
-  const programs: CheckerIR['programs'] = {};
+  const programs: Record<string, CheckerProgram> = {};
   const order: string[] = [];
   for (const name of ir.order) {
     if (keep.has(name)) {

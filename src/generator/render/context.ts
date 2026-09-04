@@ -2,19 +2,19 @@ const INDENT = '    ';
 
 /** Relative indent depth inside the function body (0 = one level = 4 spaces). */
 export interface PhpLine {
-  depth: number;
-  text: string;
+  readonly depth: number;
+  readonly text: string;
 }
 
 export function line(depth: number, text: string): PhpLine {
   return { depth, text };
 }
 
-export function shiftLines(delta: number, block: PhpLine[]): PhpLine[] {
+export function shiftLines(delta: number, block: readonly PhpLine[]): PhpLine[] {
   return block.map((l) => ({ depth: l.depth + delta, text: l.text }));
 }
 
-export function formatBody(block: PhpLine[]): string {
+export function formatBody(block: readonly PhpLine[]): string {
   const baseDepth = 1;
   return block
     .map((l) => INDENT.repeat(baseDepth + l.depth) + l.text)
@@ -24,7 +24,7 @@ export function formatBody(block: PhpLine[]): string {
 export function ifBlock(
   depth: number,
   condition: string,
-  body: PhpLine[],
+  body: readonly PhpLine[],
 ): PhpLine[] {
   return [
     line(depth, `if (${condition}) {`),
@@ -35,8 +35,8 @@ export function ifBlock(
 
 export function ifBlockMultilineOr(
   depth: number,
-  orParts: string[],
-  body: PhpLine[],
+  orParts: readonly string[],
+  body: readonly PhpLine[],
 ): PhpLine[] {
   if (orParts.length === 0) {
     return [];
@@ -54,7 +54,10 @@ export function ifBlockMultilineOr(
   return [...head, ...shiftLines(1, body), line(depth, '}')];
 }
 
-export function returnMultilineAnd(depth: number, andParts: string[]): PhpLine[] {
+export function returnMultilineAnd(
+  depth: number,
+  andParts: readonly string[],
+): PhpLine[] {
   if (andParts.length === 0) {
     return [];
   }

@@ -1,8 +1,8 @@
 export type PhpstanTypeDef = {
-  name: string;
-  typeString: string;
-  start: number;
-  end: number;
+  readonly name: string;
+  readonly typeString: string;
+  readonly start: number;
+  readonly end: number;
 };
 
 export type PhpstanTypeAlias = Pick<PhpstanTypeDef, 'name' | 'typeString'>;
@@ -17,8 +17,8 @@ export class PhpstanTypeExtractError extends Error {
   }
 }
 
-const ALIAS_NAME_PATTERN = /^[A-Za-z_\\][A-Za-z0-9_\\]*$/;
-const DOC_TAG_LINE_PATTERN = /^\s*(?:\*+\s*)?@([A-Za-z][\w-]*)\b/;
+const ALIAS_NAME_PATTERN = /^[A-Za-z_\\][A-Za-z0-9_\\]*$/u;
+const DOC_TAG_LINE_PATTERN = /^\s*(?:\*+\s*)?@([A-Za-z][\w-]*)\b/u;
 
 export function isDocblockInput(input: string): boolean {
   return input.trimStart().startsWith('/*');
@@ -42,7 +42,7 @@ export function extractPhpstanTypes(source: string): PhpstanTypeDef[] {
   while (i < lines.length) {
     const line = lines[i];
     const tagMatch = line.content.match(
-      /^\s*(?:\*+\s*)?@phpstan-type(?:\s+(.*))?$/,
+      /^\s*(?:\*+\s*)?@phpstan-type(?:\s+(.*))?$/u,
     );
 
     if (!tagMatch) {
@@ -51,7 +51,7 @@ export function extractPhpstanTypes(source: string): PhpstanTypeDef[] {
     }
 
     let rest = tagMatch[1]?.trim() ?? '';
-    rest = rest.replace(/\*+\/\s*$/, '').trim();
+    rest = rest.replace(/\*+\/\s*$/u, '').trim();
     if (rest === '') {
       throw new PhpstanTypeExtractError(
         'Expected alias name after @phpstan-type',
@@ -59,7 +59,7 @@ export function extractPhpstanTypes(source: string): PhpstanTypeDef[] {
       );
     }
 
-    const nameMatch = rest.match(/^([A-Za-z_\\][A-Za-z0-9_\\]*)(?:\s+(.*))?$/s);
+    const nameMatch = rest.match(/^([A-Za-z_\\][A-Za-z0-9_\\]*)(?:\s+(.*))?$/su);
     if (!nameMatch) {
       throw new PhpstanTypeExtractError(
         `Invalid alias name in @phpstan-type: ${rest}`,
@@ -127,9 +127,9 @@ export function extractPhpstanTypes(source: string): PhpstanTypeDef[] {
 }
 
 type DocLine = {
-  content: string;
-  start: number;
-  end: number;
+  readonly content: string;
+  readonly start: number;
+  readonly end: number;
 };
 
 function splitDocblockLines(source: string): DocLine[] {
@@ -143,10 +143,10 @@ function splitDocblockLines(source: string): DocLine[] {
     let content = raw;
 
     if (lineIndex === 0) {
-      content = content.replace(/^\/\*+\s?/, '');
+      content = content.replace(/^\/\*+\s?/u, '');
     }
     if (lineIndex === rawLines.length - 1) {
-      content = content.replace(/\*+\/\s*$/, '');
+      content = content.replace(/\*+\/\s*$/u, '');
     }
 
     lines.push({
@@ -161,15 +161,17 @@ function splitDocblockLines(source: string): DocLine[] {
 }
 
 function stripDocLinePrefix(line: string): string {
-  return line.replace(/^\s*\*+\s?/, '');
+  return line.replace(/^\s*\*+\s?/u, '');
 }
 
 function normalizeTypeString(typeString: string): string {
-  return typeString.replace(/\s+/g, ' ').trim();
+  return typeString.replaceAll(/\s+/gu, ' ').trim();
 }
 
 /** PHPDoc block of `@phpstan-type` lines for prepending to generated PHP. */
-export function formatPhpstanTypeAliasesBlock(aliases: PhpstanTypeAlias[]): string {
+export function formatPhpstanTypeAliasesBlock(
+  aliases: readonly PhpstanTypeAlias[],
+): string {
   if (aliases.length === 0) {
     return '';
   }

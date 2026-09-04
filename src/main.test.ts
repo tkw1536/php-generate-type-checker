@@ -84,14 +84,14 @@ function installClipboard(): ReturnType<
 }
 
 async function bootApp(options?: {
-  hash?: string;
-  fakeTimers?: boolean;
+  readonly hash?: string;
+  readonly fakeTimers?: boolean;
 }): Promise<{
   writeText: ReturnType<typeof vi.fn<(text: string) => Promise<void>>>;
 }> {
   vi.resetModules();
 
-  if (options?.fakeTimers) {
+  if (options?.fakeTimers === true) {
     vi.useFakeTimers();
   } else {
     vi.useRealTimers();

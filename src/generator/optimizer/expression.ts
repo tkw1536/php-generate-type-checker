@@ -92,13 +92,18 @@ export function expandBinOps(expr: Expr): Expr {
     case 'not':
       return { kind: 'not', expr: expandBinOps(expr.expr) };
     case 'and':
-      return { kind: 'and', exprs: expr.exprs.map(expandBinOps) };
+      return { kind: 'and', exprs: expr.exprs.map((e) => expandBinOps(e)) };
     case 'or':
-      return { kind: 'or', exprs: expr.exprs.map(expandBinOps) };
+      return { kind: 'or', exprs: expr.exprs.map((e) => expandBinOps(e)) };
     case 'bin':
       return expandBinOp(expr);
-    default:
+    case 'bool':
+    case 'call':
+    case 'call_checker':
+    case 'instanceof':
       return expr;
+    default:
+      throw new Error('never reached');
   }
 }
 
@@ -122,11 +127,17 @@ export function absorbBinOps(expr: Expr): Expr {
       return absorbBinOp({ kind: 'not', expr: inner });
     }
     case 'and':
-      return { kind: 'and', exprs: expr.exprs.map(absorbBinOps) };
+      return { kind: 'and', exprs: expr.exprs.map((e) => absorbBinOps(e)) };
     case 'or':
-      return { kind: 'or', exprs: expr.exprs.map(absorbBinOps) };
-    default:
+      return { kind: 'or', exprs: expr.exprs.map((e) => absorbBinOps(e)) };
+    case 'bin':
+    case 'bool':
+    case 'call':
+    case 'call_checker':
+    case 'instanceof':
       return absorbBinOp(expr);
+    default:
+      throw new Error('never reached');
   }
 }
 
@@ -138,8 +149,14 @@ function normalizeExpr(expr: Expr): Expr {
       return normalizeAnd(expr.exprs);
     case 'or':
       return normalizeOr(expr.exprs);
-    default:
+    case 'bin':
+    case 'bool':
+    case 'call':
+    case 'call_checker':
+    case 'instanceof':
       return expr;
+    default:
+      throw new Error('never reached');
   }
 }
 
@@ -160,7 +177,7 @@ function normalizeNot(expr: Extract<Expr, { kind: 'not' }>): Expr {
   return { kind: 'not', expr: inner };
 }
 
-function normalizeAnd(exprs: Expr[]): Expr {
+function normalizeAnd(exprs: readonly Expr[]): Expr {
   let flat = flattenAnd(exprs.map((e) => normalizeExpr(e)));
   const factored = factorAndOfOrs(flat);
   if (factored !== null) {
@@ -183,7 +200,7 @@ function normalizeAnd(exprs: Expr[]): Expr {
   return { kind: 'and', exprs: flat };
 }
 
-function normalizeOr(exprs: Expr[]): Expr {
+function normalizeOr(exprs: readonly Expr[]): Expr {
   let flat = flattenOr(exprs.map((e) => normalizeExpr(e)));
   const factored = factorOrOfAnds(flat);
   if (factored !== null) {
@@ -206,7 +223,7 @@ function normalizeOr(exprs: Expr[]): Expr {
   return { kind: 'or', exprs: flat };
 }
 
-function dedupeOperands(exprs: Expr[]): Expr[] {
+function dedupeOperands(exprs: readonly Expr[]): Expr[] {
   const out: Expr[] = [];
   for (const e of exprs) {
     if (!out.some((prev) => equals(prev, e))) {
@@ -220,7 +237,7 @@ function negatedInner(expr: Expr): Expr | null {
   return expr.kind === 'not' ? expr.expr : null;
 }
 
-function hasContradiction(exprs: Expr[]): boolean {
+function hasContradiction(exprs: readonly Expr[]): boolean {
   for (let i = 0; i < exprs.length; i++) {
     for (let j = i + 1; j < exprs.length; j++) {
       const a = exprs[i];
@@ -238,11 +255,11 @@ function hasContradiction(exprs: Expr[]): boolean {
   return false;
 }
 
-function hasTautology(exprs: Expr[]): boolean {
+function hasTautology(exprs: readonly Expr[]): boolean {
   return hasContradiction(exprs);
 }
 
-function flattenAnd(exprs: Expr[]): Expr[] {
+function flattenAnd(exprs: readonly Expr[]): Expr[] {
   const out: Expr[] = [];
   for (const e of exprs) {
     if (e.kind === 'and') {
@@ -254,7 +271,7 @@ function flattenAnd(exprs: Expr[]): Expr[] {
   return out;
 }
 
-function flattenOr(exprs: Expr[]): Expr[] {
+function flattenOr(exprs: readonly Expr[]): Expr[] {
   const out: Expr[] = [];
   for (const e of exprs) {
     if (e.kind === 'or') {
@@ -266,25 +283,27 @@ function flattenOr(exprs: Expr[]): Expr[] {
   return out;
 }
 
-function conjunctsOf(expr: Expr): Expr[] {
+function conjunctsOf(expr: Expr): readonly Expr[] {
   if (expr.kind === 'and') {
     return flattenAnd(expr.exprs);
   }
   return [expr];
 }
 
-function disjunctsOf(expr: Expr): Expr[] {
+function disjunctsOf(expr: Expr): readonly Expr[] {
   if (expr.kind === 'or') {
     return flattenOr(expr.exprs);
   }
   return [expr];
 }
 
-function exprInList(expr: Expr, list: Expr[]): boolean {
+function exprInList(expr: Expr, list: readonly Expr[]): boolean {
   return list.some((e) => equals(e, expr));
 }
 
-function intersectOperands(armLists: Expr[][]): Expr[] {
+function intersectOperands(
+  armLists: readonly (readonly Expr[])[],
+): readonly Expr[] {
   if (armLists.length === 0) {
     return [];
   }
@@ -294,11 +313,14 @@ function intersectOperands(armLists: Expr[][]): Expr[] {
   );
 }
 
-function subtractOperands(arm: Expr[], common: Expr[]): Expr[] {
+function subtractOperands(
+  arm: readonly Expr[],
+  common: readonly Expr[],
+): readonly Expr[] {
   return arm.filter((operand) => !common.some((c) => equals(c, operand)));
 }
 
-function remainderAndExpr(remainder: Expr[]): Expr {
+function remainderAndExpr(remainder: readonly Expr[]): Expr {
   if (remainder.length === 0) {
     return boolLit(true);
   }
@@ -308,7 +330,7 @@ function remainderAndExpr(remainder: Expr[]): Expr {
   return andExpr(remainder);
 }
 
-function remainderOrExpr(remainder: Expr[]): Expr {
+function remainderOrExpr(remainder: readonly Expr[]): Expr {
   if (remainder.length === 0) {
     return boolLit(false);
   }
@@ -318,11 +340,11 @@ function remainderOrExpr(remainder: Expr[]): Expr {
   return orExpr(remainder);
 }
 
-function allRemaindersEmpty(armLists: Expr[][], common: Expr[]): boolean {
+function allRemaindersEmpty(armLists: readonly (readonly Expr[])[], common: readonly Expr[]): boolean {
   return armLists.every((arm) => subtractOperands(arm, common).length === 0);
 }
 
-function factorOrOfAnds(exprs: Expr[]): Extract<Expr, { kind: 'and' }> | null {
+function factorOrOfAnds(exprs: readonly Expr[]): Extract<Expr, { kind: 'and' }> | null {
   if (exprs.length < 2) {
     return null;
   }
@@ -344,7 +366,7 @@ function factorOrOfAnds(exprs: Expr[]): Extract<Expr, { kind: 'and' }> | null {
   return { kind: 'and', exprs: [...common, remainderOr] };
 }
 
-function factorAndOfOrs(exprs: Expr[]): Extract<Expr, { kind: 'or' }> | null {
+function factorAndOfOrs(exprs: readonly Expr[]): Extract<Expr, { kind: 'or' }> | null {
   if (exprs.length < 2) {
     return null;
   }

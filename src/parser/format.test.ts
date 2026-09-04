@@ -3,7 +3,7 @@ import { formatType } from './format.ts';
 import { parseType, type TypeNode } from './index.ts';
 import successCases from './testdata/parser.success.json';
 
-type ParseSuccessCase = { source: string; ast: TypeNode };
+type ParseSuccessCase = { readonly source: string; readonly ast: TypeNode };
 
 function isParseSuccessCase(value: unknown): value is ParseSuccessCase {
   return (

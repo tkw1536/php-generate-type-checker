@@ -53,7 +53,7 @@ export class Builder {
 
   constructor(
     registry: FunctionNameRegistry,
-    options?: { aliasCheckerByName?: ReadonlyMap<string, string> },
+    options?: { readonly aliasCheckerByName?: ReadonlyMap<string, string> },
   ) {
     this.registry = registry;
     this.aliasCheckerByName = options?.aliasCheckerByName;
@@ -61,7 +61,7 @@ export class Builder {
 
   add(type: TypeNode): string {
     const name = this.registry.get(type);
-    if (typeof this.programs[name] === 'undefined') {
+    if (this.programs[name] === undefined) {
       this.emit(name, type);
     }
     this.promote(name);
@@ -71,7 +71,7 @@ export class Builder {
   /** Add a root entry with an explicit function name (always promoted, even when types dedupe). */
   addEntry(explicitName: string, type: TypeNode): string {
     this.registry.reserveName(explicitName);
-    if (typeof this.programs[explicitName] === 'undefined') {
+    if (this.programs[explicitName] === undefined) {
       this.emit(explicitName, type);
     }
     this.promote(explicitName);
@@ -109,7 +109,7 @@ export class Builder {
 
   private getOrEmitProgram(type: TypeNode): string {
     const name = this.registry.get(type);
-    if (typeof this.programs[name] === 'undefined') {
+    if (this.programs[name] === undefined) {
       this.emit(name, type);
     }
     return name;
@@ -120,7 +120,7 @@ export class Builder {
   }
 
   private finishBody(block: Block): Block {
-    const last = block[block.length - 1];
+    const last = block.at(-1);
     if (last?.kind === 'return') {
       return block;
     }
@@ -179,7 +179,7 @@ export class Builder {
     node: Extract<TypeNode, { kind: 'intersection' }>,
     subject: ValueRef,
   ): Block {
-    const out: Block = [];
+    const out: Stmt[] = [];
     let provenArray = false;
     let provenObject = false;
     for (const member of node.types) {
@@ -270,7 +270,7 @@ export class Builder {
         return [returnStmt(boolLit(false))];
       default: {
         const atoms = this.booleanAtoms(node, subject);
-        const out: Block = [];
+        const out: Stmt[] = [];
         for (const atom of atoms) {
           out.push(failIfStmt(atom));
         }
@@ -281,7 +281,7 @@ export class Builder {
 
   private emitAtomicStatements(type: TypeNode, subject: ValueRef): Block {
     const atoms = this.booleanAtoms(type, subject);
-    const out: Block = [];
+    const out: Stmt[] = [];
     for (const atom of atoms) {
       out.push(failIfStmt(atom));
     }
@@ -336,21 +336,24 @@ export class Builder {
     base: ValueRef,
     opts: EmitOptions,
   ): Block {
-    const out: Block = [];
+    const out: Stmt[] = [];
     const objectShape = shapeIsObject(node);
 
     if (!objectShape && node.fields.length === 0) {
       if (isListKeyword(node.keyword)) {
-        this.appendListGuards(out, base, opts, isNonEmptyKeyword(node.keyword));
+        out.push(
+          ...this.listGuards(base, opts, isNonEmptyKeyword(node.keyword)),
+        );
         return out;
       }
       if (isNonEmptyKeyword(node.keyword)) {
-        this.appendArrayGuards(
-          out,
-          base,
-          opts,
-          true,
-          isIterableKeyword(node.keyword),
+        out.push(
+          ...this.arrayGuards(
+            base,
+            opts,
+            true,
+            isIterableKeyword(node.keyword),
+          ),
         );
         return out;
       }
@@ -364,12 +367,16 @@ export class Builder {
           out.push(failIfStmt(callExpr('is_object', [refArg(base)])));
         }
       } else if (isListKeyword(node.keyword)) {
-        this.appendListGuards(out, base, opts, isNonEmptyKeyword(node.keyword));
+        out.push(
+          ...this.listGuards(base, opts, isNonEmptyKeyword(node.keyword)),
+        );
       } else if (!opts.provenArray) {
         out.push(failIfStmt(callExpr('is_array', [refArg(base)])));
       }
     } else if (!objectShape && isListKeyword(node.keyword)) {
-      this.appendListGuards(out, base, opts, isNonEmptyKeyword(node.keyword));
+      out.push(
+        ...this.listGuards(base, opts, isNonEmptyKeyword(node.keyword)),
+      );
     }
 
     let nextUnkeyedSlot = 0;
@@ -471,7 +478,7 @@ export class Builder {
       return [failIfStmt(binExpr('===', refArg(subject), literalArg('[]')))];
     }
 
-    const out: Block = [];
+    const out: Stmt[] = [];
     if (!opts.skipContainerGuard && !opts.provenArray) {
       out.push(failIfStmt(callExpr('is_array', [refArg(subject)])));
     }
@@ -482,7 +489,7 @@ export class Builder {
 
     const valueRef = this.freshVar();
     const body = this.checkInValueLoop(node.value, valueRef);
-    this.pushForeach(out, subject, valueRef, null, body);
+    out.push(this.pushForeach(subject, valueRef, null, body));
     return out;
   }
 
@@ -503,8 +510,8 @@ export class Builder {
       ];
     }
 
-    const out: Block = [];
-    this.appendListGuards(out, subject, opts, nonEmpty);
+    const out: Stmt[] = [];
+    out.push(...this.listGuards(subject, opts, nonEmpty));
 
     if (element.kind === 'keyword' && element.keyword === 'mixed') {
       return out;
@@ -512,7 +519,7 @@ export class Builder {
 
     const valueRef = this.freshVar();
     const body = this.checkInValueLoop(element, valueRef);
-    this.pushForeach(out, subject, valueRef, null, body);
+    out.push(this.pushForeach(subject, valueRef, null, body));
     return out;
   }
 
@@ -522,7 +529,7 @@ export class Builder {
     opts: EmitOptions,
   ): Block {
     const nonEmpty = isNonEmptyKeyword(node.keyword);
-    const out: Block = [];
+    const out: Stmt[] = [];
     if (!opts.skipContainerGuard && !opts.provenArray) {
       out.push(failIfStmt(callExpr('is_iterable', [refArg(subject)])));
     }
@@ -573,7 +580,7 @@ export class Builder {
       return [failIfStmt(emptyCheck)];
     }
 
-    const out: Block = [];
+    const out: Stmt[] = [];
 
     if (isMixed(node.value)) {
       const compact = this.compactCollectionTest(node, subject);
@@ -583,7 +590,7 @@ export class Builder {
         }
         return out;
       }
-      this.appendArrayGuards(out, subject, opts, nonEmpty, false);
+      out.push(...this.arrayGuards(subject, opts, nonEmpty, false));
       return out;
     }
 
@@ -595,7 +602,7 @@ export class Builder {
       return out;
     }
 
-    this.appendArrayGuards(out, subject, opts, nonEmpty, false);
+    out.push(...this.arrayGuards(subject, opts, nonEmpty, false));
     return [
       ...out,
       ...this.emitForeachKeyed(subject, opts, null, node.value, nonEmpty, true),
@@ -610,15 +617,15 @@ export class Builder {
     nonEmpty: boolean,
     skipGuards: boolean,
   ): Block {
-    const out: Block = [];
+    const out: Stmt[] = [];
     if (!skipGuards) {
-      this.appendArrayGuards(out, subject, opts, nonEmpty, false);
+      out.push(...this.arrayGuards(subject, opts, nonEmpty, false));
     }
 
     const valueRef = this.freshVar();
     const keyRef =
       key !== null && !isMixed(key) ? this.freshVar() : null;
-    const body: Block = [];
+    const body: Stmt[] = [];
 
     if (keyRef !== null && key !== null) {
       body.push(...this.guardForeachKey(key, keyRef));
@@ -626,32 +633,31 @@ export class Builder {
     if (!isMixed(value)) {
       body.push(...this.checkInValueLoop(value, valueRef));
     }
-    this.pushForeach(out, subject, valueRef, keyRef, body);
+    out.push(this.pushForeach(subject, valueRef, keyRef, body));
     return out;
   }
 
   private pushForeach(
-    out: Block,
     iterable: ValueRef,
     valueRef: ValueRef,
     keyRef: ValueRef | null,
     body: Block,
-  ): void {
-    out.push({
+  ): Stmt {
+    return {
       kind: 'foreach',
       iterable,
-      keyVar: keyRef !== null ? this.varName(keyRef) : null,
+      keyVar: keyRef === null ? null : this.varName(keyRef),
       valueVar: this.varName(valueRef),
       body: stripTrailingTrueReturn(body),
-    });
+    };
   }
 
-  private appendListGuards(
-    out: Block,
+  private listGuards(
     subject: ValueRef,
     opts: EmitOptions,
     nonEmpty: boolean,
-  ): void {
+  ): Stmt[] {
+    const out: Stmt[] = [];
     if (opts.skipContainerGuard) {
       if (!opts.provenArray) {
         out.push(failIfStmt(callExpr('is_array', [refArg(subject)])));
@@ -662,7 +668,7 @@ export class Builder {
           failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),
         );
       }
-      return;
+      return out;
     }
     if (opts.provenArray) {
       out.push(failIfStmt(callExpr('array_is_list', [refArg(subject)])));
@@ -671,31 +677,31 @@ export class Builder {
           failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),
         );
       }
-      return;
+      return out;
     }
-    out.push(failIfStmt(callExpr('is_array', [refArg(subject)])));
-    out.push(failIfStmt(callExpr('array_is_list', [refArg(subject)])));
+    out.push(failIfStmt(callExpr('is_array', [refArg(subject)])), failIfStmt(callExpr('array_is_list', [refArg(subject)])));
     if (nonEmpty) {
       out.push(
         failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),
       );
     }
+    return out;
   }
 
-  private appendArrayGuards(
-    out: Block,
+  private arrayGuards(
     subject: ValueRef,
     opts: EmitOptions,
     nonEmpty: boolean,
     iterable: boolean,
-  ): void {
+  ): Stmt[] {
+    const out: Stmt[] = [];
     if (!opts.skipContainerGuard && opts.provenArray && !iterable) {
       if (nonEmpty) {
         out.push(
           failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),
         );
       }
-      return;
+      return out;
     }
     if (!opts.skipContainerGuard) {
       out.push(
@@ -708,7 +714,7 @@ export class Builder {
           failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),
         );
       }
-      return;
+      return out;
     }
     if (!opts.provenArray) {
       out.push(
@@ -722,13 +728,14 @@ export class Builder {
         failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),
       );
     }
+    return out;
   }
 
   // -------------------------------------------------------------------------
   // Boolean expressions
   // -------------------------------------------------------------------------
 
-  private booleanAtoms(type: TypeNode, subject: ValueRef): Expr[] {
+  private booleanAtoms(type: TypeNode, subject: ValueRef): readonly Expr[] {
     if (type.kind === 'keyword' && type.keyword === 'mixed') {
       return [];
     }
@@ -967,12 +974,12 @@ export class Builder {
 // ---------------------------------------------------------------------------
 
 type EmitOptions = {
-  unionRoot: boolean;
-  skipContainerGuard: boolean;
-  provenArray: boolean;
-  provenObject: boolean;
-  inLoop: boolean;
-  insideShapeField: boolean;
+  readonly unionRoot: boolean;
+  readonly skipContainerGuard: boolean;
+  readonly provenArray: boolean;
+  readonly provenObject: boolean;
+  readonly inLoop: boolean;
+  readonly insideShapeField: boolean;
 };
 
 const UNCHECKABLE_KEYWORDS = new Set([
@@ -1066,7 +1073,7 @@ function phpKeyLiteral(key: string | number): string {
   if (typeof key === 'number') {
     return String(key);
   }
-  return `'${key.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+  return `'${key.replaceAll('\\', '\\\\').replaceAll('\'', "\\'")}'`;
 }
 
 function phpLiteralFromNode(
@@ -1077,12 +1084,12 @@ function phpLiteralFromNode(
   }
   const quote = node.quotes === 'double' ? '"' : "'";
   const escaped = node.value
-    .replace(/\\/g, '\\\\')
+    .replaceAll('\\', '\\\\')
     .replace(quote, `\\${quote}`);
   return `${quote}${escaped}${quote}`;
 }
 
-function exprAtoms(expr: Expr): Expr[] {
+function exprAtoms(expr: Expr): readonly Expr[] {
   if (expr.kind === 'and') {
     return expr.exprs;
   }

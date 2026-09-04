@@ -3,7 +3,7 @@ import path from 'node:path';
 import { stdin, stdout } from 'node:process';
 import { fileURLToPath } from 'node:url';
 
-const dir = path.dirname(fileURLToPath(import.meta.url));
+const dir = import.meta.dirname;
 const statePath = path.join(dir, 'review-state.json');
 
 function loadFixtures() {

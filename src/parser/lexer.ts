@@ -21,11 +21,11 @@ export type TokenType =
   | 'eof';
 
 export interface Token {
-  type: TokenType;
-  value: string;
-  pos: number;
+  readonly type: TokenType;
+  readonly value: string;
+  readonly pos: number;
   /** Present on `string` tokens: which quote character wrapped the literal. */
-  quotes?: 'single' | 'double';
+  readonly quotes?: 'single' | 'double';
 }
 
 export class LexerError extends Error {
@@ -47,7 +47,7 @@ export function tokenize(input: string): Token[] {
   while (i < input.length) {
     const ch = input[i];
 
-    if (/\s/.test(ch)) {
+    if (/\s/u.test(ch)) {
       i++;
       continue;
     }
@@ -161,20 +161,20 @@ export function tokenize(input: string): Token[] {
       continue;
     }
 
-    if (/[0-9]/.test(ch) || (ch === '-' && /[0-9]/.test(peek(1)))) {
+    if (/[0-9]/u.test(ch) || (ch === '-' && /[0-9]/u.test(peek(1)))) {
       let value = '';
       if (ch === '-') {
         value += ch;
         i++;
       }
-      while (i < input.length && /[0-9]/.test(input[i])) {
+      while (i < input.length && /[0-9]/u.test(input[i])) {
         value += input[i];
         i++;
       }
       if (input[i] === '.') {
         value += input[i];
         i++;
-        while (i < input.length && /[0-9]/.test(input[i])) {
+        while (i < input.length && /[0-9]/u.test(input[i])) {
           value += input[i];
           i++;
         }
@@ -183,7 +183,7 @@ export function tokenize(input: string): Token[] {
       continue;
     }
 
-    if (ch === '$' || ch === '\\' || /[a-zA-Z_]/.test(ch)) {
+    if (ch === '$' || ch === '\\' || /[a-zA-Z_]/u.test(ch)) {
       let value = '';
       if (ch === '\\') {
         value += ch;
@@ -194,13 +194,13 @@ export function tokenize(input: string): Token[] {
         if (c === '\\') {
           value += c;
           i++;
-          if (i < input.length && /[a-zA-Z_]/.test(input[i])) {
+          if (i < input.length && /[a-zA-Z_]/u.test(input[i])) {
             value += input[i];
             i++;
           }
           continue;
         }
-        if (/[a-zA-Z0-9_$-]/.test(c)) {
+        if (/[a-zA-Z0-9_$-]/u.test(c)) {
           value += c;
           i++;
           continue;

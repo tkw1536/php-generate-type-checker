@@ -2,42 +2,43 @@
  * Checker IR: PHP-shaped AST for generated checker function bodies.
  */
 export type ValueRef =
-  | { kind: 'variable'; name: string }
-  | { kind: 'array_access'; object: ValueRef; key: string | number }
-  | { kind: 'property_access'; object: ValueRef; name: string };
+  | { readonly kind: 'variable'; readonly name: string }
+  | { readonly kind: 'array_access'; readonly object: ValueRef; readonly key: string | number }
+  | { readonly kind: 'property_access'; readonly object: ValueRef; readonly name: string };
 
 export type BinOp = '===' | '!==' | '==' | '!=' | '>' | '<' | '>=' | '<=';
 
 export type Arg =
-  | { kind: 'ref'; ref: ValueRef }
-  | { kind: 'literal'; value: string }
-  | { kind: 'call'; name: string; args: Arg[] };
+  | { readonly kind: 'ref'; readonly ref: ValueRef }
+  | { readonly kind: 'literal'; readonly value: string }
+  | { readonly kind: 'call'; readonly name: string; readonly args: readonly Arg[] };
 
 export type Expr =
-  | { kind: 'bool'; value: boolean }
-  | { kind: 'not'; expr: Expr }
-  | { kind: 'and'; exprs: Expr[] }
-  | { kind: 'or'; exprs: Expr[] }
-  | { kind: 'call'; name: string; args: Arg[] }
-  | { kind: 'bin'; op: BinOp; left: Arg; right: Arg }
-  | { kind: 'instanceof'; subject: Arg; className: string }
-  | { kind: 'call_checker'; name: string; subject: ValueRef };
+  | { readonly kind: 'bool'; readonly value: boolean }
+  | { readonly kind: 'not'; readonly expr: Expr }
+  | { readonly kind: 'and'; readonly exprs: readonly Expr[] }
+  | { readonly kind: 'or'; readonly exprs: readonly Expr[] }
+  | { readonly kind: 'call'; readonly name: string; readonly args: readonly Arg[] }
+  | { readonly kind: 'bin'; readonly op: BinOp; readonly left: Arg; readonly right: Arg }
+  | { readonly kind: 'instanceof'; readonly subject: Arg; readonly className: string }
+  | { readonly kind: 'call_checker'; readonly name: string; readonly subject: ValueRef };
 
-export type Block = Stmt[];
+/** Immutable statement list (builders use mutable `Stmt[]` then return as Block). */
+export type Block = readonly Stmt[];
 
 export type Stmt =
-  | { kind: 'if'; cond: Expr; body: Block }
-  | { kind: 'foreach'; iterable: ValueRef; keyVar: string | null; valueVar: string; body: Block }
-  | { kind: 'return'; expr: Expr };
+  | { readonly kind: 'if'; readonly cond: Expr; readonly body: Block }
+  | { readonly kind: 'foreach'; readonly iterable: ValueRef; readonly keyVar: string | null; readonly valueVar: string; readonly body: Block }
+  | { readonly kind: 'return'; readonly expr: Expr };
 
 export type CheckerProgram = {
-  parameter: string;
-  body: Block;
+  readonly parameter: string;
+  readonly body: Block;
 };
 
 export type CheckerIR = {
-  programs: Record<string, CheckerProgram>;
-  order: string[];
+  readonly programs: Readonly<Record<string, CheckerProgram>>;
+  readonly order: readonly string[];
   /** User-facing entry checkers in parse order; never pruned by the optimizer. */
-  entries: string[];
+  readonly entries: readonly string[];
 };

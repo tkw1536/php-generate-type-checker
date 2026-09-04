@@ -11,26 +11,26 @@ import protectedStaticCases from './testdata/protected_static.json';
 import publicStaticCases from './testdata/public_static.json';
 
 interface GeneratorFixture {
-  name: string;
-  input: string;
-  output: CheckerOutputMode;
-  expected: string;
-  expectsError: boolean;
-  emitPhpstanTypeAliases?: boolean;
-  docblock?: boolean;
+  readonly name: string;
+  readonly input: string;
+  readonly output: CheckerOutputMode;
+  readonly expected: string;
+  readonly expectsError: boolean;
+  readonly emitPhpstanTypeAliases?: boolean;
+  readonly docblock?: boolean;
 }
 
-type SuccessCase = { input: string; expected: string };
+type SuccessCase = { readonly input: string; readonly expected: string };
 type DocblockCase = {
-  input: string;
-  output: CheckerOutputMode;
-  expected: string;
-  emitPhpstanTypeAliases?: boolean;
+  readonly input: string;
+  readonly output: CheckerOutputMode;
+  readonly expected: string;
+  readonly emitPhpstanTypeAliases?: boolean;
 };
-type ErrorCase = { input: string };
+type ErrorCase = { readonly input: string };
 
 function successToFixtures(
-  cases: SuccessCase[],
+  cases: readonly SuccessCase[],
   output: CheckerOutputMode,
 ): GeneratorFixture[] {
   return cases.map(({ input, expected }) => ({
@@ -42,7 +42,7 @@ function successToFixtures(
   }));
 }
 
-function docblockToFixtures(cases: DocblockCase[]): GeneratorFixture[] {
+function docblockToFixtures(cases: readonly DocblockCase[]): GeneratorFixture[] {
   return cases.map(({ input, output, expected, emitPhpstanTypeAliases }) => {
     const label =
       output === 'function' && !emitPhpstanTypeAliases
@@ -60,7 +60,7 @@ function docblockToFixtures(cases: DocblockCase[]): GeneratorFixture[] {
   });
 }
 
-function errorsToFixtures(cases: ErrorCase[]): GeneratorFixture[] {
+function errorsToFixtures(cases: readonly ErrorCase[]): GeneratorFixture[] {
   return cases.map(({ input }) => ({
     name: `error: ${input}`,
     input,

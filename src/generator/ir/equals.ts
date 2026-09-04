@@ -51,7 +51,7 @@ export function equals(a: Expr, b: Expr): boolean {
   }
 }
 
-function argsEqual(a: Arg[], b: Arg[]): boolean {
+function argsEqual(a: readonly Arg[], b: readonly Arg[]): boolean {
   if (a.length !== b.length) {
     return false;
   }

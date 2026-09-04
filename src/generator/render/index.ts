@@ -10,8 +10,8 @@ import {
 import { renderProgramBody } from './php.ts';
 
 export type RenderOptions = GenerateCheckerOptions & {
-  entryDocType: string;
-  docsByName: Record<string, string>;
+  readonly entryDocType: string;
+  readonly docsByName: Readonly<Record<string, string>>;
 };
 
 export function render(ir: CheckerIR, options: RenderOptions): string {
@@ -24,7 +24,7 @@ class Renderer {
     const useSelfCalls = mode !== 'function';
     const entrySet = new Set(ir.entries);
     const entryNames =
-      ir.entries.length > 0 ? ir.entries : ir.order[0] !== undefined ? [ir.order[0]] : [];
+      ir.entries.length > 0 ? ir.entries : ir.order[0] === undefined ? [] : [ir.order[0]];
 
     const helpers: HelperRenderSpec[] = [];
     for (const name of ir.order) {

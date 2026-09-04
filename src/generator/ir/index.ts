@@ -8,21 +8,21 @@ export function notExpr(expr: Expr): Expr {
   return { kind: 'not', expr };
 }
 
-export function andExpr(exprs: Expr[]): Expr {
+export function andExpr(exprs: readonly Expr[]): Expr {
   if (exprs.length === 1) {
     return exprs[0];
   }
   return { kind: 'and', exprs };
 }
 
-export function orExpr(exprs: Expr[]): Expr {
+export function orExpr(exprs: readonly Expr[]): Expr {
   if (exprs.length === 1) {
     return exprs[0];
   }
   return { kind: 'or', exprs };
 }
 
-export function callExpr(name: string, args: Arg[]): Expr {
+export function callExpr(name: string, args: readonly Arg[]): Expr {
   return { kind: 'call', name, args };
 }
 
@@ -50,7 +50,7 @@ export function literalArg(value: string): Arg {
   return { kind: 'literal', value };
 }
 
-export function callArg(name: string, args: Arg[]): Arg {
+export function callArg(name: string, args: readonly Arg[]): Arg {
   return { kind: 'call', name, args };
 }
 

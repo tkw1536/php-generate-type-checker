@@ -4,7 +4,44 @@
   "categories": {
     "correctness": "error",
     "suspicious": "error",
-    "perf": "warn"
+    "pedantic": "error",
+    "perf": "error"
+  },
+  "rules": {
+    "eslint/max-lines": "off",
+    "eslint/max-lines-per-function": "off",
+    "typescript/prefer-readonly-parameter-types": [
+      "error",
+      {
+        "treatMethodsAsReadonly": true,
+        "allow": [
+          { "from": "lib", "name": "Map" },
+          { "from": "lib", "name": "Set" },
+          { "from": "lib", "name": "ReadonlyMap" },
+          { "from": "lib", "name": "ReadonlySet" },
+          { "from": "lib", "name": "Error" },
+          { "from": "lib", "name": "RegExp" },
+          { "from": "lib", "name": "URLSearchParams" },
+          { "from": "lib", "name": "HTMLElement" },
+          { "from": "lib", "name": "HTMLInputElement" },
+          { "from": "lib", "name": "HTMLTextAreaElement" },
+          { "from": "lib", "name": "HTMLSelectElement" },
+          { "from": "lib", "name": "HTMLButtonElement" },
+          { "from": "lib", "name": "HTMLPreElement" },
+          { "from": "lib", "name": "HTMLOptionElement" },
+          { "from": "lib", "name": "Element" },
+          { "from": "lib", "name": "Event" },
+          { "from": "lib", "name": "MouseEvent" },
+          { "from": "lib", "name": "KeyboardEvent" },
+          { "from": "lib", "name": "Node" },
+          { "from": "lib", "name": "Document" },
+          { "from": "lib", "name": "Window" },
+          { "from": "lib", "name": "Location" },
+          { "from": "lib", "name": "History" },
+          { "from": "lib", "name": "Storage" }
+        ]
+      }
+    ]
   },
   "options": {
     "typeAware": true

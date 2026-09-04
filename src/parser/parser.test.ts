@@ -4,8 +4,11 @@ import { parseType, parseTypes } from './index.ts';
 import errorCases from './testdata/parser.errors.json';
 import successCases from './testdata/parser.success.json';
 
-type ParseSuccessCase = { source: string; ast: TypeNode };
-type ParseErrorCase = { input: string; messageContains?: string };
+type ParseSuccessCase = { readonly source: string; readonly ast: TypeNode };
+type ParseErrorCase = {
+  readonly input: string;
+  readonly messageContains?: string;
+};
 
 function isParseSuccessCase(value: unknown): value is ParseSuccessCase {
   return (
@@ -30,14 +33,14 @@ function isParseErrorCase(value: unknown): value is ParseErrorCase {
 }
 
 function readSuccessCases(data: unknown): ParseSuccessCase[] {
-  if (!Array.isArray(data) || !data.every(isParseSuccessCase)) {
+  if (!Array.isArray(data) || !data.every((item) => isParseSuccessCase(item))) {
     throw new Error('invalid parser success fixture JSON');
   }
   return data;
 }
 
 function readErrorCases(data: unknown): ParseErrorCase[] {
-  if (!Array.isArray(data) || !data.every(isParseErrorCase)) {
+  if (!Array.isArray(data) || !data.every((item) => isParseErrorCase(item))) {
     throw new Error('invalid parser error fixture JSON');
   }
   return data;
@@ -110,7 +113,7 @@ describe('parseType', () => {
 
   describe('errors', () => {
     const withMessage = parsedErrorCases.filter(
-      (c): c is ParseErrorCase & { messageContains: string } =>
+      (c): c is ParseErrorCase & { readonly messageContains: string } =>
         typeof c.messageContains === 'string',
     );
     const withoutMessage = parsedErrorCases.filter(
@@ -123,17 +126,35 @@ describe('parseType', () => {
         input,
         messageContains,
       })),
-    )('$label', ({ input, messageContains }) => {
-      expect(() => parseType(input)).toThrow(new RegExp(messageContains));
-    });
+    )(
+      '$label',
+      ({
+        input,
+        messageContains,
+      }: {
+        readonly label: string;
+        readonly input: string;
+        readonly messageContains: string;
+      }) => {
+        expect(() => parseType(input)).toThrow(new RegExp(messageContains, 'u'));
+      },
+    );
 
     it.each(
       withoutMessage.map(({ input }) => ({
         label: input === '' ? '(empty)' : input,
         input,
       })),
-    )('$label', ({ input }) => {
-      expect(() => parseType(input)).toThrow(Error);
-    });
+    )(
+      '$label',
+      ({
+        input,
+      }: {
+        readonly label: string;
+        readonly input: string;
+      }) => {
+        expect(() => parseType(input)).toThrow(Error);
+      },
+    );
   });
 });

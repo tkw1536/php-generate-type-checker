@@ -1,12 +1,12 @@
 import type { CheckerOutputMode } from '../generator/options.ts';
 
 export interface AppFragmentState {
-  nameFromType: boolean;
-  optimize: boolean;
-  emit: CheckerOutputMode;
-  emitAliases: boolean;
-  resolveAliases: boolean;
-  input: string;
+  readonly nameFromType: boolean;
+  readonly optimize: boolean;
+  readonly emit: CheckerOutputMode;
+  readonly emitAliases: boolean;
+  readonly resolveAliases: boolean;
+  readonly input: string;
 }
 
 const EMIT_MODES: ReadonlySet<string> = new Set([
@@ -54,7 +54,7 @@ export function encodeFragmentState(state: AppFragmentState): string {
 
 export function decodeFragmentState(
   hash: string,
-): Partial<AppFragmentState> | null {
+): Readonly<Partial<AppFragmentState>> | null {
   const raw = hash.startsWith('#') ? hash.slice(1) : hash;
   if (!raw.trim()) {
     return null;
@@ -79,7 +79,14 @@ export function decodeFragmentState(
     return null;
   }
 
-  const state: Partial<AppFragmentState> = {};
+  const state: {
+    nameFromType?: boolean;
+    optimize?: boolean;
+    emit?: CheckerOutputMode;
+    emitAliases?: boolean;
+    resolveAliases?: boolean;
+    input?: string;
+  } = {};
   if (nameFromType !== undefined) {
     state.nameFromType = nameFromType;
   }
@@ -101,7 +108,7 @@ export function decodeFragmentState(
   return state;
 }
 
-export function readFragmentFromLocation(): Partial<AppFragmentState> | null {
+export function readFragmentFromLocation(): Readonly<Partial<AppFragmentState>> | null {
   return decodeFragmentState(window.location.hash);
 }
 

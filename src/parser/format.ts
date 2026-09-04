@@ -105,10 +105,10 @@ function formatShapeKey(key: string | number): string {
   if (typeof key === 'number') {
     return String(key);
   }
-  if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key)) {
+  if (/^[a-zA-Z_][a-zA-Z0-9_]*$/u.test(key)) {
     return key;
   }
-  return `'${key.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+  return `'${key.replaceAll(/\\/gu, '\\\\').replaceAll(/'/gu, "\\'")}'`;
 }
 
 function formatUnion(

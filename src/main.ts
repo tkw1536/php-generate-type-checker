@@ -44,13 +44,55 @@ function isOutputTabId(value: string): value is OutputTabId {
   return OUTPUT_TAB_IDS.has(value);
 }
 
-interface OutputPanel {
-  tabId: OutputTabId;
-  bodyEl: HTMLElement;
-  preId: string;
-  defaultLanguage: HighlightLanguage;
-  rawText: string;
+class OutputPanel {
+  readonly tabId: OutputTabId;
+  readonly bodyEl: HTMLElement;
+  readonly preId: string;
+  readonly defaultLanguage: HighlightLanguage;
+  rawText = '';
+
+  constructor(
+    tabId: OutputTabId,
+    bodyEl: HTMLElement,
+    preId: string,
+    defaultLanguage: HighlightLanguage,
+  ) {
+    this.tabId = tabId;
+    this.bodyEl = bodyEl;
+    this.preId = preId;
+    this.defaultLanguage = defaultLanguage;
+  }
+
+  setSuccess(text: string): void {
+    this.rawText = text;
+    this.bodyEl.classList.remove('panel-body--error');
+
+    const { code } = getPreAndCode(this.bodyEl, this.preId);
+
+    const language = detectOutputLanguage(text, this.defaultLanguage);
+    code.className = `hljs language-${language}`;
+    code.innerHTML = highlightCode(text, language);
+    syncCopyButton();
+  }
+
+  setError(err: unknown, sourceText: string): void {
+    const described = describeError(err);
+    this.rawText = described.message;
+    this.bodyEl.classList.add('panel-body--error');
+    this.bodyEl.innerHTML = renderErrorHtml(described, sourceText);
+    syncCopyButton();
+  }
 }
+
+/** Parameter view of {@link OutputPanel} for prefer-readonly-parameter-types. */
+type OutputPanelRef = Readonly<OutputPanel>;
+
+type OutputPanelSet = {
+  readonly ast: OutputPanelRef;
+  readonly irBuild: OutputPanelRef;
+  readonly irOptimized: OutputPanelRef;
+  readonly php: OutputPanelRef;
+};
 
 const outputPanels: OutputPanel[] = [];
 let activeOutputTab: OutputTabId = 'php';
@@ -80,8 +122,11 @@ function getPreAndCode(bodyEl: HTMLElement, preId: string): {
   return { pre, code };
 }
 
-function getActiveOutputPanel(): OutputPanel {
-  return outputPanels.find((p) => p.tabId === activeOutputTab) ?? outputPanels[0];
+function getActiveOutputPanel(): OutputPanelRef {
+  return (
+    outputPanels.find((p: OutputPanelRef) => p.tabId === activeOutputTab) ??
+    outputPanels[0]
+  );
 }
 
 function syncCopyButton(): void {
@@ -96,43 +141,15 @@ function setupOutputPanel(
   defaultLanguage: HighlightLanguage,
 ): OutputPanel {
   const bodyEl = document.querySelector<HTMLElement>(`#${bodyId}`)!;
-
-  const panel: OutputPanel = {
-    tabId,
-    bodyEl,
-    preId,
-    defaultLanguage,
-    rawText: '',
-  };
-
+  const panel = new OutputPanel(tabId, bodyEl, preId, defaultLanguage);
   outputPanels.push(panel);
   return panel;
-}
-
-function setSuccessOutput(panel: OutputPanel, text: string): void {
-  panel.rawText = text;
-  panel.bodyEl.classList.remove('panel-body--error');
-
-  const { code } = getPreAndCode(panel.bodyEl, panel.preId);
-
-  const language = detectOutputLanguage(text, panel.defaultLanguage);
-  code.className = `hljs language-${language}`;
-  code.innerHTML = highlightCode(text, language);
-  syncCopyButton();
-}
-
-function setErrorOutput(panel: OutputPanel, err: unknown, sourceText: string): void {
-  const described = describeError(err);
-  panel.rawText = described.message;
-  panel.bodyEl.classList.add('panel-body--error');
-  panel.bodyEl.innerHTML = renderErrorHtml(described, sourceText);
-  syncCopyButton();
 }
 
 function refreshAllHighlights(): void {
   for (const panel of outputPanels) {
     if (panel.rawText && !panel.bodyEl.classList.contains('panel-body--error')) {
-      setSuccessOutput(panel, panel.rawText);
+      panel.setSuccess(panel.rawText);
     }
   }
 }
@@ -199,7 +216,9 @@ function readUiFragmentState(): AppFragmentState {
   };
 }
 
-function applyFragmentState(fragment: Partial<AppFragmentState>): void {
+function applyFragmentState(
+  fragment: Readonly<Partial<AppFragmentState>>,
+): void {
   if (fragment.nameFromType !== undefined) {
     document.querySelector<HTMLInputElement>('#generate-name-by-type')!.checked =
       fragment.nameFromType;
@@ -232,7 +251,11 @@ function syncFragmentToLocation(): void {
   replaceLocationFragment(readUiFragmentState());
 }
 
-function getGenerateOptions() {
+function getGenerateOptions(): {
+  readonly output: CheckerOutputMode;
+  readonly nameFunctionsByType: boolean;
+  readonly prioritizeReadabilityOverCompactness: boolean;
+} {
   return {
     output: getGenerateOutputMode(),
     nameFunctionsByType: getNameFunctionsByType(),
@@ -251,39 +274,36 @@ function syncDocblockOptions(): void {
 }
 
 function runBuildPipeline(
-  panels: {
-    ast: OutputPanel;
-    irBuild: OutputPanel;
-    irOptimized: OutputPanel;
-    php: OutputPanel;
-  },
+  panels: OutputPanelSet,
   typeString: string,
   genOpts: ReturnType<typeof getGenerateOptions>,
   built: {
-    ir: ReturnType<typeof buildMany>['ir'];
-    typesByName: ReturnType<typeof buildMany>['typesByName'];
-    docStringsByName?: ReturnType<typeof buildMany>['docStringsByName'];
-    phpstanTypeAliases?: ReturnType<typeof buildManyNamed>['phpstanTypeAliases'];
+    readonly ir: ReturnType<typeof buildMany>['ir'];
+    readonly typesByName: ReturnType<typeof buildMany>['typesByName'];
+    readonly docStringsByName?: ReturnType<typeof buildMany>['docStringsByName'];
+    readonly phpstanTypeAliases?: ReturnType<
+      typeof buildManyNamed
+    >['phpstanTypeAliases'];
   },
   renderExtras?: {
-    emitPhpstanTypeAliases?: boolean;
-    phpstanTypeAliases?: ReturnType<typeof buildManyNamed>['phpstanTypeAliases'];
+    readonly emitPhpstanTypeAliases?: boolean;
+    readonly phpstanTypeAliases?: ReturnType<
+      typeof buildManyNamed
+    >['phpstanTypeAliases'];
   },
 ): void {
   try {
     const builtJson = JSON.stringify(built.ir, null, 2);
-    setSuccessOutput(panels.irBuild, builtJson);
+    panels.irBuild.setSuccess(builtJson);
     const irForPhp = wouldRunOptimizer() ? optimize(built.ir) : built.ir;
     if (wouldRunOptimizer()) {
-      setSuccessOutput(panels.irOptimized, JSON.stringify(irForPhp, null, 2));
+      panels.irOptimized.setSuccess(JSON.stringify(irForPhp, null, 2));
     } else {
-      setSuccessOutput(
-        panels.irOptimized,
+      panels.irOptimized.setSuccess(
         'Optimizer skipped (Optimize is off).\nIR (optimized) matches IR (build).',
       );
     }
-    setSuccessOutput(
-      panels.php,
+    panels.php.setSuccess(
       renderChecker(irForPhp, {
         ...genOpts,
         typeString,
@@ -295,18 +315,13 @@ function runBuildPipeline(
       }),
     );
   } catch (err) {
-    setErrorOutput(panels.irBuild, err, typeString);
-    setErrorOutput(panels.irOptimized, err, typeString);
-    setErrorOutput(panels.php, err, typeString);
+    panels.irBuild.setError(err, typeString);
+    panels.irOptimized.setError(err, typeString);
+    panels.php.setError(err, typeString);
   }
 }
 
-function runGenerate(panels: {
-  ast: OutputPanel;
-  irBuild: OutputPanel;
-  irOptimized: OutputPanel;
-  php: OutputPanel;
-}): void {
+function runGenerate(panels: OutputPanelSet): void {
   const typeString = getTypeInput();
   const genOpts = getGenerateOptions();
   syncDocblockOptions();
@@ -317,9 +332,7 @@ function runGenerate(panels: {
       defs = parsePhpstanTypesFromDocblock(typeString, {
         resolveAliases: getResolveAliases(),
       });
-      setSuccessOutput(
-        panels.ast,
-        JSON.stringify(
+      panels.ast.setSuccess(JSON.stringify(
           defs.map((d) => ({
             name: d.name,
             typeString: d.typeString,
@@ -330,13 +343,13 @@ function runGenerate(panels: {
         ),
       );
     } catch (err) {
-      setErrorOutput(panels.ast, err, typeString);
+      panels.ast.setError(err, typeString);
     }
 
     if (defs === undefined) {
-      setErrorOutput(panels.irBuild, new Error('Parse failed'), typeString);
-      setErrorOutput(panels.irOptimized, new Error('Parse failed'), typeString);
-      setErrorOutput(panels.php, new Error('Parse failed'), typeString);
+      panels.irBuild.setError(new Error('Parse failed'), typeString);
+      panels.irOptimized.setError(new Error('Parse failed'), typeString);
+      panels.php.setError(new Error('Parse failed'), typeString);
       return;
     }
 
@@ -357,9 +370,9 @@ function runGenerate(panels: {
         phpstanTypeAliases: built.phpstanTypeAliases,
       });
     } catch (err) {
-      setErrorOutput(panels.irBuild, err, typeString);
-      setErrorOutput(panels.irOptimized, err, typeString);
-      setErrorOutput(panels.php, err, typeString);
+      panels.irBuild.setError(err, typeString);
+      panels.irOptimized.setError(err, typeString);
+      panels.php.setError(err, typeString);
     }
     return;
   }
@@ -367,9 +380,7 @@ function runGenerate(panels: {
   let parsed: ReturnType<typeof parseTypes> | undefined;
   try {
     parsed = parseTypes(typeString);
-    setSuccessOutput(
-      panels.ast,
-      JSON.stringify(
+    panels.ast.setSuccess(JSON.stringify(
         parsed.segments.map((s) => ({
           start: s.start,
           end: s.end,
@@ -380,13 +391,13 @@ function runGenerate(panels: {
       ),
     );
   } catch (err) {
-    setErrorOutput(panels.ast, err, typeString);
+    panels.ast.setError(err, typeString);
   }
 
   if (parsed === undefined) {
-    setErrorOutput(panels.irBuild, new Error('Parse failed'), typeString);
-    setErrorOutput(panels.irOptimized, new Error('Parse failed'), typeString);
-    setErrorOutput(panels.php, new Error('Parse failed'), typeString);
+    panels.irBuild.setError(new Error('Parse failed'), typeString);
+    panels.irOptimized.setError(new Error('Parse failed'), typeString);
+    panels.php.setError(new Error('Parse failed'), typeString);
     return;
   }
 
@@ -400,9 +411,9 @@ function runGenerate(panels: {
     );
     runBuildPipeline(panels, typeString, genOpts, built);
   } catch (err) {
-    setErrorOutput(panels.irBuild, err, typeString);
-    setErrorOutput(panels.irOptimized, err, typeString);
-    setErrorOutput(panels.php, err, typeString);
+    panels.irBuild.setError(err, typeString);
+    panels.irOptimized.setError(err, typeString);
+    panels.php.setError(err, typeString);
   }
 }
 
@@ -454,7 +465,7 @@ function scheduleGenerate(): void {
 
 function activateOutputTab(
   tabId: OutputTabId,
-  options?: { focus?: boolean },
+  options?: { readonly focus?: boolean },
 ): void {
   const tabButtons = document.querySelectorAll<HTMLButtonElement>(
     '.output-tab[data-output-tab]',
@@ -639,7 +650,7 @@ function setupExamples(): void {
     const option = document.createElement('option');
     option.value = example.type;
     option.textContent = example.label;
-    select.appendChild(option);
+    select.append(option);
   }
 
   select.addEventListener('change', () => {
@@ -659,10 +670,10 @@ setupExamples();
 
 {
   const fromFragment = readFragmentFromLocation();
-  if (fromFragment !== null) {
-    applyFragmentState(fromFragment);
-  } else {
+  if (fromFragment === null) {
     typeInput.value = DEFAULT_TYPE;
+  } else {
+    applyFragmentState(fromFragment);
   }
   syncFragmentToLocation();
 }

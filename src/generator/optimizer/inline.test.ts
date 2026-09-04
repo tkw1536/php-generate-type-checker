@@ -28,13 +28,13 @@ const $elem = variableRef('$value1');
 
 function ir(
   programs: CheckerIR['programs'],
-  order: string[],
-  entries?: string[],
+  order: readonly string[],
+  entries?: readonly string[],
 ): CheckerIR {
   return {
     programs,
     order,
-    entries: entries ?? (order[0] !== undefined ? [order[0]] : []),
+    entries: entries ?? (order[0] === undefined ? [] : [order[0]]),
   };
 }
 

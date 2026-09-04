@@ -1,63 +1,63 @@
 export type TypeNode =
   // known keyword
-  | { kind: 'keyword'; keyword: Keyword }
+  | { readonly kind: 'keyword'; readonly keyword: Keyword }
 
   // class name or alias reference — resolved at codegen (alias entry checker vs instanceof)
-  | { kind: 'named'; name: string }
+  | { readonly kind: 'named'; readonly name: string }
 
   // string literals "hello world", 'hello world'
-  | { kind: 'literal'; type: 'string'; value: string, quotes: 'single' | 'double' }
+  | { readonly kind: 'literal'; readonly type: 'string'; readonly value: string; readonly quotes: 'single' | 'double' }
 
   // numeric literals with exact source. e.g. "42" or "42.0"
-  | { kind: 'literal'; type: 'number'; value: string }
+  | { readonly kind: 'literal'; readonly type: 'number'; readonly value: string }
 
   // int<$min, $max> with null meaning a literal "min" or "max"
-  | { kind: 'range'; min: number|null; max: number|null, keyword: 'int' | 'integer' } 
+  | { readonly kind: 'range'; readonly min: number | null; readonly max: number | null; readonly keyword: 'int' | 'integer' }
 
   // iterable<value> + variants
-  | { kind: 'collection'; value: TypeNode; keyword: 'list' | 'non-empty-list' | 'array' | 'non-empty-array' | 'iterable' | 'non-empty-iterable'}
+  | { readonly kind: 'collection'; readonly value: TypeNode; readonly keyword: 'list' | 'non-empty-list' | 'array' | 'non-empty-array' | 'iterable' | 'non-empty-iterable' }
   // iterable<key, value> + variants
-  | { kind: 'collection'; key: TypeNode; value: TypeNode; keyword: 'array' | 'non-empty-array' | 'iterable' | 'non-empty-iterable'}
+  | { readonly kind: 'collection'; readonly key: TypeNode; readonly value: TypeNode; readonly keyword: 'array' | 'non-empty-array' | 'iterable' | 'non-empty-iterable' }
 
   // iterable{…} + variants — positional slots use {@link ShapeField} with `key: null`; named slots use string | number keys
-  | { kind: 'shape'; fields: ShapeField[], keyword: 'list' | 'non-empty-list' | 'array' | 'non-empty-array' | 'iterable' | 'non-empty-iterable' | 'object' }
+  | { readonly kind: 'shape'; readonly fields: readonly ShapeField[]; readonly keyword: 'list' | 'non-empty-list' | 'array' | 'non-empty-array' | 'iterable' | 'non-empty-iterable' | 'object' }
 
   // value[]
-  | { kind: 'array'; value: TypeNode }
+  | { readonly kind: 'array'; readonly value: TypeNode }
 
   // left|right
-  | { kind: 'union'; types: TypeNode[] }
+  | { readonly kind: 'union'; readonly types: readonly TypeNode[] }
 
   // left&right
-  | { kind: 'intersection'; types: TypeNode[] } 
+  | { readonly kind: 'intersection'; readonly types: readonly TypeNode[] }
 
   // callable(params): returnType
-  | { kind: 'callable'; signature: CallableSig }
+  | { readonly kind: 'callable'; readonly signature: CallableSig }
 
   // Foo<...>
-  | { kind: 'generic'; name: string; typeArgs: TypeNode[] }
+  | { readonly kind: 'generic'; readonly name: string; readonly typeArgs: readonly TypeNode[] }
 
   // everything not supported by the parser
-  | { kind: 'unsupported'; raw: string; reason?: string }; 
+  | { readonly kind: 'unsupported'; readonly raw: string; readonly reason?: string };
 
 export interface ShapeField {
   /** `null` = positional / tuple slot (no `key:` in source); otherwise the shape field name or numeric index. */
-  key: string | number | null;
-  optional: boolean;
-  value: TypeNode;
+  readonly key: string | number | null;
+  readonly optional: boolean;
+  readonly value: TypeNode;
 }
 
 export interface CallableParam {
-  name?: string;
-  type: TypeNode;
-  optional: boolean;
-  byRef: boolean;
-  variadic: boolean;
+  readonly name?: string;
+  readonly type: TypeNode;
+  readonly optional: boolean;
+  readonly byRef: boolean;
+  readonly variadic: boolean;
 }
 
 export interface CallableSig {
-  params: CallableParam[];
-  returnType: TypeNode;
+  readonly params: readonly CallableParam[];
+  readonly returnType: TypeNode;
 }
 
 

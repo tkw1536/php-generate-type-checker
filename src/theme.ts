@@ -29,7 +29,7 @@ function applyHljsStylesheet(theme: ResolvedTheme): void {
     hljsLink = document.createElement('link');
     hljsLink.id = 'hljs-theme';
     hljsLink.rel = 'stylesheet';
-    document.head.appendChild(hljsLink);
+    document.head.append(hljsLink);
   }
   hljsLink.href = theme === 'dark' ? hljsDarkUrl : hljsLightUrl;
 }

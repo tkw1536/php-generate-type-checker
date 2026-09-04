@@ -1,6 +1,6 @@
 export interface TypeExample {
-  label: string;
-  type: string;
+  readonly label: string;
+  readonly type: string;
 }
 
 /** Built-in types for the UI examples dropdown (common PHPStan shapes from APIs, config, and persistence). */

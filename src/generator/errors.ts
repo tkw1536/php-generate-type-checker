@@ -7,7 +7,10 @@ export class GenerationError extends Error {
   constructor(
     message: string,
     typeDescription?: string,
-    options?: { expressionIndex?: number; segmentSource?: string },
+    options?: {
+      readonly expressionIndex?: number;
+      readonly segmentSource?: string;
+    },
     cause?: Error,
   ) {
     super(message);

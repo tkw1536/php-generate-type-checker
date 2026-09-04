@@ -8,8 +8,8 @@ import {
 
 
 export function createFunctionNameRegistry(options?: {
-  nameFunctionsByType?: boolean;
-  reservedNames?: string[];
+  readonly nameFunctionsByType?: boolean;
+  readonly reservedNames?: readonly string[];
 }): FunctionNameRegistry {
   const reserved = options?.reservedNames ?? [];
   const proposer =

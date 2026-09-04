@@ -86,7 +86,7 @@ function inlineCallCheckerExpr(
 }
 
 function findFirstCallChecker(
-  exprs: Expr[],
+  exprs: readonly Expr[],
 ): { index: number; call: Extract<Expr, { kind: 'call_checker' }> } | null {
   for (let i = 0; i < exprs.length; i++) {
     const e = exprs[i];
@@ -192,7 +192,7 @@ function inlineReturnStmt(
   stmt: Extract<Stmt, { kind: 'return' }>,
   ir: CheckerIR,
   programName: string,
-): Stmt[] | null {
+): Block | null {
   const peeledOr = peelOrReturn(stmt, ir, programName);
   if (peeledOr !== null) {
     return peeledOr;
@@ -235,7 +235,7 @@ function inlineExpr(expr: Expr, ir: CheckerIR, programName: string): Expr | null
       return inlineCallCheckerExpr(expr, ir, programName);
     case 'not': {
       const inner = inlineExpr(expr.expr, ir, programName);
-      return inner !== null ? notExpr(inner) : null;
+      return inner === null ? null : notExpr(inner);
     }
     case 'and':
     case 'or': {
@@ -255,7 +255,7 @@ function inlineExpr(expr: Expr, ir: CheckerIR, programName: string): Expr | null
   }
 }
 
-function inlineStmt(stmt: Stmt, ir: CheckerIR, programName: string): Stmt[] {
+function inlineStmt(stmt: Stmt, ir: CheckerIR, programName: string): Block {
   switch (stmt.kind) {
     case 'return': {
       const replaced = inlineReturnStmt(stmt, ir, programName);
@@ -279,10 +279,8 @@ function inlineStmt(stmt: Stmt, ir: CheckerIR, programName: string): Stmt[] {
           body: inlineBlock(stmt.body, ir, programName),
         },
       ];
-    default: {
-      const exhaustive: never = stmt;
-      return [exhaustive];
-    }
+    default:
+      throw new Error('never reached');
   }
 }
 

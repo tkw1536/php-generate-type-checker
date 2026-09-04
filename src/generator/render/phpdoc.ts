@@ -13,5 +13,5 @@ export function formatTypeForPhpstanDoc(node: TypeNode): string {
 
 /** Escapes a type string for safe use inside `/** … *\/` (one line). */
 function escapePhpdocTypeLine(type: string): string {
-  return type.replace(/\*\//g, '* /');
+  return type.replaceAll('*/', '* /');
 }

@@ -41,7 +41,7 @@ import { describe, expect, it } from 'vitest';
 import { generateChecker } from './index.ts';
 ```
 
-Lint standard: Oxlint [`correctness`](https://oxc.rs/docs/guide/usage/linter/config.html#enable-groups-of-rules-with-categories) + `suspicious` as errors, `perf` as warnings, type-aware on, Vitest plugin enabled (see [`.oxlintrc.json`](.oxlintrc.json)). Rule list: [Oxlint Rules](https://oxc.rs/docs/guide/usage/linter/rules.html). Do not invent rule lists or mass-fix with `yarn lint:fix` unless asked.
+Lint config: [`.oxlintrc.json`](.oxlintrc.json) (see README). Do not invent rule lists or mass-fix with `yarn lint:fix` unless asked.
 
 For switch exhaustiveness (or other “impossible” paths), do **not** use `const x: never = …`. Throw instead, like Go’s `panic("never reached")`:
 
@@ -65,6 +65,9 @@ yarn spellcheck
 ## Warnings
 
 - ABSOLUTELY NO LINT IGNORES (`oxlint-disable`, `eslint-disable`, or equivalents). Fix the code or adjust shared config — never suppress.
+- Do **not** turn rules off / weaken shared lint config unless the user explicitly asks to disable or change that specific rule. Prefer fixing code. (The only current intentional offs are `eslint/max-lines` and `eslint/max-lines-per-function`, per prior request.)
+- NO WRITE INTERACTIONS UNLESS EXPLICITLY REQUESTED. Do not edit, create, delete, move, or overwrite files unless the user clearly asked for that change. Read-only investigation is fine; applying fixes is not, until asked.
+- NEVER run `git checkout`, `git restore`, `git reset`, or any other command that discards or overwrites working-tree changes unless the user explicitly requests that exact recovery/discard operation.
 - Never invent `package.json` scripts; only use scripts that exist.
 - Keep URL fragment state backwards compatible (`src/ui/fragmentState.ts`).
 - Do not hand-edit golden `*.json`; regenerate from `*.IN`.

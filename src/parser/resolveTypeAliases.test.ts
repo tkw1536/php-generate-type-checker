@@ -6,7 +6,7 @@ import {
   TypeAliasResolveError,
 } from './resolveTypeAliases.ts';
 
-function aliasNames(defs: { name: string }[]): string[] {
+function aliasNames(defs: readonly { readonly name: string }[]): string[] {
   return defs.map((d) => d.name);
 }
 
