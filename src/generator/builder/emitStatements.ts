@@ -59,23 +59,9 @@ export function emitStatements(
 ): Block {
   switch (type.kind) {
     case 'unsupported':
-      return cannotBuild(
-        type,
-        `Cannot generate a runtime check for unsupported type: ${type.raw}`,
-        type.raw,
-      );
     case 'callable':
-      return cannotBuild(
-        type,
-        'Cannot generate a runtime check for callable with parameter or return types: parameter and return types cannot be verified without invoking the callable',
-        'callable(...)',
-      );
     case 'generic':
-      return cannotBuild(
-        type,
-        `Cannot generate a runtime check for the generic type ${type.name}: not a supported generic for codegen`,
-        `${type.name}<...>`,
-      );
+      return emitUncheckable(type);
     case 'union':
       if (opts.unionRoot) {
         return unionOrAtRoot(ctx, type, subject);
@@ -103,6 +89,33 @@ export function emitStatements(
     case 'literal':
     case 'range':
       return emitAtomicStatements(ctx, type, subject);
+    default:
+      throw new Error('never reached');
+  }
+}
+
+function emitUncheckable(
+  type: Extract<TypeNode, { kind: 'unsupported' | 'callable' | 'generic' }>,
+): Block {
+  switch (type.kind) {
+    case 'unsupported':
+      return cannotBuild(
+        type,
+        `Cannot generate a runtime check for unsupported type: ${type.raw}`,
+        type.raw,
+      );
+    case 'callable':
+      return cannotBuild(
+        type,
+        'Cannot generate a runtime check for callable with parameter or return types: parameter and return types cannot be verified without invoking the callable',
+        'callable(...)',
+      );
+    case 'generic':
+      return cannotBuild(
+        type,
+        `Cannot generate a runtime check for the generic type ${type.name}: not a supported generic for codegen`,
+        `${type.name}<...>`,
+      );
     default:
       throw new Error('never reached');
   }

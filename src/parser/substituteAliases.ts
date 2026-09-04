@@ -49,6 +49,17 @@ export function substituteAliases(
   if (node.kind === 'named' && isBareAliasReference(node.name, aliases)) {
     return resolveAlias(node.name, aliases, resolvedByName, resolving);
   }
+  return substituteComposite(node, aliases, resolvedByName, resolving);
+}
+
+function substituteComposite(
+  node: TypeNode,
+  aliases: Map<string, TypeNode>,
+  resolvedByName: Map<string, TypeNode>,
+  resolving: Set<string>,
+): TypeNode {
+  const sub = (t: TypeNode): TypeNode =>
+    substituteAliases(t, aliases, resolvedByName, resolving);
 
   switch (node.kind) {
     case 'keyword':
@@ -59,48 +70,13 @@ export function substituteAliases(
     case 'callable':
       return node;
     case 'array':
-      return {
-        kind: 'array',
-        value: substituteAliases(
-          node.value,
-          aliases,
-          resolvedByName,
-          resolving,
-        ),
-      };
+      return { kind: 'array', value: sub(node.value) };
     case 'union':
-      return {
-        kind: 'union',
-        types: node.types.map((t) =>
-          substituteAliases(t, aliases, resolvedByName, resolving),
-        ),
-      };
+      return { kind: 'union', types: node.types.map(sub) };
     case 'intersection':
-      return {
-        kind: 'intersection',
-        types: node.types.map((t) =>
-          substituteAliases(t, aliases, resolvedByName, resolving),
-        ),
-      };
+      return { kind: 'intersection', types: node.types.map(sub) };
     case 'collection':
-      if ('key' in node) {
-        return {
-          kind: 'collection',
-          keyword: node.keyword,
-          key: substituteAliases(node.key, aliases, resolvedByName, resolving),
-          value: substituteAliases(
-            node.value,
-            aliases,
-            resolvedByName,
-            resolving,
-          ),
-        };
-      }
-      return {
-        kind: 'collection',
-        keyword: node.keyword,
-        value: substituteAliases(node.value, aliases, resolvedByName, resolving),
-      };
+      return substituteCollection(node, sub);
     case 'shape':
       return {
         kind: 'shape',
@@ -113,13 +89,30 @@ export function substituteAliases(
       return {
         kind: 'generic',
         name: node.name,
-        typeArgs: node.typeArgs.map((t) =>
-          substituteAliases(t, aliases, resolvedByName, resolving),
-        ),
+        typeArgs: node.typeArgs.map(sub),
       };
     default:
       throw new Error('never reached');
   }
+}
+
+function substituteCollection(
+  node: Extract<TypeNode, { kind: 'collection' }>,
+  sub: (t: TypeNode) => TypeNode,
+): TypeNode {
+  if ('key' in node) {
+    return {
+      kind: 'collection',
+      keyword: node.keyword,
+      key: sub(node.key),
+      value: sub(node.value),
+    };
+  }
+  return {
+    kind: 'collection',
+    keyword: node.keyword,
+    value: sub(node.value),
+  };
 }
 
 function substituteShapeField(

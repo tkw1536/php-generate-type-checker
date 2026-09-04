@@ -22,40 +22,8 @@ class Renderer {
   render(ir: CheckerIR, options: RenderOptions): string {
     const mode = options.output ?? DEFAULT_CHECKER_OUTPUT;
     const useSelfCalls = mode !== 'function';
-    const entrySet = new Set(ir.entries);
-    const entryNames =
-      ir.entries.length > 0 ? ir.entries : ir.order[0] === undefined ? [] : [ir.order[0]];
-
-    const helpers: HelperRenderSpec[] = [];
-    for (const name of ir.order) {
-      if (entrySet.has(name)) {
-        continue;
-      }
-      const program = ir.programs[name];
-      const docType = options.docsByName[name];
-      if (program === undefined || docType === undefined) {
-        continue;
-      }
-      const body = renderProgramBody(program, { useSelfCalls });
-      helpers.push({ functionName: name, docType, body });
-    }
-
-    const entrySpecs: EntryRenderSpec[] = [];
-    for (const name of entryNames) {
-      const program = ir.programs[name];
-      if (program === undefined) {
-        continue;
-      }
-      const docType =
-        options.docsByName[name] ??
-        (entryNames.length === 1 ? options.entryDocType : name);
-      const body = renderProgramBody(program, { useSelfCalls });
-      const functionName =
-        entryNames.length === 1
-          ? (options.mainFunctionName ?? name)
-          : name;
-      entrySpecs.push({ functionName, docType, body });
-    }
+    const helpers = collectHelpers(ir, options, useSelfCalls);
+    const entrySpecs = collectEntries(ir, options, useSelfCalls);
 
     if (entrySpecs.length === 0) {
       return '';
@@ -71,4 +39,60 @@ class Renderer {
     }
     return wrapMultipleEntries(entrySpecs, { ...options, output: mode }, helpers);
   }
+}
+
+function collectHelpers(
+  ir: CheckerIR,
+  options: RenderOptions,
+  useSelfCalls: boolean,
+): HelperRenderSpec[] {
+  const entrySet = new Set(ir.entries);
+  const helpers: HelperRenderSpec[] = [];
+  for (const name of ir.order) {
+    if (entrySet.has(name)) {
+      continue;
+    }
+    const program = ir.programs[name];
+    const docType = options.docsByName[name];
+    if (program === undefined || docType === undefined) {
+      continue;
+    }
+    helpers.push({
+      functionName: name,
+      docType,
+      body: renderProgramBody(program, { useSelfCalls }),
+    });
+  }
+  return helpers;
+}
+
+function collectEntries(
+  ir: CheckerIR,
+  options: RenderOptions,
+  useSelfCalls: boolean,
+): EntryRenderSpec[] {
+  const entryNames =
+    ir.entries.length > 0
+      ? ir.entries
+      : ir.order[0] === undefined
+        ? []
+        : [ir.order[0]];
+  const entrySpecs: EntryRenderSpec[] = [];
+  for (const name of entryNames) {
+    const program = ir.programs[name];
+    if (program === undefined) {
+      continue;
+    }
+    const docType =
+      options.docsByName[name] ??
+      (entryNames.length === 1 ? options.entryDocType : name);
+    const functionName =
+      entryNames.length === 1 ? (options.mainFunctionName ?? name) : name;
+    entrySpecs.push({
+      functionName,
+      docType,
+      body: renderProgramBody(program, { useSelfCalls }),
+    });
+  }
+  return entrySpecs;
 }

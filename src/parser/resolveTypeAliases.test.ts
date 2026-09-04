@@ -76,90 +76,111 @@ const FORWARD_REF_DOCBLOCK = `/**
  * @phpstan-type Inner int
  */`;
 
-describe('parsePhpstanTypesFromDocblock', () => {
-  it('keeps forward alias references as named nodes', () => {
-    const defs = parsePhpstanTypesFromDocblock(FORWARD_REF_DOCBLOCK);
-    expect(defs).toHaveLength(2);
-    const outer = defs.find((d) => d.name === 'Outer')!;
-    expect(namedAliasReferences(outer.ast, aliasNames(defs))).toEqual([
-      'Inner',
-    ]);
-    expect(outer.ast).toEqual(parseType('array{inner: Inner}'));
-  });
+function keepsForwardAliasReferencesAsNamed(): void {
+  const defs = parsePhpstanTypesFromDocblock(FORWARD_REF_DOCBLOCK);
+  expect(defs).toHaveLength(2);
+  const outer = defs.find((d) => d.name === 'Outer')!;
+  expect(namedAliasReferences(outer.ast, aliasNames(defs))).toEqual(['Inner']);
+  expect(outer.ast).toEqual(parseType('array{inner: Inner}'));
+}
 
-  it('inlines alias cross-references when resolveAliases is true', () => {
-    const defs = parsePhpstanTypesFromDocblock(FORWARD_REF_DOCBLOCK, {
-      resolveAliases: true,
-    });
-    const outer = defs.find((d) => d.name === 'Outer')!;
-    expect(namedAliasReferences(outer.ast, aliasNames(defs))).toEqual([]);
-    expect(outer.ast).toEqual(parseType('array{inner: int}'));
+function inlinesAliasCrossReferencesWhenResolveAliases(): void {
+  const defs = parsePhpstanTypesFromDocblock(FORWARD_REF_DOCBLOCK, {
+    resolveAliases: true,
   });
+  const outer = defs.find((d) => d.name === 'Outer')!;
+  expect(namedAliasReferences(outer.ast, aliasNames(defs))).toEqual([]);
+  expect(outer.ast).toEqual(parseType('array{inner: int}'));
+}
 
-  it('keeps post list cross-references as named nodes', () => {
-    const defs = parsePhpstanTypesFromDocblock(POST_LIST_DOCBLOCK);
-    const response = defs.find((d) => d.name === 'PostListResponse')!;
-    expect(namedAliasReferences(response.ast, defs.map((d) => d.name))).toEqual([
-      'PaginationMeta',
-      'PostSummary',
-    ]);
-    const shape = expectShape(response.ast);
-    const postsField = shape.fields.find((f) => f.key === 'posts');
-    expect(postsField?.value).toEqual({
-      kind: 'collection',
-      keyword: 'list',
-      value: { kind: 'named', name: 'PostSummary' },
-    });
+function keepsPostListCrossReferencesAsNamed(): void {
+  const defs = parsePhpstanTypesFromDocblock(POST_LIST_DOCBLOCK);
+  const response = defs.find((d) => d.name === 'PostListResponse')!;
+  expect(namedAliasReferences(response.ast, defs.map((d) => d.name))).toEqual([
+    'PaginationMeta',
+    'PostSummary',
+  ]);
+  const shape = expectShape(response.ast);
+  const postsField = shape.fields.find((f) => f.key === 'posts');
+  expect(postsField?.value).toEqual({
+    kind: 'collection',
+    keyword: 'list',
+    value: { kind: 'named', name: 'PostSummary' },
   });
+}
 
-  it('keeps annotation alias references as named nodes inside intersection shapes', () => {
-    const defs = parsePhpstanTypesFromDocblock(ANNOTATION_DOCBLOCK);
-    const input = defs.find((d) => d.name === 'AnnotationInput')!;
-    expect(namedAliasReferences(input.ast, defs.map((d) => d.name))).toEqual([
-      'AnnotationBody',
-      'AnnotationTarget',
-    ]);
-    const intersection = expectIntersection(input.ast);
-    const shapeNode = expectShape(intersection.types[1]);
-    const bodyField = shapeNode.fields.find((f) => f.key === 'body');
-    expect(bodyField?.value).toEqual({
-      kind: 'named',
-      name: 'AnnotationBody',
-    });
+function keepsAnnotationAliasReferencesAsNamed(): void {
+  const defs = parsePhpstanTypesFromDocblock(ANNOTATION_DOCBLOCK);
+  const input = defs.find((d) => d.name === 'AnnotationInput')!;
+  expect(namedAliasReferences(input.ast, defs.map((d) => d.name))).toEqual([
+    'AnnotationBody',
+    'AnnotationTarget',
+  ]);
+  const intersection = expectIntersection(input.ast);
+  const shapeNode = expectShape(intersection.types[1]);
+  const bodyField = shapeNode.fields.find((f) => f.key === 'body');
+  expect(bodyField?.value).toEqual({
+    kind: 'named',
+    name: 'AnnotationBody',
   });
+}
 
-  it('preserves real class names with leading backslash', () => {
-    const defs = parsePhpstanTypesFromDocblock(ANNOTATION_DOCBLOCK);
-    const body = defs.find((d) => d.name === 'AnnotationBody')!;
-    const intersection = expectIntersection(body.ast);
-    expect(intersection.types[0]).toEqual({
-      kind: 'named',
-      name: '\\stdClass',
-    });
-    const shapeNode = expectShape(intersection.types[1]);
-    const elementsField = shapeNode.fields.find((f) => f.key === 'elements');
-    expect(elementsField?.value).toEqual({
-      kind: 'collection',
-      keyword: 'list',
-      value: { kind: 'named', name: '\\DOMElement' },
-    });
+function preservesRealClassNamesWithLeadingBackslash(): void {
+  const defs = parsePhpstanTypesFromDocblock(ANNOTATION_DOCBLOCK);
+  const body = defs.find((d) => d.name === 'AnnotationBody')!;
+  const intersection = expectIntersection(body.ast);
+  expect(intersection.types[0]).toEqual({
+    kind: 'named',
+    name: '\\stdClass',
   });
+  const shapeNode = expectShape(intersection.types[1]);
+  const elementsField = shapeNode.fields.find((f) => f.key === 'elements');
+  expect(elementsField?.value).toEqual({
+    kind: 'collection',
+    keyword: 'list',
+    value: { kind: 'named', name: '\\DOMElement' },
+  });
+}
 
-  it('throws on circular alias references', () => {
-    expect(() =>
-      parsePhpstanTypesFromDocblock(`/**
+function throwsOnCircularAliasReferences(): void {
+  expect(() =>
+    parsePhpstanTypesFromDocblock(`/**
  * @phpstan-type A B
  * @phpstan-type B A
  */`),
-    ).toThrow(TypeAliasResolveError);
-  });
+  ).toThrow(TypeAliasResolveError);
+}
 
-  it('attributes parse errors to alias index', () => {
-    expect(() =>
-      parsePhpstanTypesFromDocblock(`/**
+function attributesParseErrorsToAliasIndex(): void {
+  expect(() =>
+    parsePhpstanTypesFromDocblock(`/**
  * @phpstan-type Good int
  * @phpstan-type Bad array{
  */`),
-    ).toThrow(expect.objectContaining({ expressionIndex: 1 }));
-  });
+  ).toThrow(expect.objectContaining({ expressionIndex: 1 }));
+}
+
+describe('parsePhpstanTypesFromDocblock', () => {
+  it(
+    'keeps forward alias references as named nodes',
+    keepsForwardAliasReferencesAsNamed,
+  );
+  it(
+    'inlines alias cross-references when resolveAliases is true',
+    inlinesAliasCrossReferencesWhenResolveAliases,
+  );
+  it(
+    'keeps post list cross-references as named nodes',
+    keepsPostListCrossReferencesAsNamed,
+  );
+  it(
+    'keeps annotation alias references as named nodes inside intersection shapes',
+    keepsAnnotationAliasReferencesAsNamed,
+  );
+  it(
+    'preserves real class names with leading backslash',
+    preservesRealClassNamesWithLeadingBackslash,
+  );
+  it('throws on circular alias references', throwsOnCircularAliasReferences);
+  it('attributes parse errors to alias index', attributesParseErrorsToAliasIndex);
 });

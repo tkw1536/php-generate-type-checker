@@ -102,16 +102,7 @@ class Parser extends TokenCursor {
     }
 
     if (this.match('string')) {
-      const prev = this.previous();
-      if (prev.quotes === undefined) {
-        throw new ParseError('Internal error: string token missing quotes', prev.pos);
-      }
-      return {
-        kind: 'literal',
-        type: 'string',
-        value: prev.value,
-        quotes: prev.quotes,
-      };
+      return this.parseStringLiteral();
     }
 
     if (!this.check('identifier')) {
@@ -121,28 +112,40 @@ class Parser extends TokenCursor {
       );
     }
 
+    return this.parseIdentifierPrimary();
+  }
+
+  private parseStringLiteral(): TypeNode {
+    const prev = this.previous();
+    if (prev.quotes === undefined) {
+      throw new ParseError('Internal error: string token missing quotes', prev.pos);
+    }
+    return {
+      kind: 'literal',
+      type: 'string',
+      value: prev.value,
+      quotes: prev.quotes,
+    };
+  }
+
+  private parseIdentifierPrimary(): TypeNode {
     const name = this.previousAfterAdvance();
 
     if (name === 'array' && this.check('lbrace')) {
       return parseArrayShape(this);
     }
-
     if (name === 'object' && this.check('lbrace')) {
       return parseObjectShape(this);
     }
-
     if (name === 'list' && this.check('lbrace')) {
       return parseListShape(this);
     }
-
     if (name === 'callable' && this.check('lparen')) {
       return parseCallable(this);
     }
-
     if (this.check('lt')) {
       return parseGeneric(this, name);
     }
-
     return identifierToNode(name);
   }
 

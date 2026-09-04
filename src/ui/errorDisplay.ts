@@ -40,6 +40,10 @@ export function describeError(err: unknown): PositionedError {
       detail: err.aliasName,
     };
   }
+  return describeNonParseError(err);
+}
+
+function describeNonParseError(err: unknown): PositionedError {
   if (err instanceof LexerError) {
     return {
       kind: 'lexer',
@@ -59,17 +63,9 @@ export function describeError(err: unknown): PositionedError {
     };
   }
   if (err instanceof Error) {
-    return {
-      kind: 'unknown',
-      title: 'Error',
-      message: err.message,
-    };
+    return { kind: 'unknown', title: 'Error', message: err.message };
   }
-  return {
-    kind: 'unknown',
-    title: 'Error',
-    message: String(err),
-  };
+  return { kind: 'unknown', title: 'Error', message: String(err) };
 }
 
 export function renderErrorHtml(error: PositionedError, sourceText: string): string {
@@ -77,42 +73,12 @@ export function renderErrorHtml(error: PositionedError, sourceText: string): str
   const hasPosition =
     error.pos !== undefined && error.pos >= 0 && snippetSource.length > 0;
   const snippet = hasPosition ? buildSnippet(snippetSource, error.pos) : null;
-
   const typeLabel =
     error.expressionIndex === undefined
       ? null
       : `Type ${error.expressionIndex + 1}`;
-
-  const detailHtml = [
-    typeLabel === null
-      ? ''
-      : `<p class="error-detail">${escapeHtml(typeLabel)}</p>`,
-    error.detail !== undefined && error.detail !== ''
-      ? `<p class="error-detail">Type: <code>${escapeHtml(error.detail)}</code></p>`
-      : '',
-  ].join('');
-
-  const snippetHtml =
-    snippet === null
-      ? snippetSource === ''
-        ? ''
-        : `
-    <div class="error-snippet">
-      <div class="error-snippet-label">${typeLabel === null ? 'Input' : escapeHtml(typeLabel)}</div>
-      <pre class="error-source-plain">${escapeHtml(snippetSource)}</pre>
-    </div>`
-      : `
-    <div class="error-snippet">
-      <div class="error-snippet-label">In your input</div>
-      <div class="error-source-wrap">
-        <table class="error-source" role="presentation">
-          <tbody>
-            ${snippet.rows}
-          </tbody>
-        </table>
-      </div>
-      <p class="error-location">${escapeHtml(typeLabel === null ? snippet.locationLabel : `${typeLabel} — ${snippet.locationLabel}`)}</p>
-    </div>`;
+  const detailHtml = renderErrorDetails(error, typeLabel);
+  const snippetHtml = renderErrorSnippet(snippet, snippetSource, typeLabel);
 
   return `
 <div class="error-display" role="alert">
@@ -128,9 +94,56 @@ export function renderErrorHtml(error: PositionedError, sourceText: string): str
 </div>`;
 }
 
+function renderErrorDetails(
+  error: PositionedError,
+  typeLabel: string | null,
+): string {
+  return [
+    typeLabel === null
+      ? ''
+      : `<p class="error-detail">${escapeHtml(typeLabel)}</p>`,
+    error.detail !== undefined && error.detail !== ''
+      ? `<p class="error-detail">Type: <code>${escapeHtml(error.detail)}</code></p>`
+      : '',
+  ].join('');
+}
+
+function renderErrorSnippet(
+  snippet: SnippetResult | null,
+  snippetSource: string,
+  typeLabel: string | null,
+): string {
+  if (snippet === null) {
+    if (snippetSource === '') {
+      return '';
+    }
+    return `
+    <div class="error-snippet">
+      <div class="error-snippet-label">${typeLabel === null ? 'Input' : escapeHtml(typeLabel)}</div>
+      <pre class="error-source-plain">${escapeHtml(snippetSource)}</pre>
+    </div>`;
+  }
+  const location =
+    typeLabel === null
+      ? snippet.locationLabel
+      : `${typeLabel} — ${snippet.locationLabel}`;
+  return `
+    <div class="error-snippet">
+      <div class="error-snippet-label">In your input</div>
+      <div class="error-source-wrap">
+        <table class="error-source" role="presentation">
+          <tbody>
+            ${snippet.rows}
+          </tbody>
+        </table>
+      </div>
+      <p class="error-location">${escapeHtml(location)}</p>
+    </div>`;
+}
+
 interface SnippetResult {
-  rows: string;
-  locationLabel: string;
+  readonly rows: string;
+  readonly locationLabel: string;
 }
 
 function buildSnippet(source: string, pos: number): SnippetResult {

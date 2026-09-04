@@ -96,10 +96,34 @@ export function buildManyNamed(
     nameFunctionsByType: nameByType,
     reservedNames: options?.reservedNames ?? [],
   });
-  const aliasCheckerByName = new Map<string, string>();
-  const docStringsByName: Record<string, string> = {};
-  let sequentialIndex = 0;
+  const aliasCheckerByName = registerNamedAliasCheckers(
+    entries,
+    registry,
+    nameByType,
+  );
+  const builder = new Builder(registry, { aliasCheckerByName });
+  const docStringsByName = addNamedEntries(builder, entries, aliasCheckerByName, options);
 
+  return {
+    ir: builder.build(),
+    typesByName: builder.getTypesByName(),
+    docStringsByName,
+    phpstanTypeAliases: entries
+      .filter(
+        (entry): entry is NamedTypeEntry & { readonly typeString: string } =>
+          entry.typeString !== undefined,
+      )
+      .map((entry) => ({ name: entry.name, typeString: entry.typeString })),
+  };
+}
+
+function registerNamedAliasCheckers(
+  entries: readonly NamedTypeEntry[],
+  registry: ReturnType<typeof createFunctionNameRegistry>,
+  nameByType: boolean,
+): Map<string, string> {
+  const aliasCheckerByName = new Map<string, string>();
+  let sequentialIndex = 0;
   for (const entry of entries) {
     const fnName = nameByType
       ? aliasToIsName(entry.name)
@@ -110,13 +134,18 @@ export function buildManyNamed(
     aliasCheckerByName.set(entry.name, fnName);
     registry.set(entry.type, fnName);
   }
+  return aliasCheckerByName;
+}
 
-  const builder = new Builder(registry, { aliasCheckerByName });
-  sequentialIndex = 0;
-
+function addNamedEntries(
+  builder: Readonly<Builder>,
+  entries: readonly NamedTypeEntry[],
+  aliasCheckerByName: ReadonlyMap<string, string>,
+  options?: BuildOptions,
+): Record<string, string> {
+  const docStringsByName: Record<string, string> = {};
   for (const [i, entry] of entries.entries()) {
     const fnName = aliasCheckerByName.get(entry.name)!;
-
     try {
       builder.addEntry(fnName, entry.type);
       docStringsByName[fnName] = entry.name;
@@ -134,18 +163,7 @@ export function buildManyNamed(
       }, cause);
     }
   }
-
-  return {
-    ir: builder.build(),
-    typesByName: builder.getTypesByName(),
-    docStringsByName,
-    phpstanTypeAliases: entries
-      .filter(
-        (entry): entry is NamedTypeEntry & { readonly typeString: string } =>
-          entry.typeString !== undefined,
-      )
-      .map((entry) => ({ name: entry.name, typeString: entry.typeString })),
-  };
+  return docStringsByName;
 }
 
 export function optimize(ir: CheckerIR): CheckerIR {

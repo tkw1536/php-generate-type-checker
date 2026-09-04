@@ -1,4 +1,4 @@
-import type { Expr, ValueRef } from '../ir/types.ts';
+import type { Arg, Expr, ValueRef } from '../ir/types.ts';
 import {
   andExpr,
   binExpr,
@@ -15,7 +15,15 @@ export function keywordToBoolean(
   subject: ValueRef,
 ): Expr | null {
   const s = refArg(subject);
+  return (
+    primitiveKeyword(keyword, s) ??
+    intKeyword(keyword, s) ??
+    stringKeyword(keyword, s) ??
+    truthinessKeyword(keyword, s)
+  );
+}
 
+function primitiveKeyword(keyword: string, s: Arg): Expr | null {
   switch (keyword) {
     case 'int':
     case 'integer':
@@ -56,6 +64,13 @@ export function keywordToBoolean(
       return callExpr('is_callable', [s]);
     case 'array-key':
       return orExpr([callExpr('is_string', [s]), callExpr('is_int', [s])]);
+    default:
+      return null;
+  }
+}
+
+function intKeyword(keyword: string, s: Arg): Expr | null {
+  switch (keyword) {
     case 'positive-int':
       return andExpr([
         callExpr('is_int', [s]),
@@ -81,6 +96,17 @@ export function keywordToBoolean(
         callExpr('is_int', [s]),
         binExpr('!==', s, literalArg('0')),
       ]);
+    default:
+      return null;
+  }
+}
+
+function stringKeyword(keyword: string, s: Arg): Expr | null {
+  return stringKeywordSimple(keyword, s) ?? stringKeywordCased(keyword, s);
+}
+
+function stringKeywordSimple(keyword: string, s: Arg): Expr | null {
+  switch (keyword) {
     case 'non-empty-string':
       return andExpr([
         callExpr('is_string', [s]),
@@ -92,26 +118,6 @@ export function keywordToBoolean(
         callExpr('is_string', [s]),
         binExpr('!==', s, literalArg("''")),
         binExpr('!==', s, literalArg("'0'")),
-      ]);
-    case 'non-empty-mixed':
-      return andExpr([
-        binExpr('!==', s, literalArg('false')),
-        binExpr('!==', s, literalArg('0')),
-        binExpr('!==', s, literalArg('0.0')),
-        binExpr('!==', s, literalArg("''")),
-        binExpr('!==', s, literalArg("'0'")),
-        binExpr('!==', s, literalArg('[]')),
-        binExpr('!==', s, literalArg('null')),
-      ]);
-    case 'empty':
-      return orExpr([
-        binExpr('===', s, literalArg('false')),
-        binExpr('===', s, literalArg('0')),
-        binExpr('===', s, literalArg('0.0')),
-        binExpr('===', s, literalArg("''")),
-        binExpr('===', s, literalArg("'0'")),
-        binExpr('===', s, literalArg('[]')),
-        binExpr('===', s, literalArg('null')),
       ]);
     case 'class-string':
     case 'interface-string':
@@ -135,6 +141,13 @@ export function keywordToBoolean(
         callExpr('is_string', [s]),
         callExpr('is_callable', [s]),
       ]);
+    default:
+      return null;
+  }
+}
+
+function stringKeywordCased(keyword: string, s: Arg): Expr | null {
+  switch (keyword) {
     case 'lowercase-string':
       return andExpr([
         callExpr('is_string', [s]),
@@ -174,6 +187,33 @@ export function keywordToBoolean(
         callExpr('is_string', [s]),
         binExpr('!==', s, literalArg("''")),
         binExpr('===', callArg('strtoupper', [s]), s),
+      ]);
+    default:
+      return null;
+  }
+}
+
+function truthinessKeyword(keyword: string, s: Arg): Expr | null {
+  switch (keyword) {
+    case 'non-empty-mixed':
+      return andExpr([
+        binExpr('!==', s, literalArg('false')),
+        binExpr('!==', s, literalArg('0')),
+        binExpr('!==', s, literalArg('0.0')),
+        binExpr('!==', s, literalArg("''")),
+        binExpr('!==', s, literalArg("'0'")),
+        binExpr('!==', s, literalArg('[]')),
+        binExpr('!==', s, literalArg('null')),
+      ]);
+    case 'empty':
+      return orExpr([
+        binExpr('===', s, literalArg('false')),
+        binExpr('===', s, literalArg('0')),
+        binExpr('===', s, literalArg('0.0')),
+        binExpr('===', s, literalArg("''")),
+        binExpr('===', s, literalArg("'0'")),
+        binExpr('===', s, literalArg('[]')),
+        binExpr('===', s, literalArg('null')),
       ]);
     default:
       return null;

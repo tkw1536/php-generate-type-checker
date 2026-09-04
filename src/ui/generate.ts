@@ -6,7 +6,10 @@ import {
 } from '../generator/pipeline.ts';
 import { isDocblockInput } from '../parser/phpstanTypeDocblock.ts';
 import { parseTypes } from '../parser/parser.ts';
-import { parsePhpstanTypesFromDocblock } from '../parser/resolveTypeAliases.ts';
+import {
+  parsePhpstanTypesFromDocblock,
+  type ResolvedPhpstanType,
+} from '../parser/resolveTypeAliases.ts';
 import { readFragmentFromLocation } from './fragmentState.ts';
 import {
   DEFAULT_TYPE,
@@ -90,9 +93,22 @@ function runGenerateDocblock(
   typeString: string,
   genOpts: ReturnType<typeof getGenerateOptions>,
 ): void {
-  let defs: ReturnType<typeof parsePhpstanTypesFromDocblock> | undefined;
+  const defs = parseDocblockDefs(panels, typeString);
+  if (defs === undefined) {
+    panels.irBuild.setError(new Error('Parse failed'), typeString);
+    panels.irOptimized.setError(new Error('Parse failed'), typeString);
+    panels.php.setError(new Error('Parse failed'), typeString);
+    return;
+  }
+  buildDocblockOutput(panels, typeString, genOpts, defs);
+}
+
+function parseDocblockDefs(
+  panels: OutputPanelSet,
+  typeString: string,
+): readonly ResolvedPhpstanType[] | undefined {
   try {
-    defs = parsePhpstanTypesFromDocblock(typeString, {
+    const defs = parsePhpstanTypesFromDocblock(typeString, {
       resolveAliases: getResolveAliases(),
     });
     panels.ast.setSuccess(
@@ -106,17 +122,19 @@ function runGenerateDocblock(
         2,
       ),
     );
+    return defs;
   } catch (err) {
     panels.ast.setError(err, typeString);
+    return undefined;
   }
+}
 
-  if (defs === undefined) {
-    panels.irBuild.setError(new Error('Parse failed'), typeString);
-    panels.irOptimized.setError(new Error('Parse failed'), typeString);
-    panels.php.setError(new Error('Parse failed'), typeString);
-    return;
-  }
-
+function buildDocblockOutput(
+  panels: OutputPanelSet,
+  typeString: string,
+  genOpts: ReturnType<typeof getGenerateOptions>,
+  defs: readonly ResolvedPhpstanType[],
+): void {
   try {
     const built = buildManyNamed(
       defs.map((d) => ({

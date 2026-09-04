@@ -61,24 +61,37 @@ export function decodeFragmentState(
   }
 
   const params = new URLSearchParams(raw);
-  const nameFromType = parseBoolParam(params.get('name'));
-  const optimize = parseBoolParam(params.get('optimize'));
-  const emit = parseEmitParam(params.get('emit'));
-  const emitAliases = parseBoolParam(params.get('aliases'));
-  const resolveAliases = parseBoolParam(params.get('resolve'));
-  const input = params.get('input');
+  const parsed = {
+    nameFromType: parseBoolParam(params.get('name')),
+    optimize: parseBoolParam(params.get('optimize')),
+    emit: parseEmitParam(params.get('emit')),
+    emitAliases: parseBoolParam(params.get('aliases')),
+    resolveAliases: parseBoolParam(params.get('resolve')),
+    input: params.get('input'),
+  };
 
   if (
-    nameFromType === undefined &&
-    optimize === undefined &&
-    emit === undefined &&
-    emitAliases === undefined &&
-    resolveAliases === undefined &&
-    input === null
+    parsed.nameFromType === undefined &&
+    parsed.optimize === undefined &&
+    parsed.emit === undefined &&
+    parsed.emitAliases === undefined &&
+    parsed.resolveAliases === undefined &&
+    parsed.input === null
   ) {
     return null;
   }
 
+  return buildPartialFragmentState(parsed);
+}
+
+function buildPartialFragmentState(parsed: {
+  readonly nameFromType: boolean | undefined;
+  readonly optimize: boolean | undefined;
+  readonly emit: CheckerOutputMode | undefined;
+  readonly emitAliases: boolean | undefined;
+  readonly resolveAliases: boolean | undefined;
+  readonly input: string | null;
+}): Readonly<Partial<AppFragmentState>> {
   const state: {
     nameFromType?: boolean;
     optimize?: boolean;
@@ -87,23 +100,23 @@ export function decodeFragmentState(
     resolveAliases?: boolean;
     input?: string;
   } = {};
-  if (nameFromType !== undefined) {
-    state.nameFromType = nameFromType;
+  if (parsed.nameFromType !== undefined) {
+    state.nameFromType = parsed.nameFromType;
   }
-  if (optimize !== undefined) {
-    state.optimize = optimize;
+  if (parsed.optimize !== undefined) {
+    state.optimize = parsed.optimize;
   }
-  if (emit !== undefined) {
-    state.emit = emit;
+  if (parsed.emit !== undefined) {
+    state.emit = parsed.emit;
   }
-  if (emitAliases !== undefined) {
-    state.emitAliases = emitAliases;
+  if (parsed.emitAliases !== undefined) {
+    state.emitAliases = parsed.emitAliases;
   }
-  if (resolveAliases !== undefined) {
-    state.resolveAliases = resolveAliases;
+  if (parsed.resolveAliases !== undefined) {
+    state.resolveAliases = parsed.resolveAliases;
   }
-  if (input !== null) {
-    state.input = input;
+  if (parsed.input !== null) {
+    state.input = parsed.input;
   }
   return state;
 }

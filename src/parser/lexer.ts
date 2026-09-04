@@ -28,6 +28,11 @@ export interface Token {
   readonly quotes?: 'single' | 'double';
 }
 
+/** Mutable token sink for lexer helpers (prefer-readonly-parameter-types). */
+type TokenList = {
+  push(token: Token): number;
+};
+
 export class LexerError extends Error {
   readonly pos: number;
 
@@ -38,163 +43,136 @@ export class LexerError extends Error {
   }
 }
 
+const SINGLE_CHAR_TOKENS: Readonly<Record<string, TokenType>> = {
+  '<': 'lt',
+  '>': 'gt',
+  '{': 'lbrace',
+  '}': 'rbrace',
+  '[': 'lbracket',
+  ']': 'rbracket',
+  '|': 'pipe',
+  '&': 'amp',
+  ',': 'comma',
+  ':': 'colon',
+  '?': 'question',
+  '=': 'equals',
+  '(': 'lparen',
+  ')': 'rparen',
+};
+
 export function tokenize(input: string): Token[] {
   const tokens: Token[] = [];
   let i = 0;
-
   const peek = (offset = 0): string => input[i + offset] ?? '';
 
   while (i < input.length) {
     const ch = input[i];
-
     if (/\s/u.test(ch)) {
       i++;
       continue;
     }
-
     const start = i;
-
-    if (ch === '<') {
-      tokens.push({ type: 'lt', value: '<', pos: start });
-      i++;
-      continue;
-    }
-    if (ch === '>') {
-      tokens.push({ type: 'gt', value: '>', pos: start });
-      i++;
-      continue;
-    }
-    if (ch === '{') {
-      tokens.push({ type: 'lbrace', value: '{', pos: start });
-      i++;
-      continue;
-    }
-    if (ch === '}') {
-      tokens.push({ type: 'rbrace', value: '}', pos: start });
-      i++;
-      continue;
-    }
-    if (ch === '[') {
-      tokens.push({ type: 'lbracket', value: '[', pos: start });
-      i++;
-      continue;
-    }
-    if (ch === ']') {
-      tokens.push({ type: 'rbracket', value: ']', pos: start });
-      i++;
-      continue;
-    }
-    if (ch === '|') {
-      tokens.push({ type: 'pipe', value: '|', pos: start });
-      i++;
-      continue;
-    }
-    if (ch === '&') {
-      tokens.push({ type: 'amp', value: '&', pos: start });
-      i++;
-      continue;
-    }
-    if (ch === ',') {
-      tokens.push({ type: 'comma', value: ',', pos: start });
-      i++;
-      continue;
-    }
-    if (ch === ':') {
-      tokens.push({ type: 'colon', value: ':', pos: start });
-      i++;
-      continue;
-    }
-    if (ch === '?') {
-      tokens.push({ type: 'question', value: '?', pos: start });
-      i++;
-      continue;
-    }
-    if (ch === '=') {
-      tokens.push({ type: 'equals', value: '=', pos: start });
-      i++;
-      continue;
-    }
-    if (ch === '(') {
-      tokens.push({ type: 'lparen', value: '(', pos: start });
-      i++;
-      continue;
-    }
-    if (ch === ')') {
-      tokens.push({ type: 'rparen', value: ')', pos: start });
+    const single = SINGLE_CHAR_TOKENS[ch];
+    if (single !== undefined) {
+      tokens.push({ type: single, value: ch, pos: start });
       i++;
       continue;
     }
     if (ch === '.') {
-      if (peek(1) === '.' && peek(2) === '.') {
-        tokens.push({ type: 'ellipsis', value: '...', pos: start });
-        i += 3;
-        continue;
-      }
-      tokens.push({ type: 'dot', value: '.', pos: start });
-      i++;
+      i = pushDotOrEllipsis(tokens, i, start, peek);
       continue;
     }
-
     if (ch === "'" || ch === '"') {
-      const quote = ch;
-      i++;
-      let value = '';
-      while (i < input.length && input[i] !== quote) {
-        if (input[i] === '\\' && i + 1 < input.length) {
-          value += input[i + 1];
-          i += 2;
-          continue;
-        }
-        value += input[i];
-        i++;
-      }
-      if (i >= input.length) {
-        throw new LexerError('Unterminated string literal', start);
-      }
-      i++;
-      tokens.push({
-        type: 'string',
-        value,
-        pos: start,
-        quotes: quote === "'" ? 'single' : 'double',
-      });
+      i = pushString(tokens, input, i, start, ch);
       continue;
     }
-
     if (/[0-9]/u.test(ch) || (ch === '-' && /[0-9]/u.test(peek(1)))) {
-      let value = '';
-      if (ch === '-') {
-        value += ch;
-        i++;
-      }
-      while (i < input.length && /[0-9]/u.test(input[i])) {
-        value += input[i];
-        i++;
-      }
-      if (input[i] === '.') {
-        value += input[i];
-        i++;
-        while (i < input.length && /[0-9]/u.test(input[i])) {
-          value += input[i];
-          i++;
-        }
-      }
-      tokens.push({ type: 'number', value, pos: start });
+      i = pushNumber(tokens, input, i, start);
       continue;
     }
-
     if (ch === '$' || ch === '\\' || /[a-zA-Z_]/u.test(ch)) {
       const { value, nextIndex } = readIdentifier(input, i);
       i = nextIndex;
       tokens.push({ type: 'identifier', value, pos: start });
       continue;
     }
-
     throw new LexerError(`Unexpected character: ${ch}`, start);
   }
 
   tokens.push({ type: 'eof', value: '', pos: i });
   return tokens;
+}
+
+function pushDotOrEllipsis(
+  tokens: TokenList,
+  i: number,
+  start: number,
+  peek: (offset?: number) => string,
+): number {
+  if (peek(1) === '.' && peek(2) === '.') {
+    tokens.push({ type: 'ellipsis', value: '...', pos: start });
+    return i + 3;
+  }
+  tokens.push({ type: 'dot', value: '.', pos: start });
+  return i + 1;
+}
+
+function pushString(
+  tokens: TokenList,
+  input: string,
+  i: number,
+  start: number,
+  quote: string,
+): number {
+  i++;
+  let value = '';
+  while (i < input.length && input[i] !== quote) {
+    if (input[i] === '\\' && i + 1 < input.length) {
+      value += input[i + 1];
+      i += 2;
+      continue;
+    }
+    value += input[i];
+    i++;
+  }
+  if (i >= input.length) {
+    throw new LexerError('Unterminated string literal', start);
+  }
+  i++;
+  tokens.push({
+    type: 'string',
+    value,
+    pos: start,
+    quotes: quote === "'" ? 'single' : 'double',
+  });
+  return i;
+}
+
+function pushNumber(
+  tokens: TokenList,
+  input: string,
+  i: number,
+  start: number,
+): number {
+  let value = '';
+  if (input[i] === '-') {
+    value += '-';
+    i++;
+  }
+  while (i < input.length && /[0-9]/u.test(input[i])) {
+    value += input[i];
+    i++;
+  }
+  if (input[i] === '.') {
+    value += '.';
+    i++;
+    while (i < input.length && /[0-9]/u.test(input[i])) {
+      value += input[i];
+      i++;
+    }
+  }
+  tokens.push({ type: 'number', value, pos: start });
+  return i;
 }
 
 function readIdentifier(

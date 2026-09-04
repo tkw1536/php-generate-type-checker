@@ -58,60 +58,63 @@ export function setupOutputTabs(): void {
   });
 
   tablist?.addEventListener('keydown', (event) => {
-    const target = event.target;
-    if (
-      !(target instanceof HTMLButtonElement) ||
-      target.dataset.outputTab === undefined ||
-      target.dataset.outputTab === ''
-    ) {
-      return;
-    }
-
-    const currentIndex = tabButtons.indexOf(target);
-    if (currentIndex < 0) {
-      return;
-    }
-
-    let nextIndex: number | undefined;
-
-    switch (event.key) {
-      case 'ArrowLeft':
-        nextIndex = (currentIndex - 1 + tabButtons.length) % tabButtons.length;
-        break;
-      case 'ArrowRight':
-        nextIndex = (currentIndex + 1) % tabButtons.length;
-        break;
-      case 'Home':
-        nextIndex = 0;
-        break;
-      case 'End':
-        nextIndex = tabButtons.length - 1;
-        break;
-      case 'Enter':
-      case ' ': {
-        event.preventDefault();
-        const tabId = target.dataset.outputTab;
-        if (tabId !== undefined && tabId !== '' && isOutputTabId(tabId)) {
-          activateOutputTab(tabId);
-        }
-        return;
-      }
-      default:
-        return;
-    }
-
-    if (nextIndex === undefined) {
-      return;
-    }
-
-    event.preventDefault();
-    const nextTab = tabButtons[nextIndex];
-    if (nextTab === undefined) {
-      return;
-    }
-    // Manual activation: move focus only; activate with Enter/Space or click.
-    nextTab.focus();
+    handleOutputTabKeydown(event, tabButtons);
   });
 
   activateOutputTab(getActiveOutputTab());
+}
+
+function handleOutputTabKeydown(
+  event: KeyboardEvent,
+  tabButtons: readonly HTMLButtonElement[],
+): void {
+  const target = event.target;
+  if (
+    !(target instanceof HTMLButtonElement) ||
+    target.dataset.outputTab === undefined ||
+    target.dataset.outputTab === ''
+  ) {
+    return;
+  }
+
+  const currentIndex = tabButtons.indexOf(target);
+  if (currentIndex < 0) {
+    return;
+  }
+
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    const tabId = target.dataset.outputTab;
+    if (tabId !== undefined && tabId !== '' && isOutputTabId(tabId)) {
+      activateOutputTab(tabId);
+    }
+    return;
+  }
+
+  const nextIndex = nextTabIndex(event.key, currentIndex, tabButtons.length);
+  if (nextIndex === undefined) {
+    return;
+  }
+
+  event.preventDefault();
+  tabButtons[nextIndex]?.focus();
+}
+
+function nextTabIndex(
+  key: string,
+  currentIndex: number,
+  length: number,
+): number | undefined {
+  switch (key) {
+    case 'ArrowLeft':
+      return (currentIndex - 1 + length) % length;
+    case 'ArrowRight':
+      return (currentIndex + 1) % length;
+    case 'Home':
+      return 0;
+    case 'End':
+      return length - 1;
+    default:
+      return undefined;
+  }
 }

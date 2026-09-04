@@ -53,58 +53,55 @@ const ANNOTATION_DOCBLOCK = `/**
  * }
  */`;
 
-describe('isDocblockInput', () => {
-  it('returns true when input starts with /* after trim', () => {
-    expect(isDocblockInput('  /**\n * @phpstan-type Foo int\n */')).toBe(true);
-    expect(isDocblockInput('/* @phpstan-type Foo int */')).toBe(true);
-  });
+function returnsTrueWhenStartsWithDocComment(): void {
+  expect(isDocblockInput('  /**\n * @phpstan-type Foo int\n */')).toBe(true);
+  expect(isDocblockInput('/* @phpstan-type Foo int */')).toBe(true);
+}
 
-  it('returns false for plain type expressions', () => {
-    expect(isDocblockInput('array<string>')).toBe(false);
-    expect(isDocblockInput('string /* comment */')).toBe(false);
-  });
-});
+function returnsFalseForPlainTypeExpressions(): void {
+  expect(isDocblockInput('array<string>')).toBe(false);
+  expect(isDocblockInput('string /* comment */')).toBe(false);
+}
 
-describe('extractPhpstanTypes', () => {
-  it('extracts post list API docblock types', () => {
-    const defs = extractPhpstanTypes(POST_LIST_DOCBLOCK);
-    expect(defs).toHaveLength(3);
-    expect(defs.map((d) => d.name)).toEqual([
-      'PostSummary',
-      'PaginationMeta',
-      'PostListResponse',
-    ]);
-    expect(defs[0].typeString).toBe(
-      'array{ id: positive-int, slug: non-empty-string, title: string }',
-    );
-    expect(defs[2].typeString).toBe(
-      'array{ posts: list<PostSummary>, meta: PaginationMeta }',
-    );
-  });
+function extractsPostListApiDocblockTypes(): void {
+  const defs = extractPhpstanTypes(POST_LIST_DOCBLOCK);
+  expect(defs).toHaveLength(3);
+  expect(defs.map((d) => d.name)).toEqual([
+    'PostSummary',
+    'PaginationMeta',
+    'PostListResponse',
+  ]);
+  expect(defs[0].typeString).toBe(
+    'array{ id: positive-int, slug: non-empty-string, title: string }',
+  );
+  expect(defs[2].typeString).toBe(
+    'array{ posts: list<PostSummary>, meta: PaginationMeta }',
+  );
+}
 
-  it('extracts annotation docblock with multiline intersections', () => {
-    const defs = extractPhpstanTypes(ANNOTATION_DOCBLOCK);
-    expect(defs).toHaveLength(4);
-    expect(defs.map((d) => d.name)).toEqual([
-      'AnnotationBody',
-      'AnnotationTarget',
-      'AnnotationInput',
-      'Annotation',
-    ]);
-    expect(defs[0].typeString).toContain('\\stdClass&object{');
-    expect(defs[0].typeString).toContain('list<\\DOMElement>');
-    expect(defs[2].typeString).toContain('body: AnnotationBody');
-  });
+function extractsAnnotationDocblockWithMultilineIntersections(): void {
+  const defs = extractPhpstanTypes(ANNOTATION_DOCBLOCK);
+  expect(defs).toHaveLength(4);
+  expect(defs.map((d) => d.name)).toEqual([
+    'AnnotationBody',
+    'AnnotationTarget',
+    'AnnotationInput',
+    'Annotation',
+  ]);
+  expect(defs[0].typeString).toContain('\\stdClass&object{');
+  expect(defs[0].typeString).toContain('list<\\DOMElement>');
+  expect(defs[2].typeString).toContain('body: AnnotationBody');
+}
 
-  it('extracts single-line @phpstan-type', () => {
-    const defs = extractPhpstanTypes('/** @phpstan-type Foo int */');
-    expect(defs).toEqual([
-      expect.objectContaining({ name: 'Foo', typeString: 'int' }),
-    ]);
-  });
+function extractsSingleLinePhpstanType(): void {
+  const defs = extractPhpstanTypes('/** @phpstan-type Foo int */');
+  expect(defs).toEqual([
+    expect.objectContaining({ name: 'Foo', typeString: 'int' }),
+  ]);
+}
 
-  it('ignores non-phpstan doc tags and prose', () => {
-    const defs = extractPhpstanTypes(`/**
+function ignoresNonPhpstanDocTagsAndProse(): void {
+  const defs = extractPhpstanTypes(`/**
  * Some class.
  *
  * @todo refactor
@@ -112,62 +109,90 @@ describe('extractPhpstanTypes', () => {
  *
  * @phpstan-type Bar string
  */`);
-    expect(defs).toHaveLength(1);
-    expect(defs[0].name).toBe('Bar');
-  });
+  expect(defs).toHaveLength(1);
+  expect(defs[0].name).toBe('Bar');
+}
 
-  it('throws when input is not a docblock', () => {
-    expect(() => extractPhpstanTypes('array<string>')).toThrow(
-      PhpstanTypeExtractError,
-    );
-  });
+function throwsWhenInputIsNotDocblock(): void {
+  expect(() => extractPhpstanTypes('array<string>')).toThrow(
+    PhpstanTypeExtractError,
+  );
+}
 
-  it('throws when no @phpstan-type tags are present', () => {
-    expect(() => extractPhpstanTypes('/** just a comment */')).toThrow(
-      /No @phpstan-type definitions/u,
-    );
-  });
+function throwsWhenNoPhpstanTypeTags(): void {
+  expect(() => extractPhpstanTypes('/** just a comment */')).toThrow(
+    /No @phpstan-type definitions/u,
+  );
+}
 
-  it('throws on duplicate alias names', () => {
-    expect(() =>
-      extractPhpstanTypes(`/**
+function throwsOnDuplicateAliasNames(): void {
+  expect(() =>
+    extractPhpstanTypes(`/**
  * @phpstan-type Foo int
  * @phpstan-type Foo string
  */`),
-    ).toThrow(/Duplicate @phpstan-type alias "Foo"/u);
-  });
+  ).toThrow(/Duplicate @phpstan-type alias "Foo"/u);
+}
 
-  it('throws when alias name is missing', () => {
-    expect(() => extractPhpstanTypes('/** @phpstan-type */')).toThrow(
-      /Expected alias name/u,
-    );
-  });
+function throwsWhenAliasNameMissing(): void {
+  expect(() => extractPhpstanTypes('/** @phpstan-type */')).toThrow(
+    /Expected alias name/u,
+  );
+}
 
-  it('throws when type string is missing', () => {
-    expect(() => extractPhpstanTypes('/** @phpstan-type Foo */')).toThrow(
-      /Missing type definition/u,
-    );
-  });
-});
+function throwsWhenTypeStringMissing(): void {
+  expect(() => extractPhpstanTypes('/** @phpstan-type Foo */')).toThrow(
+    /Missing type definition/u,
+  );
+}
 
-describe('formatPhpstanTypeAliasesBlock', () => {
-  it('formats alias definitions as a PHPDoc block', () => {
-    const block = formatPhpstanTypeAliasesBlock([
-      { name: 'PostSummary', typeString: 'array{id: int, title: string}' },
-      {
-        name: 'PostListResponse',
-        typeString: 'array{posts: list<PostSummary>}',
-      },
-    ]);
-    expect(block).toBe(`/**
+function formatsAliasDefinitionsAsPhpdocBlock(): void {
+  const block = formatPhpstanTypeAliasesBlock([
+    { name: 'PostSummary', typeString: 'array{id: int, title: string}' },
+    {
+      name: 'PostListResponse',
+      typeString: 'array{posts: list<PostSummary>}',
+    },
+  ]);
+  expect(block).toBe(`/**
  * @phpstan-type PostSummary array{id: int, title: string}
  * @phpstan-type PostListResponse array{posts: list<PostSummary>}
  */
 
 `);
-  });
+}
 
-  it('returns empty string for no aliases', () => {
-    expect(formatPhpstanTypeAliasesBlock([])).toBe('');
-  });
+function returnsEmptyStringForNoAliases(): void {
+  expect(formatPhpstanTypeAliasesBlock([])).toBe('');
+}
+
+describe('isDocblockInput', () => {
+  it(
+    'returns true when input starts with /* after trim',
+    returnsTrueWhenStartsWithDocComment,
+  );
+  it('returns false for plain type expressions', returnsFalseForPlainTypeExpressions);
+});
+
+describe('extractPhpstanTypes', () => {
+  it('extracts post list API docblock types', extractsPostListApiDocblockTypes);
+  it(
+    'extracts annotation docblock with multiline intersections',
+    extractsAnnotationDocblockWithMultilineIntersections,
+  );
+  it('extracts single-line @phpstan-type', extractsSingleLinePhpstanType);
+  it('ignores non-phpstan doc tags and prose', ignoresNonPhpstanDocTagsAndProse);
+  it('throws when input is not a docblock', throwsWhenInputIsNotDocblock);
+  it('throws when no @phpstan-type tags are present', throwsWhenNoPhpstanTypeTags);
+  it('throws on duplicate alias names', throwsOnDuplicateAliasNames);
+  it('throws when alias name is missing', throwsWhenAliasNameMissing);
+  it('throws when type string is missing', throwsWhenTypeStringMissing);
+});
+
+describe('formatPhpstanTypeAliasesBlock', () => {
+  it(
+    'formats alias definitions as a PHPDoc block',
+    formatsAliasDefinitionsAsPhpdocBlock,
+  );
+  it('returns empty string for no aliases', returnsEmptyStringForNoAliases);
 });

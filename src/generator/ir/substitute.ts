@@ -95,15 +95,30 @@ export function substituteExpr(
         expr: substituteExpr(expr.expr, parameter, subject),
       };
     case 'and':
-      return {
-        kind: 'and',
-        exprs: expr.exprs.map((e) => substituteExpr(e, parameter, subject)),
-      };
     case 'or':
       return {
-        kind: 'or',
+        kind: expr.kind,
         exprs: expr.exprs.map((e) => substituteExpr(e, parameter, subject)),
       };
+    case 'call':
+    case 'bin':
+    case 'instanceof':
+    case 'call_checker':
+      return substituteLeafExpr(expr, parameter, subject);
+    default:
+      throw new Error('never reached');
+  }
+}
+
+function substituteLeafExpr(
+  expr: Extract<
+    Expr,
+    { kind: 'call' | 'bin' | 'instanceof' | 'call_checker' }
+  >,
+  parameter: string,
+  subject: ValueRef,
+): Expr {
+  switch (expr.kind) {
     case 'call':
       return {
         kind: 'call',
@@ -129,10 +144,8 @@ export function substituteExpr(
         name: expr.name,
         subject: substituteValueRef(expr.subject, parameter, subject),
       };
-    default: {
-      const exhaustive: never = expr;
-      return exhaustive;
-    }
+    default:
+      throw new Error('never reached');
   }
 }
 

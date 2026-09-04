@@ -90,78 +90,87 @@ describe('parseTypes', () => {
   });
 });
 
-describe('parseType', () => {
-  describe('nullable ? prefix', () => {
-    it.each([
-      ['?int', 'int|null'],
-      ['?int|string', 'int|null|string'],
-      ['?(int|string)', '(int|string)|null'],
-      ['?int[]', '(int[])|null'],
-      ['array{foo: ?int}', 'array{foo: int|null}'],
-      ['array{?int}', 'array{int|null}'],
-      ['array{bar?: ?string}', 'array{bar?: string|null}'],
-      ['list{?int}', 'list{int|null}'],
-    ] as const)('%s', (source, expectedSource) => {
-      expect(parseType(source)).toEqual(parseType(expectedSource));
-    });
+const NULLABLE_CASES = [
+  ['?int', 'int|null'],
+  ['?int|string', 'int|null|string'],
+  ['?(int|string)', '(int|string)|null'],
+  ['?int[]', '(int[])|null'],
+  ['array{foo: ?int}', 'array{foo: int|null}'],
+  ['array{?int}', 'array{int|null}'],
+  ['array{bar?: ?string}', 'array{bar?: string|null}'],
+  ['list{?int}', 'list{int|null}'],
+] as const;
 
-    it('array{bar?: string} still parses optional shape fields', () => {
-      expect(parseType('array{bar?: string}')).toEqual(
-        parseType('array{bar?: string}'),
-      );
-    });
+function optionalShapeFieldsStillParse(): void {
+  expect(parseType('array{bar?: string}')).toEqual(
+    parseType('array{bar?: string}'),
+  );
+}
+
+const ERROR_CASES_WITH_MESSAGE = parsedErrorCases.filter(
+  (c): c is ParseErrorCase & { readonly messageContains: string } =>
+    typeof c.messageContains === 'string',
+);
+const ERROR_CASES_WITHOUT_MESSAGE = parsedErrorCases.filter(
+  (c) => c.messageContains === undefined,
+);
+
+const ERROR_CASES_WITH_MESSAGE_LABELS = ERROR_CASES_WITH_MESSAGE.map(
+  ({ input, messageContains }) => ({
+    label: caseLabel(input),
+    input,
+    messageContains,
+  }),
+);
+
+const ERROR_CASES_WITHOUT_MESSAGE_LABELS = ERROR_CASES_WITHOUT_MESSAGE.map(
+  ({ input }) => ({
+    label: caseLabel(input),
+    input,
+  }),
+);
+
+describe('parseType nullable ? prefix', () => {
+  it.each(NULLABLE_CASES)('%s', (source, expectedSource) => {
+    expect(parseType(source)).toEqual(parseType(expectedSource));
   });
 
-  describe('success', () => {
-    it.each(parsedSuccessCases)('$source', ({ source, ast }) => {
-      expect(parseType(source)).toEqual(ast);
-    });
+  it(
+    'array{bar?: string} still parses optional shape fields',
+    optionalShapeFieldsStillParse,
+  );
+});
+
+describe('parseType success', () => {
+  it.each(parsedSuccessCases)('$source', ({ source, ast }) => {
+    expect(parseType(source)).toEqual(ast);
   });
+});
 
-  describe('errors', () => {
-    const withMessage = parsedErrorCases.filter(
-      (c): c is ParseErrorCase & { readonly messageContains: string } =>
-        typeof c.messageContains === 'string',
-    );
-    const withoutMessage = parsedErrorCases.filter(
-      (c) => c.messageContains === undefined,
-    );
+describe('parseType errors', () => {
+  it.each(ERROR_CASES_WITH_MESSAGE_LABELS)(
+    '$label',
+    ({
+      input,
+      messageContains,
+    }: {
+      readonly label: string;
+      readonly input: string;
+      readonly messageContains: string;
+    }) => {
+      expect(() => parseType(input)).toThrow(new RegExp(messageContains, 'u'));
+    },
+  );
 
-    it.each(
-      withMessage.map(({ input, messageContains }) => ({
-        label: caseLabel(input),
-        input,
-        messageContains,
-      })),
-    )(
-      '$label',
-      ({
-        input,
-        messageContains,
-      }: {
-        readonly label: string;
-        readonly input: string;
-        readonly messageContains: string;
-      }) => {
-        expect(() => parseType(input)).toThrow(new RegExp(messageContains, 'u'));
-      },
-    );
-
-    it.each(
-      withoutMessage.map(({ input }) => ({
-        label: caseLabel(input),
-        input,
-      })),
-    )(
-      '$label',
-      ({
-        input,
-      }: {
-        readonly label: string;
-        readonly input: string;
-      }) => {
-        expect(() => parseType(input)).toThrow(Error);
-      },
-    );
-  });
+  it.each(ERROR_CASES_WITHOUT_MESSAGE_LABELS)(
+    '$label',
+    ({
+      input,
+    }: {
+      readonly label: string;
+      readonly input: string;
+    }) => {
+      expect(() => parseType(input)).toThrow(Error);
+    },
+  );
 });

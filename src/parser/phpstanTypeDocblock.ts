@@ -40,80 +40,13 @@ export function extractPhpstanTypes(source: string): PhpstanTypeDef[] {
 
   let i = 0;
   while (i < lines.length) {
-    const line = lines[i];
-    const tagMatch = line.content.match(
-      /^\s*(?:\*+\s*)?@phpstan-type(?:\s+(.*))?$/u,
-    );
-
-    if (!tagMatch) {
+    const parsed = tryParsePhpstanTypeAt(lines, i, seenNames);
+    if (parsed === null) {
       i++;
       continue;
     }
-
-    let rest = tagMatch[1]?.trim() ?? '';
-    rest = rest.replace(/\*+\/\s*$/u, '').trim();
-    if (rest === '') {
-      throw new PhpstanTypeExtractError(
-        'Expected alias name after @phpstan-type',
-        line.start,
-      );
-    }
-
-    const nameMatch = rest.match(/^([A-Za-z_\\][A-Za-z0-9_\\]*)(?:\s+(.*))?$/su);
-    if (!nameMatch) {
-      throw new PhpstanTypeExtractError(
-        `Invalid alias name in @phpstan-type: ${rest}`,
-        line.start,
-      );
-    }
-
-    const name = nameMatch[1];
-    if (!ALIAS_NAME_PATTERN.test(name)) {
-      throw new PhpstanTypeExtractError(
-        `Invalid alias name "${name}"`,
-        line.start,
-      );
-    }
-
-    if (seenNames.has(name)) {
-      throw new PhpstanTypeExtractError(
-        `Duplicate @phpstan-type alias "${name}"`,
-        line.start,
-      );
-    }
-    seenNames.add(name);
-
-    const typeParts: string[] = [];
-    const initialType = nameMatch[2]?.trim() ?? '';
-    if (initialType !== '') {
-      typeParts.push(initialType);
-    }
-
-    const defStart = line.start;
-    i++;
-
-    while (i < lines.length) {
-      const next = lines[i];
-      if (DOC_TAG_LINE_PATTERN.test(next.content)) {
-        break;
-      }
-      const continuation = stripDocLinePrefix(next.content);
-      if (continuation.trim() !== '') {
-        typeParts.push(continuation.trim());
-      }
-      i++;
-    }
-
-    const typeString = normalizeTypeString(typeParts.join(' '));
-    if (typeString === '') {
-      throw new PhpstanTypeExtractError(
-        `Missing type definition for @phpstan-type ${name}`,
-        defStart,
-      );
-    }
-
-    const defEnd = i > 0 ? lines[i - 1].end : line.end;
-    defs.push({ name, typeString, start: defStart, end: defEnd });
+    defs.push(parsed.def);
+    i = parsed.nextIndex;
   }
 
   if (defs.length === 0) {
@@ -124,6 +57,103 @@ export function extractPhpstanTypes(source: string): PhpstanTypeDef[] {
   }
 
   return defs;
+}
+
+function tryParsePhpstanTypeAt(
+  lines: readonly DocLine[],
+  index: number,
+  seenNames: Set<string>,
+): { def: PhpstanTypeDef; nextIndex: number } | null {
+  const line = lines[index];
+  const tagMatch = line.content.match(
+    /^\s*(?:\*+\s*)?@phpstan-type(?:\s+(.*))?$/u,
+  );
+  if (!tagMatch) {
+    return null;
+  }
+
+  const nameAndRest = parsePhpstanTypeName(tagMatch[1]?.trim() ?? '', line.start);
+  if (seenNames.has(nameAndRest.name)) {
+    throw new PhpstanTypeExtractError(
+      `Duplicate @phpstan-type alias "${nameAndRest.name}"`,
+      line.start,
+    );
+  }
+  seenNames.add(nameAndRest.name);
+
+  const { typeString, nextIndex } = collectPhpstanTypeBody(
+    lines,
+    index,
+    nameAndRest.initialType,
+    line.start,
+  );
+
+  return {
+    def: {
+      name: nameAndRest.name,
+      typeString,
+      start: line.start,
+      end: nextIndex > 0 ? lines[nextIndex - 1].end : line.end,
+    },
+    nextIndex,
+  };
+}
+
+function parsePhpstanTypeName(
+  restRaw: string,
+  pos: number,
+): { name: string; initialType: string } {
+  let rest = restRaw.replace(/\*+\/\s*$/u, '').trim();
+  if (rest === '') {
+    throw new PhpstanTypeExtractError(
+      'Expected alias name after @phpstan-type',
+      pos,
+    );
+  }
+  const nameMatch = rest.match(/^([A-Za-z_\\][A-Za-z0-9_\\]*)(?:\s+(.*))?$/su);
+  if (!nameMatch) {
+    throw new PhpstanTypeExtractError(
+      `Invalid alias name in @phpstan-type: ${rest}`,
+      pos,
+    );
+  }
+  const name = nameMatch[1];
+  if (!ALIAS_NAME_PATTERN.test(name)) {
+    throw new PhpstanTypeExtractError(`Invalid alias name "${name}"`, pos);
+  }
+  return { name, initialType: nameMatch[2]?.trim() ?? '' };
+}
+
+function collectPhpstanTypeBody(
+  lines: readonly DocLine[],
+  index: number,
+  initialType: string,
+  defStart: number,
+): { typeString: string; nextIndex: number } {
+  const typeParts: string[] = [];
+  if (initialType !== '') {
+    typeParts.push(initialType);
+  }
+  let i = index + 1;
+  while (i < lines.length) {
+    const next = lines[i];
+    if (DOC_TAG_LINE_PATTERN.test(next.content)) {
+      break;
+    }
+    const continuation = stripDocLinePrefix(next.content);
+    if (continuation.trim() !== '') {
+      typeParts.push(continuation.trim());
+    }
+    i++;
+  }
+  const typeString = normalizeTypeString(typeParts.join(' '));
+  if (typeString === '') {
+    throw new PhpstanTypeExtractError(
+      'Missing type definition for @phpstan-type',
+      defStart,
+    );
+  }
+  return { typeString, nextIndex: i };
 }
 
 type DocLine = {

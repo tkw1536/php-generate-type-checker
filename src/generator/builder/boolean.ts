@@ -188,55 +188,45 @@ export function compactCollectionTest(
   if (isMixed(type)) {
     return boolLit(true);
   }
-  if (type.kind === 'collection') {
-    if (isIterableKeyword(type.keyword) && !('key' in type)) {
-      const listOk = callExpr('is_iterable', [refArg(subject)]);
-      return isNonEmptyKeyword(type.keyword)
-        ? andExpr([
-            listOk,
-            binExpr('!==', refArg(subject), literalArg('[]')),
-          ])
-        : listOk;
-    }
-    if ('value' in type && !isNever(type.value) && isMixed(type.value)) {
-      if (isListKeyword(type.keyword)) {
-        const listCompact = compactListElementTest(
-          type.keyword,
-          type.value,
-          subject,
-        );
-        if (listCompact !== null) {
-          return listCompact;
-        }
-      }
-      const guard = isIterableKeyword(type.keyword)
-        ? 'is_iterable'
-        : 'is_array';
-      const arrOk = callExpr(guard, [refArg(subject)]);
-      return isNonEmptyKeyword(type.keyword)
-        ? andExpr([
-            arrOk,
-            binExpr('!==', refArg(subject), literalArg('[]')),
-          ])
-        : arrOk;
-    }
-    if (
-      'value' in type &&
-      isNever(type.value) &&
-      !isIterableKeyword(type.keyword)
-    ) {
-      return isNonEmptyKeyword(type.keyword)
-        ? boolLit(false)
-        : binExpr('===', refArg(subject), literalArg('[]'));
-    }
+  return (
+    compactCollectionKind(type, subject) ??
+    compactEmptyShape(type, subject) ??
+    compactListLike(type, subject) ??
+    (type.kind === 'array' && isNever(type.value)
+      ? binExpr('===', refArg(subject), literalArg('[]'))
+      : null)
+  );
+}
+
+function compactCollectionKind(
+  type: TypeNode,
+  subject: ValueRef,
+): Expr | null {
+  if (type.kind !== 'collection') {
+    return null;
   }
-  if (
-    type.kind === 'shape' &&
-    !shapeIsObject(type) &&
-    type.fields.length === 0 &&
-    isArrayCollectionKeyword(type.keyword)
-  ) {
-    const arrOk = callExpr('is_array', [refArg(subject)]);
+  if (isIterableKeyword(type.keyword) && !('key' in type)) {
+    const listOk = callExpr('is_iterable', [refArg(subject)]);
+    return isNonEmptyKeyword(type.keyword)
+      ? andExpr([
+          listOk,
+          binExpr('!==', refArg(subject), literalArg('[]')),
+        ])
+      : listOk;
+  }
+  if ('value' in type && !isNever(type.value) && isMixed(type.value)) {
+    if (isListKeyword(type.keyword)) {
+      const listCompact = compactListElementTest(
+        type.keyword,
+        type.value,
+        subject,
+      );
+      if (listCompact !== null) {
+        return listCompact;
+      }
+    }
+    const guard = isIterableKeyword(type.keyword) ? 'is_iterable' : 'is_array';
+    const arrOk = callExpr(guard, [refArg(subject)]);
     return isNonEmptyKeyword(type.keyword)
       ? andExpr([
           arrOk,
@@ -245,11 +235,31 @@ export function compactCollectionTest(
       : arrOk;
   }
   if (
-    type.kind === 'shape' &&
-    !shapeIsObject(type) &&
-    type.fields.length === 0 &&
-    isListKeyword(type.keyword)
+    'value' in type &&
+    isNever(type.value) &&
+    !isIterableKeyword(type.keyword)
   ) {
+    return isNonEmptyKeyword(type.keyword)
+      ? boolLit(false)
+      : binExpr('===', refArg(subject), literalArg('[]'));
+  }
+  return null;
+}
+
+function compactEmptyShape(type: TypeNode, subject: ValueRef): Expr | null {
+  if (type.kind !== 'shape' || shapeIsObject(type) || type.fields.length > 0) {
+    return null;
+  }
+  if (isArrayCollectionKeyword(type.keyword)) {
+    const arrOk = callExpr('is_array', [refArg(subject)]);
+    return isNonEmptyKeyword(type.keyword)
+      ? andExpr([
+          arrOk,
+          binExpr('!==', refArg(subject), literalArg('[]')),
+        ])
+      : arrOk;
+  }
+  if (isListKeyword(type.keyword)) {
     const listOk = andExpr([
       callExpr('is_array', [refArg(subject)]),
       callExpr('array_is_list', [refArg(subject)]),
@@ -261,21 +271,23 @@ export function compactCollectionTest(
         ])
       : listOk;
   }
-  if (
-    (type.kind === 'collection' && isListKeyword(type.keyword)) ||
-    (type.kind === 'shape' && !shapeIsObject(type) && isListKeyword(type.keyword))
-  ) {
-    const el =
-      type.kind === 'collection'
-        ? listElementType(type)
-        : shapeListElementType(type);
-    const listCompact = compactListElementTest(type.keyword, el, subject);
-    if (listCompact !== null) {
-      return listCompact;
-    }
-  }
-  if (type.kind === 'array' && isNever(type.value)) {
-    return binExpr('===', refArg(subject), literalArg('[]'));
-  }
   return null;
+}
+
+function compactListLike(type: TypeNode, subject: ValueRef): Expr | null {
+  if (
+    !(
+      (type.kind === 'collection' && isListKeyword(type.keyword)) ||
+      (type.kind === 'shape' &&
+        !shapeIsObject(type) &&
+        isListKeyword(type.keyword))
+    )
+  ) {
+    return null;
+  }
+  const el =
+    type.kind === 'collection'
+      ? listElementType(type)
+      : shapeListElementType(type);
+  return compactListElementTest(type.keyword, el, subject);
 }

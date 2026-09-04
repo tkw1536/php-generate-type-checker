@@ -238,38 +238,14 @@ export function applyKnownFacts(
   for (const stmt of block) {
     switch (stmt.kind) {
       case 'if': {
-        const cond = substituteFacts(stmt.cond, currentEnv);
-        const bodyEnv = withTrueFact(currentEnv, cond);
-        const newBody = applyKnownFacts(stmt.body, parameter, bodyEnv);
-        out.push({ kind: 'if', cond, body: newBody });
-        if (blockAlwaysExitsWhenEntered(stmt.body)) {
-          currentEnv = withFalseFact(currentEnv, cond);
-        }
+        const next = applyKnownFactsIf(stmt, parameter, currentEnv);
+        out.push(next.stmt);
+        currentEnv = next.env;
         break;
       }
-      case 'foreach': {
-        const innerShadowed = new Set([
-          ...currentEnv.shadowed,
-          stmt.valueVar,
-          ...(stmt.keyVar === null ? [] : [stmt.keyVar]),
-        ]);
-        const bodyEnv: FactEnv =
-          stmt.valueVar === parameter
-            ? {
-                trueFacts: [],
-                falseFacts: [],
-                shadowed: innerShadowed,
-              }
-            : {
-                ...currentEnv,
-                shadowed: innerShadowed,
-              };
-        out.push({
-          ...stmt,
-          body: applyKnownFacts(stmt.body, parameter, bodyEnv),
-        });
+      case 'foreach':
+        out.push(applyKnownFactsForeach(stmt, parameter, currentEnv));
         break;
-      }
       case 'return':
         out.push({
           kind: 'return',
@@ -282,4 +258,40 @@ export function applyKnownFacts(
   }
 
   return out;
+}
+
+function applyKnownFactsIf(
+  stmt: Extract<Stmt, { kind: 'if' }>,
+  parameter: string,
+  env: FactEnv,
+): { stmt: Stmt; env: FactEnv } {
+  const cond = substituteFacts(stmt.cond, env);
+  const bodyEnv = withTrueFact(env, cond);
+  const newBody = applyKnownFacts(stmt.body, parameter, bodyEnv);
+  return {
+    stmt: { kind: 'if', cond, body: newBody },
+    env: blockAlwaysExitsWhenEntered(stmt.body)
+      ? withFalseFact(env, cond)
+      : env,
+  };
+}
+
+function applyKnownFactsForeach(
+  stmt: Extract<Stmt, { kind: 'foreach' }>,
+  parameter: string,
+  env: FactEnv,
+): Stmt {
+  const innerShadowed = new Set([
+    ...env.shadowed,
+    stmt.valueVar,
+    ...(stmt.keyVar === null ? [] : [stmt.keyVar]),
+  ]);
+  const bodyEnv: FactEnv =
+    stmt.valueVar === parameter
+      ? { trueFacts: [], falseFacts: [], shadowed: innerShadowed }
+      : { ...env, shadowed: innerShadowed };
+  return {
+    ...stmt,
+    body: applyKnownFacts(stmt.body, parameter, bodyEnv),
+  };
 }

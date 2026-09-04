@@ -24,7 +24,7 @@ export type ParsePhpstanTypesFromDocblockOptions = {
 export function parsePhpstanTypesFromDocblock(
   source: string,
   options?: ParsePhpstanTypesFromDocblockOptions,
-): ResolvedPhpstanType[] {
+): readonly ResolvedPhpstanType[] {
   const defs = extractPhpstanTypes(source);
   const rawByName = new Map<string, TypeNode>();
 
