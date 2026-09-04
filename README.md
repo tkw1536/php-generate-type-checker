@@ -8,7 +8,7 @@ Parse [PHPDoc types as supported by PHPStan](https://phpstan.org/writing-php-cod
 
 **[Open the live demo](https://check.guys.wtf)** — paste a type or PHPDoc block and copy the generated PHP. Prefer the deployed UI over running a local server.
 
-<!-- screenshot: docs/ui.png -->
+![Light-theme UI: type input on the left with array{id, email, name?} and generate options; PHP Code tab on the right showing the generated isArray… checker function](docs/ui.png)
 
 ## Features
 

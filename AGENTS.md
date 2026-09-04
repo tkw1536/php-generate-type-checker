@@ -56,3 +56,44 @@ yarn spellcheck
 - Do not treat this as a published library API.
 - Always keep existing CI checks passing.
 - Generated PHP must be nicely formatted and pass PHPStan at level 10 (max / strictest). Anything else is a bug.
+
+## README screenshot
+
+Do **not** use Puppeteer, CDN helpers, `html2canvas`, or the DevTools device toolbar.
+
+When updating `docs/ui.png`:
+
+**Agent (automatic):**
+- Create `docs/` if missing.
+- After the user saves the PNG, move/rename it to `docs/ui.png` if it landed elsewhere in the project or Downloads path they point to.
+- In `README.md` under Try it, set the image to `![…](docs/ui.png)` with a short alt description of the UI shown, and remove `<!-- screenshot: docs/ui.png -->` if present.
+
+**User (manual) — Firefox only:**
+1. Run `yarn dev` and open `http://localhost:5173/` in Firefox (allow popups for localhost).
+2. Paste this in the page console and run it:
+
+```js
+(() => {
+  localStorage.setItem('php-type-checker-theme', 'light');
+  const W = 1280;
+  const H = 800;
+  const win = window.open(
+    location.href,
+    'readme-screenshot',
+    `popup=yes,width=${W},height=${H}`,
+  );
+  if (!win) {
+    throw new Error('Popup blocked — allow popups for localhost and rerun');
+  }
+  const fixSize = () => {
+    win.resizeTo(W + (win.outerWidth - win.innerWidth), H + (win.outerHeight - win.innerHeight));
+  };
+  win.addEventListener('load', fixSize);
+  setTimeout(fixSize, 500);
+})();
+```
+
+3. In the **popup** window: leave the UI alone. Right-click the page → **Take Screenshot**.
+4. In the screenshot UI, choose the **visible** / Save visible option (not full page) → **Download**.
+5. The PNG is saved under `~/Downloads/`. The filename starts with `Screenshot` (Firefox adds a date/time).
+6. Tell the agent the full path to that file (or move it into the repo yourself).
