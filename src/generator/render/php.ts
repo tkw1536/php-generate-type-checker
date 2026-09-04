@@ -69,7 +69,7 @@ function renderOperand(expr: Expr, opts: RenderPhpOptions): string {
   return isLeaf(expr) ? text : `(${text})`;
 }
 
-function renderArg(arg: Arg, opts: RenderPhpOptions): string {
+function renderArg(arg: Arg): string {
   switch (arg.kind) {
     case 'ref':
       return renderValueRef(arg.ref);
@@ -77,9 +77,9 @@ function renderArg(arg: Arg, opts: RenderPhpOptions): string {
       return renderPhpScalarLiteral(arg.value);
     case 'call': {
       if (arg.name === '' && arg.args.length === 1) {
-        return renderArg(arg.args[0], opts);
+        return renderArg(arg.args[0]);
       }
-      const args = arg.args.map((a) => renderArg(a, opts)).join(', ');
+      const args = arg.args.map((a) => renderArg(a)).join(', ');
       return `${arg.name}(${args})`;
     }
     default:
@@ -116,15 +116,15 @@ export function renderExpr(expr: Expr, opts: RenderPhpOptions = {}): string {
       return expr.exprs.map((e) => renderOperand(e, opts)).join(' || ');
     case 'call': {
       if (expr.name === '' && expr.args.length === 1) {
-        return renderArg(expr.args[0], opts);
+        return renderArg(expr.args[0]);
       }
-      const args = expr.args.map((a) => renderArg(a, opts)).join(', ');
+      const args = expr.args.map((a) => renderArg(a)).join(', ');
       return `${expr.name}(${args})`;
     }
     case 'bin':
-      return `${renderArg(expr.left, opts)} ${expr.op} ${renderArg(expr.right, opts)}`;
+      return `${renderArg(expr.left)} ${expr.op} ${renderArg(expr.right)}`;
     case 'instanceof':
-      return `${renderArg(expr.subject, opts)} instanceof ${expr.className}`;
+      return `${renderArg(expr.subject)} instanceof ${expr.className}`;
     case 'call_checker': {
       const path = renderValueRef(expr.subject);
       const name = opts.useSelfCalls ? `self::${expr.name}` : expr.name;

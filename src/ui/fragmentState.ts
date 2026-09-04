@@ -9,12 +9,12 @@ export interface AppFragmentState {
   input: string;
 }
 
-const EMIT_MODES: readonly CheckerOutputMode[] = new Set([
+const EMIT_MODES: readonly CheckerOutputMode[] = [
   'function',
   'public_static',
   'protected_static',
   'private_static',
-]);
+];
 
 function parseBoolParam(value: string | null): boolean | undefined {
   if (value === null) {
@@ -33,7 +33,7 @@ function parseEmitParam(value: string | null): CheckerOutputMode | undefined {
   if (value === null) {
     return undefined;
   }
-  return EMIT_MODES.has(value)
+  return EMIT_MODES.includes(value as CheckerOutputMode)
     ? (value as CheckerOutputMode)
     : undefined;
 }

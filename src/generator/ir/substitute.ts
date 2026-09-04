@@ -200,7 +200,7 @@ function walkStmt(stmt: Stmt, names: Set<string>): void {
       walkBlock(stmt.body, names);
       break;
     case 'foreach':
-      walkValueRef(stmt.iterable, names);
+      walkValueRef(stmt.iterable);
       walkBlock(stmt.body, names);
       break;
     case 'return':
@@ -240,7 +240,7 @@ function walkExpr(expr: Expr, names: Set<string>): void {
       return;
     case 'call_checker':
       names.add(expr.name);
-      walkValueRef(expr.subject, names);
+      walkValueRef(expr.subject);
       return;
     default: {
       const _exhaustive: never = expr;
@@ -252,7 +252,7 @@ function walkExpr(expr: Expr, names: Set<string>): void {
 function walkArg(arg: Arg, names: Set<string>): void {
   switch (arg.kind) {
     case 'ref':
-      walkValueRef(arg.ref, names);
+      walkValueRef(arg.ref);
       return;
     case 'literal':
       return;
@@ -268,15 +268,15 @@ function walkArg(arg: Arg, names: Set<string>): void {
   }
 }
 
-function walkValueRef(ref: ValueRef, names: Set<string>): void {
+function walkValueRef(ref: ValueRef): void {
   switch (ref.kind) {
     case 'variable':
       return;
     case 'array_access':
-      walkValueRef(ref.object, names);
+      walkValueRef(ref.object);
       return;
     case 'property_access':
-      walkValueRef(ref.object, names);
+      walkValueRef(ref.object);
       return;
     default: {
       const _exhaustive: never = ref;

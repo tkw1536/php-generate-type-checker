@@ -57,7 +57,7 @@ function installLocalStorage(): void {
       store.delete(key);
     },
     setItem(key: string, value: string) {
-      store.set(key, String(value));
+      store.set(key, value);
     },
   };
   Object.defineProperty(window, 'localStorage', {
