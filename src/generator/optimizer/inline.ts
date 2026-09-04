@@ -9,6 +9,7 @@ import {
   substituteExpr,
   substituteProgramBody,
 } from '../ir/substitute.ts';
+import { negateBlock } from './negate.ts';
 
 function isSingleReturn(program: CheckerProgram): program is CheckerProgram & {
   body: [{ kind: 'return'; expr: Expr }];
@@ -16,25 +17,6 @@ function isSingleReturn(program: CheckerProgram): program is CheckerProgram & {
   return (
     program.body.length === 1 && program.body[0].kind === 'return'
   );
-}
-
-export function negateBlock(block: Block): Block {
-  return block.map((stmt) => negateStmt(stmt));
-}
-
-function negateStmt(stmt: Stmt): Stmt {
-  switch (stmt.kind) {
-    case 'return':
-      return returnStmt(notExpr(stmt.expr));
-    case 'if':
-      return { ...stmt, body: negateBlock(stmt.body) };
-    case 'foreach':
-      return { ...stmt, body: negateBlock(stmt.body) };
-    default: {
-      const exhaustive: never = stmt;
-      return exhaustive;
-    }
-  }
 }
 
 function getCallee(ir: CheckerIR, name: string): CheckerProgram | null {

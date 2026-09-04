@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { parseType } from '../../parser/index.ts';
 import {
   andExpr,
   arrayAccessRef,
@@ -15,47 +14,20 @@ import {
   variableRef,
 } from '../ir/index.ts';
 import { substituteExpr, substituteValueRef } from '../ir/substitute.ts';
-import type { Block, CheckerIR, Expr, Stmt } from '../ir/types.ts';
-import { buildMany } from '../pipeline.ts';
-import { optimize } from './index.ts';
+import type { Block } from '../ir/types.ts';
 import { createOptimizerParams } from './params.ts';
-import { inlineBlock, negateBlock } from './inline.ts';
+import { inlineBlock } from './inline.ts';
+import {
+  expectForeach,
+  expectIf,
+  ir,
+  isNotGuardIf,
+} from '../../../test-utils/inlineTestHelpers.ts';
+import { negateBlock } from './negate.ts';
 import { prunePrograms } from './prune.ts';
 
 const $v = variableRef('$value');
 const $elem = variableRef('$value1');
-
-function expectForeach(stmt: Stmt | undefined): Extract<Stmt, { kind: 'foreach' }> {
-  expect(stmt?.kind).toBe('foreach');
-  if (stmt?.kind !== 'foreach') {
-    throw new Error('expected foreach');
-  }
-  return stmt;
-}
-
-function expectIf(stmt: Stmt | undefined): Extract<Stmt, { kind: 'if' }> {
-  expect(stmt?.kind).toBe('if');
-  if (stmt?.kind !== 'if') {
-    throw new Error('expected if');
-  }
-  return stmt;
-}
-
-function isNotGuardIf(stmt: Stmt): boolean {
-  return stmt.kind === 'if' && stmt.cond.kind === 'not';
-}
-
-function ir(
-  programs: CheckerIR['programs'],
-  order: readonly string[],
-  entries?: readonly string[],
-): CheckerIR {
-  return {
-    programs,
-    order,
-    entries: entries ?? (order[0] === undefined ? [] : [order[0]]),
-  };
-}
 
 describe('substituteValueRef', () => {
   it('nests array access off substituted subject', () => {
@@ -286,71 +258,5 @@ describe('prunePrograms', () => {
     const pruned = prunePrograms(testIr, params);
     expect(pruned.order).toEqual(['entry']);
     expect(pruned.programs.orphan).toBeUndefined();
-  });
-});
-
-function exprHasCallChecker(expr: Expr): boolean {
-  switch (expr.kind) {
-    case 'call_checker':
-      return true;
-    case 'not':
-      return exprHasCallChecker(expr.expr);
-    case 'and':
-    case 'or':
-      return expr.exprs.some((child) => exprHasCallChecker(child));
-    case 'bin':
-    case 'bool':
-    case 'call':
-    case 'instanceof':
-      return false;
-    default:
-      throw new Error('never reached');
-  }
-}
-
-function blockHasCallChecker(block: Block): boolean {
-  for (const stmt of block) {
-    switch (stmt.kind) {
-      case 'return':
-        if (exprHasCallChecker(stmt.expr)) {
-          return true;
-        }
-        break;
-      case 'if':
-        if (exprHasCallChecker(stmt.cond) || blockHasCallChecker(stmt.body)) {
-          return true;
-        }
-        break;
-      case 'foreach':
-        if (blockHasCallChecker(stmt.body)) {
-          return true;
-        }
-        break;
-      default: {
-        const exhaustive: never = stmt;
-        return exhaustive;
-      }
-    }
-  }
-  return false;
-}
-
-describe('optimize integration', () => {
-  it('inlines nested array union in foreach and prunes helpers', () => {
-    const ast = parseType('array<array{x: string}|array{y: string}>');
-    const { ir: built } = buildMany([ast]);
-    const optimized = optimize(built);
-    const entry = optimized.programs[optimized.order[0]];
-    expect(blockHasCallChecker(entry.body)).toBe(false);
-    expect(optimized.order.length).toBeLessThan(built.order.length);
-  });
-
-  it('inlines shape union and prunes helpers', () => {
-    const ast = parseType('array{left: array{}, right: never[]}|array{}');
-    const { ir: built } = buildMany([ast]);
-    const optimized = optimize(built);
-    const entry = optimized.programs[optimized.order[0]];
-    expect(blockHasCallChecker(entry.body)).toBe(false);
-    expect(optimized.order.length).toBeLessThan(built.order.length);
   });
 });

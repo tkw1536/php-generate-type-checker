@@ -65,7 +65,7 @@ yarn spellcheck
 ## Warnings
 
 - ABSOLUTELY NO LINT IGNORES (`oxlint-disable`, `eslint-disable`, or equivalents). Fix the code or adjust shared config — never suppress.
-- Do **not** turn rules off / weaken shared lint config unless the user explicitly asks to disable or change that specific rule. Prefer fixing code. (The only current intentional offs are `eslint/max-lines` and `eslint/max-lines-per-function`, per prior request.)
+- Do **not** turn rules off / weaken shared lint config unless the user explicitly asks to disable or change that specific rule. Prefer fixing code. (See the oxlint config file for what is currently off per prior request.)
 - NO WRITE INTERACTIONS UNLESS EXPLICITLY REQUESTED. Do not edit, create, delete, move, or overwrite files unless the user clearly asked for that change. Read-only investigation is fine; applying fixes is not, until asked.
 - NEVER run `git checkout`, `git restore`, `git reset`, or any other command that discards or overwrites working-tree changes unless the user explicitly requests that exact recovery/discard operation.
 - Never invent `package.json` scripts; only use scripts that exist.

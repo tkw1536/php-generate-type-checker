@@ -8,7 +8,6 @@
     "perf": "error"
   },
   "rules": {
-    "eslint/max-lines": "off",
     "eslint/max-lines-per-function": "off",
     "typescript/prefer-readonly-parameter-types": [
       "error",
