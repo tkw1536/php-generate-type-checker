@@ -1,19 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { parsePhpstanTypesFromDocblock } from '../parser/index.ts';
-import { buildManyNamed, optimize, renderChecker } from './pipeline.ts';
+import { parseCheckerInput } from '../parser/index.ts';
+import { buildEntries, optimize, renderChecker } from './pipeline.ts';
 
-function buildManyNamedDelegatesToEntryCheckers(): void {
-  const defs = parsePhpstanTypesFromDocblock(`/**
+function buildEntriesDelegatesToEntryCheckers(): void {
+  const entries = parseCheckerInput(`/**
  * @phpstan-type PostSummary array{id: int, title: string}
  * @phpstan-type PostListResponse array{posts: list<PostSummary>}
  */`);
-  const { ir, typesByName, docStringsByName } = buildManyNamed(
-    defs.map((d) => ({
-      name: d.name,
-      type: d.ast,
-      typeString: d.typeString,
-    })),
-  );
+  const { ir, typesByName, docStringsByName } = buildEntries(entries);
   const php = renderChecker(optimize(ir), {
     typeString: 'docblock',
     typesByName,
@@ -23,18 +17,12 @@ function buildManyNamedDelegatesToEntryCheckers(): void {
   expect(php).toContain('isPostSummary(');
 }
 
-function buildManyNamedNamesFromAliases(): void {
-  const defs = parsePhpstanTypesFromDocblock(`/**
+function buildEntriesNamesFromAliases(): void {
+  const entries = parseCheckerInput(`/**
  * @phpstan-type PostSummary array{id: int, title: string}
  * @phpstan-type PostListResponse array{posts: list<PostSummary>}
  */`);
-  const { ir, typesByName, docStringsByName } = buildManyNamed(
-    defs.map((d) => ({
-      name: d.name,
-      type: d.ast,
-      typeString: d.typeString,
-    })),
-  );
+  const { ir, typesByName, docStringsByName } = buildEntries(entries);
   expect(ir.entries).toEqual(['isPostSummary', 'isPostListResponse']);
   const php = renderChecker(ir, {
     typeString: 'docblock',
@@ -49,18 +37,12 @@ function buildManyNamedNamesFromAliases(): void {
 }
 
 function prependsAliasesWhenEmitTrue(): void {
-  const defs = parsePhpstanTypesFromDocblock(`/**
+  const entries = parseCheckerInput(`/**
  * @phpstan-type PostSummary array{id: int, title: string}
  * @phpstan-type PostListResponse array{posts: list<PostSummary>}
  */`);
   const { ir, typesByName, docStringsByName, phpstanTypeAliases } =
-    buildManyNamed(
-      defs.map((d) => ({
-        name: d.name,
-        type: d.ast,
-        typeString: d.typeString,
-      })),
-    );
+    buildEntries(entries);
   const php = renderChecker(ir, {
     typeString: 'docblock',
     typesByName,
@@ -80,15 +62,9 @@ function prependsAliasesWhenEmitTrue(): void {
 }
 
 function doesNotPrependAliasesWhenEmitFalse(): void {
-  const defs = parsePhpstanTypesFromDocblock('/** @phpstan-type Foo int */');
+  const entries = parseCheckerInput('/** @phpstan-type Foo int */');
   const { ir, typesByName, docStringsByName, phpstanTypeAliases } =
-    buildManyNamed(
-      defs.map((d) => ({
-        name: d.name,
-        type: d.ast,
-        typeString: d.typeString,
-      })),
-    );
+    buildEntries(entries);
   const php = renderChecker(ir, {
     typeString: 'docblock',
     typesByName,
@@ -102,26 +78,26 @@ function doesNotPrependAliasesWhenEmitFalse(): void {
   );
 }
 
-function buildManyNamedUsesSequentialCheckNames(): void {
-  const defs = parsePhpstanTypesFromDocblock(`/**
+function buildEntriesUsesSequentialCheckNames(): void {
+  const entries = parseCheckerInput(
+    `/**
  * @phpstan-type Foo int
  * @phpstan-type Bar string
- */`);
-  const { ir } = buildManyNamed(
-    defs.map((d) => ({ name: d.name, type: d.ast })),
+ */`,
     { nameFunctionsByType: false },
   );
+  const { ir } = buildEntries(entries, { nameFunctionsByType: false });
   expect(ir.entries).toEqual(['check', 'check_1']);
 }
 
-describe('pipeline buildManyNamed', () => {
+describe('pipeline buildEntries', () => {
   it(
-    'buildManyNamed delegates to entry checkers for alias cross-references',
-    buildManyNamedDelegatesToEntryCheckers,
+    'buildEntries delegates to entry checkers for alias cross-references',
+    buildEntriesDelegatesToEntryCheckers,
   );
   it(
-    'buildManyNamed names entries from @phpstan-type aliases',
-    buildManyNamedNamesFromAliases,
+    'buildEntries names entries from @phpstan-type aliases',
+    buildEntriesNamesFromAliases,
   );
   it(
     'prepends @phpstan-type aliases when emitPhpstanTypeAliases is true',
@@ -132,7 +108,7 @@ describe('pipeline buildManyNamed', () => {
     doesNotPrependAliasesWhenEmitFalse,
   );
   it(
-    'buildManyNamed uses sequential check names when nameFunctionsByType is false',
-    buildManyNamedUsesSequentialCheckNames,
+    'buildEntries uses sequential check names when nameFunctionsByType is false',
+    buildEntriesUsesSequentialCheckNames,
   );
 });

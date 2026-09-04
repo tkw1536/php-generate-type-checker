@@ -27,7 +27,7 @@ export function describeError(err: unknown): PositionedError {
   if (err instanceof PhpstanTypeExtractError) {
     return {
       kind: 'parse',
-      title: 'Docblock extract error',
+      title: 'Invalid input',
       message: err.message,
       pos: err.pos,
     };
@@ -35,9 +35,10 @@ export function describeError(err: unknown): PositionedError {
   if (err instanceof TypeAliasResolveError) {
     return {
       kind: 'parse',
-      title: 'Alias resolve error',
+      title: 'Invalid type alias',
       message: err.message,
       detail: err.aliasName,
+      pos: err.pos,
     };
   }
   return describeNonParseError(err);
@@ -149,6 +150,8 @@ interface SnippetResult {
 function buildSnippet(source: string, pos: number): SnippetResult {
   const clampedPos = Math.min(Math.max(0, pos), source.length);
   const { line: errorLine, col: errorCol } = posToLineCol(source, clampedPos);
+  // Column is 1-based for display; caret/highlight use a 0-based index.
+  const caretIndex = errorCol - 1;
   const lines = source.split('\n');
   const errorLineIndex = errorLine - 1;
   const startLine = Math.max(0, errorLineIndex - 1);
@@ -160,7 +163,7 @@ function buildSnippet(source: string, pos: number): SnippetResult {
     const text = lines[i] ?? '';
     const isErrorLine = i === errorLineIndex;
     const lineHtml = isErrorLine
-      ? renderMarkedLine(text, errorCol)
+      ? renderMarkedLine(text, caretIndex)
       : escapeHtml(text);
     rows.push(`
       <tr class="error-line${isErrorLine ? ' error-line--active' : ''}">
@@ -171,7 +174,7 @@ function buildSnippet(source: string, pos: number): SnippetResult {
       rows.push(`
       <tr class="error-caret-row">
         <td class="error-gutter"></td>
-        <td class="error-code"><pre class="error-caret">${renderCaret(errorCol)}</pre></td>
+        <td class="error-code"><pre class="error-caret">${renderCaret(caretIndex)}</pre></td>
       </tr>`);
     }
   }
@@ -198,19 +201,21 @@ function posToLineCol(source: string, pos: number): { line: number; col: number 
   return { line, col };
 }
 
-function renderMarkedLine(line: string, errorCol: number): string {
-  const col = Math.min(errorCol, line.length);
-  const before = line.slice(0, col);
-  const at = line[col] ?? '';
-  const after = line.slice(col + (at ? 1 : 0));
-  if (!at && col === line.length) {
+/** Highlight the character at 0-based {@link errorIndex} on the line. */
+function renderMarkedLine(line: string, errorIndex: number): string {
+  const idx = Math.min(Math.max(0, errorIndex), line.length);
+  const before = line.slice(0, idx);
+  const at = line[idx] ?? '';
+  const after = line.slice(idx + (at ? 1 : 0));
+  if (!at && idx === line.length) {
     return `${escapeHtml(line)}<span class="error-cursor-marker"> </span>`;
   }
   return `${escapeHtml(before)}<span class="error-char">${escapeHtml(at)}</span>${escapeHtml(after)}`;
 }
 
-function renderCaret(col: number): string {
-  const spaces = col > 0 ? ' '.repeat(col) : '';
+/** Place `^` under 0-based {@link errorIndex}. */
+function renderCaret(errorIndex: number): string {
+  const spaces = errorIndex > 0 ? ' '.repeat(errorIndex) : '';
   return `${spaces}^`;
 }
 

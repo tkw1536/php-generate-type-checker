@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { generateChecker, generateDocblockChecker } from './index.ts';
+import { generateChecker } from './index.ts';
 import { GenerationError } from './errors.ts';
 import type { CheckerOutputMode } from './render/output.ts';
 import docblockCases from './testdata/docblock.json';
 import docblockEmitAliasesCases from './testdata/docblock_emit_aliases.json';
 import errorsCases from './testdata/errors.json';
 import functionCases from './testdata/function.json';
+import multiCommentCases from './testdata/multi_comment.json';
 import privateStaticCases from './testdata/private_static.json';
 import protectedStaticCases from './testdata/protected_static.json';
 import publicStaticCases from './testdata/public_static.json';
@@ -17,7 +18,6 @@ interface GeneratorFixture {
   readonly expected: string;
   readonly expectsError: boolean;
   readonly emitPhpstanTypeAliases?: boolean;
-  readonly docblock?: boolean;
 }
 
 type SuccessCase = { readonly input: string; readonly expected: string };
@@ -42,12 +42,15 @@ function successToFixtures(
   }));
 }
 
-function docblockToFixtures(cases: readonly DocblockCase[]): GeneratorFixture[] {
-  return cases.map(({ input, output, expected, emitPhpstanTypeAliases }) => {
+function docblockToFixtures(
+  cases: readonly DocblockCase[],
+  labelPrefix: string,
+): GeneratorFixture[] {
+  return cases.map(({ input, output, expected, emitPhpstanTypeAliases }, index) => {
     const label =
-      output === 'function' && emitPhpstanTypeAliases !== true
-        ? 'docblock: post list API'
-        : `docblock: ${output}${emitPhpstanTypeAliases === true ? ' + aliases' : ''}`;
+      cases.length === 1
+        ? `${labelPrefix}: ${output}${emitPhpstanTypeAliases === true ? ' + aliases' : ''}`
+        : `${labelPrefix}[${index}]: ${output}${emitPhpstanTypeAliases === true ? ' + aliases' : ''}`;
     return {
       name: label,
       input,
@@ -55,7 +58,6 @@ function docblockToFixtures(cases: readonly DocblockCase[]): GeneratorFixture[] 
       expected,
       expectsError: false,
       emitPhpstanTypeAliases,
-      docblock: true,
     };
   });
 }
@@ -134,8 +136,12 @@ export function loadFixtures(): GeneratorFixture[] {
       'protected_static',
     ),
     ...successToFixtures(readSuccessCases(privateStaticCases), 'private_static'),
-    ...docblockToFixtures(readDocblockCases(docblockCases)),
-    ...docblockToFixtures(readDocblockCases(docblockEmitAliasesCases)),
+    ...docblockToFixtures(readDocblockCases(docblockCases), 'docblock'),
+    ...docblockToFixtures(
+      readDocblockCases(docblockEmitAliasesCases),
+      'docblock_emit_aliases',
+    ),
+    ...docblockToFixtures(readDocblockCases(multiCommentCases), 'multi_comment'),
     ...errorsToFixtures(readErrorCases(errorsCases)),
   ].toSorted((a, b) => a.name.localeCompare(b.name));
 }
@@ -143,12 +149,6 @@ export function loadFixtures(): GeneratorFixture[] {
 const fixtures = loadFixtures();
 const errorFixtures = fixtures.filter((fixture) => fixture.expectsError);
 const successFixtures = fixtures.filter((fixture) => !fixture.expectsError);
-const docblockSuccessFixtures = successFixtures.filter(
-  (fixture) => fixture.docblock === true,
-);
-const typeSuccessFixtures = successFixtures.filter(
-  (fixture) => fixture.docblock !== true,
-);
 
 describe('generateChecker fixtures', () => {
   it.each(errorFixtures)('$name', (fixture) => {
@@ -157,18 +157,12 @@ describe('generateChecker fixtures', () => {
     ).toThrow(GenerationError);
   });
 
-  it.each(docblockSuccessFixtures)('$name', (fixture) => {
+  it.each(successFixtures)('$name', (fixture) => {
     expect(
-      generateDocblockChecker(fixture.input, {
+      generateChecker(fixture.input, {
         output: fixture.output,
         emitPhpstanTypeAliases: fixture.emitPhpstanTypeAliases,
       }),
     ).toBe(fixture.expected);
-  });
-
-  it.each(typeSuccessFixtures)('$name', (fixture) => {
-    expect(generateChecker(fixture.input, { output: fixture.output })).toBe(
-      fixture.expected,
-    );
   });
 });

@@ -6,45 +6,19 @@ Parse [PHPDoc types as supported by PHPStan](https://phpstan.org/writing-php-cod
 
 ## Try it
 
-**[Open the live demo](https://check.guys.wtf)** — paste a type or PHPDoc block and copy the generated PHP. Prefer the deployed UI over running a local server.
+**[Open the live demo](https://check.guys.wtf)** — paste a PHPDoc `@phpstan-type` block (or plain types) and copy the generated PHP. Prefer the deployed UI over running a local server.
 
-![Light-theme UI: type input on the left with array{id, email, name?} and generate options; PHP Code tab on the right showing the generated isArray… checker function](docs/ui.png)
+![Light-theme UI: PHPDoc @phpstan-type User input on the left with generate options; PHP Code tab on the right showing the generated isUser checker function](docs/ui.png)
 
 ## Features
 
 - Parse the PHPDoc types PHPStan supports (primitives, unions, shapes, generics, int ranges, aliases, and more)
-- Input is just type expressions or a PHPDoc block with `@phpstan-type` aliases — nothing else required
+- Primary input is PHPDoc with `@phpstan-type` aliases (multiple comments allowed); plain type expressions work as a convenience
 - Emit standalone functions or static methods you can drop into your own code
 - Shared helpers for nested types, with readable names like `isPostListResponse` by default
 - UI that runs entirely in your browser — no server-side code or analytics
 
 ## Examples
-
-### Type expression
-
-Input:
-
-```
-array{foo: int, bar?: string}
-```
-
-Generated PHP:
-
-```php
-/** @phpstan-assert-if-true array{foo: int, bar?: string} $value */
-function isArrayFooIntBarString(mixed $value): bool
-{
-    return (
-        is_array($value) &&
-        array_key_exists('foo', $value) &&
-        is_int($value['foo']) &&
-        (
-            !array_key_exists('bar', $value) ||
-            is_string($value['bar'])
-        )
-    );
-}
-```
 
 ### Docblock aliases
 
@@ -95,6 +69,32 @@ function isPostListResponse(mixed $value): bool
         }
     }
     return (array_key_exists('meta', $value) && isPaginationMeta($value['meta']));
+}
+```
+
+### Plain type expression (convenience)
+
+Input:
+
+```
+array{foo: int, bar?: string}
+```
+
+Generated PHP:
+
+```php
+/** @phpstan-assert-if-true array{foo: int, bar?: string} $value */
+function isArrayFooIntBarString(mixed $value): bool
+{
+    return (
+        is_array($value) &&
+        array_key_exists('foo', $value) &&
+        is_int($value['foo']) &&
+        (
+            !array_key_exists('bar', $value) ||
+            is_string($value['bar'])
+        )
+    );
 }
 ```
 

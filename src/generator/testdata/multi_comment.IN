@@ -1,0 +1,15 @@
+/**
+ * @phpstan-type UserId int
+ */
+/**
+ * @phpstan-type UserName non-empty-string
+ */
+---
+# output: function
+/**
+ * @phpstan-type Foo int
+ */
+string
+/**
+ * @phpstan-type Bar string
+ */

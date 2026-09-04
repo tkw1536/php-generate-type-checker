@@ -1,11 +1,11 @@
 import type { TypeNode } from '../../../parser/ast.ts';
+import { allocateUniqueName } from '../../../parser/entryNames.ts';
 import { formatType } from '../../../parser/format.ts';
 import {
   type FunctionNameProposer,
   IsStyleFunctionNameProposer,
   SequentialCheckNameProposer,
 } from './proposer.ts';
-
 
 export function createFunctionNameRegistry(options?: {
   readonly nameFunctionsByType?: boolean;
@@ -42,7 +42,7 @@ export class FunctionNameRegistry {
       return existing;
     }
     const base = this.proposer.name(type);
-    const candidate = this.allocateUnique(base);
+    const candidate = allocateUniqueName(base, this.used);
     this.used.add(candidate);
     this.assigned.set(key, candidate);
     return candidate;
@@ -62,15 +62,5 @@ export class FunctionNameRegistry {
     }
     this.used.add(fnName);
     this.assigned.set(key, fnName);
-  }
-
-  private allocateUnique(base: string): string {
-    let candidate = base;
-    let n = 2;
-    while (this.used.has(candidate)) {
-      candidate = `${base}_${n}`;
-      n++;
-    }
-    return candidate;
   }
 }

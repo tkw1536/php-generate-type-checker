@@ -4,8 +4,9 @@ import indexHtml from '../index.html?raw';
 import { INPUT_DEBOUNCE_MS } from '../src/ui/generate.ts';
 
 export { INPUT_DEBOUNCE_MS };
-export const DEFAULT_TYPE =
-  'array{id: int, email: non-empty-string, name?: string}';
+export const DEFAULT_TYPE = `/**
+ * @phpstan-type User array{id: int, email: non-empty-string, name?: string}
+ */`;
 
 export function extractBodyHtml(html: string): string {
   const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/iu);

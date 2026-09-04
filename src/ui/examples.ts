@@ -3,48 +3,8 @@ export interface TypeExample {
   readonly type: string;
 }
 
-/** Built-in types for the UI examples dropdown (common PHPStan shapes from APIs, config, and persistence). */
+/** Built-in types for the UI examples dropdown (primarily `@phpstan-type` docblocks). */
 export const TYPE_EXAMPLES: readonly TypeExample[] = [
-  {
-    label: 'Paginated list response',
-    type: 'array{items: list<array{id: int, title: string}>, total: int}',
-  },
-  {
-    label: 'HTTP client configuration',
-    type: 'array{baseUrl: string, timeout?: positive-int, apiKey?: string}',
-  },
-  {
-    label: 'User account record',
-    type: 'array{id: positive-int, email: non-empty-string, name: string, updatedAt: int}',
-  },
-  {
-    label: 'JSON:API resource document',
-    type: 'array{data: array{id: string, type: string, attributes: array<string, mixed>}}',
-  },
-  {
-    label: 'Webhook delivery payload',
-    type: 'array{event: string, deliveryId: string, payload: array<string, mixed>}',
-  },
-  {
-    label: 'Authenticated session data',
-    type: 'array{userId: int, roles: list<string>, expiresAt: int}',
-  },
-  {
-    label: 'Query or header parameters',
-    type: 'array<string, string>',
-  },
-  {
-    label: 'Decoded JSON object',
-    type: 'array<string, mixed>',
-  },
-  {
-    label: 'Route or resource identifier',
-    type: 'int|string',
-  },
-  {
-    label: 'String array and integer array',
-    type: 'array<string>array<int>',
-  },
   {
     label: 'Paginated blog post list',
     type: `/**
@@ -65,5 +25,53 @@ export const TYPE_EXAMPLES: readonly TypeExample[] = [
  *   meta: PaginationMeta
  * }
  */`,
+  },
+  {
+    label: 'Paginated list response',
+    type: `/**
+ * @phpstan-type PaginatedList array{items: list<array{id: int, title: string}>, total: int}
+ */`,
+  },
+  {
+    label: 'HTTP client configuration',
+    type: `/**
+ * @phpstan-type HttpClientConfig array{baseUrl: string, timeout?: positive-int, apiKey?: string}
+ */`,
+  },
+  {
+    label: 'User account record',
+    type: `/**
+ * @phpstan-type UserAccount array{id: positive-int, email: non-empty-string, name: string, updatedAt: int}
+ */`,
+  },
+  {
+    label: 'JSON:API resource document',
+    type: `/**
+ * @phpstan-type JsonApiResource array{data: array{id: string, type: string, attributes: array<string, mixed>}}
+ */`,
+  },
+  {
+    label: 'Webhook delivery payload',
+    type: `/**
+ * @phpstan-type WebhookDelivery array{event: string, deliveryId: string, payload: array<string, mixed>}
+ */`,
+  },
+  {
+    label: 'Authenticated session data',
+    type: `/**
+ * @phpstan-type SessionData array{userId: int, roles: list<string>, expiresAt: int}
+ */`,
+  },
+  {
+    label: 'Query parameters (plain type)',
+    type: 'array<string, string>',
+  },
+  {
+    label: 'Decoded JSON object (plain type)',
+    type: 'array<string, mixed>',
+  },
+  {
+    label: 'Two plain types',
+    type: 'array<string>array<int>',
   },
 ];

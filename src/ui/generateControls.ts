@@ -1,12 +1,12 @@
 import type { CheckerOutputMode } from '../generator/options.ts';
-import { isDocblockInput } from '../parser/phpstanTypeDocblock.ts';
 import {
   replaceLocationFragment,
   type AppFragmentState,
 } from './fragmentState.ts';
 
-export const DEFAULT_TYPE =
-  'array{id: int, email: non-empty-string, name?: string}';
+export const DEFAULT_TYPE = `/**
+ * @phpstan-type User array{id: int, email: non-empty-string, name?: string}
+ */`;
 
 export function getGenerateOutputMode(): CheckerOutputMode {
   const el = document.querySelector<HTMLSelectElement>('#generate-output-mode');
@@ -118,12 +118,12 @@ export function getGenerateOptions(): {
   };
 }
 
-export function syncDocblockOptions(): void {
+/** Show alias options when the parse result includes `@phpstan-type` aliases. */
+export function syncDocblockOptions(hasAliases: boolean): void {
   const docblockOptions = document.querySelector<HTMLElement>(
     '#generate-docblock-options',
   );
-  const raw = document.querySelector<HTMLTextAreaElement>('#type-input')!.value;
   if (docblockOptions) {
-    docblockOptions.hidden = !isDocblockInput(raw);
+    docblockOptions.hidden = !hasAliases;
   }
 }

@@ -1,26 +1,35 @@
 import {
-  buildMany,
-  buildManyNamed,
+  buildEntries,
   optimize,
   renderChecker,
 } from './pipeline.ts';
 import type { GenerateCheckerOptions } from './options.ts';
-import { parsePhpstanTypesFromDocblock, parseTypes } from '../parser/index.ts';
+import { parseCheckerInput } from '../parser/index.ts';
 
-export type GenerateDocblockCheckerOptions = GenerateCheckerOptions & {
+export type GenerateCheckerOptionsWithAliases = GenerateCheckerOptions & {
   readonly emitPhpstanTypeAliases?: boolean;
   /** Inline alias cross-references instead of calling entry checkers. Default: false. */
   readonly resolveAliases?: boolean;
 };
 
-/** Composed pipeline; used by fixture tests. */
+/** Composed pipeline; used by fixture tests and the UI. */
 export function generateChecker(
   typeString: string,
-  options?: GenerateCheckerOptions,
+  options?: GenerateCheckerOptionsWithAliases,
 ): string {
-  const { segments } = parseTypes(typeString);
-  const types = segments.map((s) => s.ast);
-  const { ir: built, typesByName } = buildMany(types, options);
+  const entries = parseCheckerInput(typeString, {
+    resolveAliases: options?.resolveAliases,
+    nameFunctionsByType: options?.nameFunctionsByType,
+  });
+  const {
+    ir: built,
+    typesByName,
+    docStringsByName,
+    phpstanTypeAliases,
+  } = buildEntries(entries, {
+    ...options,
+    segmentSources: entries.map((e) => e.typeString),
+  });
   const ir =
     options?.prioritizeReadabilityOverCompactness === true
       ? built
@@ -28,38 +37,6 @@ export function generateChecker(
   return renderChecker(ir, {
     ...options,
     typeString: typeString.trim(),
-    typesByName,
-  });
-}
-
-/** Docblock pipeline; mirrors the UI docblock path. */
-export function generateDocblockChecker(
-  docblock: string,
-  options?: GenerateDocblockCheckerOptions,
-): string {
-  const defs = parsePhpstanTypesFromDocblock(docblock, {
-    resolveAliases: options?.resolveAliases,
-  });
-  const {
-    ir: built,
-    typesByName,
-    docStringsByName,
-    phpstanTypeAliases,
-  } = buildManyNamed(
-    defs.map((d) => ({
-      name: d.name,
-      type: d.ast,
-      typeString: d.typeString,
-    })),
-    { segmentSources: defs.map((d) => d.typeString) },
-  );
-  const ir =
-    options?.prioritizeReadabilityOverCompactness === true
-      ? built
-      : optimize(built);
-  return renderChecker(ir, {
-    ...options,
-    typeString: docblock.trim(),
     typesByName,
     docStringsByName,
     phpstanTypeAliases,

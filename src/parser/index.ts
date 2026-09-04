@@ -6,20 +6,33 @@ export {
   type ParseTypesResult,
 } from './parser.ts';
 export {
-  extractPhpstanTypes,
-  isDocblockInput,
+  extractPhpstanTypesFromComment,
   formatPhpstanTypeAliasesBlock,
   PhpstanTypeExtractError,
   type PhpstanTypeDef,
   type PhpstanTypeAlias,
 } from './phpstanTypeDocblock.ts';
 export {
-  parsePhpstanTypesFromDocblock,
+  extractInputTypes,
+  extractPhpstanTypes,
+  type InputTypeEntry,
+} from './extractInput.ts';
+export {
+  aliasToIsName,
+  allocateUniqueName,
+  assignEntryNames,
+  proposeIsStyleName,
+} from './entryNames.ts';
+export {
+  hasPhpstanTypeAliases,
+  parseCheckerInput,
+  type ParsedCheckerEntry,
+  type ParseCheckerInputOptions,
+} from './parseInput.ts';
+export {
   resolveTypeAliases,
   TypeAliasResolveError,
   namedAliasReferences,
-  type ResolvedPhpstanType,
-  type ParsePhpstanTypesFromDocblockOptions,
 } from './resolveTypeAliases.ts';
 export { LexerError, tokenize } from './lexer.ts';
 export type {

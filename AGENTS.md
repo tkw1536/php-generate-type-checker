@@ -72,7 +72,7 @@ yarn spellcheck
 - Never invent `package.json` scripts; only use scripts that exist.
 - Keep URL fragment state backwards compatible (`src/ui/fragmentState.ts`).
 - Do not hand-edit golden `*.json`; regenerate from `*.IN`.
-- Do not treat this as a published library API.
+- Do not treat this as a published library API. There is **no** library-consumer backwards compatibility — rename/remove internal exports freely; update all in-repo call sites instead of leaving compatibility shims.
 - Always keep existing CI checks passing.
 - Generated PHP must be nicely formatted and pass PHPStan at level 10 (max / strictest). Anything else is a bug.
 

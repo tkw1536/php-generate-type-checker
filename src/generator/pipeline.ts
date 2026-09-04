@@ -1,33 +1,33 @@
 import type { TypeNode } from '../parser/ast.ts';
+import type { ParsedCheckerEntry } from '../parser/parseInput.ts';
+import {
+  formatPhpstanTypeAliasesBlock,
+  type PhpstanTypeAlias,
+} from '../parser/phpstanTypeDocblock.ts';
 import { GenerationError } from './errors.ts';
 import type { CheckerIR } from './ir/types.ts';
 import { Builder } from './builder/index.ts';
 import {
   createFunctionNameRegistry,
 } from './builder/registry/index.ts';
-import { aliasToIsName } from './builder/registry/proposer.ts';
 import { optimize as optimizeIr } from './optimizer/index.ts';
 import type { GenerateCheckerOptions } from './options.ts';
 import { render } from './render/index.ts';
 import { formatTypeForPhpstanDoc } from './render/phpdoc.ts';
-import {
-  formatPhpstanTypeAliasesBlock,
-  type PhpstanTypeAlias,
-} from '../parser/phpstanTypeDocblock.ts';
 
 export type BuildOptions = GenerateCheckerOptions & {
   readonly parameter?: string;
   readonly reservedNames?: readonly string[];
-  /** Source text per root type (for error reporting in {@link buildMany}). */
+  /** Source text per root type (for error reporting). */
   readonly segmentSources?: readonly string[];
 };
 
 export type BuildResult = {
   readonly ir: CheckerIR;
   readonly typesByName: Readonly<Record<string, TypeNode>>;
-  /** Original type strings for entry checkers (e.g. @phpstan-type source text). */
+  /** Assert doc text per entry function name. */
   readonly docStringsByName?: Readonly<Record<string, string>>;
-  /** @phpstan-type alias definitions from docblock input (for optional re-emission). */
+  /** `@phpstan-type` alias definitions for optional re-emission. */
   readonly phpstanTypeAliases?: readonly PhpstanTypeAlias[];
 };
 
@@ -40,13 +40,97 @@ export type RenderCheckerInput = GenerateCheckerOptions & {
   readonly phpstanTypeAliases?: readonly PhpstanTypeAlias[];
 };
 
-export type NamedTypeEntry = {
-  readonly name: string;
-  readonly type: TypeNode;
-  readonly typeString?: string;
-};
+/**
+ * Build IR from {@link parseCheckerInput} results (single generate path).
+ */
+export function buildEntries(
+  entries: readonly ParsedCheckerEntry[],
+  options?: BuildOptions,
+): BuildResult {
+  if (entries.length === 0) {
+    throw new GenerationError('No types to build');
+  }
+  const nameByType = options?.nameFunctionsByType !== false;
+  const registry = createFunctionNameRegistry({
+    nameFunctionsByType: nameByType,
+    reservedNames: options?.reservedNames ?? [],
+  });
+  const aliasCheckerByName = registerAliasCheckers(entries, registry);
+  const builder = new Builder(registry, { aliasCheckerByName });
+  const docStringsByName = addParsedEntries(builder, entries, options);
+  return {
+    ir: builder.build(),
+    typesByName: builder.getTypesByName(),
+    docStringsByName,
+    phpstanTypeAliases: phpstanAliasesFromEntries(entries),
+  };
+}
 
-/** Build one combined IR for multiple root types (shared helpers, all entries never pruned). */
+function registerAliasCheckers(
+  entries: readonly ParsedCheckerEntry[],
+  registry: ReturnType<typeof createFunctionNameRegistry>,
+): Map<string, string> {
+  const aliasCheckerByName = new Map<string, string>();
+  for (const entry of entries) {
+    if (entry.aliasName !== null) {
+      aliasCheckerByName.set(entry.aliasName, entry.functionName);
+    }
+    registry.set(entry.ast, entry.functionName);
+  }
+  return aliasCheckerByName;
+}
+
+function addParsedEntries(
+  builder: Readonly<Builder>,
+  entries: readonly ParsedCheckerEntry[],
+  options?: BuildOptions,
+): Record<string, string> {
+  const docStringsByName: Record<string, string> = {};
+  for (const [i, entry] of entries.entries()) {
+    try {
+      builder.addEntry(entry.functionName, entry.ast);
+      docStringsByName[entry.functionName] = entry.docType;
+    } catch (err) {
+      throw wrapBuildEntryError(err, i, entry, options);
+    }
+  }
+  return docStringsByName;
+}
+
+function wrapBuildEntryError(
+  err: unknown,
+  index: number,
+  entry: ParsedCheckerEntry,
+  options?: BuildOptions,
+): GenerationError {
+  const message = err instanceof Error ? err.message : String(err);
+  const typeDescription =
+    err instanceof GenerationError ? err.typeDescription : undefined;
+  const cause = err instanceof Error ? err : undefined;
+  return new GenerationError(message, typeDescription, {
+    expressionIndex: index,
+    segmentSource:
+      options?.segmentSources?.[index] ??
+      entry.typeString ??
+      (err instanceof GenerationError ? err.segmentSource : undefined),
+  }, cause);
+}
+
+function phpstanAliasesFromEntries(
+  entries: readonly ParsedCheckerEntry[],
+): PhpstanTypeAlias[] {
+  return entries
+    .filter(
+      (entry): entry is ParsedCheckerEntry & { readonly aliasName: string } =>
+        entry.aliasName !== null,
+    )
+    .map((entry) => ({
+      name: entry.aliasName,
+      typeString: entry.typeString,
+    }));
+}
+
+/** Build one combined IR for multiple root types (shared helpers; used by unit tests). */
 export function buildMany(
   types: readonly TypeNode[],
   options?: BuildOptions,
@@ -61,7 +145,6 @@ export function buildMany(
   });
   const builder = new Builder(registry);
   for (const [i, tp] of types.entries()) {
-
     try {
       builder.add(tp);
     } catch (err) {
@@ -81,89 +164,6 @@ export function buildMany(
     ir: builder.build(),
     typesByName: builder.getTypesByName(),
   };
-}
-
-/** Build one combined IR for named @phpstan-type aliases (explicit entry function names). */
-export function buildManyNamed(
-  entries: readonly NamedTypeEntry[],
-  options?: BuildOptions,
-): BuildResult {
-  if (entries.length === 0) {
-    throw new GenerationError('No types to build');
-  }
-  const nameByType = options?.nameFunctionsByType !== false;
-  const registry = createFunctionNameRegistry({
-    nameFunctionsByType: nameByType,
-    reservedNames: options?.reservedNames ?? [],
-  });
-  const aliasCheckerByName = registerNamedAliasCheckers(
-    entries,
-    registry,
-    nameByType,
-  );
-  const builder = new Builder(registry, { aliasCheckerByName });
-  const docStringsByName = addNamedEntries(builder, entries, aliasCheckerByName, options);
-
-  return {
-    ir: builder.build(),
-    typesByName: builder.getTypesByName(),
-    docStringsByName,
-    phpstanTypeAliases: entries
-      .filter(
-        (entry): entry is NamedTypeEntry & { readonly typeString: string } =>
-          entry.typeString !== undefined,
-      )
-      .map((entry) => ({ name: entry.name, typeString: entry.typeString })),
-  };
-}
-
-function registerNamedAliasCheckers(
-  entries: readonly NamedTypeEntry[],
-  registry: ReturnType<typeof createFunctionNameRegistry>,
-  nameByType: boolean,
-): Map<string, string> {
-  const aliasCheckerByName = new Map<string, string>();
-  let sequentialIndex = 0;
-  for (const entry of entries) {
-    const fnName = nameByType
-      ? aliasToIsName(entry.name)
-      : sequentialIndex === 0
-        ? 'check'
-        : `check_${sequentialIndex}`;
-    sequentialIndex++;
-    aliasCheckerByName.set(entry.name, fnName);
-    registry.set(entry.type, fnName);
-  }
-  return aliasCheckerByName;
-}
-
-function addNamedEntries(
-  builder: Readonly<Builder>,
-  entries: readonly NamedTypeEntry[],
-  aliasCheckerByName: ReadonlyMap<string, string>,
-  options?: BuildOptions,
-): Record<string, string> {
-  const docStringsByName: Record<string, string> = {};
-  for (const [i, entry] of entries.entries()) {
-    const fnName = aliasCheckerByName.get(entry.name)!;
-    try {
-      builder.addEntry(fnName, entry.type);
-      docStringsByName[fnName] = entry.name;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      const typeDescription =
-        err instanceof GenerationError ? err.typeDescription : undefined;
-      const cause = err instanceof Error ? err : undefined;
-      throw new GenerationError(message, typeDescription, {
-        expressionIndex: i,
-        segmentSource:
-          options?.segmentSources?.[i] ??
-          entry.typeString ??
-          (err instanceof GenerationError ? err.segmentSource : undefined),
-      }, cause);
-    }
-  }
-  return docStringsByName;
 }
 
 export function optimize(ir: CheckerIR): CheckerIR {

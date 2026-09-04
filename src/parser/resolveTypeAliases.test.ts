@@ -2,13 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { parseType } from './parser.ts';
 import type { TypeNode } from './ast.ts';
 import {
+  hasPhpstanTypeAliases,
+  parseCheckerInput,
+  type ParsedCheckerEntry,
+} from './parseInput.ts';
+import {
   namedAliasReferences,
-  parsePhpstanTypesFromDocblock,
-  TypeAliasResolveError,
 } from './resolveTypeAliases.ts';
 
-function aliasNames(defs: readonly { readonly name: string }[]): string[] {
-  return defs.map((d) => d.name);
+function aliasNames(defs: readonly ParsedCheckerEntry[]): string[] {
+  return defs
+    .map((d) => d.aliasName)
+    .filter((name): name is string => name !== null);
 }
 
 function expectShape(
@@ -77,26 +82,27 @@ const FORWARD_REF_DOCBLOCK = `/**
  */`;
 
 function keepsForwardAliasReferencesAsNamed(): void {
-  const defs = parsePhpstanTypesFromDocblock(FORWARD_REF_DOCBLOCK);
+  const defs = parseCheckerInput(FORWARD_REF_DOCBLOCK);
   expect(defs).toHaveLength(2);
-  const outer = defs.find((d) => d.name === 'Outer')!;
+  expect(hasPhpstanTypeAliases(defs)).toBe(true);
+  const outer = defs.find((d) => d.aliasName === 'Outer')!;
   expect(namedAliasReferences(outer.ast, aliasNames(defs))).toEqual(['Inner']);
   expect(outer.ast).toEqual(parseType('array{inner: Inner}'));
 }
 
 function inlinesAliasCrossReferencesWhenResolveAliases(): void {
-  const defs = parsePhpstanTypesFromDocblock(FORWARD_REF_DOCBLOCK, {
+  const defs = parseCheckerInput(FORWARD_REF_DOCBLOCK, {
     resolveAliases: true,
   });
-  const outer = defs.find((d) => d.name === 'Outer')!;
+  const outer = defs.find((d) => d.aliasName === 'Outer')!;
   expect(namedAliasReferences(outer.ast, aliasNames(defs))).toEqual([]);
   expect(outer.ast).toEqual(parseType('array{inner: int}'));
 }
 
 function keepsPostListCrossReferencesAsNamed(): void {
-  const defs = parsePhpstanTypesFromDocblock(POST_LIST_DOCBLOCK);
-  const response = defs.find((d) => d.name === 'PostListResponse')!;
-  expect(namedAliasReferences(response.ast, defs.map((d) => d.name))).toEqual([
+  const defs = parseCheckerInput(POST_LIST_DOCBLOCK);
+  const response = defs.find((d) => d.aliasName === 'PostListResponse')!;
+  expect(namedAliasReferences(response.ast, aliasNames(defs))).toEqual([
     'PaginationMeta',
     'PostSummary',
   ]);
@@ -110,9 +116,9 @@ function keepsPostListCrossReferencesAsNamed(): void {
 }
 
 function keepsAnnotationAliasReferencesAsNamed(): void {
-  const defs = parsePhpstanTypesFromDocblock(ANNOTATION_DOCBLOCK);
-  const input = defs.find((d) => d.name === 'AnnotationInput')!;
-  expect(namedAliasReferences(input.ast, defs.map((d) => d.name))).toEqual([
+  const defs = parseCheckerInput(ANNOTATION_DOCBLOCK);
+  const input = defs.find((d) => d.aliasName === 'AnnotationInput')!;
+  expect(namedAliasReferences(input.ast, aliasNames(defs))).toEqual([
     'AnnotationBody',
     'AnnotationTarget',
   ]);
@@ -126,8 +132,8 @@ function keepsAnnotationAliasReferencesAsNamed(): void {
 }
 
 function preservesRealClassNamesWithLeadingBackslash(): void {
-  const defs = parsePhpstanTypesFromDocblock(ANNOTATION_DOCBLOCK);
-  const body = defs.find((d) => d.name === 'AnnotationBody')!;
+  const defs = parseCheckerInput(ANNOTATION_DOCBLOCK);
+  const body = defs.find((d) => d.aliasName === 'AnnotationBody')!;
   const intersection = expectIntersection(body.ast);
   expect(intersection.types[0]).toEqual({
     kind: 'named',
@@ -143,24 +149,40 @@ function preservesRealClassNamesWithLeadingBackslash(): void {
 }
 
 function throwsOnCircularAliasReferences(): void {
-  expect(() =>
-    parsePhpstanTypesFromDocblock(`/**
+  const source = `/**
  * @phpstan-type A B
  * @phpstan-type B A
- */`),
-  ).toThrow(TypeAliasResolveError);
+ */`;
+  // Cycle is found via B → A while A is visiting; call site is A's name in B's body.
+  const callSiteInB = source.indexOf('@phpstan-type B A') + '@phpstan-type B '.length;
+  expect(() => parseCheckerInput(source)).toThrow(
+    expect.objectContaining({
+      name: 'TypeAliasResolveError',
+      pos: callSiteInB,
+    }),
+  );
+}
+
+function throwsOnSelfReferentialAliasAtReference(): void {
+  const source = '/** @phpstan-type Referential Referential */';
+  expect(() => parseCheckerInput(source)).toThrow(
+    expect.objectContaining({
+      name: 'TypeAliasResolveError',
+      pos: source.lastIndexOf('Referential'),
+    }),
+  );
 }
 
 function attributesParseErrorsToAliasIndex(): void {
   expect(() =>
-    parsePhpstanTypesFromDocblock(`/**
+    parseCheckerInput(`/**
  * @phpstan-type Good int
  * @phpstan-type Bad array{
  */`),
   ).toThrow(expect.objectContaining({ expressionIndex: 1 }));
 }
 
-describe('parsePhpstanTypesFromDocblock', () => {
+describe('parseCheckerInput aliases', () => {
   it(
     'keeps forward alias references as named nodes',
     keepsForwardAliasReferencesAsNamed,
@@ -182,5 +204,9 @@ describe('parsePhpstanTypesFromDocblock', () => {
     preservesRealClassNamesWithLeadingBackslash,
   );
   it('throws on circular alias references', throwsOnCircularAliasReferences);
+  it(
+    'throws on self-referential alias at the reference call site',
+    throwsOnSelfReferentialAliasAtReference,
+  );
   it('attributes parse errors to alias index', attributesParseErrorsToAliasIndex);
 });

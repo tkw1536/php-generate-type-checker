@@ -4,7 +4,7 @@
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { generateChecker, generateDocblockChecker } from '../index.ts';
+import { generateChecker } from '../index.ts';
 
 const testdataDir = import.meta.dirname;
 
@@ -139,6 +139,7 @@ for (const output of OUTPUT_MODES) {
 const DOCBlock_FIXTURES = [
   { name: 'docblock', emitPhpstanTypeAliases: false },
   { name: 'docblock_emit_aliases', emitPhpstanTypeAliases: true },
+  { name: 'multi_comment', emitPhpstanTypeAliases: false },
 ];
 
 for (const { name, emitPhpstanTypeAliases: defaultEmit } of DOCBlock_FIXTURES) {
@@ -152,7 +153,7 @@ for (const { name, emitPhpstanTypeAliases: defaultEmit } of DOCBlock_FIXTURES) {
   for (const { input, output, emitPhpstanTypeAliases } of cases) {
     const emit = emitPhpstanTypeAliases || defaultEmit;
     try {
-      const expected = generateDocblockChecker(input, {
+      const expected = generateChecker(input, {
         output,
         emitPhpstanTypeAliases: emit,
       });

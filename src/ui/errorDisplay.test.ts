@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ParseError } from '../parser/parser.ts';
-import { renderErrorHtml } from './errorDisplay.ts';
+import { describeError, renderErrorHtml } from './errorDisplay.ts';
 
 function showsCaretAtParseErrorPosition(): void {
   const html = renderErrorHtml(
@@ -16,6 +16,27 @@ function showsCaretAtParseErrorPosition(): void {
   expect(html).toContain('error-char');
   expect(html).toContain('error-caret');
   expect(html).toContain('Position 18');
+  // pos 17 is the first `>` of `>>` — caret must sit under that character.
+  expect(html).toMatch(/error-char[^>]*>&gt;<\/span>/u);
+  expect(html).toMatch(/error-caret"> {17}\^/u);
+}
+
+function pointsCaretAtGtAfterIncompleteUnion(): void {
+  const source = 'array<int|>';
+  const err = new ParseError('Expected type, got ">"', 10);
+  const html = renderErrorHtml(describeError(err), source);
+  expect(html).toContain('Position 11');
+  expect(html).toMatch(/error-char[^>]*>&gt;<\/span>/u);
+  expect(html).toMatch(/error-caret"> {10}\^/u);
+}
+
+function pointsCaretAtEofAfterTrailingPipe(): void {
+  const source = 'int|';
+  const err = new ParseError('Expected type, got "end of input"', 4);
+  const html = renderErrorHtml(describeError(err), source);
+  expect(html).toContain('Position 5');
+  expect(html).toContain('error-cursor-marker');
+  expect(html).toMatch(/error-caret"> {4}\^/u);
 }
 
 function usesPlainInputBlockForGenerationErrors(): void {
@@ -64,6 +85,14 @@ function integratesWithParseError(): void {
 
 describe('renderErrorHtml', () => {
   it('shows caret at parse error position', showsCaretAtParseErrorPosition);
+  it(
+    'points caret at `>` after incomplete union inside generics',
+    pointsCaretAtGtAfterIncompleteUnion,
+  );
+  it(
+    'points caret at end of input after trailing pipe',
+    pointsCaretAtEofAfterTrailingPipe,
+  );
   it(
     'uses plain input block for generation errors',
     usesPlainInputBlockForGenerationErrors,

@@ -1,0 +1,12 @@
+[
+  {
+    "input": "/**\n * @phpstan-type UserId int\n */\n/**\n * @phpstan-type UserName non-empty-string\n */",
+    "output": "function",
+    "expected": "/** @phpstan-assert-if-true UserId $value */\nfunction isUserId(mixed $value): bool\n{\n    return is_int($value);\n}\n\n\n/** @phpstan-assert-if-true UserName $value */\nfunction isUserName(mixed $value): bool\n{\n    return (is_string($value) && $value !== '');\n}\n"
+  },
+  {
+    "input": "/**\n * @phpstan-type Foo int\n */\nstring\n/**\n * @phpstan-type Bar string\n */",
+    "output": "function",
+    "expected": "/** @phpstan-assert-if-true Foo $value */\nfunction isFoo(mixed $value): bool\n{\n    return is_int($value);\n}\n\n\n/** @phpstan-assert-if-true string $value */\nfunction isString(mixed $value): bool\n{\n    return is_string($value);\n}\n\n\n/** @phpstan-assert-if-true Bar $value */\nfunction isBar(mixed $value): bool\n{\n    return is_string($value);\n}\n"
+  }
+]
