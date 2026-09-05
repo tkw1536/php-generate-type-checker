@@ -11,7 +11,10 @@ import {
   createFunctionNameRegistry,
 } from './builder/registry/index.ts';
 import { optimize as optimizeIr } from './optimizer/index.ts';
-import type { GenerateCheckerOptions } from './options.ts';
+import {
+  DEFAULT_CHECKER_OUTPUT,
+  type GenerateCheckerOptions,
+} from './options.ts';
 import { render } from './render/index.ts';
 import { formatTypeForPhpstanDoc } from './render/phpdoc.ts';
 
@@ -180,18 +183,26 @@ export function renderChecker(
     docsByName[firstEntry] ??
     input.typeString.trim().replaceAll('*/', '* /');
 
+  const aliasesToEmit =
+    input.emitPhpstanTypeAliases === true &&
+    input.phpstanTypeAliases !== undefined &&
+    input.phpstanTypeAliases.length > 0
+      ? input.phpstanTypeAliases
+      : undefined;
+
+  const mode = input.output ?? DEFAULT_CHECKER_OUTPUT;
+  const isClassOutput = mode !== 'function';
+
   const php = render(ir, {
     ...input,
     entryDocType,
     docsByName,
+    // Class modes own the alias block (merged with class PHPDoc when verbose).
+    classPhpstanTypeAliases: isClassOutput ? aliasesToEmit : undefined,
   });
 
-  if (
-    input.emitPhpstanTypeAliases === true &&
-    input.phpstanTypeAliases !== undefined &&
-    input.phpstanTypeAliases.length > 0
-  ) {
-    return formatPhpstanTypeAliasesBlock(input.phpstanTypeAliases) + php;
+  if (!isClassOutput && aliasesToEmit !== undefined) {
+    return formatPhpstanTypeAliasesBlock(aliasesToEmit) + php;
   }
 
   return php;

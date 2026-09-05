@@ -121,6 +121,17 @@ const KEYWORD_VALUES = [
 ] as const;
 const keywords: ReadonlySet<string> = new Set(KEYWORD_VALUES);
 
+/** True if `candidate` is already the canonical (lowercase) keyword spelling. */
 export function isKeyword(candidate: string): candidate is Keyword {
   return keywords.has(candidate);
+}
+
+/**
+ * Map a PHPStan builtin / keyword identifier to its canonical lowercase form.
+ * Case-insensitive: `TRue` → `true`, `non-FALSY-string` → `non-falsy-string`.
+ * Returns `null` when `candidate` is not a known keyword.
+ */
+export function canonicalKeyword(candidate: string): Keyword | null {
+  const lower = candidate.toLowerCase();
+  return isKeyword(lower) ? lower : null;
 }

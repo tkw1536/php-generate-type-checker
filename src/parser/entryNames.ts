@@ -14,15 +14,25 @@ export function aliasToIsName(aliasName: string): string {
   return `is${withPrefix}`;
 }
 
-/** Allocate `base`, then `base_2`, `base_3`, … until unused. */
+/** Allocate `base`, then `base_2`, `base_3`, … until unused (PHP names are case-insensitive). */
 export function allocateUniqueName(base: string, used: ReadonlySet<string>): string {
   let candidate = base;
   let n = 2;
-  while (used.has(candidate)) {
+  while (phpNameUsed(candidate, used)) {
     candidate = `${base}_${n}`;
     n++;
   }
   return candidate;
+}
+
+function phpNameUsed(name: string, used: ReadonlySet<string>): boolean {
+  const lower = name.toLowerCase();
+  for (const existing of used) {
+    if (existing.toLowerCase() === lower) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export type NamedInputEntry = {

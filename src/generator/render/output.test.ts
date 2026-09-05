@@ -73,45 +73,95 @@ describe('class output visibility', () => {
   );
 });
 
+function emitsOneLineAssertByDefault(): void {
+  const php = generateChecker('string');
+  expect(php.startsWith('/** @phpstan-assert-if-true string $value */')).toBe(
+    true,
+  );
+  expect(php).not.toContain('@return');
+}
+
+function emitsDrupalStylePhpdocWithArticle(): void {
+  const php = generateChecker('array<string, bool>', { verbosePhpdoc: true });
+  expect(php).toContain(
+    'Checks if the given value is an array<string, bool>.',
+  );
+  expect(php).toContain('@param mixed $value');
+  expect(php).toContain('The value to check.');
+  expect(php).toContain('@return bool');
+  expect(php).toContain(
+    'TRUE if the given value is an array<string, bool>.',
+  );
+  expect(php).toContain(
+    '@phpstan-assert-if-true array<string, bool> $value',
+  );
+}
+
+function usesANotAnForConsonant(): void {
+  const php = generateChecker('string', { verbosePhpdoc: true });
+  expect(php).toContain('Checks if the given value is a string.');
+  expect(php).toContain('TRUE if the given value is a string.');
+}
+
+function indentsVerbosePhpdocOnClassMethods(): void {
+  const php = generateChecker('int', {
+    verbosePhpdoc: true,
+    output: 'public_static',
+  });
+  expect(php).toMatch(/^\/\*\*$/mu);
+  expect(php).toContain(' * Provides type checker methods.');
+  expect(php).toMatch(/^class TypeChecker$/mu);
+  expect(php).toMatch(/^\s{4}\/\*\*$/mu);
+  expect(php).toMatch(/^\s{4} \* Checks if the given value is an int\.$/mu);
+  expect(php).toMatch(/^\s{4} \* @return bool$/mu);
+  expect(php).toMatch(/^\s{4} \* @phpstan-assert-if-true int \$value$/mu);
+}
+
+function mergesClassSummaryAndAliasesWhenVerbose(): void {
+  const php = generateChecker('/** @phpstan-type Foo int */', {
+    verbosePhpdoc: true,
+    output: 'public_static',
+    emitPhpstanTypeAliases: true,
+  });
+  expect(
+    php.startsWith(
+      '/**\n * Provides type checker methods.\n *\n * @phpstan-type Foo int\n */\nclass TypeChecker',
+    ),
+  ).toBe(true);
+  expect(php).not.toContain('*/\n\nclass TypeChecker');
+}
+
+function emitsAliasesAboveClassWithoutBlankLine(): void {
+  const php = generateChecker('/** @phpstan-type Foo int */', {
+    output: 'public_static',
+    emitPhpstanTypeAliases: true,
+  });
+  expect(
+    php.startsWith('/**\n * @phpstan-type Foo int\n */\nclass TypeChecker'),
+  ).toBe(true);
+  expect(php).not.toContain('*/\n\nclass TypeChecker');
+}
+
 describe('verbose PHPDoc', () => {
-  it('emits a one-line assert by default', () => {
-    const php = generateChecker('string');
-    expect(php.startsWith('/** @phpstan-assert-if-true string $value */')).toBe(
-      true,
-    );
-    expect(php).not.toContain('@return');
-  });
-
-  it('emits Drupal-style PHPDoc with a/an for function output', () => {
-    const php = generateChecker('array<string, bool>', { verbosePhpdoc: true });
-    expect(php).toContain(
-      'Checks if the given value is an array<string, bool>.',
-    );
-    expect(php).toContain('@param mixed $value');
-    expect(php).toContain('The value to check.');
-    expect(php).toContain('@return bool');
-    expect(php).toContain(
-      'TRUE if the given value is an array<string, bool>.',
-    );
-    expect(php).toContain(
-      '@phpstan-assert-if-true array<string, bool> $value',
-    );
-  });
-
-  it('uses a (not an) when the type starts with a consonant', () => {
-    const php = generateChecker('string', { verbosePhpdoc: true });
-    expect(php).toContain('Checks if the given value is a string.');
-    expect(php).toContain('TRUE if the given value is a string.');
-  });
-
-  it('indents verbose PHPDoc on class methods', () => {
-    const php = generateChecker('int', {
-      verbosePhpdoc: true,
-      output: 'public_static',
-    });
-    expect(php).toMatch(/^\s{4}\/\*\*$/mu);
-    expect(php).toMatch(/^\s{4} \* Checks if the given value is an int\.$/mu);
-    expect(php).toMatch(/^\s{4} \* @return bool$/mu);
-    expect(php).toMatch(/^\s{4} \* @phpstan-assert-if-true int \$value$/mu);
-  });
+  it('emits a one-line assert by default', emitsOneLineAssertByDefault);
+  it(
+    'emits Drupal-style PHPDoc with a/an for function output',
+    emitsDrupalStylePhpdocWithArticle,
+  );
+  it(
+    'uses a (not an) when the type starts with a consonant',
+    usesANotAnForConsonant,
+  );
+  it(
+    'indents verbose PHPDoc on class methods',
+    indentsVerbosePhpdocOnClassMethods,
+  );
+  it(
+    'puts class summary and aliases in one docblock when verbose',
+    mergesClassSummaryAndAliasesWhenVerbose,
+  );
+  it(
+    'emits aliases above class with no blank line when not verbose',
+    emitsAliasesAboveClassWithoutBlankLine,
+  );
 });

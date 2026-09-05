@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TypeNode } from './ast.ts';
+import { formatType } from './format.ts';
 import errorCases from './testdata/parser.errors.json';
 import successCases from './testdata/parser.success.json';
 import { parseType, parseTypes } from "./index.ts";
@@ -141,6 +142,70 @@ describe('parseType nullable ? prefix', () => {
   );
 });
 
+describe('parseType case-insensitivity', () => {
+  it.each(['TRue', 'TRUE', 'true'])('%s equals true keyword', (source) => {
+    expect(parseType(source)).toEqual({ kind: 'keyword', keyword: 'true' });
+    expect(formatType(parseType(source))).toBe('TRUE');
+  });
+
+  it.each(['STRING', 'string', 'String'])('%s equals string keyword', (source) => {
+    expect(parseType(source)).toEqual({ kind: 'keyword', keyword: 'string' });
+    expect(formatType(parseType(source))).toBe('string');
+  });
+
+  it('folds non-FALSY-string to non-falsy-string', foldsNonFalsyStringCase);
+  it('folds ARRAY{foo: int} shape keyword', foldsArrayShapeKeywordCase);
+  it('folds INT<MIN, MAX> range endpoints', foldsIntRangeEndpointsCase);
+  it('folds CALLABLE(): void', foldsCallableKeywordCase);
+  it(
+    'folds class-STRING generic name and keeps class spelling',
+    foldsClassStringGenericCase,
+  );
+  it('keeps class name spelling', keepsClassNameSpelling);
+  it('folds OPEN-RESOURCE pseudo-named type', foldsOpenResourcePseudoCase);
+});
+
+function foldsNonFalsyStringCase(): void {
+  expect(parseType('non-FALSY-string')).toEqual({
+    kind: 'keyword',
+    keyword: 'non-falsy-string',
+  });
+}
+
+function foldsArrayShapeKeywordCase(): void {
+  expect(parseType('ARRAY{foo: int}')).toEqual(parseType('array{foo: int}'));
+}
+
+function foldsIntRangeEndpointsCase(): void {
+  expect(parseType('INT<MIN, MAX>')).toEqual(parseType('int<min, max>'));
+}
+
+function foldsCallableKeywordCase(): void {
+  expect(parseType('CALLABLE(): void')).toEqual(parseType('callable(): void'));
+}
+
+function foldsClassStringGenericCase(): void {
+  expect(parseType('class-STRING<SomeClass>')).toEqual(
+    parseType('class-string<SomeClass>'),
+  );
+  expect(parseType('class-STRING<SomeClass>')).toEqual({
+    kind: 'generic',
+    name: 'class-string',
+    typeArgs: [{ kind: 'named', name: 'SomeClass' }],
+  });
+}
+
+function keepsClassNameSpelling(): void {
+  expect(parseType('SomeClass')).toEqual({ kind: 'named', name: 'SomeClass' });
+  expect(parseType('\\Foo\\Bar')).toEqual({ kind: 'named', name: '\\Foo\\Bar' });
+}
+
+function foldsOpenResourcePseudoCase(): void {
+  expect(parseType('OPEN-RESOURCE')).toEqual({
+    kind: 'named',
+    name: 'open-resource',
+  });
+}
 describe('parseType success', () => {
   it.each(parsedSuccessCases)('$source', ({ source, ast }) => {
     expect(parseType(source)).toEqual(ast);

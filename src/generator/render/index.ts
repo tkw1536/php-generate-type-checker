@@ -1,3 +1,4 @@
+import type { PhpstanTypeAlias } from '../../parser/phpstanTypeDocblock.ts';
 import type { CheckerIR } from '../ir/types.ts';
 import { DEFAULT_CHECKER_OUTPUT, type GenerateCheckerOptions } from '../options.ts';
 import {
@@ -11,6 +12,8 @@ import { renderProgramBody } from './php.ts';
 export type RenderOptions = GenerateCheckerOptions & {
   readonly entryDocType: string;
   readonly docsByName: Readonly<Record<string, string>>;
+  /** Aliases to attach on the class PHPDoc (class output only). */
+  readonly classPhpstanTypeAliases?: readonly PhpstanTypeAlias[];
 };
 
 export function render(ir: CheckerIR, options: RenderOptions): string {
@@ -23,6 +26,9 @@ class Renderer {
     const useSelfCalls = mode !== 'function';
     const helpers = collectHelpers(ir, options, useSelfCalls);
     const entrySpecs = collectEntries(ir, options, useSelfCalls);
+    const extras = {
+      phpstanTypeAliases: options.classPhpstanTypeAliases ?? [],
+    };
 
     if (entrySpecs.length === 0) {
       return '';
@@ -34,9 +40,15 @@ class Renderer {
         entry.body,
         { ...options, output: mode, mainFunctionName: entry.functionName },
         helpers,
+        extras,
       );
     }
-    return wrapMultipleEntries(entrySpecs, { ...options, output: mode }, helpers);
+    return wrapMultipleEntries(
+      entrySpecs,
+      { ...options, output: mode },
+      helpers,
+      extras,
+    );
   }
 }
 

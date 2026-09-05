@@ -20,13 +20,26 @@
   {
     "input": "array<string, bool>",
     "output": "public_static",
-    "expected": "class TypeChecker\n{\n    /**\n     * Checks if the given value is an array<string, bool>.\n     *\n     * @param mixed $value\n     *   The value to check.\n     *\n     * @return bool\n     *   TRUE if the given value is an array<string, bool>.\n     *\n     * @phpstan-assert-if-true array<string, bool> $value\n     */\n    public static function isArrayStringBool(mixed $value): bool\n    {\n        if (!is_array($value)) {\n            return FALSE;\n        }\n        foreach ($value as $var1 => $var0) {\n            if (\n                !is_string($var1) ||\n                !is_bool($var0)\n            ) {\n                return FALSE;\n            }\n        }\n        return TRUE;\n    }\n}\n",
+    "expected": "/**\n * Provides type checker methods.\n */\nclass TypeChecker\n{\n    /**\n     * Checks if the given value is an array<string, bool>.\n     *\n     * @param mixed $value\n     *   The value to check.\n     *\n     * @return bool\n     *   TRUE if the given value is an array<string, bool>.\n     *\n     * @phpstan-assert-if-true array<string, bool> $value\n     */\n    public static function isArrayStringBool(mixed $value): bool\n    {\n        if (!is_array($value)) {\n            return FALSE;\n        }\n        foreach ($value as $var1 => $var0) {\n            if (\n                !is_string($var1) ||\n                !is_bool($var0)\n            ) {\n                return FALSE;\n            }\n        }\n        return TRUE;\n    }\n}\n",
     "verbosePhpdoc": true
   },
   {
     "input": "/**\n * @phpstan-type PostSummary array{id: int, title: string}\n */",
     "output": "function",
     "expected": "/**\n * Checks if the given value is a PostSummary.\n *\n * @param mixed $value\n *   The value to check.\n *\n * @return bool\n *   TRUE if the given value is a PostSummary.\n *\n * @phpstan-assert-if-true PostSummary $value\n */\nfunction isPostSummary(mixed $value): bool\n{\n    return (is_array($value) && array_key_exists('id', $value) && array_key_exists('title', $value) && is_int($value['id']) && is_string($value['title']));\n}\n",
+    "verbosePhpdoc": true
+  },
+  {
+    "input": "/**\n * @phpstan-type PostSummary array{id: int, title: string}\n */",
+    "output": "public_static",
+    "expected": "/**\n * Provides type checker methods.\n */\nclass TypeChecker\n{\n    /**\n     * Checks if the given value is a PostSummary.\n     *\n     * @param mixed $value\n     *   The value to check.\n     *\n     * @return bool\n     *   TRUE if the given value is a PostSummary.\n     *\n     * @phpstan-assert-if-true PostSummary $value\n     */\n    public static function isPostSummary(mixed $value): bool\n    {\n        return (is_array($value) && array_key_exists('id', $value) && array_key_exists('title', $value) && is_int($value['id']) && is_string($value['title']));\n    }\n}\n",
+    "verbosePhpdoc": true
+  },
+  {
+    "input": "/**\n * @phpstan-type PostSummary array{id: int, title: string}\n */",
+    "output": "public_static",
+    "expected": "/**\n * Provides type checker methods.\n *\n * @phpstan-type PostSummary array{id: int, title: string}\n */\nclass TypeChecker\n{\n    /**\n     * Checks if the given value is a PostSummary.\n     *\n     * @param mixed $value\n     *   The value to check.\n     *\n     * @return bool\n     *   TRUE if the given value is a PostSummary.\n     *\n     * @phpstan-assert-if-true PostSummary $value\n     */\n    public static function isPostSummary(mixed $value): bool\n    {\n        return (is_array($value) && array_key_exists('id', $value) && array_key_exists('title', $value) && is_int($value['id']) && is_string($value['title']));\n    }\n}\n",
+    "emitPhpstanTypeAliases": true,
     "verbosePhpdoc": true
   }
 ]

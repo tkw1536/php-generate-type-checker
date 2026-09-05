@@ -1,3 +1,4 @@
+import type { PhpstanTypeAlias } from '../../parser/phpstanTypeDocblock.ts';
 import {
   DEFAULT_CHECKER_OUTPUT,
   type CheckerOutputMode,
@@ -5,6 +6,7 @@ import {
 } from '../options.ts';
 
 const CLASS_INDENT = '    ';
+const CLASS_SUMMARY = 'Provides type checker methods.';
 
 function indentEachLine(text: string, prefix: string): string {
   return text
@@ -45,6 +47,36 @@ function phpDocBlock(escapedType: string, verbose: boolean): string {
  */`;
 }
 
+function formatAliasLines(aliases: readonly PhpstanTypeAlias[]): string[] {
+  return aliases.map(
+    (alias) => ` * @phpstan-type ${alias.name} ${alias.typeString}`,
+  );
+}
+
+/**
+ * PHPDoc immediately above `class TypeChecker`.
+ * Verbose: class summary, optionally with `@phpstan-type` lines in the same block.
+ * Non-verbose + aliases: aliases-only block with no blank line before the class.
+ */
+function formatClassDocBlock(
+  verbose: boolean,
+  aliases: readonly PhpstanTypeAlias[],
+): string {
+  const aliasLines = formatAliasLines(aliases);
+  if (verbose) {
+    const lines = ['/**', ` * ${CLASS_SUMMARY}`];
+    if (aliasLines.length > 0) {
+      lines.push(' *', ...aliasLines);
+    }
+    lines.push(' */');
+    return `${lines.join('\n')}\n`;
+  }
+  if (aliasLines.length === 0) {
+    return '';
+  }
+  return `/**\n${aliasLines.join('\n')}\n */\n`;
+}
+
 function normalizeEndingNewline(s: string): string {
   return s.endsWith('\n') ? s : `${s}\n`;
 }
@@ -64,6 +96,10 @@ export type MethodRenderSpec = {
 export type EntryRenderSpec = MethodRenderSpec;
 
 export type HelperRenderSpec = MethodRenderSpec;
+
+export type ClassRenderExtras = {
+  readonly phpstanTypeAliases?: readonly PhpstanTypeAlias[];
+};
 
 /** One class method: PHPDoc and body indented once; visibility applied only here. */
 function formatClassStaticMethod(
@@ -103,11 +139,16 @@ ${spec.body}
 }`;
 }
 
-function formatClassTypeChecker(entryMethods: string, helperMethods: string): string {
+function formatClassTypeChecker(
+  entryMethods: string,
+  helperMethods: string,
+  verbose: boolean,
+  aliases: readonly PhpstanTypeAlias[],
+): string {
   const inner = helperMethods
     ? `${entryMethods}\n\n${helperMethods}`
     : entryMethods;
-  return `class TypeChecker
+  return `${formatClassDocBlock(verbose, aliases)}class TypeChecker
 {
 ${inner}
 }
@@ -119,6 +160,7 @@ function formatClassCheckerOutput(
   helpers: readonly HelperRenderSpec[],
   mode: CheckerOutputMode,
   verbose: boolean,
+  aliases: readonly PhpstanTypeAlias[],
 ): string {
   const entryMethod = formatClassStaticMethod(
     entry,
@@ -126,7 +168,7 @@ function formatClassCheckerOutput(
     verbose,
   );
   const helperMethods = formatClassHelpers(helpers, verbose);
-  return formatClassTypeChecker(entryMethod, helperMethods);
+  return formatClassTypeChecker(entryMethod, helperMethods, verbose, aliases);
 }
 
 function formatClassMultipleEntries(
@@ -134,13 +176,14 @@ function formatClassMultipleEntries(
   helpers: readonly HelperRenderSpec[],
   mode: CheckerOutputMode,
   verbose: boolean,
+  aliases: readonly PhpstanTypeAlias[],
 ): string {
   const visibility = visibilityForMode(mode);
   const entryMethods = entries
     .map((e) => formatClassStaticMethod(e, visibility, verbose))
     .join('\n\n');
   const helperMethods = formatClassHelpers(helpers, verbose);
-  return formatClassTypeChecker(entryMethods, helperMethods);
+  return formatClassTypeChecker(entryMethods, helperMethods, verbose, aliases);
 }
 
 /**
@@ -171,6 +214,7 @@ ${body}
     [],
     mode,
     verbose,
+    [],
   );
 }
 
@@ -178,9 +222,11 @@ export function wrapMultipleEntries(
   entries: readonly EntryRenderSpec[],
   options?: GenerateCheckerOptions,
   helpers: readonly HelperRenderSpec[] = [],
+  extras?: ClassRenderExtras,
 ): string {
   const mode = options?.output ?? DEFAULT_CHECKER_OUTPUT;
   const verbose = options?.verbosePhpdoc === true;
+  const aliases = extras?.phpstanTypeAliases ?? [];
   if (entries.length === 0) {
     return '';
   }
@@ -197,7 +243,7 @@ export function wrapMultipleEntries(
     return normalizeEndingNewline(withHelpers);
   }
   return normalizeEndingNewline(
-    formatClassMultipleEntries(entries, helpers, mode, verbose),
+    formatClassMultipleEntries(entries, helpers, mode, verbose, aliases),
   );
 }
 
@@ -206,10 +252,12 @@ export function wrapChecker(
   body: string,
   options?: GenerateCheckerOptions,
   helpers: readonly HelperRenderSpec[] = [],
+  extras?: ClassRenderExtras,
 ): string {
   const mode = options?.output ?? DEFAULT_CHECKER_OUTPUT;
   const mainFunctionName = options?.mainFunctionName ?? 'check';
   const verbose = options?.verbosePhpdoc === true;
+  const aliases = extras?.phpstanTypeAliases ?? [];
   if (mode === 'function') {
     const core = formatCheckerOutput(
       typeString,
@@ -230,6 +278,7 @@ export function wrapChecker(
       helpers,
       mode,
       verbose,
+      aliases,
     ),
   );
 }

@@ -42,4 +42,9 @@ describe('pseudo named types', () => {
     expect(isAllowedNamedType(name)).toBe(true);
     expect(isValidPhpClassName(name)).toBe(false);
   });
+
+  it('treats OPEN-RESOURCE as a pseudo named type', () => {
+    expect(isPseudoNamedType('OPEN-RESOURCE')).toBe(true);
+    expect(isAllowedNamedType('OPEN-RESOURCE')).toBe(true);
+  });
 });

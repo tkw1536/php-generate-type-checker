@@ -73,4 +73,19 @@ function treatsEveryPairAsUnequal(): void {
 
 describe('equals', () => {
   it('treats every pair in a large fixture set as unequal', treatsEveryPairAsUnequal);
+
+  it('treats instanceof class names as case-insensitive', () => {
+    expect(
+      equals(
+        instanceofExpr(refArg($v), 'Foo'),
+        instanceofExpr(refArg($v), 'foo'),
+      ),
+    ).toBe(true);
+    expect(
+      equals(
+        instanceofExpr(refArg($v), 'Foo\\Bar'),
+        instanceofExpr(refArg($v), 'foo\\bar'),
+      ),
+    ).toBe(true);
+  });
 });

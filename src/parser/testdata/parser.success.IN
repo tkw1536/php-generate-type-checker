@@ -16,7 +16,7 @@ object
 callable
 iterable
 mixed
-null
+NULL
 void
 resource
 never
@@ -26,8 +26,8 @@ scalar
 array-key
 
 # --- Boolean / null literals (keyword vs literal forms) ---
-true
-false
+TRUE
+FALSE
 
 # --- Built-in type aliases ---
 positive-int
@@ -90,7 +90,7 @@ enum-string<A|B>
 'baz'
 'hello world'
 'foo'|'bar'
-42|'foo'|true
+42|'foo'|TRUE
 
 # --- int ranges ---
 int<0, 100>
@@ -152,16 +152,16 @@ object{'a-minus': int, 'b-minus'?: string}
 
 # --- Unions ---
 int|string
-int|string|null
+int|string|NULL
 int|array<string, bool>
-false|null
-true|false
+FALSE|NULL
+TRUE|FALSE
 
 # --- Intersections ---
 Foo&Bar
 A&B&C
 A&B|C
-(array<string, int|null>|null)&Foo
+(array<string, int|NULL>|NULL)&Foo
 (int|string)&Foo
 
 # --- Callable signatures ---
@@ -171,6 +171,6 @@ callable(int, int=): string
 callable(int $a, string $b): bool
 callable(string &$bar): mixed
 callable(string &$x): void
-callable(float ...$floats): int|null
-callable(float...): int|null
+callable(float ...$floats): int|NULL
+callable(float...): int|NULL
 callable(int ...$rest): void

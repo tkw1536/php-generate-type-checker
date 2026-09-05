@@ -1,4 +1,4 @@
-import type { CallableParam, ShapeField, TypeNode } from './ast';
+import type { CallableParam, Keyword, ShapeField, TypeNode } from './ast';
 
 /**
  * Formats a TypeNode into a string.
@@ -12,10 +12,24 @@ export function formatType(type: TypeNode): string {
 
 type Precedence = 'union' | 'intersection' | 'primary';
 
+/** Constants uppercase; other builtins lowercase (already canonical on the AST). */
+function formatKeyword(keyword: Keyword): string {
+  if (keyword === 'true') {
+    return 'TRUE';
+  }
+  if (keyword === 'false') {
+    return 'FALSE';
+  }
+  if (keyword === 'null') {
+    return 'NULL';
+  }
+  return keyword;
+}
+
 function formatTypeInner(type: TypeNode, parent: Precedence): string {
   switch (type.kind) {
     case 'keyword':
-      return type.keyword;
+      return formatKeyword(type.keyword);
     case 'named':
       return type.name;
     case 'literal':

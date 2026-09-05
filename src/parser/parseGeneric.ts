@@ -1,7 +1,10 @@
 import type { TypeNode } from './ast.ts';
-import { isKeyword } from './ast.ts';
+import { canonicalKeyword } from './ast.ts';
 import { ParseError } from './parseError.ts';
-import { isAllowedNamedType } from './phpClassName.ts';
+import {
+  canonicalPseudoNamedType,
+  isAllowedNamedType,
+} from './phpClassName.ts';
 import type { TokenReader } from './tokenReader.ts';
 
 /** Host methods required to parse generics and int ranges. */
@@ -9,11 +12,32 @@ export type GenericParseHost = TokenReader & {
   readonly parseUnion: () => TypeNode;
 };
 
+type CollectionKeyword =
+  | 'list'
+  | 'non-empty-list'
+  | 'array'
+  | 'non-empty-array'
+  | 'iterable'
+  | 'non-empty-iterable';
+
+function isCollectionKeyword(name: string): name is CollectionKeyword {
+  return (
+    name === 'array' ||
+    name === 'non-empty-array' ||
+    name === 'iterable' ||
+    name === 'non-empty-iterable' ||
+    name === 'list' ||
+    name === 'non-empty-list'
+  );
+}
+
 export function parseGeneric(host: GenericParseHost, name: string): TypeNode {
   host.expect('lt');
 
-  if (name === 'int' || name === 'integer') {
-    const node = parseIntRangeGenericBody(host, name);
+  const keyword = canonicalKeyword(name);
+
+  if (keyword === 'int' || keyword === 'integer') {
+    const node = parseIntRangeGenericBody(host, keyword);
     host.expect('gt');
     return node;
   }
@@ -28,18 +52,13 @@ export function parseGeneric(host: GenericParseHost, name: string): TypeNode {
 
   host.expect('gt');
 
-  if (
-    name === 'array' ||
-    name === 'non-empty-array' ||
-    name === 'iterable' ||
-    name === 'non-empty-iterable' ||
-    name === 'list' ||
-    name === 'non-empty-list'
-  ) {
-    return genericCollectionToNode(typeArgs, name);
+  if (keyword !== null && isCollectionKeyword(keyword)) {
+    return genericCollectionToNode(typeArgs, keyword);
   }
 
-  return { kind: 'generic', name, typeArgs };
+  // Builtin generics (e.g. class-string<T>) use the canonical lowercase name;
+  // user-defined generics keep the input spelling.
+  return { kind: 'generic', name: keyword ?? name, typeArgs };
 }
 
 /** `int<lower, upper>` / `integer<…>`: bounds are integer literals or `min` / `max` for open sides. */
@@ -76,10 +95,11 @@ function parseIntRangeEndpoint(
     throw new ParseError('Expected integer literal or min/max', host.peek().pos);
   }
   const id = host.advance().value;
-  if (side === 'lower' && id === 'min') {
+  const idLower = id.toLowerCase();
+  if (side === 'lower' && idLower === 'min') {
     return { kind: 'open' };
   }
-  if (side === 'upper' && id === 'max') {
+  if (side === 'upper' && idLower === 'max') {
     return { kind: 'open' };
   }
   throw new ParseError(
@@ -127,11 +147,13 @@ function genericCollectionToNode(
 }
 
 export function identifierToNode(name: string, pos: number): TypeNode {
-  if (name === 'null') {
-    return { kind: 'keyword', keyword: 'null' };
+  const keyword = canonicalKeyword(name);
+  if (keyword !== null) {
+    return { kind: 'keyword', keyword };
   }
-  if (isKeyword(name)) {
-    return { kind: 'keyword', keyword: name };
+  const pseudo = canonicalPseudoNamedType(name);
+  if (pseudo !== null) {
+    return { kind: 'named', name: pseudo };
   }
   if (!isAllowedNamedType(name)) {
     throw new ParseError(`Invalid PHP class name: "${name}"`, pos);

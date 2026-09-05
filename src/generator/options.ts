@@ -17,8 +17,9 @@ export interface GenerateCheckerOptions {
    */
   readonly prioritizeReadabilityOverCompactness?: boolean;
   /**
-   * When `true`, emit a multi-line Drupal-style PHPDoc (summary, `@param`, `@return`,
-   * `@phpstan-assert-if-true`). When `false` (default), emit a one-line assert comment.
+   * When `true`, emit a multi-line Drupal-style PHPDoc (method summary, `@param`,
+   * `@return`, `@phpstan-assert-if-true`; for class output also a class summary).
+   * When `false` (default), emit a one-line assert comment.
    */
   readonly verbosePhpdoc?: boolean;
 }

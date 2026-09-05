@@ -1,4 +1,4 @@
-# Verbose PHPDoc golden cases. Headers: output, verbosePhpdoc.
+# Verbose PHPDoc golden cases. Headers: output, verbosePhpdoc, emitAliases.
 # verbosePhpdoc: 1
 array<string, bool>
 ---
@@ -13,6 +13,19 @@ int
 array<string, bool>
 ---
 # verbosePhpdoc: 1
+/**
+ * @phpstan-type PostSummary array{id: int, title: string}
+ */
+---
+# output: public_static
+# verbosePhpdoc: 1
+/**
+ * @phpstan-type PostSummary array{id: int, title: string}
+ */
+---
+# output: public_static
+# verbosePhpdoc: 1
+# emitAliases: 1
 /**
  * @phpstan-type PostSummary array{id: int, title: string}
  */

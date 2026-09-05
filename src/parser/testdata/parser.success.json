@@ -98,7 +98,7 @@
     }
   },
   {
-    "source": "null",
+    "source": "NULL",
     "ast": {
       "kind": "keyword",
       "keyword": "null"
@@ -154,14 +154,14 @@
     }
   },
   {
-    "source": "true",
+    "source": "TRUE",
     "ast": {
       "kind": "keyword",
       "keyword": "true"
     }
   },
   {
-    "source": "false",
+    "source": "FALSE",
     "ast": {
       "kind": "keyword",
       "keyword": "false"
@@ -653,7 +653,7 @@
     }
   },
   {
-    "source": "42|'foo'|true",
+    "source": "42|'foo'|TRUE",
     "ast": {
       "kind": "union",
       "types": [
@@ -1339,7 +1339,7 @@
     }
   },
   {
-    "source": "int|string|null",
+    "source": "int|string|NULL",
     "ast": {
       "kind": "union",
       "types": [
@@ -1383,7 +1383,7 @@
     }
   },
   {
-    "source": "false|null",
+    "source": "FALSE|NULL",
     "ast": {
       "kind": "union",
       "types": [
@@ -1399,7 +1399,7 @@
     }
   },
   {
-    "source": "true|false",
+    "source": "TRUE|FALSE",
     "ast": {
       "kind": "union",
       "types": [
@@ -1476,7 +1476,7 @@
     }
   },
   {
-    "source": "(array<string, int|null>|null)&Foo",
+    "source": "(array<string, int|NULL>|NULL)&Foo",
     "ast": {
       "kind": "intersection",
       "types": [
@@ -1702,7 +1702,7 @@
     }
   },
   {
-    "source": "callable(float ...$floats): int|null",
+    "source": "callable(float ...$floats): int|NULL",
     "ast": {
       "kind": "callable",
       "signature": {
@@ -1735,7 +1735,7 @@
     }
   },
   {
-    "source": "callable(float...): int|null",
+    "source": "callable(float...): int|NULL",
     "ast": {
       "kind": "callable",
       "signature": {

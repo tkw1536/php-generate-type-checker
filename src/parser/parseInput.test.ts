@@ -31,6 +31,36 @@ int`);
   expect(entries[1].functionName).toBe('isInt_2');
 }
 
+function disambiguatesCaseCollidingAliasFunctionNames(): void {
+  const entries = parseCheckerInput(`/**
+ * @phpstan-type FOO int
+ * @phpstan-type foo string
+ */`);
+  expect(entries.map((e) => e.aliasName)).toEqual(['FOO', 'foo']);
+  expect(entries[0].functionName).toBe('isFOO');
+  expect(entries[1].functionName).toBe('isFoo_2');
+}
+
+function keepsAliasReferencesCaseSensitive(): void {
+  const entries = parseCheckerInput(`/**
+ * @phpstan-type Test int
+ */
+test TEST`);
+  expect(entries).toHaveLength(3);
+  expect(entries[0].aliasName).toBe('Test');
+  expect(entries[1].ast).toEqual({ kind: 'named', name: 'test' });
+  expect(entries[2].ast).toEqual({ kind: 'named', name: 'TEST' });
+
+  const resolved = parseCheckerInput(
+    `/**
+ * @phpstan-type Test int
+ */
+Test`,
+    { resolveAliases: true },
+  );
+  expect(resolved[1].ast).toEqual({ kind: 'keyword', keyword: 'int' });
+}
+
 function rethrowsDocblockTypeParseErrorsAtAbsolutePositions(): void {
   const source = `array<int>
 array<string|int>
@@ -53,6 +83,14 @@ describe('parseCheckerInput', () => {
   it(
     'disambiguates colliding proposed names with a counter',
     disambiguatesCollidingProposedNames,
+  );
+  it(
+    'disambiguates case-colliding alias function names',
+    disambiguatesCaseCollidingAliasFunctionNames,
+  );
+  it(
+    'keeps @phpstan-type alias references case-sensitive',
+    keepsAliasReferencesCaseSensitive,
   );
   it(
     'rethrows docblock type parse errors at absolute input positions',

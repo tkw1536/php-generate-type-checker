@@ -24,9 +24,18 @@ export function isValidPhpClassName(name: string): boolean {
   return segments.every((segment) => PHP_IDENTIFIER.test(segment));
 }
 
+/**
+ * Canonical lowercase spelling for a known pseudo-named type, or `null`.
+ * Case-insensitive: `OPEN-RESOURCE` → `open-resource`.
+ */
+export function canonicalPseudoNamedType(name: string): string | null {
+  const lower = name.toLowerCase();
+  return PSEUDO_NAMED_TYPES.has(lower) ? lower : null;
+}
+
 /** Named types that may contain characters illegal in PHP class names (codegen special-cases). */
 export function isPseudoNamedType(name: string): boolean {
-  return PSEUDO_NAMED_TYPES.has(name);
+  return canonicalPseudoNamedType(name) !== null;
 }
 
 /** True if a named type node may keep this identifier (valid class or known pseudo-type). */

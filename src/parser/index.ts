@@ -1,4 +1,5 @@
 import type { TypeNode } from './ast.ts';
+import { canonicalKeyword } from './ast.ts';
 import { LexerError, tokenize } from './lexer.ts';
 import { ParseError } from './parseError.ts';
 import { parseCallable } from './parseCallable.ts';
@@ -128,17 +129,18 @@ class Parser extends TokenCursor {
 
   private parseIdentifierPrimary(): TypeNode {
     const name = this.previousAfterAdvance();
+    const keyword = canonicalKeyword(name);
 
-    if (name === 'array' && this.check('lbrace')) {
+    if (keyword === 'array' && this.check('lbrace')) {
       return parseArrayShape(this);
     }
-    if (name === 'object' && this.check('lbrace')) {
+    if (keyword === 'object' && this.check('lbrace')) {
       return parseObjectShape(this);
     }
-    if (name === 'list' && this.check('lbrace')) {
+    if (keyword === 'list' && this.check('lbrace')) {
       return parseListShape(this);
     }
-    if (name === 'callable' && this.check('lparen')) {
+    if (keyword === 'callable' && this.check('lparen')) {
       return parseCallable(this);
     }
     if (this.check('lt')) {

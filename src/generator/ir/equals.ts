@@ -37,7 +37,7 @@ export function equals(a: Expr, b: Expr): boolean {
     case 'instanceof':
       return (
         b.kind === 'instanceof' &&
-        a.className === b.className &&
+        a.className.toLowerCase() === b.className.toLowerCase() &&
         argEquals(a.subject, b.subject)
       );
     case 'call_checker':

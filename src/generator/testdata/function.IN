@@ -28,6 +28,13 @@ array-key
 true
 false
 
+# --- Case-insensitive builtins (same as lowercase) ---
+TRue
+STRING
+non-FALSY-string
+ARRAY<string>
+class-STRING<SomeClass>
+
 # --- Built-in type aliases ---
 positive-int
 negative-int
