@@ -25,8 +25,6 @@ setupCopyButton();
 const typeInput = document.querySelector<HTMLTextAreaElement>('#type-input')!;
 const outputModeSelect =
   document.querySelector<HTMLSelectElement>('#generate-output-mode')!;
-const nameByTypeCheckbox =
-  document.querySelector<HTMLInputElement>('#generate-name-by-type')!;
 const prioritizeReadabilityCheckbox = document.querySelector<HTMLInputElement>(
   '#generate-prioritize-readability',
 )!;
@@ -41,7 +39,6 @@ const resolveAliasesCheckbox = document.querySelector<HTMLInputElement>(
 
 typeInput.addEventListener('input', onGenerateInputChanged);
 outputModeSelect.addEventListener('change', generateNow);
-nameByTypeCheckbox.addEventListener('change', generateNow);
 prioritizeReadabilityCheckbox.addEventListener('change', generateNow);
 verbosePhpdocCheckbox.addEventListener('change', generateNow);
 emitAliasesCheckbox.addEventListener('change', generateNow);

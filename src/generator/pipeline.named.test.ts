@@ -78,18 +78,6 @@ function doesNotPrependAliasesWhenEmitFalse(): void {
   );
 }
 
-function buildEntriesUsesSequentialCheckNames(): void {
-  const entries = parseCheckerInput(
-    `/**
- * @phpstan-type Foo int
- * @phpstan-type Bar string
- */`,
-    { nameFunctionsByType: false },
-  );
-  const { ir } = buildEntries(entries, { nameFunctionsByType: false });
-  expect(ir.entries).toEqual(['check', 'check_1']);
-}
-
 describe('pipeline buildEntries', () => {
   it(
     'buildEntries delegates to entry checkers for alias cross-references',
@@ -106,9 +94,5 @@ describe('pipeline buildEntries', () => {
   it(
     'does not prepend aliases when emitPhpstanTypeAliases is false',
     doesNotPrependAliasesWhenEmitFalse,
-  );
-  it(
-    'buildEntries uses sequential check names when nameFunctionsByType is false',
-    buildEntriesUsesSequentialCheckNames,
   );
 });

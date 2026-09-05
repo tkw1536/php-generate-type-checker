@@ -6,7 +6,6 @@ import {
 } from './fragmentState.ts';
 
 const sample: AppFragmentState = {
-  nameFromType: true,
   optimize: false,
   verbosePhpdoc: true,
   emit: 'public_static',
@@ -18,13 +17,13 @@ const sample: AppFragmentState = {
 describe('fragmentState', () => {
   it('round-trips via URLSearchParams encoding', () => {
     const encoded = encodeFragmentState(sample);
-    expect(encoded).toContain('name=1');
     expect(encoded).toContain('optimize=0');
     expect(encoded).toContain('verbose=1');
     expect(encoded).toContain('emit=public_static');
     expect(encoded).toContain('aliases=1');
     expect(encoded).toContain('resolve=0');
     expect(encoded).toContain('input=array%7Bx%3A+list%3Cstring%3E%7D');
+    expect(encoded).not.toContain('name=');
 
     expect(decodeFragmentState(`#${encoded}`)).toEqual(sample);
   });
@@ -49,9 +48,15 @@ describe('fragmentState', () => {
     });
   });
 
+  it('ignores legacy name fragment param', () => {
+    expect(decodeFragmentState('#input=int&name=0')).toEqual({
+      input: 'int',
+    });
+  });
+
   it('keeps short PHPDoc when verbose is absent from the hash', () => {
-    expect(decodeFragmentState('#input=int&name=1')).toEqual({
-      nameFromType: true,
+    expect(decodeFragmentState('#input=int&optimize=1')).toEqual({
+      optimize: true,
       input: 'int',
     });
   });

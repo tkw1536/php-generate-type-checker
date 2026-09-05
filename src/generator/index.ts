@@ -19,7 +19,6 @@ export function generateChecker(
 ): string {
   const entries = parseCheckerInput(typeString, {
     resolveAliases: options?.resolveAliases,
-    nameFunctionsByType: options?.nameFunctionsByType,
   });
   const {
     ir: built,

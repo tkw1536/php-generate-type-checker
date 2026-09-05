@@ -17,9 +17,9 @@
           class="option-help site-help"
           aria-label="Help: About this tool"
           aria-describedby="help-about-tool"
-          data-tooltip="Left: paste a PHPDoc block with @phpstan-type aliases (one or more comments), or plain PHPStan type expressions for convenience. Each alias or plain type becomes a checker. Options under the input control naming, optimization, alias handling, and PHP shape — hover each ? for details. Right: tabs follow the pipeline Type AST → IR (build) → IR (optimized) → PHP Code; output updates as you edit. Some types cannot be checked at runtime (for example callable signatures or unhandled generics) and report a generation error."
+          data-tooltip="Left: paste a PHPDoc block with @phpstan-type aliases (one or more comments), or plain PHPStan type expressions for convenience. Each alias or plain type becomes a checker. Options under the input control optimization, alias handling, and PHP shape — hover each ? for details. Right: tabs follow the pipeline Type AST → IR (build) → IR (optimized) → PHP Code; output updates as you edit. Some types cannot be checked at runtime (for example callable signatures or unhandled generics) and report a generation error."
         >?</button>
-        <span id="help-about-tool" class="visually-hidden">Left: paste a PHPDoc block with @phpstan-type aliases (one or more comments), or plain PHPStan type expressions for convenience. Each alias or plain type becomes a checker. Options under the input control naming, optimization, alias handling, and PHP shape — hover each ? for details. Right: tabs follow the pipeline Type AST → IR (build) → IR (optimized) → PHP Code; output updates as you edit. Some types cannot be checked at runtime (for example callable signatures or unhandled generics) and report a generation error.</span>
+        <span id="help-about-tool" class="visually-hidden">Left: paste a PHPDoc block with @phpstan-type aliases (one or more comments), or plain PHPStan type expressions for convenience. Each alias or plain type becomes a checker. Options under the input control optimization, alias handling, and PHP shape — hover each ? for details. Right: tabs follow the pipeline Type AST → IR (build) → IR (optimized) → PHP Code; output updates as you edit. Some types cannot be checked at runtime (for example callable signatures or unhandled generics) and report a generation error.</span>
       </div>
       <button id="theme-toggle" type="button" class="btn btn-theme" aria-label="Switch to dark mode" title="Dark mode">☾</button>
     </header>
@@ -38,24 +38,6 @@
           </div>
           <div class="panel-footer panel-footer--generate">
             <div class="panel-footer-options">
-              <div class="panel-footer-option-row">
-                <label class="panel-footer-option" for="generate-name-by-type">
-                  <input
-                    type="checkbox"
-                    id="generate-name-by-type"
-                    checked
-                  >
-                  <span>Name from type</span>
-                </label>
-                <button
-                  type="button"
-                  class="option-help"
-                  aria-label="Help: Name from type"
-                  aria-describedby="help-name-from-type"
-                  data-tooltip="When on, checkers are named from the type (e.g. isPostListResponse). When off, they use check / check_1 / …."
-                >?</button>
-                <span id="help-name-from-type" class="visually-hidden">When on, checkers are named from the type (e.g. isPostListResponse). When off, they use check / check_1 / ….</span>
-              </div>
               <div class="panel-footer-option-row">
                 <label class="panel-footer-option" for="generate-verbose-phpdoc">
                   <input

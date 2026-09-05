@@ -70,7 +70,6 @@ export function runGenerate(panels: OutputPanelSet): void {
   try {
     entries = parseCheckerInput(typeString, {
       resolveAliases: getResolveAliases(),
-      nameFunctionsByType: genOpts.nameFunctionsByType,
     });
     syncDocblockOptions(hasPhpstanTypeAliases(entries));
     panels.ast.setSuccess(

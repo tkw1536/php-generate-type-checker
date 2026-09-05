@@ -39,7 +39,6 @@ async function bootsWithDefaultTypeAndPhp(): Promise<void> {
 
 async function restoresControlsFromUrlFragment(): Promise<void> {
   const fragment = encodeFragmentState({
-    nameFromType: false,
     optimize: true,
     verbosePhpdoc: true,
     emit: 'public_static',
@@ -51,9 +50,6 @@ async function restoresControlsFromUrlFragment(): Promise<void> {
   await bootApp({ hash: `#${fragment}` });
 
   expect(typeInput().value).toBe('int');
-  expect(
-    document.querySelector<HTMLInputElement>('#generate-name-by-type')!.checked,
-  ).toBe(false);
   expect(
     document.querySelector<HTMLInputElement>(
       '#generate-prioritize-readability',
@@ -69,7 +65,7 @@ async function restoresControlsFromUrlFragment(): Promise<void> {
 
   const php = phpCodeText();
   expect(php).toContain('public static function');
-  expect(php).toMatch(/function check\b/u);
+  expect(php).toMatch(/function isInt\b/u);
   expect(php).toContain('Checks if the given value is an int.');
   expect(php).toContain('@return bool');
 }
@@ -136,13 +132,6 @@ async function debouncesInputThenUpdatesPhpAndHash(): Promise<void> {
 async function updatesPhpWhenOptionsChange(): Promise<void> {
   await bootApp();
 
-  const nameByType = document.querySelector<HTMLInputElement>(
-    '#generate-name-by-type',
-  )!;
-  nameByType.checked = false;
-  nameByType.dispatchEvent(new Event('change', { bubbles: true }));
-  expect(phpCodeText()).toMatch(/function check\b/u);
-
   const optimize = document.querySelector<HTMLInputElement>(
     '#generate-prioritize-readability',
   )!;
@@ -190,7 +179,7 @@ describe('app UI boot', () => {
     debouncesInputThenUpdatesPhpAndHash,
   );
   it(
-    'updates PHP when naming, optimize, verbose PHPDoc, and emit options change',
+    'updates PHP when optimize, verbose PHPDoc, and emit options change',
     updatesPhpWhenOptionsChange,
   );
 });

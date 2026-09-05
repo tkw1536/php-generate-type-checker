@@ -7,13 +7,8 @@ export type CheckerOutputMode =
 export interface GenerateCheckerOptions {
   readonly output?: CheckerOutputMode;
   /**
-   * When `true` (default), emit `is{Type}` helper names and a type-based entry function.
-   * When `false`, use legacy `check` / `check_N`.
-   */
-  readonly nameFunctionsByType?: boolean;
-  /**
-   * Name of the emitted entry function or static method. Usually set together with
-   * {@link emitBody}; defaults to `check` when using legacy naming.
+   * Name of the emitted entry function or static method.
+   * Defaults to `check` when not provided by the caller.
    */
   readonly mainFunctionName?: string;
   /**

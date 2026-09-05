@@ -2,16 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { parseType, parseTypes } from '../parser/index.ts';
 import { buildMany, optimize, renderChecker } from './pipeline.ts';
 
-function namesEntryFromTypeWhenDefault(): void {
+function namesEntryFromType(): void {
   const ast = parseType('int');
   const { ir } = buildMany([ast]);
   expect(ir.entries[0]).toBe('isInt');
-}
-
-function usesCheckEntryWhenNameFunctionsByTypeFalse(): void {
-  const ast = parseType('int');
-  const { ir } = buildMany([ast], { nameFunctionsByType: false });
-  expect(ir.entries[0]).toBe('check');
 }
 
 function buildManyEmitsTwoEntryCheckers(): void {
@@ -165,14 +159,7 @@ function objectShapeAndClassDropsRedundantIsObject(): void {
 }
 
 describe('pipeline build + render', () => {
-  it(
-    'names entry from type when nameFunctionsByType is default',
-    namesEntryFromTypeWhenDefault,
-  );
-  it(
-    'uses check entry when nameFunctionsByType is false',
-    usesCheckEntryWhenNameFunctionsByTypeFalse,
-  );
+  it('names entry from type', namesEntryFromType);
   it(
     'buildMany emits two entry checkers for array<string>array<int>',
     buildManyEmitsTwoEntryCheckers,

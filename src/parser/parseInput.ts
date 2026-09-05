@@ -26,11 +26,6 @@ export type ParsedCheckerEntry = {
 export type ParseCheckerInputOptions = {
   /** When true, inline alias cross-references into each body. Default: false. */
   readonly resolveAliases?: boolean;
-  /**
-   * When `true` (default), use `is{Type}` / alias-based entry names.
-   * When `false`, use `check` / `check_N`.
-   */
-  readonly nameFunctionsByType?: boolean;
 };
 
 /**
@@ -51,7 +46,6 @@ export function parseCheckerInput(
       typeString: entry.typeString,
       ast: asts[index],
     })),
-    { nameFunctionsByType: options?.nameFunctionsByType },
   );
 
   return extracted.map((entry, index) => ({

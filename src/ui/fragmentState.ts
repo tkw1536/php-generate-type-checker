@@ -1,7 +1,6 @@
 import type { CheckerOutputMode } from '../generator/options.ts';
 
 export interface AppFragmentState {
-  readonly nameFromType: boolean;
   readonly optimize: boolean;
   readonly verbosePhpdoc: boolean;
   readonly emit: CheckerOutputMode;
@@ -44,7 +43,6 @@ function parseEmitParam(value: string | null): CheckerOutputMode | undefined {
 /** Query-string-style payload for the URL fragment (no leading `#`). */
 export function encodeFragmentState(state: AppFragmentState): string {
   const params = new URLSearchParams();
-  params.set('name', state.nameFromType ? '1' : '0');
   params.set('optimize', state.optimize ? '1' : '0');
   params.set('verbose', state.verbosePhpdoc ? '1' : '0');
   params.set('emit', state.emit);
@@ -64,7 +62,6 @@ export function decodeFragmentState(
 
   const params = new URLSearchParams(raw);
   const parsed = {
-    nameFromType: parseBoolParam(params.get('name')),
     optimize: parseBoolParam(params.get('optimize')),
     verbosePhpdoc: parseBoolParam(params.get('verbose')),
     emit: parseEmitParam(params.get('emit')),
@@ -74,7 +71,6 @@ export function decodeFragmentState(
   };
 
   if (
-    parsed.nameFromType === undefined &&
     parsed.optimize === undefined &&
     parsed.verbosePhpdoc === undefined &&
     parsed.emit === undefined &&
@@ -89,7 +85,6 @@ export function decodeFragmentState(
 }
 
 function buildPartialFragmentState(parsed: {
-  readonly nameFromType: boolean | undefined;
   readonly optimize: boolean | undefined;
   readonly verbosePhpdoc: boolean | undefined;
   readonly emit: CheckerOutputMode | undefined;
@@ -98,7 +93,6 @@ function buildPartialFragmentState(parsed: {
   readonly input: string | null;
 }): Readonly<Partial<AppFragmentState>> {
   const state: {
-    nameFromType?: boolean;
     optimize?: boolean;
     verbosePhpdoc?: boolean;
     emit?: CheckerOutputMode;
@@ -106,9 +100,6 @@ function buildPartialFragmentState(parsed: {
     resolveAliases?: boolean;
     input?: string;
   } = {};
-  if (parsed.nameFromType !== undefined) {
-    state.nameFromType = parsed.nameFromType;
-  }
   if (parsed.optimize !== undefined) {
     state.optimize = parsed.optimize;
   }

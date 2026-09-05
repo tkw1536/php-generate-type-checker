@@ -18,12 +18,6 @@ export {
   type InputTypeEntry,
 } from './extractInput.ts';
 export {
-  aliasToIsName,
-  allocateUniqueName,
-  assignEntryNames,
-  proposeIsStyleName,
-} from './entryNames.ts';
-export {
   hasPhpstanTypeAliases,
   parseCheckerInput,
   type ParsedCheckerEntry,

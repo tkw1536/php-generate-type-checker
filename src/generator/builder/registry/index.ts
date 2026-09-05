@@ -1,31 +1,21 @@
 import type { TypeNode } from '../../../parser/ast.ts';
 import { allocateUniqueName } from '../../../parser/entryNames.ts';
+import { FunctionNameProposer } from '../../../parser/functionNameProposer.ts';
 import { formatType } from '../../../parser/format.ts';
-import {
-  type FunctionNameProposer,
-  IsStyleFunctionNameProposer,
-  SequentialCheckNameProposer,
-} from './proposer.ts';
 
 export function createFunctionNameRegistry(options?: {
-  readonly nameFunctionsByType?: boolean;
   readonly reservedNames?: readonly string[];
 }): FunctionNameRegistry {
   const reserved = options?.reservedNames ?? [];
-  const proposer =
-    options?.nameFunctionsByType === false
-      ? new SequentialCheckNameProposer()
-      : new IsStyleFunctionNameProposer();
-  return new FunctionNameRegistry(proposer, reserved);
+  return new FunctionNameRegistry(reserved);
 }
 
 export class FunctionNameRegistry {
   private readonly assigned = new Map<string, string>();
   private readonly used = new Set<string>();
-  private readonly proposer: FunctionNameProposer;
+  private readonly proposer = new FunctionNameProposer();
 
-  constructor(proposer: FunctionNameProposer, reservedNames: Iterable<string> = []) {
-    this.proposer = proposer;
+  constructor(reservedNames: Iterable<string> = []) {
     for (const r of reservedNames) {
       this.used.add(r);
     }
@@ -53,7 +43,7 @@ export class FunctionNameRegistry {
     this.used.add(name);
   }
 
-  /** Assign an explicit name for a type (e.g. entry `check`). Idempotent when unchanged. */
+  /** Assign an explicit name for a type (e.g. an entry checker). Idempotent when unchanged. */
   set(type: TypeNode, fnName: string): void {
     const key = FunctionNameRegistry.key(type);
     const existing = this.assigned.get(key);

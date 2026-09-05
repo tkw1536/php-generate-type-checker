@@ -50,9 +50,7 @@ export function buildEntries(
   if (entries.length === 0) {
     throw new GenerationError('No types to build');
   }
-  const nameByType = options?.nameFunctionsByType !== false;
   const registry = createFunctionNameRegistry({
-    nameFunctionsByType: nameByType,
     reservedNames: options?.reservedNames ?? [],
   });
   const aliasCheckerByName = registerAliasCheckers(entries, registry);
@@ -138,9 +136,7 @@ export function buildMany(
   if (types.length === 0) {
     throw new GenerationError('No types to build');
   }
-  const nameByType = options?.nameFunctionsByType !== false;
   const registry = createFunctionNameRegistry({
-    nameFunctionsByType: nameByType,
     reservedNames: options?.reservedNames ?? [],
   });
   const builder = new Builder(registry);

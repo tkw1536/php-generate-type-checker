@@ -31,13 +31,6 @@ int`);
   expect(entries[1].functionName).toBe('isInt_2');
 }
 
-function usesSequentialCheckNamesWhenDisabled(): void {
-  const entries = parseCheckerInput('int string', {
-    nameFunctionsByType: false,
-  });
-  expect(entries.map((e) => e.functionName)).toEqual(['check', 'check_1']);
-}
-
 function rethrowsDocblockTypeParseErrorsAtAbsolutePositions(): void {
   const source = `array<int>
 array<string|int>
@@ -60,10 +53,6 @@ describe('parseCheckerInput', () => {
   it(
     'disambiguates colliding proposed names with a counter',
     disambiguatesCollidingProposedNames,
-  );
-  it(
-    'uses sequential check names when nameFunctionsByType is false',
-    usesSequentialCheckNamesWhenDisabled,
   );
   it(
     'rethrows docblock type parse errors at absolute input positions',

@@ -27,11 +27,6 @@ export function getTypeInput(): string {
   return input.value.trim() || DEFAULT_TYPE;
 }
 
-export function getNameFunctionsByType(): boolean {
-  const el = document.querySelector<HTMLInputElement>('#generate-name-by-type');
-  return el?.checked !== false;
-}
-
 export function getOptimize(): boolean {
   const el = document.querySelector<HTMLInputElement>(
     '#generate-prioritize-readability',
@@ -66,7 +61,6 @@ export function wouldRunOptimizer(): boolean {
 
 export function readUiFragmentState(): AppFragmentState {
   return {
-    nameFromType: getNameFunctionsByType(),
     optimize: getOptimize(),
     verbosePhpdoc: getVerbosePhpdoc(),
     emit: getGenerateOutputMode(),
@@ -79,10 +73,6 @@ export function readUiFragmentState(): AppFragmentState {
 export function applyFragmentState(
   fragment: Readonly<Partial<AppFragmentState>>,
 ): void {
-  if (fragment.nameFromType !== undefined) {
-    document.querySelector<HTMLInputElement>('#generate-name-by-type')!.checked =
-      fragment.nameFromType;
-  }
   if (fragment.optimize !== undefined) {
     document.querySelector<HTMLInputElement>(
       '#generate-prioritize-readability',
@@ -118,13 +108,11 @@ export function syncFragmentToLocation(): void {
 
 export function getGenerateOptions(): {
   readonly output: CheckerOutputMode;
-  readonly nameFunctionsByType: boolean;
   readonly prioritizeReadabilityOverCompactness: boolean;
   readonly verbosePhpdoc: boolean;
 } {
   return {
     output: getGenerateOutputMode(),
-    nameFunctionsByType: getNameFunctionsByType(),
     prioritizeReadabilityOverCompactness:
       getPrioritizeReadabilityOverCompactness(),
     verbosePhpdoc: getVerbosePhpdoc(),
