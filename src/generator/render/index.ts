@@ -1,7 +1,6 @@
 import type { CheckerIR } from '../ir/types.ts';
-import type { GenerateCheckerOptions } from '../options.ts';
+import { DEFAULT_CHECKER_OUTPUT, type GenerateCheckerOptions } from '../options.ts';
 import {
-  DEFAULT_CHECKER_OUTPUT,
   wrapChecker,
   wrapMultipleEntries,
   type EntryRenderSpec,

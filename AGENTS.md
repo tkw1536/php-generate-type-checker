@@ -42,7 +42,7 @@ import { describe, expect, it } from 'vitest';
 import { generateChecker } from './index.ts';
 ```
 
-Linting is [Oxlint](https://oxc.rs/docs/guide/usage/linter.html) with type-aware TypeScript checks: stock category presets for high-signal correctness (plus a bit of strictness), not a hand-tuned rule list. Exact settings live in [`.oxlintrc.json`](.oxlintrc.json); what each stock rule means is in the [Oxlint rules reference](https://oxc.rs/docs/guide/usage/linter/rules.html). Project-specific rules live under [`oxlint-plugins/`](oxlint-plugins/) (currently `local/no-reexport`, which forbids `export … from` / `export * from` re-exports). Do not invent rule lists or mass-fix with `yarn lint:fix` unless asked. Do not re-export — import from the defining module instead.
+Linting is [Oxlint](https://oxc.rs/docs/guide/usage/linter.html) with type-aware TypeScript checks: stock category presets for high-signal correctness (plus a bit of strictness), not a hand-tuned rule list. Exact settings live in [`.oxlintrc.json`](.oxlintrc.json); what each stock rule means is in the [Oxlint rules reference](https://oxc.rs/docs/guide/usage/linter/rules.html). Project-specific rules live under [`oxlint-plugins/`](oxlint-plugins/) (currently `local/no-reexport`, which forbids `export … from`, `export * from`, and `export { name }` away from the definition). Do not invent rule lists or mass-fix with `yarn lint:fix` unless asked. Export only at the definition site — do not re-export or use bare `export { name }`.
 
 For switch exhaustiveness (or other “impossible” paths), do **not** use `const x: never = …`. Throw instead, like Go’s `panic("never reached")`:
 

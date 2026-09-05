@@ -13,13 +13,10 @@ import {
 } from '../ir/index.ts';
 import type { Expr } from '../ir/types.ts';
 import {
-  absorbBinOp,
-  absorbBinOps,
-  expandBinOp,
-  expandBinOps,
   simplifyExpression,
 } from './expression.ts';
 import { createOptimizerParams } from './params.ts';
+import { absorbBinOp, absorbBinOps, expandBinOp, expandBinOps } from "./binOps.ts";
 
 const defaultParams = createOptimizerParams({
   programs: {},

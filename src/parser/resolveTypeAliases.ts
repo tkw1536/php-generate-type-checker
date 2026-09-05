@@ -1,11 +1,7 @@
 import type { TypeNode } from './ast.ts';
-import { TypeAliasResolveError } from './aliasGraph.ts';
 import {
-  namedAliasReferences,
   substituteAliases,
 } from './substituteAliases.ts';
-
-export { TypeAliasResolveError, namedAliasReferences };
 
 /** Inline alias cross-references in an AST using the given alias map. */
 export function resolveTypeAliases(

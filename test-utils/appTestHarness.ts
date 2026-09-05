@@ -3,7 +3,6 @@ import { vi } from 'vitest';
 import indexHtml from '../index.html?raw';
 import { INPUT_DEBOUNCE_MS } from '../src/ui/generate.ts';
 
-export { INPUT_DEBOUNCE_MS };
 export const DEFAULT_TYPE = `/**
  * @phpstan-type User array{id: int, email: non-empty-string, name?: string}
  */`;

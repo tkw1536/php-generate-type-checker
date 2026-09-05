@@ -1,5 +1,5 @@
 import type { TypeNode } from './ast.ts';
-import { TypeAliasResolveError, validateAliasGraph } from './aliasGraph.ts';
+import { validateAliasGraph } from './aliasGraph.ts';
 import { assignEntryNames } from './entryNames.ts';
 import { extractInputTypes, type InputTypeEntry } from './extractInput.ts';
 import { LexerError } from './lexer.ts';
@@ -9,8 +9,6 @@ import {
   resolveAlias,
   substituteAliases,
 } from './substituteAliases.ts';
-
-export { TypeAliasResolveError };
 
 /** Fully parsed checker input entry (ready for a single build path). */
 export type ParsedCheckerEntry = {

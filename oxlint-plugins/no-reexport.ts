@@ -1,4 +1,4 @@
-/** Oxlint JS plugin: forbid `export … from` / `export * from` re-exports. */
+/** Oxlint JS plugin: forbid re-exports and `export { name }` away from the definition. */
 
 type ReexportNode = {
   readonly type: string;
@@ -15,11 +15,13 @@ const noReexport = {
   meta: {
     type: 'problem' as const,
     docs: {
-      description: 'Disallow re-exporting (`export … from`).',
+      description:
+        'Disallow re-exports and `export { name }` not attached to a definition.',
     },
     schema: [],
     messages: {
-      noReexport: 'Re-exporting is forbidden.',
+      noReexport:
+        'Export only at the definition site; `export { name }` / `export … from` is forbidden.',
     },
   },
   create(context: ReexportContext) {
@@ -27,7 +29,8 @@ const noReexport = {
       ExportAllDeclaration(node: ReexportNode) {
         context.report({ node, messageId: 'noReexport' });
       },
-      'ExportNamedDeclaration[source]'(node: ReexportNode) {
+      // `export { a }`, `export { a } from '…'`, `export type { A }` — no inline declaration
+      'ExportNamedDeclaration[declaration=null]'(node: ReexportNode) {
         context.report({ node, messageId: 'noReexport' });
       },
     };

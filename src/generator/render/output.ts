@@ -4,9 +4,6 @@ import {
   type GenerateCheckerOptions,
 } from '../options.ts';
 
-export type { CheckerOutputMode, GenerateCheckerOptions };
-export { DEFAULT_CHECKER_OUTPUT };
-
 const CLASS_INDENT = '    ';
 
 function indentEachLine(text: string, prefix: string): string {

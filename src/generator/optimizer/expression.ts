@@ -1,22 +1,11 @@
 import type { Block, Expr, Stmt } from '../ir/types.ts';
 import { equals } from '../ir/equals.ts';
 import {
-  absorbBinOp,
   absorbBinOps,
-  expandBinOp,
   expandBinOps,
-  negateBinOp,
 } from './binOps.ts';
 import { normalizeExpr } from './normalize.ts';
 import type { OptimizerParams } from './params.ts';
-
-export {
-  absorbBinOp,
-  absorbBinOps,
-  expandBinOp,
-  expandBinOps,
-  negateBinOp,
-};
 
 export function simplify(block: Block, params: OptimizerParams): Block {
   return block.map((stmt) => simplifyStatement(stmt, params));

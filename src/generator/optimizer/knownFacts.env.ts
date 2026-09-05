@@ -7,8 +7,8 @@ import {
   orExpr,
 } from '../ir/index.ts';
 import { equals } from '../ir/equals.ts';
-import { negateBinOp } from './expression.ts';
 import { isAAllowStringSubject } from './implies.ts';
+import { negateBinOp } from "./binOps.ts";
 
 export type FactEnv = {
   readonly trueFacts: readonly Expr[];

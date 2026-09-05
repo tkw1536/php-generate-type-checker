@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { generateChecker } from './index.ts';
 import { GenerationError } from './errors.ts';
-import type { CheckerOutputMode } from './render/output.ts';
 import docblockCases from './testdata/docblock.json';
 import docblockEmitAliasesCases from './testdata/docblock_emit_aliases.json';
 import errorsCases from './testdata/errors.json';
@@ -11,6 +10,7 @@ import privateStaticCases from './testdata/private_static.json';
 import protectedStaticCases from './testdata/protected_static.json';
 import publicStaticCases from './testdata/public_static.json';
 import verbosePhpdocCases from './testdata/verbose_phpdoc.json';
+import type { CheckerOutputMode } from "./options.ts";
 
 interface GeneratorFixture {
   readonly name: string;

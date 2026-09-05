@@ -6,9 +6,7 @@ import {
   parseCheckerInput,
   type ParsedCheckerEntry,
 } from './parseInput.ts';
-import {
-  namedAliasReferences,
-} from './resolveTypeAliases.ts';
+import { namedAliasReferences } from "./substituteAliases.ts";
 
 function aliasNames(defs: readonly ParsedCheckerEntry[]): string[] {
   return defs

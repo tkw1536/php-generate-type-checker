@@ -10,11 +10,8 @@ import {
   renderExpr,
   renderExprLayout,
   renderJunctionLines,
-  renderPhpScalarLiteral,
 } from './phpExpr.ts';
 import { renderValueRef } from './refs.ts';
-
-export { renderExpr, renderPhpScalarLiteral };
 
 function renderConditionBlock(
   expr: Expr,

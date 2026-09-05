@@ -1,8 +1,8 @@
 import { GenerationError } from '../generator/errors.ts';
+import { TypeAliasResolveError } from "../parser/aliasGraph.ts";
 import { LexerError } from '../parser/lexer.ts';
 import { ParseError } from '../parser/parseError.ts';
 import { PhpstanTypeExtractError } from '../parser/phpstanTypeDocblock.ts';
-import { TypeAliasResolveError } from '../parser/resolveTypeAliases.ts';
 
 export interface PositionedError {
   readonly kind: 'parse' | 'lexer' | 'generation' | 'unknown';
