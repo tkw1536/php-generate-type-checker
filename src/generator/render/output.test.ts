@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseType } from '../../parser/index.ts';
+import { generateChecker } from '../index.ts';
 import { buildMany, renderChecker } from '../pipeline.ts';
 
 function protectedStaticEntryIsProtected(): void {
@@ -70,4 +71,47 @@ describe('class output visibility', () => {
     'private_static entry is private and helpers are private static',
     privateStaticEntryIsPrivate,
   );
+});
+
+describe('verbose PHPDoc', () => {
+  it('emits a one-line assert by default', () => {
+    const php = generateChecker('string');
+    expect(php.startsWith('/** @phpstan-assert-if-true string $value */')).toBe(
+      true,
+    );
+    expect(php).not.toContain('@return');
+  });
+
+  it('emits Drupal-style PHPDoc with a/an for function output', () => {
+    const php = generateChecker('array<string, bool>', { verbosePhpdoc: true });
+    expect(php).toContain(
+      'Checks if the given value is an array<string, bool>.',
+    );
+    expect(php).toContain('@param mixed $value');
+    expect(php).toContain('The value to check.');
+    expect(php).toContain('@return bool');
+    expect(php).toContain(
+      'TRUE if the given value is an array<string, bool>.',
+    );
+    expect(php).toContain(
+      '@phpstan-assert-if-true array<string, bool> $value',
+    );
+  });
+
+  it('uses a (not an) when the type starts with a consonant', () => {
+    const php = generateChecker('string', { verbosePhpdoc: true });
+    expect(php).toContain('Checks if the given value is a string.');
+    expect(php).toContain('TRUE if the given value is a string.');
+  });
+
+  it('indents verbose PHPDoc on class methods', () => {
+    const php = generateChecker('int', {
+      verbosePhpdoc: true,
+      output: 'public_static',
+    });
+    expect(php).toMatch(/^\s{4}\/\*\*$/mu);
+    expect(php).toMatch(/^\s{4} \* Checks if the given value is an int\.$/mu);
+    expect(php).toMatch(/^\s{4} \* @return bool$/mu);
+    expect(php).toMatch(/^\s{4} \* @phpstan-assert-if-true int \$value$/mu);
+  });
 });

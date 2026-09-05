@@ -41,6 +41,7 @@ async function restoresControlsFromUrlFragment(): Promise<void> {
   const fragment = encodeFragmentState({
     nameFromType: false,
     optimize: true,
+    verbosePhpdoc: true,
     emit: 'public_static',
     emitAliases: false,
     resolveAliases: false,
@@ -59,12 +60,18 @@ async function restoresControlsFromUrlFragment(): Promise<void> {
     )!.checked,
   ).toBe(true);
   expect(
+    document.querySelector<HTMLInputElement>('#generate-verbose-phpdoc')!
+      .checked,
+  ).toBe(true);
+  expect(
     document.querySelector<HTMLSelectElement>('#generate-output-mode')!.value,
   ).toBe('public_static');
 
   const php = phpCodeText();
   expect(php).toContain('public static function');
   expect(php).toMatch(/function check\b/u);
+  expect(php).toContain('Checks if the given value is an int.');
+  expect(php).toContain('@return bool');
 }
 
 async function togglesThemeOnDocument(): Promise<void> {
@@ -143,6 +150,14 @@ async function updatesPhpWhenOptionsChange(): Promise<void> {
   optimize.dispatchEvent(new Event('change', { bubbles: true }));
   expect(irOptimizedText()).toMatch(/Optimizer skipped/iu);
 
+  const verbose = document.querySelector<HTMLInputElement>(
+    '#generate-verbose-phpdoc',
+  )!;
+  verbose.checked = true;
+  verbose.dispatchEvent(new Event('change', { bubbles: true }));
+  expect(phpCodeText()).toContain('@return bool');
+  expect(phpCodeText()).toContain('TRUE if the given value is');
+
   const emit = document.querySelector<HTMLSelectElement>(
     '#generate-output-mode',
   )!;
@@ -175,7 +190,7 @@ describe('app UI boot', () => {
     debouncesInputThenUpdatesPhpAndHash,
   );
   it(
-    'updates PHP when naming, optimize, and emit options change',
+    'updates PHP when naming, optimize, verbose PHPDoc, and emit options change',
     updatesPhpWhenOptionsChange,
   );
 });

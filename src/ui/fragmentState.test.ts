@@ -8,6 +8,7 @@ import {
 const sample: AppFragmentState = {
   nameFromType: true,
   optimize: false,
+  verbosePhpdoc: true,
   emit: 'public_static',
   emitAliases: true,
   resolveAliases: false,
@@ -19,6 +20,7 @@ describe('fragmentState', () => {
     const encoded = encodeFragmentState(sample);
     expect(encoded).toContain('name=1');
     expect(encoded).toContain('optimize=0');
+    expect(encoded).toContain('verbose=1');
     expect(encoded).toContain('emit=public_static');
     expect(encoded).toContain('aliases=1');
     expect(encoded).toContain('resolve=0');
@@ -43,6 +45,13 @@ describe('fragmentState', () => {
 
   it('ignores invalid emit values', () => {
     expect(decodeFragmentState('#emit=not-a-mode&input=int')).toEqual({
+      input: 'int',
+    });
+  });
+
+  it('keeps short PHPDoc when verbose is absent from the hash', () => {
+    expect(decodeFragmentState('#input=int&name=1')).toEqual({
+      nameFromType: true,
       input: 'int',
     });
   });

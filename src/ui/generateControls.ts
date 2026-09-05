@@ -39,6 +39,11 @@ export function getOptimize(): boolean {
   return el?.checked === true;
 }
 
+export function getVerbosePhpdoc(): boolean {
+  const el = document.querySelector<HTMLInputElement>('#generate-verbose-phpdoc');
+  return el?.checked === true;
+}
+
 export function getEmitPhpstanTypeAliases(): boolean {
   const el = document.querySelector<HTMLInputElement>('#generate-emit-aliases');
   return el?.checked === true;
@@ -63,6 +68,7 @@ export function readUiFragmentState(): AppFragmentState {
   return {
     nameFromType: getNameFunctionsByType(),
     optimize: getOptimize(),
+    verbosePhpdoc: getVerbosePhpdoc(),
     emit: getGenerateOutputMode(),
     emitAliases: getEmitPhpstanTypeAliases(),
     resolveAliases: getResolveAliases(),
@@ -81,6 +87,11 @@ export function applyFragmentState(
     document.querySelector<HTMLInputElement>(
       '#generate-prioritize-readability',
     )!.checked = fragment.optimize;
+  }
+  if (fragment.verbosePhpdoc !== undefined) {
+    document.querySelector<HTMLInputElement>(
+      '#generate-verbose-phpdoc',
+    )!.checked = fragment.verbosePhpdoc;
   }
   if (fragment.emit !== undefined) {
     document.querySelector<HTMLSelectElement>('#generate-output-mode')!.value =
@@ -109,21 +120,22 @@ export function getGenerateOptions(): {
   readonly output: CheckerOutputMode;
   readonly nameFunctionsByType: boolean;
   readonly prioritizeReadabilityOverCompactness: boolean;
+  readonly verbosePhpdoc: boolean;
 } {
   return {
     output: getGenerateOutputMode(),
     nameFunctionsByType: getNameFunctionsByType(),
     prioritizeReadabilityOverCompactness:
       getPrioritizeReadabilityOverCompactness(),
+    verbosePhpdoc: getVerbosePhpdoc(),
   };
 }
 
 /** Show alias options when the parse result includes `@phpstan-type` aliases. */
 export function syncDocblockOptions(hasAliases: boolean): void {
-  const docblockOptions = document.querySelector<HTMLElement>(
-    '#generate-docblock-options',
-  );
-  if (docblockOptions) {
-    docblockOptions.hidden = !hasAliases;
+  for (const el of document.querySelectorAll<HTMLElement>(
+    '.generate-docblock-option',
+  )) {
+    el.hidden = !hasAliases;
   }
 }

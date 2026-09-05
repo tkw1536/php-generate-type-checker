@@ -10,6 +10,7 @@ import multiCommentCases from './testdata/multi_comment.json';
 import privateStaticCases from './testdata/private_static.json';
 import protectedStaticCases from './testdata/protected_static.json';
 import publicStaticCases from './testdata/public_static.json';
+import verbosePhpdocCases from './testdata/verbose_phpdoc.json';
 
 interface GeneratorFixture {
   readonly name: string;
@@ -18,6 +19,7 @@ interface GeneratorFixture {
   readonly expected: string;
   readonly expectsError: boolean;
   readonly emitPhpstanTypeAliases?: boolean;
+  readonly verbosePhpdoc?: boolean;
 }
 
 type SuccessCase = { readonly input: string; readonly expected: string };
@@ -26,6 +28,7 @@ type DocblockCase = {
   readonly output: CheckerOutputMode;
   readonly expected: string;
   readonly emitPhpstanTypeAliases?: boolean;
+  readonly verbosePhpdoc?: boolean;
 };
 type ErrorCase = { readonly input: string };
 
@@ -46,20 +49,27 @@ function docblockToFixtures(
   cases: readonly DocblockCase[],
   labelPrefix: string,
 ): GeneratorFixture[] {
-  return cases.map(({ input, output, expected, emitPhpstanTypeAliases }, index) => {
-    const label =
-      cases.length === 1
-        ? `${labelPrefix}: ${output}${emitPhpstanTypeAliases === true ? ' + aliases' : ''}`
-        : `${labelPrefix}[${index}]: ${output}${emitPhpstanTypeAliases === true ? ' + aliases' : ''}`;
-    return {
-      name: label,
-      input,
-      output,
-      expected,
-      expectsError: false,
-      emitPhpstanTypeAliases,
-    };
-  });
+  return cases.map(
+    ({ input, output, expected, emitPhpstanTypeAliases, verbosePhpdoc }, index) => {
+      const extras = [
+        emitPhpstanTypeAliases === true ? ' + aliases' : '',
+        verbosePhpdoc === true ? ' + verbose' : '',
+      ].join('');
+      const label =
+        cases.length === 1
+          ? `${labelPrefix}: ${output}${extras}`
+          : `${labelPrefix}[${index}]: ${output}${extras}`;
+      return {
+        name: label,
+        input,
+        output,
+        expected,
+        expectsError: false,
+        emitPhpstanTypeAliases,
+        verbosePhpdoc,
+      };
+    },
+  );
 }
 
 function errorsToFixtures(cases: readonly ErrorCase[]): GeneratorFixture[] {
@@ -142,6 +152,10 @@ export function loadFixtures(): GeneratorFixture[] {
       'docblock_emit_aliases',
     ),
     ...docblockToFixtures(readDocblockCases(multiCommentCases), 'multi_comment'),
+    ...docblockToFixtures(
+      readDocblockCases(verbosePhpdocCases),
+      'verbose_phpdoc',
+    ),
     ...errorsToFixtures(readErrorCases(errorsCases)),
   ].toSorted((a, b) => a.name.localeCompare(b.name));
 }
@@ -162,6 +176,7 @@ describe('generateChecker fixtures', () => {
       generateChecker(fixture.input, {
         output: fixture.output,
         emitPhpstanTypeAliases: fixture.emitPhpstanTypeAliases,
+        verbosePhpdoc: fixture.verbosePhpdoc,
       }),
     ).toBe(fixture.expected);
   });

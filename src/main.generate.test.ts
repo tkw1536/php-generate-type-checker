@@ -50,16 +50,16 @@ async function showsDuplicateAliasErrorOnPhpPanel(): Promise<void> {
 async function revealsDocblockOptionsAndCanEmitAliases(): Promise<void> {
   await bootApp({ fakeTimers: true });
 
-  const docblockOptions = document.querySelector<HTMLElement>(
-    '#generate-docblock-options',
-  )!;
+  const docblockOptions = document.querySelectorAll<HTMLElement>(
+    '.generate-docblock-option',
+  );
   // Default input is a @phpstan-type docblock, so alias options start visible.
   flushDebounce();
-  expect(docblockOptions.hidden).toBe(false);
+  expect([...docblockOptions].every((el) => el.hidden === false)).toBe(true);
 
   setInputValue('array<string>');
   flushDebounce();
-  expect(docblockOptions.hidden).toBe(true);
+  expect([...docblockOptions].every((el) => el.hidden === true)).toBe(true);
 
   const docblock = `/**
  * @phpstan-type UserId int
@@ -67,7 +67,7 @@ async function revealsDocblockOptionsAndCanEmitAliases(): Promise<void> {
   setInputValue(docblock);
   flushDebounce();
 
-  expect(docblockOptions.hidden).toBe(false);
+  expect([...docblockOptions].every((el) => el.hidden === false)).toBe(true);
 
   const emitAliases = document.querySelector<HTMLInputElement>(
     '#generate-emit-aliases',

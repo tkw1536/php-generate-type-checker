@@ -30,6 +30,9 @@ const nameByTypeCheckbox =
 const prioritizeReadabilityCheckbox = document.querySelector<HTMLInputElement>(
   '#generate-prioritize-readability',
 )!;
+const verbosePhpdocCheckbox = document.querySelector<HTMLInputElement>(
+  '#generate-verbose-phpdoc',
+)!;
 const emitAliasesCheckbox =
   document.querySelector<HTMLInputElement>('#generate-emit-aliases')!;
 const resolveAliasesCheckbox = document.querySelector<HTMLInputElement>(
@@ -40,6 +43,7 @@ typeInput.addEventListener('input', onGenerateInputChanged);
 outputModeSelect.addEventListener('change', generateNow);
 nameByTypeCheckbox.addEventListener('change', generateNow);
 prioritizeReadabilityCheckbox.addEventListener('change', generateNow);
+verbosePhpdocCheckbox.addEventListener('change', generateNow);
 emitAliasesCheckbox.addEventListener('change', generateNow);
 resolveAliasesCheckbox.addEventListener('change', generateNow);
 

@@ -57,6 +57,42 @@
                 <span id="help-name-from-type" class="visually-hidden">When on, checkers are named from the type (e.g. isPostListResponse). When off, they use check / check_1 / ….</span>
               </div>
               <div class="panel-footer-option-row">
+                <label class="panel-footer-option" for="generate-verbose-phpdoc">
+                  <input
+                    type="checkbox"
+                    id="generate-verbose-phpdoc"
+                  >
+                  <span>Verbose PHPDoc</span>
+                </label>
+                <button
+                  type="button"
+                  class="option-help"
+                  aria-label="Help: Verbose PHPDoc"
+                  aria-describedby="help-verbose-phpdoc"
+                  data-tooltip="When on, each checker gets a multi-line PHPDoc with a summary, @param, @return, and @phpstan-assert-if-true. When off (default), only the one-line assert comment is emitted."
+                >?</button>
+                <span id="help-verbose-phpdoc" class="visually-hidden">When on, each checker gets a multi-line PHPDoc with a summary, @param, @return, and @phpstan-assert-if-true. When off (default), only the one-line assert comment is emitted.</span>
+              </div>
+              <div class="panel-footer-option-row generate-docblock-option" hidden>
+                <label class="panel-footer-option" for="generate-emit-aliases">
+                  <input
+                    type="checkbox"
+                    id="generate-emit-aliases"
+                  >
+                  <span>Re-Emit input aliases</span>
+                </label>
+                <button
+                  type="button"
+                  class="option-help"
+                  aria-label="Help: Re-Emit input aliases"
+                  aria-describedby="help-emit-aliases"
+                  data-tooltip="When on, re-emits the @phpstan-type definitions at the top of the generated PHP output."
+                >?</button>
+                <span id="help-emit-aliases" class="visually-hidden">When on, re-emits the @phpstan-type definitions at the top of the generated PHP output.</span>
+              </div>
+            </div>
+            <div class="panel-footer-options">
+              <div class="panel-footer-option-row">
                 <label class="panel-footer-option" for="generate-prioritize-readability">
                   <input
                     type="checkbox"
@@ -74,41 +110,22 @@
                 >?</button>
                 <span id="help-optimize" class="visually-hidden">When on, the IR optimizer runs before PHP is rendered for more compact output. When off, PHP is rendered from IR (build).</span>
               </div>
-            </div>
-            <div class="panel-footer-options" id="generate-docblock-options" hidden>
-              <div class="panel-footer-option-row">
+              <div class="panel-footer-option-row generate-docblock-option" hidden>
                 <label class="panel-footer-option" for="generate-resolve-aliases">
                   <input
                     type="checkbox"
                     id="generate-resolve-aliases"
                   >
-                  <span>Resolve aliases</span>
+                  <span>Inline aliases</span>
                 </label>
                 <button
                   type="button"
                   class="option-help"
-                  aria-label="Help: Resolve aliases"
+                  aria-label="Help: Inline aliases"
                   aria-describedby="help-resolve-aliases"
                   data-tooltip="When on, @phpstan-type cross-references are inlined into each alias body. When off (default), they stay as named references and call the matching entry checker."
                 >?</button>
                 <span id="help-resolve-aliases" class="visually-hidden">When on, @phpstan-type cross-references are inlined into each alias body. When off (default), they stay as named references and call the matching entry checker.</span>
-              </div>
-              <div class="panel-footer-option-row">
-                <label class="panel-footer-option" for="generate-emit-aliases">
-                  <input
-                    type="checkbox"
-                    id="generate-emit-aliases"
-                  >
-                  <span>Emit aliases</span>
-                </label>
-                <button
-                  type="button"
-                  class="option-help"
-                  aria-label="Help: Emit aliases"
-                  aria-describedby="help-emit-aliases"
-                  data-tooltip="When on, re-emits the @phpstan-type definitions at the top of the generated PHP output."
-                >?</button>
-                <span id="help-emit-aliases" class="visually-hidden">When on, re-emits the @phpstan-type definitions at the top of the generated PHP output.</span>
               </div>
             </div>
             <div class="panel-footer-option-row panel-footer-emit-row">

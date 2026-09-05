@@ -64,6 +64,7 @@ function readSources(inPath) {
  *   readonly input: string;
  *   readonly output: string;
  *   readonly emitPhpstanTypeAliases: boolean;
+ *   readonly verbosePhpdoc: boolean;
  * }} MultilineCase
  */
 
@@ -87,6 +88,7 @@ function parseMultilineCase(block) {
   const lines = block.split('\n');
   let output = 'function';
   let emitPhpstanTypeAliases = false;
+  let verbosePhpdoc = false;
   let start = 0;
 
   while (start < lines.length && lines[start].startsWith('#')) {
@@ -99,11 +101,15 @@ function parseMultilineCase(block) {
     if (emitMatch) {
       emitPhpstanTypeAliases = true;
     }
+    const verboseMatch = /^#\s*verbosePhpdoc:\s*1/u.exec(line);
+    if (verboseMatch) {
+      verbosePhpdoc = true;
+    }
     start++;
   }
 
   const input = lines.slice(start).join('\n').trim();
-  return { input, output, emitPhpstanTypeAliases };
+  return { input, output, emitPhpstanTypeAliases, verbosePhpdoc };
 }
 
 /**
@@ -140,6 +146,7 @@ const DOCBlock_FIXTURES = [
   { name: 'docblock', emitPhpstanTypeAliases: false },
   { name: 'docblock_emit_aliases', emitPhpstanTypeAliases: true },
   { name: 'multi_comment', emitPhpstanTypeAliases: false },
+  { name: 'verbose_phpdoc', emitPhpstanTypeAliases: false },
 ];
 
 for (const { name, emitPhpstanTypeAliases: defaultEmit } of DOCBlock_FIXTURES) {
@@ -148,19 +155,28 @@ for (const { name, emitPhpstanTypeAliases: defaultEmit } of DOCBlock_FIXTURES) {
     continue;
   }
   const cases = readMultilineCases(inPath);
-  /** @type {{ input: string; output: string; expected: string; emitPhpstanTypeAliases?: boolean }[]} */
+  /** @type {{ input: string; output: string; expected: string; emitPhpstanTypeAliases?: boolean; verbosePhpdoc?: boolean }[]} */
   const out = [];
-  for (const { input, output, emitPhpstanTypeAliases } of cases) {
+  for (const {
+    input,
+    output,
+    emitPhpstanTypeAliases,
+    verbosePhpdoc,
+  } of cases) {
     const emit = emitPhpstanTypeAliases || defaultEmit;
     try {
       const expected = generateChecker(input, {
         output,
         emitPhpstanTypeAliases: emit,
+        verbosePhpdoc,
       });
-      /** @type {{ input: string; output: string; expected: string; emitPhpstanTypeAliases?: boolean }} */
+      /** @type {{ input: string; output: string; expected: string; emitPhpstanTypeAliases?: boolean; verbosePhpdoc?: boolean }} */
       const entry = { input, output, expected };
       if (emit) {
         entry.emitPhpstanTypeAliases = true;
+      }
+      if (verbosePhpdoc) {
+        entry.verbosePhpdoc = true;
       }
       out.push(entry);
     } catch (err) {
