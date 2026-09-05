@@ -14,7 +14,6 @@ import {
 } from './phpExpr.ts';
 import { renderValueRef } from './refs.ts';
 
-export type { RenderPhpOptions } from './phpExpr.ts';
 export { renderExpr, renderPhpScalarLiteral };
 
 function renderConditionBlock(

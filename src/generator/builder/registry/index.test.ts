@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { parseType } from '../../../parser/index.ts';
 import { formatType } from '../../../parser/format.ts';
 import { createFunctionNameRegistry, FunctionNameRegistry } from './index.ts';
+import { parseType } from "../../../parser/index.ts";
 
 describe('FunctionNameRegistry', () => {
   it('disambiguates different dedupe keys that share the same proposed name', () => {

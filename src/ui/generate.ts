@@ -22,7 +22,6 @@ import {
 } from './generateControls.ts';
 import type { OutputPanelSet } from './outputPanel.ts';
 
-export { DEFAULT_TYPE } from './generateControls.ts';
 export const INPUT_DEBOUNCE_MS = 250;
 
 function runBuildPipeline(

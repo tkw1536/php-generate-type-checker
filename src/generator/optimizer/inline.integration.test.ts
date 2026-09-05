@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseType } from '../../parser/index.ts';
+import { parseType } from "../../parser/index.ts";
 import { buildMany } from '../pipeline.ts';
 import { optimize } from './index.ts';
 import { blockHasCallChecker } from '../../../test-utils/inlineTestHelpers.ts';

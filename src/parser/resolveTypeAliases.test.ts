@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseType } from './parser.ts';
+import { parseType } from './index.ts';
 import type { TypeNode } from './ast.ts';
 import {
   hasPhpstanTypeAliases,

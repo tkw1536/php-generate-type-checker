@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["eslint", "typescript", "unicorn", "oxc", "vitest"],
+  "jsPlugins": ["./oxlint-plugins/no-reexport.ts"],
   "categories": {
     "correctness": "error",
     "suspicious": "error",
@@ -8,6 +9,7 @@
     "perf": "error"
   },
   "rules": {
+    "local/no-reexport": "error",
     "typescript/prefer-readonly-parameter-types": [
       "error",
       {

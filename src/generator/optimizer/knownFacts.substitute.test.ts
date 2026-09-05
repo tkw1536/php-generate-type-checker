@@ -16,9 +16,9 @@ import type { Block, Stmt } from '../ir/types.ts';
 import {
   applyKnownFacts,
   blockAlwaysExitsWhenEntered,
-  emptyFactEnv,
   substituteFacts,
 } from './knownFacts.ts';
+import { emptyFactEnv } from "./knownFacts.env.ts";
 
 const $v = variableRef('$value');
 const isArray = callExpr('is_array', [refArg($v)]);

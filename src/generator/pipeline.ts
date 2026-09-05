@@ -166,8 +166,6 @@ export function optimize(ir: CheckerIR): CheckerIR {
   return optimizeIr(ir);
 }
 
-export type { CheckerIR } from './ir/types.ts';
-
 export function renderChecker(
   ir: CheckerIR,
   input: RenderCheckerInput,

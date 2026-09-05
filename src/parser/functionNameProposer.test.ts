@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { parseType } from './index.ts';
 import { FunctionNameProposer } from './functionNameProposer.ts';
+import { parseType } from "./index.ts";
 
 function propose(type: string): string {
   return new FunctionNameProposer().name(parseType(type));

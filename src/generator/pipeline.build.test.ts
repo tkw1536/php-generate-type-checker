@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseType, parseTypes } from '../parser/index.ts';
+import { parseType, parseTypes } from "../parser/index.ts";
 import { buildMany, optimize, renderChecker } from './pipeline.ts';
 
 function namesEntryFromType(): void {

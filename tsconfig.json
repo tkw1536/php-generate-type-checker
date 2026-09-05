@@ -15,5 +15,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "test-utils"]
+  "include": ["src", "test-utils", "oxlint-plugins"]
 }

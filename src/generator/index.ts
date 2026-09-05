@@ -4,7 +4,7 @@ import {
   renderChecker,
 } from './pipeline.ts';
 import type { GenerateCheckerOptions } from './options.ts';
-import { parseCheckerInput } from '../parser/index.ts';
+import { parseCheckerInput } from "../parser/parseInput.ts";
 
 export type GenerateCheckerOptionsWithAliases = GenerateCheckerOptions & {
   readonly emitPhpstanTypeAliases?: boolean;

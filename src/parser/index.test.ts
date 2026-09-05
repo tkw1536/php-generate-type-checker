@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { TypeNode } from './ast.ts';
-import { parseType, parseTypes } from './index.ts';
 import errorCases from './testdata/parser.errors.json';
 import successCases from './testdata/parser.success.json';
+import { parseType, parseTypes } from "./index.ts";
 
 type ParseSuccessCase = { readonly source: string; readonly ast: TypeNode };
 type ParseErrorCase = {

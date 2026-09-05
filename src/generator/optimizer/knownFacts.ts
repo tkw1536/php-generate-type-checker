@@ -7,9 +7,6 @@ import {
   withTrueFact,
 } from './knownFacts.env.ts';
 
-export type { FactEnv } from './knownFacts.env.ts';
-export { emptyFactEnv } from './knownFacts.env.ts';
-
 function valueRefUsesShadowed(
   ref: ValueRef,
   shadowed: ReadonlySet<string>,

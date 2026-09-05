@@ -14,8 +14,9 @@ import {
 import type { Block, Stmt } from '../ir/types.ts';
 import { simplifyExpression } from './expression.ts';
 import { createOptimizerParams } from './params.ts';
-import { applyKnownFacts, emptyFactEnv } from './knownFacts.ts';
+import { applyKnownFacts } from './knownFacts.ts';
 import { equals } from '../ir/equals.ts';
+import { emptyFactEnv } from "./knownFacts.env.ts";
 
 const defaultParams = createOptimizerParams({
   programs: {},

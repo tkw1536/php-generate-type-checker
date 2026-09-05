@@ -252,5 +252,3 @@ function pushForeach(
     body: stripTrailingTrueReturn(body),
   };
 }
-
-export { arrayGuards, listGuards } from './emitGuards.ts';

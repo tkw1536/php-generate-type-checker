@@ -3,7 +3,7 @@ import {
   PhpstanTypeExtractError,
   extractPhpstanTypesFromComment,
 } from './phpstanTypeDocblock.ts';
-import { parseTypes } from './parser.ts';
+import { parseTypes } from './index.ts';
 
 /** One type from mixed plain / `@phpstan-type` input before AST parse. */
 export type InputTypeEntry = {

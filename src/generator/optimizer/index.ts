@@ -8,8 +8,9 @@ import { inlineBlock } from './inline.ts';
 import { createOptimizerParams, type OptimizerParams } from './params.ts';
 import { prunePrograms } from './prune.ts';
 import { dce } from './dce.ts';
-import { applyKnownFacts, emptyFactEnv } from './knownFacts.ts';
+import { applyKnownFacts } from './knownFacts.ts';
 import { unnest } from './unnest.ts';
+import { emptyFactEnv } from "./knownFacts.env.ts";
 
 export function optimize(ir: CheckerIR): CheckerIR {
   const params = createOptimizerParams(ir);

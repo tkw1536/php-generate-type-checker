@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { parseType } from '../../parser/index.ts';
 import { generateChecker } from '../index.ts';
 import { buildMany, renderChecker } from '../pipeline.ts';
+import { parseType } from "../../parser/index.ts";
 
 function protectedStaticEntryIsProtected(): void {
   const ast = parseType('array<int>|array<string>');

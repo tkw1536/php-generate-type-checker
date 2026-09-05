@@ -3,7 +3,8 @@ import { TypeAliasResolveError, validateAliasGraph } from './aliasGraph.ts';
 import { assignEntryNames } from './entryNames.ts';
 import { extractInputTypes, type InputTypeEntry } from './extractInput.ts';
 import { LexerError } from './lexer.ts';
-import { ParseError, parseType } from './parser.ts';
+import { ParseError } from './parseError.ts';
+import { parseType } from './index.ts';
 import {
   resolveAlias,
   substituteAliases,

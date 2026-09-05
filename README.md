@@ -106,11 +106,9 @@ yarn install
 yarn dev          # http://localhost:5173
 yarn test
 yarn build
-yarn lint
+yarn lint         # Oxlint
 yarn lint:fix
 yarn spellcheck
 ```
-
-Linting is [Oxlint](https://oxc.rs/docs/guide/usage/linter.html) with type-aware TypeScript checks: stock category presets for high-signal correctness (plus a bit of strictness), not a hand-tuned rule list. Exact settings live in [`.oxlintrc.json`](.oxlintrc.json); what each rule means is in the [Oxlint rules reference](https://oxc.rs/docs/guide/usage/linter/rules.html).
 
 Contributor / agent notes (fixtures, warnings, CI): see [AGENTS.md](AGENTS.md).

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseCheckerInput } from '../parser/index.ts';
+import { parseCheckerInput } from '../parser/parseInput.ts';
 import { buildEntries, optimize, renderChecker } from './pipeline.ts';
 
 function buildEntriesDelegatesToEntryCheckers(): void {
