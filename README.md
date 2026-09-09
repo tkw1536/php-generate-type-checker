@@ -100,20 +100,28 @@ function isArrayFooIntBarString(mixed $value): bool
 
 ## Technical Overview
 
-Generation runs in four phases.
+Generation runs in four phases, which can be seen in the diagram below:
 
-```mermaid
-flowchart LR
-  Parse --> Generate --> Optimize --> Render
-```
+![Diagram showing the four phases](docs/stages.svg)
 
 - **Parse**:
   Read `@phpstan-type` aliases (or a plain type expression).
   Tokenize PHPStan PHPDoc types, reject cycles and duplicate aliases, and assign checker names (`User` becomes `isUser`; unnamed types are named from the type text).
   Mentions of an alias become calls to that alias’s checker unless aliases are inlined into each definition.
 - **Generate**:
-  Walk each type and build an **abstract checker** IR: fail-fast `if (!cond) return FALSE` plus a trailing `return TRUE`, plus `foreach` for collections.
-  Simple predicates are boolean expressions; shapes and collections add key/property checks and loops; types that cannot be a single expression become extra helper checkers (shared when the nested type is reused).
+  Walk each type and build an **abstract checker**.
+  The abstract checkers are represented as a very simplified php AST acting as an IR.
+
+  The IR represents each checker as a so-called block, an ordered list of statements.
+  A statement can be an `if` condition, a `foreach` loop, or a `return`.
+  These take expressions and child-blocks as parameters.
+  Each expression can be an access to a variable, a comparison, a function call, or boolean combinations thereof.
+
+  The abstract generated checkers are fail-fast functions.
+  They typically correspond to a bunch of `if (!cond) return FALSE` plus a trailing `return TRUE`, or `foreach` for collections.
+  Simple predicates are usually boolean expressions; shapes and collections add key/property checks and loops; types that cannot be a single expression become extra helper checkers.
+  Which exact code is generated for which type is described in more detail in the `Generate` section below.
+
 - **Optimize**:
   Rewrite that abstract checker in place (helpers first, then callers) until nothing changes: inline leftovers, boolean algebra, drop dead code, delete unused helpers.
   User-facing alias checkers are never inlined or deleted.
@@ -127,7 +135,9 @@ Some PHPStan types cannot be checked at runtime (see Uncheckable below).
 
 ### Generate
 
-Naïve generation is fail-fast.
+The output of the Generate phase is very naïve.
+A set of fail-fast conditions.
+
 For example, for `int` the abstract checker looks like:
 
 ```php
@@ -137,7 +147,11 @@ if (!is_int($value)) {
 return TRUE;
 ```
 
-Other checker make use of other constructors.
+The actual implementation represents this checker using a more abstract representation, however for purposes of this document we are showing the equivalent PHP syntax.
+It is also possible to see the naïve checker code in the interface, by disabling the optimize phase.
+
+Checkers for other types use functions other than `is_int`.
+They can be seen in the following sections.
 
 #### Scalars
 
@@ -220,18 +234,8 @@ Other checker make use of other constructors.
 
 #### Collections
 
-| Type                         | Check                                                              |
-| ---------------------------- | ------------------------------------------------------------------ |
-| `array<T>` / `T[]`           | `is_array($value)`, then `foreach` over values                     |
-| `array<K, V>`                | `foreach ($value as $k => $v)` checking key and value              |
-| `list<T>`                    | `is_array($value) && array_is_list($value)`, then `foreach` values |
-| `non-empty-*`                | Same as above, plus `$value !== []`                                |
-| `array<mixed>` / bare `list` | Container test only                                                |
-| `array<never>` / `array{}`   | `$value === []`                                                    |
-| Nested arrays                | Nested `foreach`                                                   |
-| Parameterized `iterable<…>`  | Not generated (foreach would not be side-effect-free)              |
-
-Example for `list<int>`:
+Collection checks are typically represented by loops.
+For example for `list<int>`:
 
 ```php
 if (!is_array($value) || !array_is_list($value)) {
@@ -245,7 +249,43 @@ foreach ($value as $var0) {
 return TRUE;
 ```
 
+| Type                         | Check                                                              |
+| ---------------------------- | ------------------------------------------------------------------ |
+| `array<T>` / `T[]`           | `is_array($value)`, then `foreach` over values                     |
+| `array<K, V>`                | `foreach ($value as $k => $v)` checking key and value              |
+| `list<T>`                    | `is_array($value) && array_is_list($value)`, then `foreach` values |
+| `non-empty-*`                | Same as above, plus `$value !== []`                                |
+| `array<mixed>` / bare `list` | Container test only                                                |
+| `array<never>` / `array{}`   | `$value === []`                                                    |
+| Nested arrays                | Nested `foreach`                                                   |
+| Parameterized `iterable<…>`  | Not generated (foreach would not be side-effect-free)              |
+
 #### Shapes
+
+Shapes represent non-homogenous containers.
+These are typically represented by existence check, followed by a type check on each property.
+For example for `array{name: string, age: int}`:
+
+```php
+if (!is_array($value)) {
+    return FALSE;
+}
+if (!array_key_exists('name', $value)) {
+    return FALSE;
+}
+if (!is_string($value['name'])) {
+    return FALSE;
+}
+if (!array_key_exists('age', $value)) {
+    return FALSE;
+}
+if (!is_int($value['age'])) {
+    return FALSE;
+}
+return TRUE;
+```
+
+In more general terms, the following shapes are supported:
 
 | Type                            | Check                                                                                |
 | ------------------------------- | ------------------------------------------------------------------------------------ |
@@ -256,38 +296,34 @@ return TRUE;
 
 #### Uncheckable
 
-| Type                                   | Why not                                                   |
-| -------------------------------------- | --------------------------------------------------------- |
-| `void`                                 | No runtime value to check                                 |
-| `static` / `self` / `parent` / `$this` | Scope-dependent; not a runtime type test                  |
-| `literal-string`                       | PHP cannot verify PHPStan literal-string semantics        |
-| `callable(…): …`                       | Parameter/return types cannot be verified without calling |
-| User generics (`Foo<T>`)               | Not a supported generic for codegen                       |
-| `open-resource` / `closed-resource`    | PHP cannot distinguish open vs closed resources           |
-| `trait-string<T>`                      | PHPStan does not support the generic variant              |
-| Parameterized `iterable<…>`            | Element checks would require side-effecting iteration     |
+Some types cannot be checked at runtime.
+These are:
+
+- `void`:
+    This represents "no value", so there is no `$value` to look at.
+- `literal-string`:
+    There is no way for the PHP runtime to know if a string is literal, as the [`is_literal` RFC](https://wiki.php.net/rfc/is_literal) was rejected.
+- `open-resource`, `closed-resource`:
+    The php runtime cannot distinguish between these.
+- `static` / `self` / `parent` / `$this`:
+    These are scope-dependent, and thus cannot be generically checked.
+- `callable(…): …`:
+    Parameter and return types cannot be verified without either calling the callable, or using reflection.
+    The former introduces possible side-effects to a type checking function - which should not be the case.
+    The latter could not pick up `@phpstan-type` comments and thus would not work either.
+- `Foo<T>`:
+    User-defined generics only exist as `@template` tags inside docblocks.
+    These cannot be inspected, not even using Reflection.
+- `iterable<…>`:
+    When parametrized, element checks would require actually iterating.
+    This would cause side-effects - which should not be the case.
 
 ### Optimize
 
 The generated output is naïve and often generates very verbose code.
 The goal of the optimize is to produce nicer code and rewrites the abstract checker in a loop until nothing changes.
 
-```mermaid
-flowchart TD
-  inline[Inline helpers]
-  dedupe[Dedupe]
-  unnest[Unnest]
-  combine[Combine]
-  flatten[Flatten]
-  facts[Known facts]
-  simplify[Simplify]
-  dce[Dead-code elimination]
-  simplify2[Simplify again]
-  prune[Prune unused helpers]
-  inline --> dedupe --> unnest --> combine --> flatten --> facts --> simplify --> dce --> simplify2
-  simplify2 -->|changed| inline
-  simplify2 -->|stable| prune
-```
+![Diagram showing the optimize passes](docs/optimize.svg)
 
 | Pass                  | Goal                                                                                         | Before                                                                     | After                                                                             |
 | --------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
@@ -297,11 +333,13 @@ flowchart TD
 | Combine               | Merge consecutive `if`s that share the same body                                             | Separate fail-fast `if`s for `!is_array` and `!array_is_list`              | One `if` with `\|\|`                                                              |
 | Flatten               | Turn a trailing `if`/`return` pair into one `return` expression                              | `if (is_int($value)) return TRUE; return FALSE;`                           | `return is_int($value);` (via `($cond && $b) \|\| (!$cond && $c)`, then Simplify) |
 | Known facts           | Replace tests already proven true or false by earlier control flow                           | After `if (is_array($value)) return TRUE;`, later `if (!is_array($value))` | Later guard is dead                                                               |
+| Simplify              | Fold boolean algebra, contradictions, factoring, and related rewrites (see below)            |                                                                            |                                                                                   |
 | Dead-code elimination | Remove unreachable or empty statements                                                       | `if (FALSE) { … }`, code after `return`, empty `foreach`                   | Removed / spliced away                                                            |
 | Prune helpers         | Delete helpers that nothing calls anymore                                                    | Helper with no remaining callers                                           | Helper deleted                                                                    |
-| Simplify              | Fold boolean algebra, contradictions, factoring, and related rewrites (see below)            |                                                                            |                                                                                   |
 
 #### Simplify expressions
+
+The simplify phase simplifies boolean expressions.
 
 | Before                                             | After                                                                              |
 | -------------------------------------------------- | ---------------------------------------------------------------------------------- |
@@ -315,7 +353,7 @@ flowchart TD
 | `!($x !== [])`                                     | `$x === []`                                                                        |
 | `!($x > 0)`                                        | `$x <= 0`                                                                          |
 
-In practice these combine.
+In practice, a lot of these combine.
 For example, `list<mixed>|list<string>` becomes `is_array($value) && array_is_list($value)` because the second arm is redundant.
 
 ## Develop locally
