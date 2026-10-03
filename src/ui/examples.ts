@@ -5,19 +5,19 @@ export interface TypeExample {
 
 /**
  * Built-in types for the UI examples dropdown.
- * {@link DEFAULT_TYPE} is always the first entry.
+ * The first entry is the initial editor contents when the URL fragment has no type.
  */
 export const TYPE_EXAMPLES: readonly TypeExample[] = [
-  {
-    label: 'API success or failure',
-    type: `/**
- * @phpstan-type ApiResult array{ok: true, data: mixed}|array{ok: false, error: non-empty-string}
- */`,
-  },
   {
     label: 'User address',
     type: `/**
  * @phpstan-type UserAddress array{street: string, city: string, zip: string}
+ */`,
+  },
+  {
+    label: 'API success or failure',
+    type: `/**
+ * @phpstan-type ApiResult array{ok: true, data: mixed}|array{ok: false, error: non-empty-string}
  */`,
   },
   {
@@ -81,6 +81,3 @@ export const TYPE_EXAMPLES: readonly TypeExample[] = [
  */`,
   },
 ];
-
-/** Initial editor contents when the URL fragment has no type. */
-export const DEFAULT_TYPE: string = TYPE_EXAMPLES[0].type;

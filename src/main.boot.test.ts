@@ -1,7 +1,7 @@
 /** @vitest-environment happy-dom */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { encodeFragmentState } from './ui/fragmentState.ts';
-import { DEFAULT_TYPE } from './ui/examples.ts';
+import { TYPE_EXAMPLES } from './ui/examples.ts';
 import {
   bootApp,
   flushDebounce,
@@ -21,7 +21,7 @@ function resetDom(): void {
 async function bootsWithDefaultTypeAndPhp(): Promise<void> {
   await bootApp();
 
-  expect(typeInput().value).toBe(DEFAULT_TYPE);
+  expect(typeInput().value).toBe(TYPE_EXAMPLES[0].type);
 
   const phpTab = document.querySelector('#output-tab-php')!;
   expect(phpTab.getAttribute('aria-selected')).toBe('true');

@@ -8,7 +8,7 @@ import {
   parseCheckerInput,
   type ParsedCheckerEntry,
 } from '../parser/parseInput.ts';
-import { DEFAULT_TYPE } from './examples.ts';
+import { TYPE_EXAMPLES } from './examples.ts';
 import { readFragmentFromLocation } from './fragmentState.ts';
 import {
   applyFragmentState,
@@ -168,7 +168,7 @@ export function initTypeInputFromFragment(): void {
   const typeInput = document.querySelector<HTMLTextAreaElement>('#type-input')!;
   const fromFragment = readFragmentFromLocation();
   if (fromFragment === null) {
-    typeInput.value = DEFAULT_TYPE;
+    typeInput.value = TYPE_EXAMPLES[0].type;
   } else {
     applyFragmentState(fromFragment);
   }

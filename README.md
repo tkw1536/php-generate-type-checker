@@ -8,7 +8,7 @@ Parse [PHPDoc types as supported by PHPStan](https://phpstan.org/writing-php-cod
 
 **[Open the live demo](https://check.guys.wtf)** — paste a PHPDoc `@phpstan-type` block (or plain types) and copy the generated PHP. 
 
-![Light-theme UI: PHPDoc @phpstan-type User input on the left with generate options; PHP Code tab on the right showing the generated isUser checker function](docs/ui.png)
+![Light-theme UI: PHPDoc @phpstan-type UserAddress input on the left with generate options; PHP Code tab on the right showing the generated isUserAddress checker function](docs/ui.png)
 
 ## Features
 
