@@ -9,16 +9,17 @@ import {
   orExpr,
   refArg,
   returnStmt,
+  parameterRef,
   variableRef,
 } from '../ir/';
 import type { CheckerProgram } from '../ir/types.ts';
 import { renderProgramBody } from './php.ts';
 import { renderExpr } from "./phpExpr.ts";
 
-const $v = variableRef('$value');
+const $v = parameterRef();
 
 function program(body: CheckerProgram['body']): CheckerProgram {
-  return { parameter: '$value', body };
+  return { body };
 }
 
 function rendersCallsAndRefs(): void {
@@ -103,8 +104,8 @@ function rendersMergedFailIfOrChain(): void {
       cond: {
         kind: 'or',
         exprs: [
-          notExpr(callExpr('is_string', [refArg(variableRef('$key1'))])),
-          notExpr(callExpr('is_string', [refArg(variableRef('$value1'))])),
+          notExpr(callExpr('is_string', [refArg(variableRef(1))])),
+          notExpr(callExpr('is_string', [refArg(variableRef(0))])),
         ],
       },
       body: [{ kind: 'return', expr: { kind: 'bool', value: false } }],
@@ -112,8 +113,8 @@ function rendersMergedFailIfOrChain(): void {
   ]);
   expect(renderProgramBody(body)).toBe(
     `    if (
-        !is_string($key1) ||
-        !is_string($value1)
+        !is_string($var1) ||
+        !is_string($var0)
     ) {
         return FALSE;
     }`,
@@ -190,13 +191,13 @@ function rendersForeachWithKeyedBinding(): void {
     {
       kind: 'foreach',
       iterable: $v,
-      keyVar: '$key1',
-      valueVar: '$value1',
+      keyVar: 1,
+      valueVar: 0,
       body: [returnStmt({ kind: 'bool', value: true })],
     },
   ]);
   expect(renderProgramBody(body)).toBe(
-    `    foreach ($value as $key1 => $value1) {
+    `    foreach ($value as $var1 => $var0) {
         return TRUE;
     }`,
   );

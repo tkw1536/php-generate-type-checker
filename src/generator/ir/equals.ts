@@ -84,8 +84,10 @@ function valueRefEquals(
     return false;
   }
   switch (a.kind) {
+    case 'parameter':
+      return b.kind === 'parameter';
     case 'variable':
-      return b.kind === 'variable' && a.name === b.name;
+      return b.kind === 'variable' && a.id === b.id;
     case 'array_access':
       return (
         b.kind === 'array_access' &&

@@ -57,6 +57,7 @@ function argTouchesMember(arg: Arg): boolean {
 
 function valueRefTouchesMember(ref: ValueRef): boolean {
   switch (ref.kind) {
+    case 'parameter':
     case 'variable':
       return false;
     case 'array_access':

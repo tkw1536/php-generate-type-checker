@@ -2,7 +2,8 @@
  * Checker IR: PHP-shaped AST for generated checker function bodies.
  */
 export type ValueRef =
-  | { readonly kind: 'variable'; readonly name: string }
+  | { readonly kind: 'parameter' }
+  | { readonly kind: 'variable'; readonly id: number }
   | { readonly kind: 'array_access'; readonly object: ValueRef; readonly key: string | number }
   | { readonly kind: 'property_access'; readonly object: ValueRef; readonly name: string };
 
@@ -28,11 +29,16 @@ export type Block = readonly Stmt[];
 
 export type Stmt =
   | { readonly kind: 'if'; readonly cond: Expr; readonly body: Block }
-  | { readonly kind: 'foreach'; readonly iterable: ValueRef; readonly keyVar: string | null; readonly valueVar: string; readonly body: Block }
+  | {
+      readonly kind: 'foreach';
+      readonly iterable: ValueRef;
+      readonly keyVar: number | null;
+      readonly valueVar: number;
+      readonly body: Block;
+    }
   | { readonly kind: 'return'; readonly expr: Expr };
 
 export type CheckerProgram = {
-  readonly parameter: string;
   readonly body: Block;
 };
 

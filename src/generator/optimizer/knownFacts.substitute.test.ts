@@ -10,7 +10,7 @@ import {
   orExpr,
   refArg,
   returnStmt,
-  variableRef,
+  parameterRef,
 } from '../ir/index.ts';
 import type { Block, Stmt } from '../ir/types.ts';
 import {
@@ -20,7 +20,7 @@ import {
 } from './knownFacts.ts';
 import { emptyFactEnv } from "./knownFacts.env.ts";
 
-const $v = variableRef('$value');
+const $v = parameterRef();
 const isArray = callExpr('is_array', [refArg($v)]);
 
 function expectIf(stmt: Stmt | undefined): Extract<Stmt, { kind: 'if' }> {
@@ -53,7 +53,7 @@ function replacesConjunctsKnownTrue(): void {
       body: [returnStmt(andExpr([isArray, isList]))],
     },
   ];
-  const result = applyKnownFacts(block, '$value', emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv());
   const ret = expectReturn(expectIf(result[0]).body[0]);
   expect(ret.expr).toEqual(boolLit(true));
 }
@@ -72,7 +72,7 @@ function replacesDisjunctsKnownFalse(): void {
       body: [returnStmt(boolLit(false))],
     },
   ];
-  const result = applyKnownFacts(block, '$value', emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv());
   expect(expectIf(result[1]).cond).toEqual(boolLit(false));
 }
 
@@ -86,7 +86,7 @@ function flipsTrueNotFact(): void {
       ],
     },
   ];
-  const result = applyKnownFacts(block, '$value', emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv());
   const innerIf = expectIf(expectIf(result[0]).body[0]);
   expect(innerIf.cond).toEqual(boolLit(false));
 }
@@ -100,7 +100,7 @@ function appliesDeMorganViaNotThenOr(): void {
       body: [returnStmt(orExpr([isArray, isInt]))],
     },
   ];
-  const result = applyKnownFacts(block, '$value', emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv());
   const ret = expectReturn(expectIf(result[0]).body[0]);
   expect(ret.expr).toEqual(boolLit(false));
 }

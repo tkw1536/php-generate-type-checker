@@ -66,8 +66,12 @@ export function returnStmt(expr: Expr): Stmt {
   return { kind: 'return', expr };
 }
 
-export function variableRef(name: string): ValueRef {
-  return { kind: 'variable', name };
+export function parameterRef(): ValueRef {
+  return { kind: 'parameter' };
+}
+
+export function variableRef(id: number): ValueRef {
+  return { kind: 'variable', id };
 }
 
 export function arrayAccessRef(

@@ -8,12 +8,12 @@ import {
   orExpr,
   refArg,
   returnStmt,
-  variableRef,
+  parameterRef,
 } from '../ir/index.ts';
 import type { Block } from '../ir/types.ts';
 import { flatten } from './flatten.ts';
 
-const $v = variableRef('$value');
+const $v = parameterRef();
 const isInt = callExpr('is_int', [refArg($v)]);
 
 const FLATTEN_CASES = [

@@ -9,11 +9,13 @@ import {
 
 function valueRefUsesShadowed(
   ref: ValueRef,
-  shadowed: ReadonlySet<string>,
+  shadowed: ReadonlySet<number>,
 ): boolean {
   switch (ref.kind) {
+    case 'parameter':
+      return false;
     case 'variable':
-      return shadowed.has(ref.name);
+      return shadowed.has(ref.id);
     case 'array_access':
       return valueRefUsesShadowed(ref.object, shadowed);
     case 'property_access':
@@ -23,7 +25,7 @@ function valueRefUsesShadowed(
   }
 }
 
-function argUsesShadowed(arg: Arg, shadowed: ReadonlySet<string>): boolean {
+function argUsesShadowed(arg: Arg, shadowed: ReadonlySet<number>): boolean {
   switch (arg.kind) {
     case 'ref':
       return valueRefUsesShadowed(arg.ref, shadowed);
@@ -36,7 +38,7 @@ function argUsesShadowed(arg: Arg, shadowed: ReadonlySet<string>): boolean {
   }
 }
 
-function exprUsesShadowed(expr: Expr, shadowed: ReadonlySet<string>): boolean {
+function exprUsesShadowed(expr: Expr, shadowed: ReadonlySet<number>): boolean {
   switch (expr.kind) {
     case 'bool':
       return false;
@@ -138,24 +140,20 @@ export function blockAlwaysExitsWhenEntered(block: Block): boolean {
   return last !== undefined && last.kind === 'return';
 }
 
-export function applyKnownFacts(
-  block: Block,
-  parameter: string,
-  env: FactEnv,
-): Block {
+export function applyKnownFacts(block: Block, env: FactEnv): Block {
   const out: Stmt[] = [];
   let currentEnv = env;
 
   for (const stmt of block) {
     switch (stmt.kind) {
       case 'if': {
-        const next = applyKnownFactsIf(stmt, parameter, currentEnv);
+        const next = applyKnownFactsIf(stmt, currentEnv);
         out.push(next.stmt);
         currentEnv = next.env;
         break;
       }
       case 'foreach':
-        out.push(applyKnownFactsForeach(stmt, parameter, currentEnv));
+        out.push(applyKnownFactsForeach(stmt, currentEnv));
         break;
       case 'return':
         out.push({
@@ -173,12 +171,11 @@ export function applyKnownFacts(
 
 function applyKnownFactsIf(
   stmt: Extract<Stmt, { kind: 'if' }>,
-  parameter: string,
   env: FactEnv,
 ): { stmt: Stmt; env: FactEnv } {
   const cond = substituteFacts(stmt.cond, env);
   const bodyEnv = withTrueFact(env, cond);
-  const newBody = applyKnownFacts(stmt.body, parameter, bodyEnv);
+  const newBody = applyKnownFacts(stmt.body, bodyEnv);
   return {
     stmt: { kind: 'if', cond, body: newBody },
     env: blockAlwaysExitsWhenEntered(stmt.body)
@@ -189,7 +186,6 @@ function applyKnownFactsIf(
 
 function applyKnownFactsForeach(
   stmt: Extract<Stmt, { kind: 'foreach' }>,
-  parameter: string,
   env: FactEnv,
 ): Stmt {
   const innerShadowed = new Set([
@@ -197,12 +193,9 @@ function applyKnownFactsForeach(
     stmt.valueVar,
     ...(stmt.keyVar === null ? [] : [stmt.keyVar]),
   ]);
-  const bodyEnv: FactEnv =
-    stmt.valueVar === parameter
-      ? { trueFacts: [], falseFacts: [], shadowed: innerShadowed }
-      : { ...env, shadowed: innerShadowed };
+  const bodyEnv: FactEnv = { ...env, shadowed: innerShadowed };
   return {
     ...stmt,
-    body: applyKnownFacts(stmt.body, parameter, bodyEnv),
+    body: applyKnownFacts(stmt.body, bodyEnv),
   };
 }

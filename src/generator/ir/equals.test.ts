@@ -11,15 +11,16 @@ import {
   literalArg,
   notExpr,
   orExpr,
+  parameterRef,
   propertyAccessRef,
   refArg,
   variableRef,
 } from './index.ts';
 import { equals } from './equals.ts';
 
-const $v = variableRef('$value');
-const $key = variableRef('$key');
-const $elem = variableRef('$elem');
+const $v = parameterRef();
+const $key = variableRef(0);
+const $elem = variableRef(1);
 const isIntOnV = callExpr('is_int', [refArg($v)]);
 const isStringOnV = callExpr('is_string', [refArg($v)]);
 
@@ -30,7 +31,7 @@ const DISTINCT_EXPRS = [
   notExpr(isIntOnV),
   isIntOnV,
   isStringOnV,
-  callExpr('is_int', [refArg(variableRef('$other'))]),
+  callExpr('is_int', [refArg(variableRef(2))]),
   callExpr('count', [refArg($v)]),
   callExpr('array_key_exists', [literalArg('foo'), refArg($v)]),
   callExpr('in_array', [

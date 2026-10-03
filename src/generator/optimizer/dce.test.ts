@@ -5,12 +5,12 @@ import {
   failIfStmt,
   refArg,
   returnStmt,
-  variableRef,
+  parameterRef,
 } from '../ir/index.ts';
 import type { Block } from '../ir/types.ts';
 import { dce } from './dce.ts';
 
-const $v = variableRef('$value');
+const $v = parameterRef();
 const isArray = callExpr('is_array', [refArg($v)]);
 
 const DCE_CASES = [
@@ -50,7 +50,7 @@ const DCE_CASES = [
         kind: 'foreach',
         iterable: $v,
         keyVar: null,
-        valueVar: '$value1',
+        valueVar: 0,
         body: [],
       },
       returnStmt(boolLit(true)),
@@ -64,7 +64,7 @@ const DCE_CASES = [
         kind: 'foreach',
         iterable: $v,
         keyVar: null,
-        valueVar: '$value1',
+        valueVar: 0,
         body: [returnStmt(boolLit(false)), returnStmt(boolLit(true))],
       },
     ],
@@ -73,7 +73,7 @@ const DCE_CASES = [
         kind: 'foreach',
         iterable: $v,
         keyVar: null,
-        valueVar: '$value1',
+        valueVar: 0,
         body: [returnStmt(boolLit(false))],
       },
     ],

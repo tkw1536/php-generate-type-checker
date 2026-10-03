@@ -9,7 +9,7 @@ import {
   notExpr,
   orExpr,
   refArg,
-  variableRef,
+  parameterRef,
 } from '../ir/index.ts';
 import type { Expr } from '../ir/types.ts';
 import {
@@ -24,7 +24,7 @@ const defaultParams = createOptimizerParams({
   entries: [],
 });
 
-const $v = variableRef('$value');
+const $v = parameterRef();
 const isInt = callExpr('is_int', [refArg($v)]);
 const isString = callExpr('is_string', [refArg($v)]);
 const empty = literalArg('[]');

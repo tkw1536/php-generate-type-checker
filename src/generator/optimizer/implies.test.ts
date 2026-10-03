@@ -4,11 +4,11 @@ import {
   instanceofExpr,
   literalArg,
   refArg,
-  variableRef,
+  parameterRef,
 } from '../ir/index.ts';
 import { absorbImpliedOperands, implies } from './implies.ts';
 
-const $v = variableRef('$value');
+const $v = parameterRef();
 const isA = callExpr('is_a', [
   refArg($v),
   literalArg('Foo::class'),

@@ -11,6 +11,7 @@ import {
   orExpr,
   refArg,
   returnStmt,
+  parameterRef,
   variableRef,
 } from '../ir/index.ts';
 import { substituteExpr, substituteValueRef } from '../ir/substitute.ts';
@@ -26,8 +27,8 @@ import {
 import { negateBlock } from './negate.ts';
 import { prunePrograms } from './prune.ts';
 
-const $v = variableRef('$value');
-const $elem = variableRef('$value1');
+const $v = parameterRef();
+const $elem = variableRef(0);
 
 const HELPER_BODY: Block = [
   {
@@ -40,9 +41,8 @@ const HELPER_BODY: Block = [
 
 const HELPER_IR = ir(
   {
-    isList: { parameter: '$value', body: HELPER_BODY },
+    isList: { body: HELPER_BODY },
     main: {
-      parameter: '$value',
       body: [returnStmt(callCheckerExpr('isList', $v))],
     },
   },
@@ -52,7 +52,6 @@ const HELPER_IR = ir(
 function nestsArrayAccessOffSubstitutedSubject(): void {
   const result = substituteValueRef(
     { kind: 'array_access', object: $v, key: 'bar' },
-    '$value',
     { kind: 'array_access', object: $v, key: 'foo' },
   );
   expect(result).toEqual({
@@ -72,11 +71,9 @@ function inlinesSingleReturnHelper(): void {
   const singleReturnIr = ir(
     {
       isInt: {
-        parameter: '$value',
         body: [returnStmt(callExpr('is_int', [refArg($v)]))],
       },
       main: {
-        parameter: '$value',
         body: [returnStmt(callCheckerExpr('isInt', $elem))],
       },
     },
@@ -97,21 +94,18 @@ function buildNestedUnionIr(
   return ir(
     {
       isArrayXString: {
-        parameter: '$value',
         body: [returnStmt(isXExpr)],
       },
       isArrayYString: {
-        parameter: '$value',
         body: [returnStmt(isYExpr)],
       },
       main: {
-        parameter: '$value',
         body: [
           {
             kind: 'foreach',
             iterable: $v,
             keyVar: null,
-            valueVar: '$value1',
+            valueVar: 0,
             body: [
               failIfStmt(
                 orExpr([
@@ -151,8 +145,8 @@ function inlinesThroughNotOrInIfCondition(): void {
   expect(failIf.cond).toEqual(
     notExpr(
       orExpr([
-        substituteExpr(isXExpr, '$value', $elem),
-        substituteExpr(isYExpr, '$value', $elem),
+        substituteExpr(isXExpr, $elem),
+        substituteExpr(isYExpr, $elem),
       ]),
     ),
   );
@@ -163,11 +157,9 @@ function inlinesCallCheckerNestedUnderNotInsideOr(): void {
   const peelIr = ir(
     {
       helper: {
-        parameter: '$value',
         body: [returnStmt(helperExpr)],
       },
       main: {
-        parameter: '$value',
         body: [
           returnStmt(
             orExpr([
@@ -192,11 +184,9 @@ function peelsOrBeforeInlining(): void {
   const orIr = ir(
     {
       helper: {
-        parameter: '$value',
         body: [returnStmt(callExpr('is_string', [refArg($v)]))],
       },
       main: {
-        parameter: '$value',
         body: [
           returnStmt(
             orExpr([
@@ -243,11 +233,9 @@ function removesUnreferencedHelpers(): void {
   const testIr = ir(
     {
       entry: {
-        parameter: '$value',
         body: [returnStmt(callExpr('is_int', [refArg($v)]))],
       },
       orphan: {
-        parameter: '$value',
         body: [returnStmt(boolLit(true))],
       },
     },

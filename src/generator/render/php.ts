@@ -11,7 +11,7 @@ import {
   renderExprLayout,
   renderJunctionLines,
 } from './phpExpr.ts';
-import { renderValueRef } from './refs.ts';
+import { renderTempVar, renderValueRef } from './refs.ts';
 
 function renderConditionBlock(
   expr: Expr,
@@ -105,10 +105,11 @@ function renderStmt(stmt: Stmt, depth: number, opts: RenderPhpOptions): PhpLine[
       return renderIfStmt(stmt, depth, opts);
     case 'foreach': {
       const iterable = renderValueRef(stmt.iterable);
+      const valueVar = renderTempVar(stmt.valueVar);
       const bind =
         stmt.keyVar === null
-          ? `foreach (${iterable} as ${stmt.valueVar}) {`
-          : `foreach (${iterable} as ${stmt.keyVar} => ${stmt.valueVar}) {`;
+          ? `foreach (${iterable} as ${valueVar}) {`
+          : `foreach (${iterable} as ${renderTempVar(stmt.keyVar)} => ${valueVar}) {`;
       const body = renderBlock(stmt.body, 0, opts);
       return [line(depth, bind), ...shiftLines(1, body), line(depth, '}')];
     }

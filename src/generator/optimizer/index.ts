@@ -46,16 +46,9 @@ export function optimize(ir: CheckerIR): CheckerIR {
   return prunePrograms(current, params);
 }
 
-function runPhases(
-  block: Block,
-  ir: CheckerIR,
-  programName: string,
-  params: OptimizerParams,
-): Block {
+function runPhases(block: Block, params: OptimizerParams): Block {
   let b = flatten(combine(unnest(dedupe(block))));
-  const program = ir.programs[programName];
-  const parameter = program?.parameter ?? '$value';
-  b = applyKnownFacts(b, parameter, emptyFactEnv());
+  b = applyKnownFacts(b, emptyFactEnv());
   b = simplify(b, params);
   b = dce(b);
   b = simplify(b, params);
@@ -72,7 +65,7 @@ function optimizeBlock(
 
   for (let iter = 0; iter < params.maxOptimizationLoops; iter++) {
     const inlined = inlineBlock(current, ir, programName);
-    const next = runPhases(inlined, ir, programName, params);
+    const next = runPhases(inlined, params);
     if (blockEquals(current, next)) {
       return next;
     }

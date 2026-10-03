@@ -64,7 +64,7 @@ function inlineCallCheckerExpr(
   if (!isSingleReturn(callee)) {
     return null;
   }
-  return substituteExpr(callee.body[0].expr, callee.parameter, expr.subject);
+  return substituteExpr(callee.body[0].expr, expr.subject);
 }
 
 function findFirstCallChecker(

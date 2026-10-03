@@ -3,8 +3,10 @@ import { arrayAccessRef, propertyAccessRef } from './index.ts';
 
 function cloneValueRef(ref: ValueRef): ValueRef {
   switch (ref.kind) {
+    case 'parameter':
+      return { kind: 'parameter' };
     case 'variable':
-      return { kind: 'variable', name: ref.name };
+      return { kind: 'variable', id: ref.id };
     case 'array_access':
       return {
         kind: 'array_access',
@@ -24,35 +26,33 @@ function cloneValueRef(ref: ValueRef): ValueRef {
   }
 }
 
-function isParameterVariable(ref: ValueRef, parameter: string): boolean {
-  return ref.kind === 'variable' && ref.name === parameter;
+function isParameter(ref: ValueRef): boolean {
+  return ref.kind === 'parameter';
 }
 
 export function substituteValueRef(
   ref: ValueRef,
-  parameter: string,
   subject: ValueRef,
 ): ValueRef {
   switch (ref.kind) {
+    case 'parameter':
+      return cloneValueRef(subject);
     case 'variable':
-      if (ref.name === parameter) {
-        return cloneValueRef(subject);
-      }
       return cloneValueRef(ref);
     case 'array_access':
-      if (isParameterVariable(ref.object, parameter)) {
+      if (isParameter(ref.object)) {
         return arrayAccessRef(cloneValueRef(subject), ref.key);
       }
       return arrayAccessRef(
-        substituteValueRef(ref.object, parameter, subject),
+        substituteValueRef(ref.object, subject),
         ref.key,
       );
     case 'property_access':
-      if (isParameterVariable(ref.object, parameter)) {
+      if (isParameter(ref.object)) {
         return propertyAccessRef(cloneValueRef(subject), ref.name);
       }
       return propertyAccessRef(
-        substituteValueRef(ref.object, parameter, subject),
+        substituteValueRef(ref.object, subject),
         ref.name,
       );
     default: {
@@ -62,17 +62,17 @@ export function substituteValueRef(
   }
 }
 
-function substituteArg(arg: Arg, parameter: string, subject: ValueRef): Arg {
+function substituteArg(arg: Arg, subject: ValueRef): Arg {
   switch (arg.kind) {
     case 'ref':
-      return { kind: 'ref', ref: substituteValueRef(arg.ref, parameter, subject) };
+      return { kind: 'ref', ref: substituteValueRef(arg.ref, subject) };
     case 'literal':
       return { kind: 'literal', value: arg.value };
     case 'call':
       return {
         kind: 'call',
         name: arg.name,
-        args: arg.args.map((a) => substituteArg(a, parameter, subject)),
+        args: arg.args.map((a) => substituteArg(a, subject)),
       };
     default: {
       const exhaustive: never = arg;
@@ -81,30 +81,26 @@ function substituteArg(arg: Arg, parameter: string, subject: ValueRef): Arg {
   }
 }
 
-export function substituteExpr(
-  expr: Expr,
-  parameter: string,
-  subject: ValueRef,
-): Expr {
+export function substituteExpr(expr: Expr, subject: ValueRef): Expr {
   switch (expr.kind) {
     case 'bool':
       return { kind: 'bool', value: expr.value };
     case 'not':
       return {
         kind: 'not',
-        expr: substituteExpr(expr.expr, parameter, subject),
+        expr: substituteExpr(expr.expr, subject),
       };
     case 'and':
     case 'or':
       return {
         kind: expr.kind,
-        exprs: expr.exprs.map((e) => substituteExpr(e, parameter, subject)),
+        exprs: expr.exprs.map((e) => substituteExpr(e, subject)),
       };
     case 'call':
     case 'bin':
     case 'instanceof':
     case 'call_checker':
-      return substituteLeafExpr(expr, parameter, subject);
+      return substituteLeafExpr(expr, subject);
     default:
       throw new Error('never reached');
   }
@@ -115,7 +111,6 @@ function substituteLeafExpr(
     Expr,
     { kind: 'call' | 'bin' | 'instanceof' | 'call_checker' }
   >,
-  parameter: string,
   subject: ValueRef,
 ): Expr {
   switch (expr.kind) {
@@ -123,54 +118,50 @@ function substituteLeafExpr(
       return {
         kind: 'call',
         name: expr.name,
-        args: expr.args.map((a) => substituteArg(a, parameter, subject)),
+        args: expr.args.map((a) => substituteArg(a, subject)),
       };
     case 'bin':
       return {
         kind: 'bin',
         op: expr.op,
-        left: substituteArg(expr.left, parameter, subject),
-        right: substituteArg(expr.right, parameter, subject),
+        left: substituteArg(expr.left, subject),
+        right: substituteArg(expr.right, subject),
       };
     case 'instanceof':
       return {
         kind: 'instanceof',
         className: expr.className,
-        subject: substituteArg(expr.subject, parameter, subject),
+        subject: substituteArg(expr.subject, subject),
       };
     case 'call_checker':
       return {
         kind: 'call_checker',
         name: expr.name,
-        subject: substituteValueRef(expr.subject, parameter, subject),
+        subject: substituteValueRef(expr.subject, subject),
       };
     default:
       throw new Error('never reached');
   }
 }
 
-export function substituteStmt(
-  stmt: Stmt,
-  parameter: string,
-  subject: ValueRef,
-): Stmt {
+export function substituteStmt(stmt: Stmt, subject: ValueRef): Stmt {
   switch (stmt.kind) {
     case 'if':
       return {
         kind: 'if',
-        cond: substituteExpr(stmt.cond, parameter, subject),
-        body: substituteBlock(stmt.body, parameter, subject),
+        cond: substituteExpr(stmt.cond, subject),
+        body: substituteBlock(stmt.body, subject),
       };
     case 'foreach':
       return {
         ...stmt,
-        iterable: substituteValueRef(stmt.iterable, parameter, subject),
-        body: substituteBlock(stmt.body, parameter, subject),
+        iterable: substituteValueRef(stmt.iterable, subject),
+        body: substituteBlock(stmt.body, subject),
       };
     case 'return':
       return {
         kind: 'return',
-        expr: substituteExpr(stmt.expr, parameter, subject),
+        expr: substituteExpr(stmt.expr, subject),
       };
     default: {
       const exhaustive: never = stmt;
@@ -179,19 +170,15 @@ export function substituteStmt(
   }
 }
 
-export function substituteBlock(
-  block: Block,
-  parameter: string,
-  subject: ValueRef,
-): Block {
-  return block.map((stmt) => substituteStmt(stmt, parameter, subject));
+export function substituteBlock(block: Block, subject: ValueRef): Block {
+  return block.map((stmt) => substituteStmt(stmt, subject));
 }
 
 export function substituteProgramBody(
   program: CheckerProgram,
   subject: ValueRef,
 ): Block {
-  return substituteBlock(program.body, program.parameter, subject);
+  return substituteBlock(program.body, subject);
 }
 
 export function collectCallCheckerNames(block: Block): Set<string> {
@@ -281,6 +268,7 @@ function walkArg(arg: Arg): void {
 
 function walkValueRef(ref: ValueRef): void {
   switch (ref.kind) {
+    case 'parameter':
     case 'variable':
       return;
     case 'array_access':

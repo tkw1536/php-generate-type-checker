@@ -7,7 +7,6 @@ export type EmitCtx = {
   readonly aliasCheckerByName?: ReadonlyMap<string, string>;
   readonly freshVar: () => ValueRef;
   readonly getOrEmitProgram: (type: TypeNode) => string;
-  readonly varName: (ref: ValueRef) => string;
   readonly emitStatements: (
     type: TypeNode,
     subject: ValueRef,

@@ -3,12 +3,13 @@ import {
   callExpr,
   failIfStmt,
   refArg,
+  parameterRef,
   variableRef,
 } from '../ir/index.ts';
 import type { Block } from '../ir/types.ts';
 import { dedupe } from './dedupe.ts';
 
-const $v = variableRef('$value');
+const $v = parameterRef();
 const isArray = callExpr('is_array', [refArg($v)]);
 const isInt = callExpr('is_int', [refArg($v)]);
 
@@ -16,8 +17,8 @@ const FOREACH_LOOP = {
   kind: 'foreach' as const,
   iterable: $v,
   keyVar: null,
-  valueVar: '$value1',
-  body: [failIfStmt(callExpr('is_string', [refArg(variableRef('$value1'))]))],
+  valueVar: 0,
+  body: [failIfStmt(callExpr('is_string', [refArg(variableRef(0))]))],
 };
 
 const DEDUPE_IF_CASES = [
@@ -51,21 +52,21 @@ const DEDUPE_FOREACH_CASES = [
       FOREACH_LOOP,
       {
         ...FOREACH_LOOP,
-        body: [failIfStmt(callExpr('is_int', [refArg(variableRef('$value1'))]))],
+        body: [failIfStmt(callExpr('is_int', [refArg(variableRef(0))]))],
       },
     ],
     [
       FOREACH_LOOP,
       {
         ...FOREACH_LOOP,
-        body: [failIfStmt(callExpr('is_int', [refArg(variableRef('$value1'))]))],
+        body: [failIfStmt(callExpr('is_int', [refArg(variableRef(0))]))],
       },
     ],
   ],
   [
     'keeps foreach when iterable differs',
-    [FOREACH_LOOP, { ...FOREACH_LOOP, iterable: variableRef('$other') }],
-    [FOREACH_LOOP, { ...FOREACH_LOOP, iterable: variableRef('$other') }],
+    [FOREACH_LOOP, { ...FOREACH_LOOP, iterable: variableRef(2) }],
+    [FOREACH_LOOP, { ...FOREACH_LOOP, iterable: variableRef(2) }],
   ],
 ] as [string, Block, Block][];
 

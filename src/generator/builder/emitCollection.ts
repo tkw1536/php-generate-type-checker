@@ -81,7 +81,7 @@ export function emitPostfixArray(
 
   const valueRef = ctx.freshVar();
   const body = ctx.checkInValueLoop(node.value, valueRef);
-  out.push(pushForeach(ctx, subject, valueRef, null, body));
+  out.push(pushForeach(subject, valueRef, null, body));
   return out;
 }
 
@@ -111,7 +111,7 @@ function emitList(
 
   const valueRef = ctx.freshVar();
   const body = ctx.checkInValueLoop(element, valueRef);
-  out.push(pushForeach(ctx, subject, valueRef, null, body));
+  out.push(pushForeach(subject, valueRef, null, body));
   return out;
 }
 
@@ -233,12 +233,18 @@ function emitForeachKeyed(
   if (!isMixed(value)) {
     body.push(...ctx.checkInValueLoop(value, valueRef));
   }
-  out.push(pushForeach(ctx, subject, valueRef, keyRef, body));
+  out.push(pushForeach(subject, valueRef, keyRef, body));
   return out;
 }
 
+function tempVarId(ref: ValueRef): number {
+  if (ref.kind !== 'variable') {
+    throw new Error('expected variable ValueRef from freshVar()');
+  }
+  return ref.id;
+}
+
 function pushForeach(
-  ctx: EmitCtx,
   iterable: ValueRef,
   valueRef: ValueRef,
   keyRef: ValueRef | null,
@@ -247,8 +253,8 @@ function pushForeach(
   return {
     kind: 'foreach',
     iterable,
-    keyVar: keyRef === null ? null : ctx.varName(keyRef),
-    valueVar: ctx.varName(valueRef),
+    keyVar: keyRef === null ? null : tempVarId(keyRef),
+    valueVar: tempVarId(valueRef),
     body: stripTrailingTrueReturn(body),
   };
 }

@@ -7,6 +7,7 @@ import type {
 } from '../ir/types.ts';
 import {
   boolLit,
+  parameterRef,
   returnStmt,
   variableRef,
 } from '../ir/index.ts';
@@ -79,7 +80,6 @@ export class Builder {
       aliasCheckerByName: this.aliasCheckerByName,
       freshVar: () => this.freshVar(),
       getOrEmitProgram: (type) => this.getOrEmitProgram(type),
-      varName: (ref) => this.varName(ref),
       emitStatements: (type, subject, opts) =>
         emitStatements(ctx, type, subject, opts),
       booleanForType: (type, subject) => booleanForType(ctx, type, subject),
@@ -98,10 +98,8 @@ export class Builder {
   }
 
   private emit(name: string, type: TypeNode): void {
-    const body = this.finishBody(
-      this.checkAtRoot(type, variableRef('$value')),
-    );
-    this.programs[name] = { parameter: '$value', body };
+    const body = this.finishBody(this.checkAtRoot(type, parameterRef()));
+    this.programs[name] = { body };
     this.typesByName[name] = type;
     if (!this.order.includes(name)) {
       this.order.push(name);
@@ -123,7 +121,7 @@ export class Builder {
   }
 
   private freshVar(): ValueRef {
-    return variableRef(`$var${this.varCounter++}`);
+    return variableRef(this.varCounter++);
   }
 
   private finishBody(block: Block): Block {
@@ -132,13 +130,6 @@ export class Builder {
       return block;
     }
     return [...block, returnStmt(boolLit(true))];
-  }
-
-  private varName(ref: ValueRef): string {
-    if (ref.kind !== 'variable') {
-      throw new Error('expected variable ValueRef from freshVar()');
-    }
-    return ref.name;
   }
 
   private checkAtRoot(type: TypeNode, subject: ValueRef): Block {

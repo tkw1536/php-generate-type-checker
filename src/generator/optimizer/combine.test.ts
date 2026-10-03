@@ -6,12 +6,12 @@ import {
   notExpr,
   orExpr,
   refArg,
-  variableRef,
+  parameterRef,
 } from '../ir/index.ts';
 import type { Block } from '../ir/types.ts';
 import { combine } from './combine.ts';
 
-const $v = variableRef('$value');
+const $v = parameterRef();
 const isArray = callExpr('is_array', [refArg($v)]);
 const isInt = callExpr('is_int', [refArg($v)]);
 const isString = callExpr('is_string', [refArg($v)]);
@@ -41,7 +41,7 @@ const COMBINE_CASES = [
         kind: 'foreach' as const,
         iterable: $v,
         keyVar: null,
-        valueVar: '$elem',
+        valueVar: 0,
         body: [],
       },
       failIfStmt(isInt),
@@ -52,7 +52,7 @@ const COMBINE_CASES = [
         kind: 'foreach' as const,
         iterable: $v,
         keyVar: null,
-        valueVar: '$elem',
+        valueVar: 0,
         body: [],
       },
       failIfStmt(isInt),

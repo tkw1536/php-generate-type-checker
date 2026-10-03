@@ -56,9 +56,14 @@ export function phpStringLiteral(key: string | number): string {
   return phpQuotedString(key);
 }
 
+/** PHP name for a numbered IR temporary (`$var0`, `$var1`, …). */
+export function renderTempVar(id: number): string {
+  return `$var${id}`;
+}
+
 function renderObjectOperand(ref: ValueRef): string {
-  if (ref.kind === 'variable') {
-    return ref.name;
+  if (ref.kind === 'parameter' || ref.kind === 'variable') {
+    return renderValueRef(ref);
   }
   return `(${renderValueRef(ref)})`;
 }
@@ -66,8 +71,10 @@ function renderObjectOperand(ref: ValueRef): string {
 /** Render a {@link ValueRef} to a PHP lvalue path. */
 export function renderValueRef(ref: ValueRef): string {
   switch (ref.kind) {
+    case 'parameter':
+      return '$value';
     case 'variable':
-      return ref.name;
+      return renderTempVar(ref.id);
     case 'array_access':
       return `${renderObjectOperand(ref.object)}[${arrayIndexExpr(ref.key)}]`;
     case 'property_access': {
