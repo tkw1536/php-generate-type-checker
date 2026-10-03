@@ -125,6 +125,7 @@ array{0: int, 1?: string}
 array{'field-one': int}
 array{'field-one'?: int}
 array{timeout?: positive-int}
+array{outer: array{inner: string}}
 array{int}
 array{int, int}
 
@@ -138,6 +139,9 @@ list{int, string}
 object{}
 object{foo: int, bar?: string}
 object{'a-minus': int, 'b-minus'?: string}
+object{outer: object{inner: string}}
+array{outer: object{inner: string}}
+object{outer: array{inner: string}}
 
 # --- Unions ---
 int|string

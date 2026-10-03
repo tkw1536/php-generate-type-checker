@@ -61,13 +61,6 @@ export function renderTempVar(id: number): string {
   return `$var${id}`;
 }
 
-function renderObjectOperand(ref: ValueRef): string {
-  if (ref.kind === 'parameter' || ref.kind === 'variable') {
-    return renderValueRef(ref);
-  }
-  return `(${renderValueRef(ref)})`;
-}
-
 /** Render a {@link ValueRef} to a PHP lvalue path. */
 export function renderValueRef(ref: ValueRef): string {
   switch (ref.kind) {
@@ -76,9 +69,10 @@ export function renderValueRef(ref: ValueRef): string {
     case 'variable':
       return renderTempVar(ref.id);
     case 'array_access':
-      return `${renderObjectOperand(ref.object)}[${arrayIndexExpr(ref.key)}]`;
+      // Chained [] / -> needs no parentheses in PHP.
+      return `${renderValueRef(ref.object)}[${arrayIndexExpr(ref.key)}]`;
     case 'property_access': {
-      const object = renderObjectOperand(ref.object);
+      const object = renderValueRef(ref.object);
       if (PHP_RESERVED_OBJECT_PROPERTIES.has(ref.name)) {
         return `${object}->{${phpQuotedString(ref.name)}}`;
       }
