@@ -46,8 +46,9 @@ export function preferMultiline(expr: Expr): boolean {
   switch (expr.kind) {
     case 'and':
     case 'or':
+      // 2 leaf operands stay one line; 3+ or any nested junction wrap.
       return (
-        expr.exprs.length > 1 && expr.exprs.some((e) => !isLeaf(e))
+        expr.exprs.length >= 3 || expr.exprs.some((e) => !isLeaf(e))
       );
     case 'not':
       return preferMultiline(expr.expr);

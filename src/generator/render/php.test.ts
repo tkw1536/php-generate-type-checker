@@ -149,6 +149,28 @@ function wrapsTopLevelReturnAndOr(): void {
   ).toBe('    return (is_int($value) || is_string($value));');
 }
 
+function wrapsLongLeafAndChains(): void {
+  expect(
+    renderProgramBody(
+      program([
+        returnStmt(
+          andExpr([
+            callExpr('is_array', [refArg($v)]),
+            callExpr('is_callable', [refArg($v)]),
+            callExpr('is_object', [refArg($v)]),
+          ]),
+        ),
+      ]),
+    ),
+  ).toBe(
+    `    return (
+        is_array($value) &&
+        is_callable($value) &&
+        is_object($value)
+    );`,
+  );
+}
+
 function wrapsNestedCompoundOperandOnce(): void {
   expect(
     renderProgramBody(
@@ -220,6 +242,7 @@ describe('renderProgramBody', () => {
   );
   it('renders merged fail-if or-chain', rendersMergedFailIfOrChain);
   it('wraps top-level return and/or in parentheses', wrapsTopLevelReturnAndOr);
+  it('wraps return && chains with 3+ leaf operands', wrapsLongLeafAndChains);
   it(
     'wraps nested compound &&/|| operands once',
     wrapsNestedCompoundOperandOnce,

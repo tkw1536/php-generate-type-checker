@@ -49,7 +49,17 @@ Generated PHP (excerpt — each alias is a separate check function; cross-refs c
 /** @phpstan-assert-if-true PostSummary $value */
 function isPostSummary(mixed $value): bool
 {
-    return (is_array($value) && array_key_exists('id', $value) && is_int($value['id']) && $value['id'] > 0 && array_key_exists('slug', $value) && is_string($value['slug']) && $value['slug'] !== '' && array_key_exists('title', $value) && is_string($value['title']));
+    return (
+        is_array($value) &&
+        array_key_exists('id', $value) &&
+        array_key_exists('slug', $value) &&
+        array_key_exists('title', $value) &&
+        is_int($value['id']) &&
+        $value['id'] > 0 &&
+        is_string($value['slug']) &&
+        $value['slug'] !== '' &&
+        is_string($value['title'])
+    );
 }
 
 /** @phpstan-assert-if-true PostListResponse $value */
