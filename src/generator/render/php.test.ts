@@ -100,23 +100,33 @@ function rendersConsecutiveFailIfGuards(): void {
 function rendersMergedFailIfOrChain(): void {
   const body = program([
     {
-      kind: 'if',
-      cond: {
-        kind: 'or',
-        exprs: [
-          notExpr(callExpr('is_string', [refArg(variableRef(1))])),
-          notExpr(callExpr('is_string', [refArg(variableRef(0))])),
-        ],
-      },
-      body: [{ kind: 'return', expr: { kind: 'bool', value: false } }],
+      kind: 'foreach',
+      iterable: $v,
+      keyVar: 1,
+      valueVar: 0,
+      body: [
+        {
+          kind: 'if',
+          cond: {
+            kind: 'or',
+            exprs: [
+              notExpr(callExpr('is_string', [refArg(variableRef(1))])),
+              notExpr(callExpr('is_string', [refArg(variableRef(0))])),
+            ],
+          },
+          body: [{ kind: 'return', expr: { kind: 'bool', value: false } }],
+        },
+      ],
     },
   ]);
   expect(renderProgramBody(body)).toBe(
-    `    if (
-        !is_string($var1) ||
-        !is_string($var0)
-    ) {
-        return FALSE;
+    `    foreach ($value as $key => $item) {
+        if (
+            !is_string($key) ||
+            !is_string($item)
+        ) {
+            return FALSE;
+        }
     }`,
   );
 }
@@ -219,8 +229,41 @@ function rendersForeachWithKeyedBinding(): void {
     },
   ]);
   expect(renderProgramBody(body)).toBe(
-    `    foreach ($value as $var1 => $var0) {
+    `    foreach ($value as $key => $item) {
         return TRUE;
+    }`,
+  );
+}
+
+function numbersNestedForeachItems(): void {
+  const body = program([
+    {
+      kind: 'foreach',
+      iterable: $v,
+      keyVar: null,
+      valueVar: 0,
+      body: [
+        {
+          kind: 'foreach',
+          iterable: variableRef(0),
+          keyVar: null,
+          valueVar: 1,
+          body: [
+            failIfStmt(callExpr('is_string', [refArg(variableRef(1))])),
+            returnStmt({ kind: 'bool', value: true }),
+          ],
+        },
+      ],
+    },
+  ]);
+  expect(renderProgramBody(body)).toBe(
+    `    foreach ($value as $item1) {
+        foreach ($item1 as $item2) {
+            if (!is_string($item2)) {
+                return FALSE;
+            }
+            return TRUE;
+        }
     }`,
   );
 }
@@ -248,4 +291,5 @@ describe('renderProgramBody', () => {
     wrapsNestedCompoundOperandOnce,
   );
   it('renders foreach with keyed binding', rendersForeachWithKeyedBinding);
+  it('numbers nested foreach items', numbersNestedForeachItems);
 });

@@ -73,8 +73,8 @@ function isPostListResponse(mixed $value): bool
     ) {
         return FALSE;
     }
-    foreach ($value['posts'] as $var0) {
-        if (!isPostSummary($var0)) {
+    foreach ($value['posts'] as $item) {
+        if (!isPostSummary($item)) {
             return FALSE;
         }
     }
@@ -253,8 +253,8 @@ For example for `list<int>`:
 if (!is_array($value) || !array_is_list($value)) {
     return FALSE;
 }
-foreach ($value as $var0) {
-    if (!is_int($var0)) {
+foreach ($value as $item) {
+    if (!is_int($item)) {
         return FALSE;
     }
 }
@@ -264,7 +264,7 @@ return TRUE;
 | Type                         | Check                                                              |
 |------------------------------|--------------------------------------------------------------------|
 | `array<T>` / `T[]`           | `is_array($value)`, then `foreach` over values                     |
-| `array<K, V>`                | `foreach ($value as $k => $v)` checking key and value              |
+| `array<K, V>`                | `foreach ($value as $key => $item)` checking key and value         |
 | `list<T>`                    | `is_array($value) && array_is_list($value)`, then `foreach` values |
 | `non-empty-*`                | Same as above, plus `$value !== []`                                |
 | `array<mixed>` / bare `list` | Container test only                                                |

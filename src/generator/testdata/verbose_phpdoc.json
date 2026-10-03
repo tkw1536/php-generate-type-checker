@@ -2,7 +2,7 @@
   {
     "input": "array<string, bool>",
     "output": "function",
-    "expected": "/**\n * Checks if the given value is an array<string, bool>.\n *\n * @param mixed $value\n *   The value to check.\n *\n * @return bool\n *   TRUE if the given value is an array<string, bool>.\n *\n * @phpstan-assert-if-true array<string, bool> $value\n */\nfunction isArrayStringBool(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $var1 => $var0) {\n        if (\n            !is_string($var1) ||\n            !is_bool($var0)\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n",
+    "expected": "/**\n * Checks if the given value is an array<string, bool>.\n *\n * @param mixed $value\n *   The value to check.\n *\n * @return bool\n *   TRUE if the given value is an array<string, bool>.\n *\n * @phpstan-assert-if-true array<string, bool> $value\n */\nfunction isArrayStringBool(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $key => $item) {\n        if (\n            !is_string($key) ||\n            !is_bool($item)\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n",
     "verbosePhpdoc": true
   },
   {
@@ -20,7 +20,7 @@
   {
     "input": "array<string, bool>",
     "output": "public_static",
-    "expected": "/**\n * Provides type checker methods.\n */\nclass TypeChecker\n{\n    /**\n     * Checks if the given value is an array<string, bool>.\n     *\n     * @param mixed $value\n     *   The value to check.\n     *\n     * @return bool\n     *   TRUE if the given value is an array<string, bool>.\n     *\n     * @phpstan-assert-if-true array<string, bool> $value\n     */\n    public static function isArrayStringBool(mixed $value): bool\n    {\n        if (!is_array($value)) {\n            return FALSE;\n        }\n        foreach ($value as $var1 => $var0) {\n            if (\n                !is_string($var1) ||\n                !is_bool($var0)\n            ) {\n                return FALSE;\n            }\n        }\n        return TRUE;\n    }\n}\n",
+    "expected": "/**\n * Provides type checker methods.\n */\nclass TypeChecker\n{\n    /**\n     * Checks if the given value is an array<string, bool>.\n     *\n     * @param mixed $value\n     *   The value to check.\n     *\n     * @return bool\n     *   TRUE if the given value is an array<string, bool>.\n     *\n     * @phpstan-assert-if-true array<string, bool> $value\n     */\n    public static function isArrayStringBool(mixed $value): bool\n    {\n        if (!is_array($value)) {\n            return FALSE;\n        }\n        foreach ($value as $key => $item) {\n            if (\n                !is_string($key) ||\n                !is_bool($item)\n            ) {\n                return FALSE;\n            }\n        }\n        return TRUE;\n    }\n}\n",
     "verbosePhpdoc": true
   },
   {

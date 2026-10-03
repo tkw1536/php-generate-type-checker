@@ -11,7 +11,14 @@ import {
   renderExprLayout,
   renderJunctionLines,
 } from './phpExpr.ts';
-import { renderTempVar, renderValueRef } from './refs.ts';
+import { assignTempNames, renderTempVar, renderValueRef } from './refs.ts';
+
+function withTempNames(
+  program: CheckerProgram,
+  opts: RenderPhpOptions,
+): RenderPhpOptions {
+  return { ...opts, tempNames: assignTempNames(program) };
+}
 
 function renderConditionBlock(
   expr: Expr,
@@ -104,12 +111,12 @@ function renderStmt(stmt: Stmt, depth: number, opts: RenderPhpOptions): PhpLine[
     case 'if':
       return renderIfStmt(stmt, depth, opts);
     case 'foreach': {
-      const iterable = renderValueRef(stmt.iterable);
-      const valueVar = renderTempVar(stmt.valueVar);
+      const iterable = renderValueRef(stmt.iterable, opts.tempNames);
+      const valueVar = renderTempVar(stmt.valueVar, opts.tempNames);
       const bind =
         stmt.keyVar === null
           ? `foreach (${iterable} as ${valueVar}) {`
-          : `foreach (${iterable} as ${renderTempVar(stmt.keyVar)} => ${valueVar}) {`;
+          : `foreach (${iterable} as ${renderTempVar(stmt.keyVar, opts.tempNames)} => ${valueVar}) {`;
       const body = renderBlock(stmt.body, 0, opts);
       return [line(depth, bind), ...shiftLines(1, body), line(depth, '}')];
     }
@@ -124,12 +131,12 @@ export function renderProgramBody(
   program: CheckerProgram,
   opts: RenderPhpOptions = {},
 ): string {
-  return formatBody(renderBlock(program.body, 0, opts));
+  return formatBody(renderBlock(program.body, 0, withTempNames(program, opts)));
 }
 
 export function renderProgram(
   program: CheckerProgram,
   opts: RenderPhpOptions = {},
 ): PhpLine[] {
-  return renderBlock(program.body, 0, opts);
+  return renderBlock(program.body, 0, withTempNames(program, opts));
 }
