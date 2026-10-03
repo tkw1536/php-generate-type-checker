@@ -159,7 +159,8 @@ function renderCompoundOperandLines(
   if (isLeaf(expr)) {
     return [line(depth, renderExpr(expr, opts))];
   }
-  const inner = renderExprLayout(expr, depth, opts, true);
+  // Caller already wraps; avoid a second `( … )` from groupParens.
+  const inner = renderExprLayout(expr, depth, opts, false);
   if (inner.length === 1) {
     return [line(depth, `(${inner[0].text})`)];
   }

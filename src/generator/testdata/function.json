@@ -412,6 +412,10 @@
     "expected": "/** @phpstan-assert-if-true array{'field-one'?: int} $value */\nfunction isArrayFieldOneInt(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        (\n            !array_key_exists('field-one', $value) ||\n            is_int($value['field-one'])\n        )\n    );\n}\n"
   },
   {
+    "input": "array{timeout?: positive-int}",
+    "expected": "/** @phpstan-assert-if-true array{timeout?: positive-int} $value */\nfunction isArrayTimeoutPositiveInt(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        (\n            !array_key_exists('timeout', $value) ||\n            (\n                is_int($value['timeout']) &&\n                $value['timeout'] > 0\n            )\n        )\n    );\n}\n"
+  },
+  {
     "input": "array{int}",
     "expected": "/** @phpstan-assert-if-true array{int} $value */\nfunction isArrayInt(mixed $value): bool\n{\n    return (is_array($value) && array_key_exists(0, $value) && is_int($value[0]));\n}\n"
   },

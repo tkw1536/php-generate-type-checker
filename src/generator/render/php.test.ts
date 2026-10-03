@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   andExpr,
+  binExpr,
   callExpr,
   failIfStmt,
+  literalArg,
   notExpr,
   orExpr,
   refArg,
@@ -146,6 +148,43 @@ function wrapsTopLevelReturnAndOr(): void {
   ).toBe('    return (is_int($value) || is_string($value));');
 }
 
+function wrapsNestedCompoundOperandOnce(): void {
+  expect(
+    renderProgramBody(
+      program([
+        returnStmt(
+          andExpr([
+            callExpr('is_array', [refArg($v)]),
+            orExpr([
+              notExpr(
+                callExpr('array_key_exists', [
+                  literalArg("'timeout'"),
+                  refArg($v),
+                ]),
+              ),
+              andExpr([
+                callExpr('is_int', [refArg($v)]),
+                binExpr('>', refArg($v), literalArg('0')),
+              ]),
+            ]),
+          ]),
+        ),
+      ]),
+    ),
+  ).toBe(
+    `    return (
+        is_array($value) &&
+        (
+            !array_key_exists('timeout', $value) ||
+            (
+                is_int($value) &&
+                $value > 0
+            )
+        )
+    );`,
+  );
+}
+
 function rendersForeachWithKeyedBinding(): void {
   const body = program([
     {
@@ -180,5 +219,9 @@ describe('renderProgramBody', () => {
   );
   it('renders merged fail-if or-chain', rendersMergedFailIfOrChain);
   it('wraps top-level return and/or in parentheses', wrapsTopLevelReturnAndOr);
+  it(
+    'wraps nested compound &&/|| operands once',
+    wrapsNestedCompoundOperandOnce,
+  );
   it('renders foreach with keyed binding', rendersForeachWithKeyedBinding);
 });

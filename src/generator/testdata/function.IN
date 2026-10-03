@@ -124,6 +124,7 @@ array{foo: int, bar?: string}
 array{0: int, 1?: string}
 array{'field-one': int}
 array{'field-one'?: int}
+array{timeout?: positive-int}
 array{int}
 array{int, int}
 
