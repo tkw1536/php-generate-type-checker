@@ -6,7 +6,7 @@ Parse [PHPDoc types as supported by PHPStan](https://phpstan.org/writing-php-cod
 
 ## Try it
 
-**[Open the live demo](https://check.guys.wtf)** — paste a PHPDoc `@phpstan-type` block (or plain types) and copy the generated PHP. Prefer the deployed UI over running a local server.
+**[Open the live demo](https://check.guys.wtf)** — paste a PHPDoc `@phpstan-type` block (or plain types) and copy the generated PHP. 
 
 ![Light-theme UI: PHPDoc @phpstan-type User input on the left with generate options; PHP Code tab on the right showing the generated isUser checker function](docs/ui.png)
 
@@ -72,9 +72,10 @@ function isPostListResponse(mixed $value): bool
 }
 ```
 
-### Plain type expression (convenience)
+### Plain type expression 
 
-Input:
+It is also possible to paste in a raw type expression. 
+For example:
 
 ```
 array{foo: int, bar?: string}
@@ -105,11 +106,11 @@ Generation runs in four phases, which can be seen in the diagram below:
 ![Diagram showing the four phases](docs/stages.svg)
 
 - **Parse**:
-  Read `@phpstan-type` aliases (or a plain type expression).
-  Tokenize PHPStan PHPDoc types, reject cycles and duplicate aliases, and assign checker names (`User` becomes `isUser`; unnamed types are named from the type text).
-  Mentions of an alias become calls to that alias’s checker unless aliases are inlined into each definition.
+  Reads `@phpstan-type` aliases (or a plain type expression).
+  Tokenizes PHPStan PHPDoc types, rejects cycles and duplicate aliases, and assigns check function names (`User` becomes `isUser`; unnamed types are named from the type text).
+  Mentions of other phpstan-types are directly inlined into the type AST, unless configured otherwise.
 - **Generate**:
-  Walk each type and build an **abstract checker**.
+  Walks each type and build an **abstract checker**.
   The abstract checkers are represented as a very simplified php AST acting as an IR.
 
   The IR represents each checker as a so-called block, an ordered list of statements.
@@ -119,18 +120,19 @@ Generation runs in four phases, which can be seen in the diagram below:
 
   The abstract generated checkers are fail-fast functions.
   They typically correspond to a bunch of `if (!cond) return FALSE` plus a trailing `return TRUE`, or `foreach` for collections.
-  Simple predicates are usually boolean expressions; shapes and collections add key/property checks and loops; types that cannot be a single expression become extra helper checkers.
+  Simple predicates are usually boolean expressions; shapes and collections add key/property checks and loops; types that cannot be a single expression become extra helpers.
   Which exact code is generated for which type is described in more detail in the `Generate` section below.
 
 - **Optimize**:
-  Rewrite that abstract checker in place (helpers first, then callers) until nothing changes: inline leftovers, boolean algebra, drop dead code, delete unused helpers.
-  User-facing alias checkers are never inlined or deleted.
-- **Render** — The first step that writes **actual PHP**: pretty-printed PHP 8+ functions (or static methods) with `@phpstan-assert-if-true`, from the optimized abstract checker.
+  Rewrites the abstract checker functions in place (helpers first, then callers) until nothing changes: inlines leftovers, boolean algebra, drop dead code, delete unused helpers.
+  More details below.
+- **Render**:
+  This final check writes **actual PHP**, rendering the AST into real PHP 8+ functions (or static methods) with `@phpstan-assert-if-true`.
 
-Generate and Optimize work on an abstract checker (guards, loops, returns) that is not PHP yet; only Render emits actual PHP.
+Generate and Optimize work on an abstract checkers (guards, loops, returns) that is not PHP yet; only Render emits actual PHP.
 Examples below show that abstract form as PHP so it is readable.
 
-Generated checkers are meant to pass PHPStan at level 10.
+Generated checkers are meant to pass PHPStan at level 10; anything else is considered a bug.
 Some PHPStan types cannot be checked at runtime (see Uncheckable below).
 
 ### Generate
@@ -156,7 +158,7 @@ They can be seen in the following sections.
 #### Scalars
 
 | Type                      | Check                                                          |
-| ------------------------- | -------------------------------------------------------------- |
+|---------------------------|----------------------------------------------------------------|
 | `int` / `integer`         | `is_int($value)`                                               |
 | `string`                  | `is_string($value)`                                            |
 | `float` / `double`        | `is_float($value)`                                             |
@@ -178,7 +180,7 @@ They can be seen in the following sections.
 #### Int refinements and ranges
 
 | Type               | Check                                            |
-| ------------------ | ------------------------------------------------ |
+|--------------------|--------------------------------------------------|
 | `positive-int`     | `is_int($value) && $value > 0`                   |
 | `negative-int`     | `is_int($value) && $value < 0`                   |
 | `non-positive-int` | `is_int($value) && $value <= 0`                  |
@@ -192,7 +194,7 @@ They can be seen in the following sections.
 #### String refinements
 
 | Type                                                 | Check                                                                        |
-| ---------------------------------------------------- | ---------------------------------------------------------------------------- |
+|------------------------------------------------------|------------------------------------------------------------------------------|
 | `non-empty-string`                                   | `is_string($value) && $value !== ''`                                         |
 | `non-falsy-string` / `truthy-string`                 | `is_string($value) && $value !== '' && $value !== '0'`                       |
 | `lowercase-string`                                   | `is_string($value) && strtolower($value) === $value`                         |
@@ -207,7 +209,7 @@ They can be seen in the following sections.
 #### class-string generics
 
 | Type                    | Check                                                                         |
-| ----------------------- | ----------------------------------------------------------------------------- |
+|-------------------------|-------------------------------------------------------------------------------|
 | `class-string<MyClass>` | `is_string($value) && is_a($value, MyClass::class, TRUE)`                     |
 | `class-string<A\|B>`    | `is_string($value) && (is_a(…, A::class, TRUE) \|\| is_a(…, B::class, TRUE))` |
 | `class-string<A&B>`     | `is_string($value) && is_a(…, A::class, TRUE) && is_a(…, B::class, TRUE)`     |
@@ -216,7 +218,7 @@ They can be seen in the following sections.
 #### Named types and literals
 
 | Type                     | Check                                                  |
-| ------------------------ | ------------------------------------------------------ |
+|--------------------------|--------------------------------------------------------|
 | `Foo` / `\Foo\Bar`       | `$value instanceof Foo`                                |
 | `callable-array`         | `is_array($value) && is_callable($value)`              |
 | `callable-object`        | `is_object($value) && is_callable($value)`             |
@@ -225,7 +227,7 @@ They can be seen in the following sections.
 #### Unions, intersections, and aliases
 
 | Type                                | Check                                                                                         |
-| ----------------------------------- | --------------------------------------------------------------------------------------------- |
+|-------------------------------------|-----------------------------------------------------------------------------------------------|
 | `int\|string`                       | `is_int($value) \|\| is_string($value)`                                                       |
 | Loop-heavy union arm                | Helper call, or early `if (simpleArm) return TRUE` then the complex arm                       |
 | `Foo&Bar`                           | Consecutive checks (`&&` after Optimize); skip redundant `is_array` / `is_object` once proven |
@@ -250,7 +252,7 @@ return TRUE;
 ```
 
 | Type                         | Check                                                              |
-| ---------------------------- | ------------------------------------------------------------------ |
+|------------------------------|--------------------------------------------------------------------|
 | `array<T>` / `T[]`           | `is_array($value)`, then `foreach` over values                     |
 | `array<K, V>`                | `foreach ($value as $k => $v)` checking key and value              |
 | `list<T>`                    | `is_array($value) && array_is_list($value)`, then `foreach` values |
@@ -285,14 +287,31 @@ if (!is_int($value['age'])) {
 return TRUE;
 ```
 
+This example checks for required keys.
+For optional keys, the value type check takes place inside the if, as opposed to after it.
+For example for `array{age?: int}`:
+
+```php
+if (!is_array($value)) {
+    return FALSE;
+}
+if (!array_key_exists('age', $value)) {
+    if (!is_int($value['age'])) {
+        return FALSE;
+    }
+}
+return TRUE;
+```
+
+
 In more general terms, the following shapes are supported:
 
-| Type                            | Check                                                                                |
-| ------------------------------- | ------------------------------------------------------------------------------------ |
-| `array{foo: int, bar?: string}` | `is_array`; `array_key_exists` for required keys; optional keys wrap the field check |
-| `array{int, string}`            | Indexes `0`, `1`, …                                                                  |
-| `list{int, string}`             | Same as array tuple, plus `array_is_list`                                            |
-| `object{foo: int}`              | `is_object`; `property_exists`; `$value->foo`                                        |
+| Type                            | Check                                         |
+|---------------------------------|-----------------------------------------------|
+| `array{foo: int, bar?: string}` | `is_array`; `array_key_exists`                |
+| `array{int, string}`            | Expanded to indexes `0`, `1`, …               |
+| `list{int, string}`             | Same as array tuple, plus `array_is_list`     |
+| `object{foo: int}`              | `is_object`; `property_exists`; `$value->foo` |
 
 #### Uncheckable
 
@@ -326,7 +345,7 @@ The goal of the optimize is to produce nicer code and rewrites the abstract chec
 ![Diagram showing the optimize passes](docs/optimize.svg)
 
 | Pass                  | Goal                                                                                         | Before                                                                     | After                                                                             |
-| --------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+|-----------------------|----------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
 | Inline helpers        | Substitute non-entry helpers at the call site (entry `@phpstan-type` checkers stay as calls) | `return isInt($elem);`                                                     | `return is_int($elem);`                                                           |
 | Dedupe                | Drop identical repeated `if` / `foreach`                                                     | Two copies of `if (!is_array($value)) return FALSE;`                       | One copy                                                                          |
 | Unnest                | Collapse nested single-body `if`s into one condition                                         | `if (a) { if (b) { … } }`                                                  | `if (a && b) { … }`                                                               |
@@ -342,7 +361,7 @@ The goal of the optimize is to produce nicer code and rewrites the abstract chec
 The simplify phase simplifies boolean expressions.
 
 | Before                                             | After                                                                              |
-| -------------------------------------------------- | ---------------------------------------------------------------------------------- |
+|----------------------------------------------------|------------------------------------------------------------------------------------|
 | `TRUE` / `FALSE` in `&&` / `\|\|`; `!!$x`          | Folded / `$x`; De Morgan for `!(a && b)` / `!(a \|\| b)`                           |
 | `$x && !$x`                                        | `FALSE`                                                                            |
 | `$x \|\| !$x`                                      | `TRUE`                                                                             |
