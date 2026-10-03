@@ -4,10 +4,6 @@ import {
   type AppFragmentState,
 } from './fragmentState.ts';
 
-export const DEFAULT_TYPE = `/**
- * @phpstan-type User array{id: int, email: non-empty-string, name?: string}
- */`;
-
 export function getGenerateOutputMode(): CheckerOutputMode {
   const el = document.querySelector<HTMLSelectElement>('#generate-output-mode');
   const v = el?.value;
@@ -24,7 +20,7 @@ export function getGenerateOutputMode(): CheckerOutputMode {
 
 export function getTypeInput(): string {
   const input = document.querySelector<HTMLTextAreaElement>('#type-input')!;
-  return input.value.trim() || DEFAULT_TYPE;
+  return input.value;
 }
 
 export function getOptimize(): boolean {

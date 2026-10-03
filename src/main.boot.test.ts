@@ -1,8 +1,8 @@
 /** @vitest-environment happy-dom */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { encodeFragmentState } from './ui/fragmentState.ts';
+import { DEFAULT_TYPE } from './ui/examples.ts';
 import {
-  DEFAULT_TYPE,
   bootApp,
   flushDebounce,
   irOptimizedText,

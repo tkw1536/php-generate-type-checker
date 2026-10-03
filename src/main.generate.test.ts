@@ -24,6 +24,23 @@ async function showsErrorDisplayWhenTypeCannotBeParsed(): Promise<void> {
   expect(astBody.querySelector('.error-display')).toBeTruthy();
 }
 
+async function showsNoTypesFoundWhenInputIsEmpty(): Promise<void> {
+  await bootApp({ fakeTimers: true });
+
+  setInputValue('');
+  flushDebounce();
+
+  const phpBody = document.querySelector('#php-output-body')!;
+  expect(phpBody.classList.contains('panel-body--error')).toBe(true);
+  expect(phpBody.querySelector('.error-display')).toBeTruthy();
+  expect(phpBody.textContent).toMatch(/No type definitions found/u);
+  expect(phpBody.textContent).toMatch(/Invalid input/u);
+
+  const astBody = document.querySelector('#ast-output-body')!;
+  expect(astBody.classList.contains('panel-body--error')).toBe(true);
+  expect(astBody.textContent).toMatch(/No type definitions found/u);
+}
+
 async function showsDuplicateAliasErrorOnPhpPanel(): Promise<void> {
   await bootApp({ fakeTimers: true });
 
@@ -89,6 +106,11 @@ describe('app UI generate', () => {
   it(
     'shows an error display when the type cannot be parsed',
     showsErrorDisplayWhenTypeCannotBeParsed,
+  );
+
+  it(
+    'shows no types found when the input is empty',
+    showsNoTypesFoundWhenInputIsEmpty,
   );
 
   it(

@@ -3,8 +3,23 @@ export interface TypeExample {
   readonly type: string;
 }
 
-/** Built-in types for the UI examples dropdown (primarily `@phpstan-type` docblocks). */
+/**
+ * Built-in types for the UI examples dropdown.
+ * {@link DEFAULT_TYPE} is always the first entry.
+ */
 export const TYPE_EXAMPLES: readonly TypeExample[] = [
+  {
+    label: 'API success or failure',
+    type: `/**
+ * @phpstan-type ApiResult array{ok: true, data: mixed}|array{ok: false, error: non-empty-string}
+ */`,
+  },
+  {
+    label: 'User address',
+    type: `/**
+ * @phpstan-type UserAddress array{street: string, city: string, zip: string}
+ */`,
+  },
   {
     label: 'Paginated blog post list',
     type: `/**
@@ -27,51 +42,45 @@ export const TYPE_EXAMPLES: readonly TypeExample[] = [
  */`,
   },
   {
-    label: 'Paginated list response',
-    type: `/**
- * @phpstan-type PaginatedList array{items: list<array{id: int, title: string}>, total: int}
- */`,
-  },
-  {
     label: 'HTTP client configuration',
     type: `/**
- * @phpstan-type HttpClientConfig array{baseUrl: string, timeout?: positive-int, apiKey?: string}
+ * @phpstan-type HttpClientConfig array{
+ *   baseUrl: non-empty-string,
+ *   timeout?: positive-int,
+ *   apiKey?: non-empty-string
+ * }
  */`,
   },
   {
-    label: 'User account record',
+    label: 'stdClass with object shape',
     type: `/**
- * @phpstan-type UserAccount array{id: positive-int, email: non-empty-string, name: string, updatedAt: int}
+ * @phpstan-type NamedEntity \\stdClass&object{id: positive-int, name: non-empty-string}
  */`,
   },
   {
-    label: 'JSON:API resource document',
+    label: 'Authenticated session',
     type: `/**
- * @phpstan-type JsonApiResource array{data: array{id: string, type: string, attributes: array<string, mixed>}}
+ * @phpstan-type SessionData array{
+ *   userId: positive-int,
+ *   roles: non-empty-list<non-empty-string>,
+ *   expiresAt: int
+ * }
  */`,
   },
   {
-    label: 'Webhook delivery payload',
-    type: `/**
- * @phpstan-type WebhookDelivery array{event: string, deliveryId: string, payload: array<string, mixed>}
- */`,
-  },
-  {
-    label: 'Authenticated session data',
-    type: `/**
- * @phpstan-type SessionData array{userId: int, roles: list<string>, expiresAt: int}
- */`,
-  },
-  {
-    label: 'Query parameters (plain type)',
+    label: 'Query string map',
     type: 'array<string, string>',
   },
   {
-    label: 'Decoded JSON object (plain type)',
-    type: 'array<string, mixed>',
-  },
-  {
-    label: 'Two plain types',
-    type: 'array<string>array<int>',
+    label: 'Two independent aliases',
+    type: `/**
+ * @phpstan-type UserId positive-int
+ */
+/**
+ * @phpstan-type Slug non-empty-string
+ */`,
   },
 ];
+
+/** Initial editor contents when the URL fragment has no type. */
+export const DEFAULT_TYPE: string = TYPE_EXAMPLES[0].type;

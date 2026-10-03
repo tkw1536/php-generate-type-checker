@@ -8,9 +8,9 @@ import {
   parseCheckerInput,
   type ParsedCheckerEntry,
 } from '../parser/parseInput.ts';
+import { DEFAULT_TYPE } from './examples.ts';
 import { readFragmentFromLocation } from './fragmentState.ts';
 import {
-  DEFAULT_TYPE,
   applyFragmentState,
   getEmitPhpstanTypeAliases,
   getGenerateOptions,
