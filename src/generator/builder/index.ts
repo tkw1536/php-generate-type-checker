@@ -133,24 +133,18 @@ export class Builder {
 
   private checkAtRoot(type: TypeNode, subject: ValueRef): Block {
     return emitStatements(this.ctx, type, subject, {
-      unionRoot: true,
-      inLoop: false,
       insideShapeField: false,
     });
   }
 
   private checkInValueLoop(type: TypeNode, valueRef: ValueRef): Block {
     return emitStatements(this.ctx, type, valueRef, {
-      unionRoot: false,
-      inLoop: true,
       insideShapeField: false,
     });
   }
 
   private checkShapeField(type: TypeNode, fieldRef: ValueRef): Block {
     return emitStatements(this.ctx, type, fieldRef, {
-      unionRoot: false,
-      inLoop: false,
       insideShapeField: true,
     });
   }

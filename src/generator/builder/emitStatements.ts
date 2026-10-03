@@ -28,8 +28,6 @@ export function checkIntersection(
   for (const member of node.types) {
     out.push(
       ...ctx.emitStatements(member, subject, {
-        unionRoot: false,
-        inLoop: false,
         insideShapeField: false,
       }),
     );
@@ -54,10 +52,7 @@ export function emitStatements(
       }
       return emitUncheckable(type);
     case 'union':
-      if (opts.unionRoot) {
-        return unionOrAtRoot(ctx, type, subject);
-      }
-      return [unionOrInline(ctx, type, subject)];
+      return emitUnion(ctx, type, subject);
     case 'intersection':
       return checkIntersection(ctx, type, subject);
     case 'collection':
@@ -139,7 +134,7 @@ function emitAtomicStatements(
   return out;
 }
 
-function unionOrAtRoot(
+function emitUnion(
   ctx: EmitCtx,
   node: Extract<TypeNode, { kind: 'union' }>,
   subject: ValueRef,
@@ -148,17 +143,6 @@ function unionOrAtRoot(
     unionArmExpr(ctx, member, subject),
   );
   return [failIfStmt(orExpr(arms))];
-}
-
-function unionOrInline(
-  ctx: EmitCtx,
-  node: Extract<TypeNode, { kind: 'union' }>,
-  subject: ValueRef,
-): Stmt {
-  const arms = flattenAlternatives(node).map((member) =>
-    unionArmExpr(ctx, member, subject),
-  );
-  return failIfStmt(orExpr(arms));
 }
 
 function unionArmExpr(

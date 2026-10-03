@@ -12,8 +12,6 @@ import { isNonEmptyKeyword } from './ast/collection.ts';
 import { isMixed, isNever } from './ast/classify.ts';
 
 export type EmitOptions = {
-  readonly unionRoot: boolean;
-  readonly inLoop: boolean;
   readonly insideShapeField: boolean;
 };
 
