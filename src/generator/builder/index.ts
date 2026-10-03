@@ -89,10 +89,9 @@ export class Builder {
       checkShapeField: (type, fieldRef) => this.checkShapeField(type, fieldRef),
       checkInValueLoop: (type, valueRef) =>
         this.checkInValueLoop(type, valueRef),
-      listGuards: (subject, opts, nonEmpty) =>
-        listGuards(subject, opts, nonEmpty),
-      arrayGuards: (subject, opts, nonEmpty, iterable) =>
-        arrayGuards(subject, opts, nonEmpty, iterable),
+      listGuards: (subject, nonEmpty) => listGuards(subject, nonEmpty),
+      arrayGuards: (subject, nonEmpty, iterable) =>
+        arrayGuards(subject, nonEmpty, iterable),
     };
     return ctx;
   }
@@ -135,9 +134,6 @@ export class Builder {
   private checkAtRoot(type: TypeNode, subject: ValueRef): Block {
     return emitStatements(this.ctx, type, subject, {
       unionRoot: true,
-      skipContainerGuard: false,
-      provenArray: false,
-      provenObject: false,
       inLoop: false,
       insideShapeField: false,
     });
@@ -146,9 +142,6 @@ export class Builder {
   private checkInValueLoop(type: TypeNode, valueRef: ValueRef): Block {
     return emitStatements(this.ctx, type, valueRef, {
       unionRoot: false,
-      skipContainerGuard: false,
-      provenArray: false,
-      provenObject: false,
       inLoop: true,
       insideShapeField: false,
     });
@@ -157,9 +150,6 @@ export class Builder {
   private checkShapeField(type: TypeNode, fieldRef: ValueRef): Block {
     return emitStatements(this.ctx, type, fieldRef, {
       unionRoot: false,
-      skipContainerGuard: true,
-      provenArray: false,
-      provenObject: false,
       inLoop: false,
       insideShapeField: true,
     });

@@ -16,20 +16,19 @@ import {
   shapeIsObject,
 } from './ast/collection.ts';
 import type { EmitCtx } from './emitCtx.ts';
-import { type EmitOptions, phpKeyLiteral } from './helpers.ts';
+import { phpKeyLiteral } from './helpers.ts';
 
 export function emitShape(
   ctx: EmitCtx,
   node: Extract<TypeNode, { kind: 'shape' }>,
   base: ValueRef,
-  opts: EmitOptions,
 ): Block {
   const objectShape = shapeIsObject(node);
   if (!objectShape && node.fields.length === 0) {
-    return emitEmptyNonObjectShape(ctx, node, base, opts);
+    return emitEmptyNonObjectShape(ctx, node, base);
   }
   return [
-    ...emitShapeContainerGuards(ctx, node, base, opts, objectShape),
+    ...emitShapeContainerGuards(ctx, node, base, objectShape),
     ...emitShapeFields(ctx, node, base, objectShape),
   ];
 }
@@ -38,14 +37,13 @@ function emitEmptyNonObjectShape(
   ctx: EmitCtx,
   node: Extract<TypeNode, { kind: 'shape' }>,
   base: ValueRef,
-  opts: EmitOptions,
 ): Block {
   if (isListKeyword(node.keyword)) {
-    return [...ctx.listGuards(base, opts, isNonEmptyKeyword(node.keyword))];
+    return [...ctx.listGuards(base, isNonEmptyKeyword(node.keyword))];
   }
   if (isNonEmptyKeyword(node.keyword)) {
     return [
-      ...ctx.arrayGuards(base, opts, true, isIterableKeyword(node.keyword)),
+      ...ctx.arrayGuards(base, true, isIterableKeyword(node.keyword)),
     ];
   }
   return [failIfStmt(binExpr('===', refArg(base), literalArg('[]')))];
@@ -55,28 +53,15 @@ function emitShapeContainerGuards(
   ctx: EmitCtx,
   node: Extract<TypeNode, { kind: 'shape' }>,
   base: ValueRef,
-  opts: EmitOptions,
   objectShape: boolean,
 ): Stmt[] {
-  const out: Stmt[] = [];
-  if (!opts.skipContainerGuard) {
-    if (objectShape) {
-      if (!opts.provenObject) {
-        out.push(failIfStmt(callExpr('is_object', [refArg(base)])));
-      }
-    } else if (isListKeyword(node.keyword)) {
-      out.push(
-        ...ctx.listGuards(base, opts, isNonEmptyKeyword(node.keyword)),
-      );
-    } else if (!opts.provenArray) {
-      out.push(failIfStmt(callExpr('is_array', [refArg(base)])));
-    }
-  } else if (!objectShape && isListKeyword(node.keyword)) {
-    out.push(
-      ...ctx.listGuards(base, opts, isNonEmptyKeyword(node.keyword)),
-    );
+  if (objectShape) {
+    return [failIfStmt(callExpr('is_object', [refArg(base)]))];
   }
-  return out;
+  if (isListKeyword(node.keyword)) {
+    return [...ctx.listGuards(base, isNonEmptyKeyword(node.keyword))];
+  }
+  return [failIfStmt(callExpr('is_array', [refArg(base)]))];
 }
 
 function emitShapeFields(

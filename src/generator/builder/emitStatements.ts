@@ -17,11 +17,7 @@ import type { EmitCtx } from './emitCtx.ts';
 import { emitCollection, emitPostfixArray } from './emitCollection.ts';
 import { emitShape } from './emitShape.ts';
 import { isClassStringLikeGenericName } from './classString.ts';
-import {
-  type EmitOptions,
-  flattenAlternatives,
-  provenContainerAfter,
-} from './helpers.ts';
+import { type EmitOptions, flattenAlternatives } from './helpers.ts';
 
 export function checkIntersection(
   ctx: EmitCtx,
@@ -29,25 +25,14 @@ export function checkIntersection(
   subject: ValueRef,
 ): Block {
   const out: Stmt[] = [];
-  let provenArray = false;
-  let provenObject = false;
   for (const member of node.types) {
     out.push(
       ...ctx.emitStatements(member, subject, {
         unionRoot: false,
-        skipContainerGuard: false,
-        provenArray,
-        provenObject,
         inLoop: false,
         insideShapeField: false,
       }),
     );
-    if (provenContainerAfter(member).array) {
-      provenArray = true;
-    }
-    if (provenContainerAfter(member).object) {
-      provenObject = true;
-    }
   }
   return out;
 }
@@ -78,17 +63,12 @@ export function emitStatements(
     case 'collection':
       return emitCollection(ctx, type, subject, opts);
     case 'shape':
-      return emitShape(ctx, type, subject, opts);
+      return emitShape(ctx, type, subject);
     case 'array':
-      return emitPostfixArray(ctx, type, subject, opts);
+      return emitPostfixArray(ctx, type, subject);
     case 'keyword':
       if (isBareEmptyCollectionKeyword(type)) {
-        return emitShape(
-          ctx,
-          bareEmptyCollectionKeywordAsShape(type),
-          subject,
-          opts,
-        );
+        return emitShape(ctx, bareEmptyCollectionKeywordAsShape(type), subject);
       }
       return emitKeywordStatements(ctx, type, subject);
     case 'named':

@@ -32,13 +32,13 @@ export function emitCollection(
   rejectParameterizedIterable(node);
 
   if (isListKeyword(node.keyword)) {
-    return emitList(ctx, node, subject, opts);
+    return emitList(ctx, node, subject);
   }
   if (isIterableKeyword(node.keyword) && !('key' in node)) {
-    return emitBareIterable(ctx, node, subject, opts);
+    return emitBareIterable(ctx, node, subject);
   }
   if ('key' in node) {
-    return emitKeyedEntries(ctx, node, subject, opts);
+    return emitKeyedEntries(ctx, node, subject);
   }
   return emitHomogeneousArray(ctx, node, subject, opts);
 }
@@ -64,16 +64,14 @@ export function emitPostfixArray(
   ctx: EmitCtx,
   node: Extract<TypeNode, { kind: 'array' }>,
   subject: ValueRef,
-  opts: EmitOptions,
 ): Block {
   if (isNever(node.value)) {
     return [failIfStmt(binExpr('===', refArg(subject), literalArg('[]')))];
   }
 
-  const out: Stmt[] = [];
-  if (!opts.skipContainerGuard && !opts.provenArray) {
-    out.push(failIfStmt(callExpr('is_array', [refArg(subject)])));
-  }
+  const out: Stmt[] = [
+    failIfStmt(callExpr('is_array', [refArg(subject)])),
+  ];
 
   if (node.value.kind === 'keyword' && node.value.keyword === 'mixed') {
     return out;
@@ -89,7 +87,6 @@ function emitList(
   ctx: EmitCtx,
   node: Extract<TypeNode, { kind: 'collection' }>,
   subject: ValueRef,
-  opts: EmitOptions,
 ): Block {
   const nonEmpty = isNonEmptyKeyword(node.keyword);
 
@@ -103,7 +100,7 @@ function emitList(
     ];
   }
 
-  const out = [...ctx.listGuards(subject, opts, nonEmpty)];
+  const out = [...ctx.listGuards(subject, nonEmpty)];
 
   if (element.kind === 'keyword' && element.keyword === 'mixed') {
     return out;
@@ -119,13 +116,11 @@ function emitBareIterable(
   ctx: EmitCtx,
   node: Extract<TypeNode, { kind: 'collection' }>,
   subject: ValueRef,
-  opts: EmitOptions,
 ): Block {
   const nonEmpty = isNonEmptyKeyword(node.keyword);
-  const out: Stmt[] = [];
-  if (!opts.skipContainerGuard && !opts.provenArray) {
-    out.push(failIfStmt(callExpr('is_iterable', [refArg(subject)])));
-  }
+  const out: Stmt[] = [
+    failIfStmt(callExpr('is_iterable', [refArg(subject)])),
+  ];
   if (nonEmpty) {
     out.push(
       failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),
@@ -149,12 +144,10 @@ function emitKeyedEntries(
     { kind: 'collection'; key: TypeNode; value: TypeNode }
   >,
   subject: ValueRef,
-  opts: EmitOptions,
 ): Block {
   return emitForeachKeyed(
     ctx,
     subject,
-    opts,
     node.key,
     node.value,
     isNonEmptyKeyword(node.keyword),
@@ -189,7 +182,7 @@ function emitHomogeneousArray(
       }
       return out;
     }
-    out.push(...ctx.arrayGuards(subject, opts, nonEmpty, false));
+    out.push(...ctx.arrayGuards(subject, nonEmpty, false));
     return out;
   }
 
@@ -201,17 +194,16 @@ function emitHomogeneousArray(
     return out;
   }
 
-  out.push(...ctx.arrayGuards(subject, opts, nonEmpty, false));
+  out.push(...ctx.arrayGuards(subject, nonEmpty, false));
   return [
     ...out,
-    ...emitForeachKeyed(ctx, subject, opts, null, node.value, nonEmpty, true),
+    ...emitForeachKeyed(ctx, subject, null, node.value, nonEmpty, true),
   ];
 }
 
 function emitForeachKeyed(
   ctx: EmitCtx,
   subject: ValueRef,
-  opts: EmitOptions,
   key: TypeNode | null,
   value: TypeNode,
   nonEmpty: boolean,
@@ -219,7 +211,7 @@ function emitForeachKeyed(
 ): Block {
   const out: Stmt[] = [];
   if (!skipGuards) {
-    out.push(...ctx.arrayGuards(subject, opts, nonEmpty, false));
+    out.push(...ctx.arrayGuards(subject, nonEmpty, false));
   }
 
   const valueRef = ctx.freshVar();

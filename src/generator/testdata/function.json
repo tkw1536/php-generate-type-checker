@@ -417,7 +417,7 @@
   },
   {
     "input": "array{outer: array{inner: string}}",
-    "expected": "/** @phpstan-assert-if-true array{outer: array{inner: string}} $value */\nfunction isArrayOuterArrayInnerString(mixed $value): bool\n{\n    return (is_array($value) && array_key_exists('outer', $value) && array_key_exists('inner', $value['outer']) && is_string($value['outer']['inner']));\n}\n"
+    "expected": "/** @phpstan-assert-if-true array{outer: array{inner: string}} $value */\nfunction isArrayOuterArrayInnerString(mixed $value): bool\n{\n    return (is_array($value) && array_key_exists('outer', $value) && is_array($value['outer']) && array_key_exists('inner', $value['outer']) && is_string($value['outer']['inner']));\n}\n"
   },
   {
     "input": "array{int}",
@@ -457,15 +457,15 @@
   },
   {
     "input": "object{outer: object{inner: string}}",
-    "expected": "/** @phpstan-assert-if-true object{outer: object{inner: string}} $value */\nfunction isObjectOuterObjectInnerString(mixed $value): bool\n{\n    return (is_object($value) && property_exists($value, 'outer') && property_exists($value->outer, 'inner') && is_string($value->outer->inner));\n}\n"
+    "expected": "/** @phpstan-assert-if-true object{outer: object{inner: string}} $value */\nfunction isObjectOuterObjectInnerString(mixed $value): bool\n{\n    return (is_object($value) && property_exists($value, 'outer') && is_object($value->outer) && property_exists($value->outer, 'inner') && is_string($value->outer->inner));\n}\n"
   },
   {
     "input": "array{outer: object{inner: string}}",
-    "expected": "/** @phpstan-assert-if-true array{outer: object{inner: string}} $value */\nfunction isArrayOuterObjectInnerString(mixed $value): bool\n{\n    return (is_array($value) && array_key_exists('outer', $value) && property_exists($value['outer'], 'inner') && is_string($value['outer']->inner));\n}\n"
+    "expected": "/** @phpstan-assert-if-true array{outer: object{inner: string}} $value */\nfunction isArrayOuterObjectInnerString(mixed $value): bool\n{\n    return (is_array($value) && array_key_exists('outer', $value) && is_object($value['outer']) && property_exists($value['outer'], 'inner') && is_string($value['outer']->inner));\n}\n"
   },
   {
     "input": "object{outer: array{inner: string}}",
-    "expected": "/** @phpstan-assert-if-true object{outer: array{inner: string}} $value */\nfunction isObjectOuterArrayInnerString(mixed $value): bool\n{\n    return (is_object($value) && property_exists($value, 'outer') && array_key_exists('inner', $value->outer) && is_string($value->outer['inner']));\n}\n"
+    "expected": "/** @phpstan-assert-if-true object{outer: array{inner: string}} $value */\nfunction isObjectOuterArrayInnerString(mixed $value): bool\n{\n    return (is_object($value) && property_exists($value, 'outer') && is_array($value->outer) && array_key_exists('inner', $value->outer) && is_string($value->outer['inner']));\n}\n"
   },
   {
     "input": "int|string",

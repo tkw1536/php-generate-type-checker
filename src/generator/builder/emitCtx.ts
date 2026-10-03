@@ -23,14 +23,9 @@ export type EmitCtx = {
   ) => Expr | null;
   readonly checkShapeField: (type: TypeNode, fieldRef: ValueRef) => Block;
   readonly checkInValueLoop: (type: TypeNode, valueRef: ValueRef) => Block;
-  readonly listGuards: (
-    subject: ValueRef,
-    opts: EmitOptions,
-    nonEmpty: boolean,
-  ) => Stmt[];
+  readonly listGuards: (subject: ValueRef, nonEmpty: boolean) => Stmt[];
   readonly arrayGuards: (
     subject: ValueRef,
-    opts: EmitOptions,
     nonEmpty: boolean,
     iterable: boolean,
   ) => Stmt[];

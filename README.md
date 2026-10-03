@@ -230,7 +230,7 @@ They can be seen in the following sections.
 |-------------------------------------|-----------------------------------------------------------------------------------------------|
 | `int\|string`                       | `is_int($value) \|\| is_string($value)`                                                       |
 | Loop-heavy union arm                | Helper call, or early `if (simpleArm) return TRUE` then the complex arm                       |
-| `Foo&Bar`                           | Consecutive checks (`&&` after Optimize); skip redundant `is_array` / `is_object` once proven |
+| `Foo&Bar`                           | Consecutive checks (`&&` after Optimize); redundant `is_array` / `is_object` dropped by Optimize |
 | `@phpstan-type` alias `PostSummary` | `isPostSummary($value)` (not inlined)                                                         |
 | Nested non-boolean type             | Extra shared `is…` helper                                                                     |
 

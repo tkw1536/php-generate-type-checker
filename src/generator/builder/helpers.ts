@@ -8,20 +8,11 @@ import {
   literalArg,
   refArg,
 } from '../ir/index.ts';
-import {
-  isBareEmptyCollectionKeyword,
-  isIterableKeyword,
-  isListKeyword,
-  isNonEmptyKeyword,
-  shapeIsObject,
-} from './ast/collection.ts';
+import { isNonEmptyKeyword } from './ast/collection.ts';
 import { isMixed, isNever } from './ast/classify.ts';
 
 export type EmitOptions = {
   readonly unionRoot: boolean;
-  readonly skipContainerGuard: boolean;
-  readonly provenArray: boolean;
-  readonly provenObject: boolean;
   readonly inLoop: boolean;
   readonly insideShapeField: boolean;
 };
@@ -39,31 +30,6 @@ export function flattenAlternatives(node: TypeNode): TypeNode[] {
     return node.types.flatMap(flattenAlternatives);
   }
   return [node];
-}
-
-export function provenContainerAfter(member: TypeNode): {
-  array: boolean;
-  object: boolean;
-} {
-  if (member.kind === 'shape' && shapeIsObject(member)) {
-    return { array: false, object: true };
-  }
-  if (member.kind === 'shape') {
-    return { array: true, object: false };
-  }
-  if (isBareEmptyCollectionKeyword(member)) {
-    return { array: true, object: false };
-  }
-  if (member.kind === 'collection' && isListKeyword(member.keyword)) {
-    return { array: true, object: false };
-  }
-  if (member.kind === 'collection' && !isIterableKeyword(member.keyword)) {
-    return { array: true, object: false };
-  }
-  if (member.kind === 'array') {
-    return { array: true, object: false };
-  }
-  return { array: false, object: false };
 }
 
 export function listElementType(
