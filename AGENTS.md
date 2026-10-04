@@ -16,7 +16,7 @@ yarn lint
 yarn lint:fix
 ```
 
-Stack: TypeScript ^7, Vite ^8, Vitest ^4, Oxlint + oxlint-tsgolint (type-aware), Yarn 4.18.0 (Corepack), Node latest (CI). PHP is generated output only.
+Stack: TypeScript ^7, Vite ^8, Vitest ^5, Oxlint + oxlint-tsgolint (type-aware), Yarn 4.18.0 (Corepack), Node latest (CI). PHP is generated output only.
 
 ## Testing
 
@@ -29,11 +29,11 @@ yarn spellcheck
 ```
 
 - Unit/integration: `*.test.ts` next to modules under `src/`
-- Whole-UI: `src/main.test.ts` (happy-dom)
+- Whole-UI: `src/main.*.test.ts` (happy-dom)
 - Parser fixtures: edit `src/parser/testdata/*.IN` → `yarn update_fixtures:parser` → commit matching `*.json`
 - Generator fixtures: edit `src/generator/testdata/*.IN` → `yarn update_fixtures:generator` → commit matching `*.json`
 - When changing generator output behavior, always add a generator golden for the new/changed case unless an equivalent `*.IN` case already exists
-- When changing parser, generator, optimizer, or render behavior described in README **How generation works** (type checks, optimizer passes, or pipeline phases), update that section to match
+- When changing parser, generator, optimizer, or render behavior described in README **Technical Overview** (type checks, optimizer passes, or pipeline phases), update that section to match
 - Optional: `yarn review_fixtures:generator` (interactive golden review)
 
 ## Code style
@@ -63,6 +63,12 @@ yarn build
 yarn lint
 yarn spellcheck
 ```
+
+## README prose
+
+In `README.md`, prefer one sentence per line.
+Do not hard-wrap long sentences across multiple lines.
+Keep Markdown tables column-aligned in the source (pad cells so `|` separators line up).
 
 ## Warnings
 

@@ -6,9 +6,9 @@ Parse [PHPDoc types as supported by PHPStan](https://phpstan.org/writing-php-cod
 
 ## Try it
 
-**[Open the live demo](https://check.guys.wtf)** — paste a PHPDoc `@phpstan-type` block (or plain types) and copy the generated PHP. 
+**[Open the live demo](https://check.guys.wtf)** — paste a PHPDoc `@phpstan-type` block (or plain types) and copy the generated PHP.
 
-![Light-theme UI: PHPDoc @phpstan-type UserAddress input on the left with generate options; PHP Code tab on the right showing the generated isUserAddress checker function](docs/ui.png)
+![Light-theme UI: PHPDoc @phpstan-type UserAddress input on the left with generate options; Pipeline / Metrics / PHP Code tabs on the right with the generated isUserAddress checker](docs/ui.png)
 
 ## Features
 
@@ -16,7 +16,7 @@ Parse [PHPDoc types as supported by PHPStan](https://phpstan.org/writing-php-cod
 - Primary input is PHPDoc with `@phpstan-type` aliases (multiple comments allowed); plain type expressions work as a convenience
 - Emit standalone functions or static methods you can drop into your own code
 - Shared helpers for nested types, with readable names like `isPostListResponse` by default
-- UI that runs entirely in your browser — no server-side code or analytics
+- UI that runs entirely in your browser — Pipeline / Metrics / PHP tabs, no server-side code or analytics
 
 ## Examples
 
@@ -82,9 +82,9 @@ function isPostListResponse(mixed $value): bool
 }
 ```
 
-### Plain type expression 
+### Plain type expression
 
-It is also possible to paste in a raw type expression. 
+It is also possible to paste in a raw type expression.
 For example:
 
 ```
@@ -120,8 +120,8 @@ Generation runs in four phases, which can be seen in the diagram below:
   Tokenizes PHPStan PHPDoc types, rejects cycles and duplicate aliases, and assigns check function names (`User` becomes `isUser`; unnamed types are named from the type text).
   Mentions of other phpstan-types are directly inlined into the type AST, unless configured otherwise.
 - **Generate**:
-  Walks each type and build an **abstract checker**.
-  The abstract checkers are represented as a very simplified php AST acting as an IR.
+  Walks each type and builds an **abstract checker**.
+  The abstract checkers are represented as a very simplified PHP AST acting as an IR.
 
   The IR represents each checker as a so-called block, an ordered list of statements.
   A statement can be an `if` condition, a `foreach` loop, or a `return`.
@@ -137,10 +137,11 @@ Generation runs in four phases, which can be seen in the diagram below:
   Rewrites the abstract checker functions in place (helpers first, then callers) until nothing changes: inlines leftovers, boolean algebra, drop dead code, delete unused helpers.
   More details below.
 - **Render**:
-  This final check writes **actual PHP**, rendering the AST into real PHP 8+ functions (or static methods) with `@phpstan-assert-if-true`.
+  This final phase writes **actual PHP**, rendering the AST into real PHP 8+ functions (or static methods) with `@phpstan-assert-if-true`.
 
-Generate and Optimize work on an abstract checkers (guards, loops, returns) that is not PHP yet; only Render emits actual PHP.
+Generate and Optimize work on abstract checkers (guards, loops, returns) that are not PHP yet; only Render emits actual PHP.
 Examples below show that abstract form as PHP so it is readable.
+The UI Pipeline tab exposes the same stages as JSON (`Parse`, `Generate`, `Optimize`; `Optimize` is `null` when skipped).
 
 Generated checkers are meant to pass PHPStan at level 10; anything else is considered a bug.
 Some PHPStan types cannot be checked at runtime (see Uncheckable below).
@@ -160,7 +161,7 @@ return TRUE;
 ```
 
 The actual implementation represents this checker using a more abstract representation, however for purposes of this document we are showing the equivalent PHP syntax.
-It is also possible to see the naïve checker code in the interface, by disabling the optimize phase.
+In the UI, the Pipeline tab's `Generate` key is this naïve IR; turn Optimize off to leave `Optimize` as `null` and render from Generate.
 
 Checkers for other types use functions other than `is_int`.
 They can be seen in the following sections.
@@ -298,14 +299,14 @@ return TRUE;
 ```
 
 This example checks for required keys.
-For optional keys, the value type check takes place inside the if, as opposed to after it.
+For optional keys, the value type check runs only when the key exists.
 For example for `array{age?: int}`:
 
 ```php
 if (!is_array($value)) {
     return FALSE;
 }
-if (!array_key_exists('age', $value)) {
+if (array_key_exists('age', $value)) {
     if (!is_int($value['age'])) {
         return FALSE;
     }
