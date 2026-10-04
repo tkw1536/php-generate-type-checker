@@ -352,6 +352,14 @@ These are:
 The generated output is naïve and often generates very verbose code.
 The goal of the optimize is to produce nicer code and rewrites the abstract checker in a loop until nothing changes.
 
+An **IR** loop rewrites all checker programs until none change (do-while: Optimize enters the pass body first; **IR changed?** runs only after a round).
+Inside that, each **block** runs **Inline → … → Dead-code elimination** until that block is stable.
+**IR changed?** / **Block changed?** ask whether another round is needed.
+IR `yes` enters the pass body again and `no` goes to **Prune**.
+Block `yes` restarts at Inline and `no` returns to the IR question.
+The UI Metrics tab draws this under the Optimize stage.
+**Yes × N** on each loop is the round count (**IR rounds** / **Block rounds**).
+
 ![Diagram showing the optimize passes](docs/optimize.svg)
 
 | Pass                  | Goal                                                                                         | Before                                                                     | After                                                                             |
@@ -392,6 +400,7 @@ corepack enable   # once per machine, if Yarn is not available
 yarn install
 yarn dev          # http://localhost:5173
 yarn test
+yarn report:optimizer-stats   # aggregate simplify metrics over generator fixtures
 yarn build
 yarn lint         # Oxlint
 yarn lint:fix

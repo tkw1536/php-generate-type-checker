@@ -4,14 +4,21 @@ import {
   type HighlightLanguage,
 } from '../highlight.ts';
 import { describeError, renderErrorHtml } from './errorDisplay.ts';
+import { IrMetricsPanel } from './irMetricsPanel.ts';
 
-/** Left → right in the tab bar: AST → IR build → IR optimized → PHP */
-export type OutputTabId = 'ast' | 'ir-build' | 'ir-optimized' | 'php';
+/** Left → right: AST → IR build → IR optimized → Metrics → PHP */
+export type OutputTabId =
+  | 'ast'
+  | 'ir-build'
+  | 'ir-optimized'
+  | 'ir-metrics'
+  | 'php';
 
 const OUTPUT_TAB_IDS: ReadonlySet<string> = new Set([
   'ast',
   'ir-build',
   'ir-optimized',
+  'ir-metrics',
   'php',
 ]);
 
@@ -62,14 +69,23 @@ export class OutputPanel {
 /** Parameter view of {@link OutputPanel} for prefer-readonly-parameter-types. */
 export type OutputPanelRef = Readonly<OutputPanel>;
 
+export type IrMetricsPanelRef = Readonly<IrMetricsPanel>;
+
+export type CopyablePanel = {
+  readonly tabId: OutputTabId;
+  readonly rawText: string;
+};
+
 export type OutputPanelSet = {
   readonly ast: OutputPanelRef;
   readonly irBuild: OutputPanelRef;
   readonly irOptimized: OutputPanelRef;
+  readonly irMetrics: IrMetricsPanelRef;
   readonly php: OutputPanelRef;
 };
 
 const outputPanels: OutputPanel[] = [];
+let irMetricsPanel: IrMetricsPanel | undefined;
 let activeOutputTab: OutputTabId = 'php';
 
 const copyBtn = document.querySelector<HTMLButtonElement>('#output-copy')!;
@@ -109,7 +125,10 @@ export function setActiveOutputTab(tabId: OutputTabId): void {
   activeOutputTab = tabId;
 }
 
-export function getActiveOutputPanel(): OutputPanelRef {
+export function getActiveOutputPanel(): CopyablePanel {
+  if (activeOutputTab === 'ir-metrics' && irMetricsPanel !== undefined) {
+    return irMetricsPanel;
+  }
   return (
     outputPanels.find((p: OutputPanelRef) => p.tabId === activeOutputTab) ??
     outputPanels[0]
@@ -134,6 +153,10 @@ function setupOutputPanel(
 }
 
 export function setupOutputPanels(): OutputPanelSet {
+  const metricsBody = document.querySelector<HTMLElement>(
+    '#ir-metrics-output-body',
+  )!;
+  irMetricsPanel = new IrMetricsPanel(metricsBody);
   return {
     ast: setupOutputPanel('ast', 'ast-output-body', 'ast-output', 'json'),
     irBuild: setupOutputPanel(
@@ -148,6 +171,7 @@ export function setupOutputPanels(): OutputPanelSet {
       'ir-optimized-output',
       'json',
     ),
+    irMetrics: irMetricsPanel,
     php: setupOutputPanel('php', 'php-output-body', 'php-output', 'php'),
   };
 }

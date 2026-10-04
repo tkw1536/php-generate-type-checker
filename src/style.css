@@ -586,6 +586,359 @@ body {
   visibility: hidden;
 }
 
+.ir-metrics {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.stages-diagram-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.35rem;
+}
+
+.stages-diagram-box {
+  flex: 1 1 5.5rem;
+  min-width: 5rem;
+  max-width: 9rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  text-align: center;
+}
+
+.stages-diagram-box--skipped {
+  border-style: dashed;
+  color: var(--muted);
+}
+
+.stages-diagram-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.stages-diagram-time {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  line-height: 1.2;
+}
+
+.stages-diagram-box--skipped .stages-diagram-time {
+  font-style: italic;
+}
+
+.stages-diagram-arrow {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  color: var(--muted);
+  user-select: none;
+}
+
+.stages-diagram-arrow-svg {
+  display: block;
+  overflow: visible;
+}
+
+.stages-diagram-arrow-svg path:first-child {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
+.stages-diagram-arrow-svg path:last-child {
+  fill: currentColor;
+  stroke: none;
+}
+
+.stages-diagram-total {
+  display: flex;
+  align-items: center;
+  margin: 0 0 0 0.15rem;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/*
+ * Stages header + fixed SVG optimize flowchart.
+ * Outer diamond sits under Optimize (cx ≈ 292); passes to the left.
+ */
+.metrics-pipeline {
+  /* Wide enough for Parse + Generate; diagram left boxes stay narrower in-canvas. */
+  --pass-col-width: 220px;
+  --decision-size: 104px;
+  --prune-col-width: 220px;
+  --pipeline-gap: 0.35rem;
+  display: grid;
+  grid-template-columns:
+    var(--pass-col-width) 40px var(--decision-size) 28px var(--prune-col-width)
+    auto;
+  column-gap: var(--pipeline-gap);
+  width: max-content;
+  max-width: 100%;
+  align-items: start;
+}
+
+.metrics-stages-header {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: center;
+  margin-bottom: 0.1rem;
+}
+
+.metrics-stages-lead {
+  grid-column: 1 / 3;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--pipeline-gap);
+  min-width: 0;
+}
+
+.metrics-stages-lead .stages-diagram-box {
+  flex: 1 1 5.5rem;
+  min-width: 5.5rem;
+  max-width: none;
+}
+
+.metrics-stages-optimize {
+  grid-column: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.metrics-stages-optimize .stages-diagram-box {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: none;
+}
+
+.metrics-stages-trail {
+  grid-column: 4 / -1;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--pipeline-gap);
+  min-width: 0;
+}
+
+.metrics-stages-trail .stages-diagram-box {
+  flex: 1 1 5.5rem;
+  min-width: 5rem;
+  max-width: 9rem;
+}
+
+.metrics-pipeline > .optimize-diagram,
+.metrics-pipeline > .ir-metrics-empty {
+  grid-column: 1 / 6;
+}
+
+.optimize-diagram {
+  position: relative;
+  max-width: 100%;
+}
+
+.optimize-diagram-svg {
+  display: block;
+  overflow: visible;
+}
+
+.optimize-diagram-edge {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1.5;
+  stroke-linejoin: miter;
+  stroke-linecap: butt;
+}
+
+.optimize-diagram-edge--dashed {
+  stroke-dasharray: 5 5;
+}
+
+.optimize-diagram-svg marker path {
+  fill: var(--border);
+  stroke: none;
+}
+
+.optimize-diagram-diamond-shape {
+  fill: var(--surface);
+  stroke: var(--border);
+  stroke-width: 1.5;
+  stroke-linejoin: miter;
+  shape-rendering: geometricPrecision;
+}
+
+.optimize-diagram-nodes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.optimize-diagram-node {
+  position: absolute;
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.optimize-diagram-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.1rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.optimize-diagram-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.optimize-diagram-label > span:first-child {
+  white-space: nowrap;
+}
+
+.optimize-diagram-detail {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  line-height: 1.2;
+}
+
+.optimize-diagram-decision {
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.optimize-diagram-decision-q {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: center;
+  width: 4.75rem;
+  color: var(--text);
+  user-select: none;
+}
+
+.optimize-diagram-decision-title {
+  font-weight: 700;
+}
+
+.optimize-diagram-decision .metrics-help {
+  pointer-events: auto;
+}
+
+.optimize-diagram-edge-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--surface);
+  padding: 0.05rem 0.15rem;
+  user-select: none;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}
+
+.optimize-diagram-yes-loop {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  background: var(--bg);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+}
+
+.optimize-diagram-node:has(.metrics-help:is(:hover, :focus-visible)) {
+  z-index: 50;
+}
+
+/* Metrics diagram tooltips: open below the control (panel is scrollable). */
+.ir-metrics .metrics-help {
+  position: relative;
+}
+
+.ir-metrics .metrics-help::after {
+  top: calc(100% + 0.35rem);
+  bottom: auto;
+  left: 0;
+  right: auto;
+  width: 14rem;
+  max-width: min(14rem, calc(100vw - 2rem));
+  z-index: 50;
+}
+
+/* Keep the rightmost pipeline stage tooltip inside the panel. */
+.stages-diagram-box[data-stage='render'] {
+  overflow: visible;
+}
+
+.stages-diagram-box[data-stage='render'] .metrics-help::after {
+  left: auto;
+  right: 0;
+}
+
+.ir-metrics-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
 .output-pre {
   flex: 1;
   min-height: 0;

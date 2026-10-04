@@ -1,8 +1,19 @@
 digraph pipeline {
   rankdir=TB;
   node [shape=box, style=rounded];
-  splines = ortho;
+  splines=true;
+  pad=0.3;
 
+  {
+    rank=same;
+    parse [label="Parse"];
+    generate [label="Generate"];
+    optimize [label="Optimize"];
+    render [label="Render"];
+    parse -> generate -> optimize -> render;
+  }
+
+  outer_dec [label="IR\nchanged?", shape=diamond, style=""];
   inline    [label="Inline helpers"];
   dedupe    [label="Dedupe"];
   unnest    [label="Unnest"];
@@ -11,10 +22,16 @@ digraph pipeline {
   facts     [label="Known facts"];
   simplify  [label="Simplify"];
   dce       [label="Dead-code elimination"];
-  simplify2 [label="Simplify again"];
+  inner_dec [label="Block\nchanged?", shape=diamond, style=""];
   prune     [label="Prune unused helpers"];
 
-  inline    -> dedupe    -> unnest  -> combine -> flatten -> facts -> simplify -> dce -> simplify2;
-  simplify2    -> inline  [label="         changed", constraint=false];
-  simplify2 -> prune     [label=" stable"];
+  // First entry skips the decision (do-while): run the body, then ask IR changed?
+  optimize -> inline [style=dashed];
+  outer_dec -> inline [label="yes"];
+  outer_dec -> prune [label="no"];
+  inline -> dedupe -> unnest -> combine -> flatten -> facts -> simplify -> dce;
+  dce -> inner_dec;
+  inner_dec -> inline [constraint=false, label="yes"];
+  inner_dec -> outer_dec [constraint=false, label="no"];
+  prune -> optimize [style=dashed, constraint=false];
 }

@@ -1,0 +1,6 @@
+digraph pipeline {
+  rankdir=LR;
+  node [shape=box, style=rounded];
+
+  Parse -> Generate -> Optimize -> Render;
+}

@@ -17,9 +17,9 @@
           class="option-help site-help"
           aria-label="Help: About this tool"
           aria-describedby="help-about-tool"
-          data-tooltip="Left: paste a PHPDoc block with @phpstan-type aliases (one or more comments), or plain PHPStan type expressions for convenience. Each alias or plain type becomes a checker. Options under the input control optimization, alias handling, and PHP shape — hover each ? for details. Right: tabs follow the pipeline Type AST → IR (build) → IR (optimized) → PHP Code; output updates as you edit. Some types cannot be checked at runtime (for example callable signatures or unhandled generics) and report a generation error."
+          data-tooltip="Left: paste a PHPDoc block with @phpstan-type aliases (one or more comments), or plain PHPStan type expressions for convenience. Each alias or plain type becomes a checker. Options under the input control optimization, alias handling, and PHP shape — hover each ? for details. Right: tabs follow the pipeline Type AST → IR (build) → IR (optimized) → Metrics → PHP Code; output updates as you edit. Some types cannot be checked at runtime (for example callable signatures or unhandled generics) and report a generation error."
         >?</button>
-        <span id="help-about-tool" class="visually-hidden">Left: paste a PHPDoc block with @phpstan-type aliases (one or more comments), or plain PHPStan type expressions for convenience. Each alias or plain type becomes a checker. Options under the input control optimization, alias handling, and PHP shape — hover each ? for details. Right: tabs follow the pipeline Type AST → IR (build) → IR (optimized) → PHP Code; output updates as you edit. Some types cannot be checked at runtime (for example callable signatures or unhandled generics) and report a generation error.</span>
+        <span id="help-about-tool" class="visually-hidden">Left: paste a PHPDoc block with @phpstan-type aliases (one or more comments), or plain PHPStan type expressions for convenience. Each alias or plain type becomes a checker. Options under the input control optimization, alias handling, and PHP shape — hover each ? for details. Right: tabs follow the pipeline Type AST → IR (build) → IR (optimized) → Metrics → PHP Code; output updates as you edit. Some types cannot be checked at runtime (for example callable signatures or unhandled generics) and report a generation error.</span>
       </div>
       <button id="theme-toggle" type="button" class="btn btn-theme" aria-label="Switch to dark mode" title="Dark mode">☾</button>
     </header>
@@ -174,6 +174,18 @@
               <button
                 type="button"
                 role="tab"
+                id="output-tab-ir-metrics"
+                class="output-tab"
+                aria-selected="false"
+                aria-controls="output-panel-ir-metrics"
+                tabindex="-1"
+                data-output-tab="ir-metrics"
+              >
+                Metrics
+              </button>
+              <button
+                type="button"
+                role="tab"
                 id="output-tab-php"
                 class="output-tab active"
                 aria-selected="true"
@@ -231,6 +243,19 @@
             >
               <div class="output-tab-panel-inner" id="ir-optimized-output-body">
                 <pre class="output-pre" id="ir-optimized-output" aria-label="IR (optimized) output"><code class="output-empty">Run generate to see output</code></pre>
+              </div>
+            </div>
+            <div
+              id="output-panel-ir-metrics"
+              class="output-tab-panel"
+              role="tabpanel"
+              aria-labelledby="output-tab-ir-metrics"
+              tabindex="-1"
+              data-output-panel="ir-metrics"
+              hidden
+            >
+              <div class="output-tab-panel-inner" id="ir-metrics-output-body">
+                <p class="ir-metrics-empty">Run generate to see output</p>
               </div>
             </div>
             <div

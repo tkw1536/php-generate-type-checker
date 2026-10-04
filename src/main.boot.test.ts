@@ -138,6 +138,12 @@ async function updatesPhpWhenOptionsChange(): Promise<void> {
   optimize.checked = false;
   optimize.dispatchEvent(new Event('change', { bubbles: true }));
   expect(irOptimizedText()).toMatch(/Optimizer skipped/iu);
+  const metricsBody = document.querySelector('#ir-metrics-output-body')!;
+  expect(metricsBody.textContent).not.toMatch(/Optimizer skipped/iu);
+  expect(metricsBody.querySelector('.metrics-stages-header')).not.toBeNull();
+  expect(
+    metricsBody.querySelector('.stages-diagram-box--skipped'),
+  ).not.toBeNull();
 
   const verbose = document.querySelector<HTMLInputElement>(
     '#generate-verbose-phpdoc',
