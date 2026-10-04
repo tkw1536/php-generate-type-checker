@@ -132,14 +132,8 @@ export function phpCodeText(): string {
   return document.querySelector('#php-output code')?.textContent ?? '';
 }
 
-export function irOptimizedText(): string {
-  return (
-    document.querySelector('#ir-optimized-output code')?.textContent ?? ''
-  );
-}
-
-export function astCodeText(): string {
-  return document.querySelector('#ast-output code')?.textContent ?? '';
+export function pipelineCodeText(): string {
+  return document.querySelector('#pipeline-output code')?.textContent ?? '';
 }
 
 export function setInputValue(value: string): void {

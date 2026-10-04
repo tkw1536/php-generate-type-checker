@@ -5,7 +5,6 @@ import { TYPE_EXAMPLES } from './ui/examples.ts';
 import {
   bootApp,
   flushDebounce,
-  irOptimizedText,
   phpCodeText,
   setInputValue,
   themeToggleLabel,
@@ -130,14 +129,24 @@ async function debouncesInputThenUpdatesPhpAndHash(): Promise<void> {
 }
 
 async function updatesPhpWhenOptionsChange(): Promise<void> {
-  await bootApp();
+  const { writeText } = await bootApp();
 
   const optimize = document.querySelector<HTMLInputElement>(
     '#generate-prioritize-readability',
   )!;
   optimize.checked = false;
   optimize.dispatchEvent(new Event('change', { bubbles: true }));
-  expect(irOptimizedText()).toMatch(/Optimizer skipped/iu);
+
+  document.querySelector<HTMLButtonElement>('#output-tab-pipeline')!.click();
+  const copyBtn = document.querySelector<HTMLButtonElement>('#output-copy')!;
+  copyBtn.click();
+  await vi.waitFor(() => {
+    expect(copyBtn.textContent).toBe('Copied!');
+  });
+  const pipelineJson = writeText.mock.calls.at(-1)?.[0];
+  expect(typeof pipelineJson).toBe('string');
+  expect(pipelineJson).toContain('"Optimize": null');
+
   const metricsBody = document.querySelector('#ir-metrics-output-body')!;
   expect(metricsBody.textContent).not.toMatch(/Optimizer skipped/iu);
   expect(metricsBody.querySelector('.metrics-stages-header')).not.toBeNull();

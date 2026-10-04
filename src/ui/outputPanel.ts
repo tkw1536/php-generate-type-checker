@@ -5,19 +5,18 @@ import {
 } from '../highlight.ts';
 import { describeError, renderErrorHtml } from './errorDisplay.ts';
 import { IrMetricsPanel } from './irMetricsPanel.ts';
+import {
+  applyExpansionState,
+  collectExpansionState,
+  setJsonTreeExpanded,
+} from './jsonTreeExpand.ts';
+import { parseJsonValue, renderJsonTree } from './jsonTreeView.ts';
 
-/** Left → right: AST → IR build → IR optimized → Metrics → PHP */
-export type OutputTabId =
-  | 'ast'
-  | 'ir-build'
-  | 'ir-optimized'
-  | 'ir-metrics'
-  | 'php';
+/** Left → right: Pipeline → Metrics → PHP */
+export type OutputTabId = 'pipeline' | 'ir-metrics' | 'php';
 
 const OUTPUT_TAB_IDS: ReadonlySet<string> = new Set([
-  'ast',
-  'ir-build',
-  'ir-optimized',
+  'pipeline',
   'ir-metrics',
   'php',
 ]);
@@ -49,9 +48,27 @@ export class OutputPanel {
     this.rawText = text;
     this.bodyEl.classList.remove('panel-body--error');
 
-    const { code } = getPreAndCode(this.bodyEl, this.preId);
+    const { pre, code } = getPreAndCode(this.bodyEl, this.preId);
 
     const language = detectOutputLanguage(text, this.defaultLanguage);
+    if (language === 'json') {
+      const parsed = parseJsonValue(text);
+      if (parsed.ok) {
+        const previous = pre.querySelector('.json-tree');
+        const expansion =
+          previous instanceof HTMLElement
+            ? collectExpansionState(previous)
+            : undefined;
+        const tree = renderJsonTree(parsed.value);
+        if (expansion !== undefined) {
+          applyExpansionState(tree, expansion);
+        }
+        pre.replaceChildren(tree);
+        syncCopyButton();
+        return;
+      }
+    }
+
     code.className = `hljs language-${language}`;
     code.innerHTML = highlightCode(text, language);
     syncCopyButton();
@@ -77,9 +94,7 @@ export type CopyablePanel = {
 };
 
 export type OutputPanelSet = {
-  readonly ast: OutputPanelRef;
-  readonly irBuild: OutputPanelRef;
-  readonly irOptimized: OutputPanelRef;
+  readonly pipeline: OutputPanelRef;
   readonly irMetrics: IrMetricsPanelRef;
   readonly php: OutputPanelRef;
 };
@@ -93,9 +108,7 @@ const copyStatus = document.querySelector<HTMLElement>('#copy-status');
 let copyStatusTimeoutId: ReturnType<typeof setTimeout> | undefined;
 
 const OUTPUT_PRE_LABELS: Record<string, string> = {
-  'ast-output': 'Type AST output',
-  'ir-build-output': 'IR (build) output',
-  'ir-optimized-output': 'IR (optimized) output',
+  'pipeline-output': 'Pipeline output',
   'php-output': 'PHP Code output',
 };
 
@@ -113,7 +126,11 @@ function getPreAndCode(
     bodyEl.innerHTML = `<pre class="output-pre" id="${preId}"${labelAttr}><code></code></pre>`;
     pre = bodyEl.querySelector<HTMLPreElement>(`#${preId}`)!;
   }
-  const code = pre.querySelector('code')!;
+  let code = pre.querySelector('code');
+  if (code === null) {
+    code = document.createElement('code');
+    pre.replaceChildren(code);
+  }
   return { pre, code };
 }
 
@@ -157,23 +174,39 @@ export function setupOutputPanels(): OutputPanelSet {
     '#ir-metrics-output-body',
   )!;
   irMetricsPanel = new IrMetricsPanel(metricsBody);
+  setupPipelineTreeActions();
   return {
-    ast: setupOutputPanel('ast', 'ast-output-body', 'ast-output', 'json'),
-    irBuild: setupOutputPanel(
-      'ir-build',
-      'ir-build-output-body',
-      'ir-build-output',
-      'json',
-    ),
-    irOptimized: setupOutputPanel(
-      'ir-optimized',
-      'ir-optimized-output-body',
-      'ir-optimized-output',
+    pipeline: setupOutputPanel(
+      'pipeline',
+      'pipeline-output-body',
+      'pipeline-output',
       'json',
     ),
     irMetrics: irMetricsPanel,
     php: setupOutputPanel('php', 'php-output-body', 'php-output', 'php'),
   };
+}
+
+function setupPipelineTreeActions(): void {
+  const expandBtn = document.querySelector<HTMLButtonElement>(
+    '#pipeline-expand-all',
+  );
+  const collapseBtn = document.querySelector<HTMLButtonElement>(
+    '#pipeline-collapse-all',
+  );
+  expandBtn?.addEventListener('click', () => {
+    setPipelineTreeExpanded(true);
+  });
+  collapseBtn?.addEventListener('click', () => {
+    setPipelineTreeExpanded(false);
+  });
+}
+
+function setPipelineTreeExpanded(expanded: boolean): void {
+  const tree = document.querySelector<HTMLElement>('#pipeline-output .json-tree');
+  if (tree !== null) {
+    setJsonTreeExpanded(tree, expanded);
+  }
 }
 
 export function refreshAllHighlights(): void {

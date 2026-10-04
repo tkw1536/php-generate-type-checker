@@ -19,9 +19,9 @@ async function showsErrorDisplayWhenTypeCannotBeParsed(): Promise<void> {
   expect(phpBody.textContent).toMatch(/Parse error/u);
   expect(phpBody.textContent).not.toMatch(/Parse failed/u);
 
-  const astBody = document.querySelector('#ast-output-body')!;
-  expect(astBody.classList.contains('panel-body--error')).toBe(true);
-  expect(astBody.querySelector('.error-display')).toBeTruthy();
+  const pipelineBody = document.querySelector('#pipeline-output-body')!;
+  expect(pipelineBody.classList.contains('panel-body--error')).toBe(true);
+  expect(pipelineBody.querySelector('.error-display')).toBeTruthy();
 }
 
 async function showsNoTypesFoundWhenInputIsEmpty(): Promise<void> {
@@ -36,9 +36,9 @@ async function showsNoTypesFoundWhenInputIsEmpty(): Promise<void> {
   expect(phpBody.textContent).toMatch(/No type definitions found/u);
   expect(phpBody.textContent).toMatch(/Invalid input/u);
 
-  const astBody = document.querySelector('#ast-output-body')!;
-  expect(astBody.classList.contains('panel-body--error')).toBe(true);
-  expect(astBody.textContent).toMatch(/No type definitions found/u);
+  const pipelineBody = document.querySelector('#pipeline-output-body')!;
+  expect(pipelineBody.classList.contains('panel-body--error')).toBe(true);
+  expect(pipelineBody.textContent).toMatch(/No type definitions found/u);
 }
 
 async function showsDuplicateAliasErrorOnPhpPanel(): Promise<void> {

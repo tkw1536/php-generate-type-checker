@@ -17,9 +17,9 @@
           class="option-help site-help"
           aria-label="Help: About this tool"
           aria-describedby="help-about-tool"
-          data-tooltip="Left: paste a PHPDoc block with @phpstan-type aliases (one or more comments), or plain PHPStan type expressions for convenience. Each alias or plain type becomes a checker. Options under the input control optimization, alias handling, and PHP shape — hover each ? for details. Right: tabs follow the pipeline Type AST → IR (build) → IR (optimized) → Metrics → PHP Code; output updates as you edit. Some types cannot be checked at runtime (for example callable signatures or unhandled generics) and report a generation error."
+          data-tooltip="Left: paste a PHPDoc block with @phpstan-type aliases (one or more comments), or plain PHPStan type expressions for convenience. Each alias or plain type becomes a checker. Options under the input control optimization, alias handling, and PHP shape — hover each ? for details. Right: tabs follow Pipeline → Metrics → PHP Code; output updates as you edit. Some types cannot be checked at runtime (for example callable signatures or unhandled generics) and report a generation error."
         >?</button>
-        <span id="help-about-tool" class="visually-hidden">Left: paste a PHPDoc block with @phpstan-type aliases (one or more comments), or plain PHPStan type expressions for convenience. Each alias or plain type becomes a checker. Options under the input control optimization, alias handling, and PHP shape — hover each ? for details. Right: tabs follow the pipeline Type AST → IR (build) → IR (optimized) → Metrics → PHP Code; output updates as you edit. Some types cannot be checked at runtime (for example callable signatures or unhandled generics) and report a generation error.</span>
+        <span id="help-about-tool" class="visually-hidden">Left: paste a PHPDoc block with @phpstan-type aliases (one or more comments), or plain PHPStan type expressions for convenience. Each alias or plain type becomes a checker. Options under the input control optimization, alias handling, and PHP shape — hover each ? for details. Right: tabs follow Pipeline → Metrics → PHP Code; output updates as you edit. Some types cannot be checked at runtime (for example callable signatures or unhandled generics) and report a generation error.</span>
       </div>
       <button id="theme-toggle" type="button" class="btn btn-theme" aria-label="Switch to dark mode" title="Dark mode">☾</button>
     </header>
@@ -88,9 +88,9 @@
                   class="option-help"
                   aria-label="Help: Optimize"
                   aria-describedby="help-optimize"
-                  data-tooltip="When on, the IR optimizer runs before PHP is rendered for more compact output. When off, PHP is rendered from IR (build)."
+                  data-tooltip="When on, rewrites the abstract checkers until stable (inline, simplify, DCE, and related passes) before PHP is rendered. When off, Optimize is skipped."
                 >?</button>
-                <span id="help-optimize" class="visually-hidden">When on, the IR optimizer runs before PHP is rendered for more compact output. When off, PHP is rendered from IR (build).</span>
+                <span id="help-optimize" class="visually-hidden">When on, rewrites the abstract checkers until stable (inline, simplify, DCE, and related passes) before PHP is rendered. When off, Optimize is skipped.</span>
               </div>
               <div class="panel-footer-option-row generate-docblock-option" hidden>
                 <label class="panel-footer-option" for="generate-resolve-aliases">
@@ -138,38 +138,14 @@
               <button
                 type="button"
                 role="tab"
-                id="output-tab-ast"
+                id="output-tab-pipeline"
                 class="output-tab"
                 aria-selected="false"
-                aria-controls="output-panel-ast"
+                aria-controls="output-panel-pipeline"
                 tabindex="-1"
-                data-output-tab="ast"
+                data-output-tab="pipeline"
               >
-                Type AST
-              </button>
-              <button
-                type="button"
-                role="tab"
-                id="output-tab-ir-build"
-                class="output-tab"
-                aria-selected="false"
-                aria-controls="output-panel-ir-build"
-                tabindex="-1"
-                data-output-tab="ir-build"
-              >
-                IR (build)
-              </button>
-              <button
-                type="button"
-                role="tab"
-                id="output-tab-ir-optimized"
-                class="output-tab"
-                aria-selected="false"
-                aria-controls="output-panel-ir-optimized"
-                tabindex="-1"
-                data-output-tab="ir-optimized"
-              >
-                IR (optimized)
+                Pipeline
               </button>
               <button
                 type="button"
@@ -207,42 +183,16 @@
           </div>
           <div class="panel-body panel-body--output panel-body--tabbed">
             <div
-              id="output-panel-ast"
+              id="output-panel-pipeline"
               class="output-tab-panel"
               role="tabpanel"
-              aria-labelledby="output-tab-ast"
+              aria-labelledby="output-tab-pipeline"
               tabindex="-1"
-              data-output-panel="ast"
+              data-output-panel="pipeline"
               hidden
             >
-              <div class="output-tab-panel-inner" id="ast-output-body">
-                <pre class="output-pre" id="ast-output" aria-label="Type AST output"><code class="output-empty">Run generate to see output</code></pre>
-              </div>
-            </div>
-            <div
-              id="output-panel-ir-build"
-              class="output-tab-panel"
-              role="tabpanel"
-              aria-labelledby="output-tab-ir-build"
-              tabindex="-1"
-              data-output-panel="ir-build"
-              hidden
-            >
-              <div class="output-tab-panel-inner" id="ir-build-output-body">
-                <pre class="output-pre" id="ir-build-output" aria-label="IR (build) output"><code class="output-empty">Run generate to see output</code></pre>
-              </div>
-            </div>
-            <div
-              id="output-panel-ir-optimized"
-              class="output-tab-panel"
-              role="tabpanel"
-              aria-labelledby="output-tab-ir-optimized"
-              tabindex="-1"
-              data-output-panel="ir-optimized"
-              hidden
-            >
-              <div class="output-tab-panel-inner" id="ir-optimized-output-body">
-                <pre class="output-pre" id="ir-optimized-output" aria-label="IR (optimized) output"><code class="output-empty">Run generate to see output</code></pre>
+              <div class="output-tab-panel-inner" id="pipeline-output-body">
+                <pre class="output-pre" id="pipeline-output" aria-label="Pipeline output"><code class="output-empty">Run generate to see output</code></pre>
               </div>
             </div>
             <div
@@ -271,9 +221,62 @@
               </div>
             </div>
           </div>
-          <div class="panel-footer panel-footer--warning" role="note">
-            <span><strong>Warning:</strong> Always review generated PHP before using it in production.
-            Output may be incorrect or incomplete for edge cases.</span>
+          <div
+            id="output-footer"
+            class="panel-footer panel-footer--output panel-footer--warning"
+            role="note"
+          >
+            <div
+              class="output-footer-pane"
+              data-output-footer="pipeline"
+              hidden
+            >
+              <p class="output-footer-help">
+                Intermediate type AST and checker IR after each stage
+                (<code>null</code> when a stage is skipped).
+                Click <code>+/−</code> to toggle; Alt/⌥-click for a whole subtree.
+              </p>
+              <div class="output-footer-actions">
+                <button
+                  type="button"
+                  id="pipeline-expand-all"
+                  class="btn btn-quiet"
+                >
+                  Expand all
+                </button>
+                <button
+                  type="button"
+                  id="pipeline-collapse-all"
+                  class="btn btn-quiet"
+                >
+                  Collapse all
+                </button>
+              </div>
+            </div>
+            <div
+              class="output-footer-pane"
+              data-output-footer="ir-metrics"
+              hidden
+            >
+              <p class="output-footer-help">
+                Stage timings for
+                <strong>Parse</strong> →
+                <strong>Generate</strong> →
+                <strong>Optimize</strong> →
+                <strong>Render</strong>,
+                plus the Optimize pass diagram when Optimize ran.
+                Hover <code>?</code> for details on each stage and pass.
+              </p>
+            </div>
+            <div
+              class="output-footer-pane output-footer-pane--warning active"
+              data-output-footer="php"
+            >
+              <p class="output-footer-help">
+                <strong>Warning:</strong> Always review generated PHP before using it in production.
+                Output may be incorrect or incomplete for edge cases.
+              </p>
+            </div>
           </div>
         </section>
       </div>

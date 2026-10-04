@@ -1,8 +1,8 @@
 /** @vitest-environment happy-dom */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  astCodeText,
   bootApp,
+  pipelineCodeText,
 } from '../test-utils/appTestHarness.ts';
 
 function resetDom(): void {
@@ -14,17 +14,22 @@ function resetDom(): void {
 async function switchesOutputTabsAndCopiesActivePanel(): Promise<void> {
   const { writeText } = await bootApp();
 
-  const astTab = document.querySelector<HTMLButtonElement>('#output-tab-ast')!;
-  astTab.click();
+  const pipelineTab = document.querySelector<HTMLButtonElement>(
+    '#output-tab-pipeline',
+  )!;
+  pipelineTab.click();
 
-  expect(astTab.getAttribute('aria-selected')).toBe('true');
+  expect(pipelineTab.getAttribute('aria-selected')).toBe('true');
   expect(
-    document.querySelector<HTMLElement>('#output-panel-ast')!.hidden,
+    document.querySelector<HTMLElement>('#output-panel-pipeline')!.hidden,
   ).toBe(false);
   expect(
     document.querySelector<HTMLElement>('#output-panel-php')!.hidden,
   ).toBe(true);
-  expect(astCodeText().length).toBeGreaterThan(0);
+  expect(pipelineCodeText().length).toBeGreaterThan(0);
+  expect(pipelineCodeText()).toContain('Parse');
+  expect(pipelineCodeText()).toContain('Generate');
+  expect(pipelineCodeText()).toContain('Optimize');
 
   const copyBtn = document.querySelector<HTMLButtonElement>('#output-copy')!;
   copyBtn.click();
@@ -33,8 +38,11 @@ async function switchesOutputTabsAndCopiesActivePanel(): Promise<void> {
   });
 
   expect(writeText).toHaveBeenCalledOnce();
-  expect(writeText).toHaveBeenCalledWith(expect.stringContaining('"ast"'));
-  expect(writeText.mock.calls[0][0]).not.toMatch(/^function /mu);
+  const copied = writeText.mock.calls[0][0];
+  expect(copied).toContain('"Parse"');
+  expect(copied).toContain('"Generate"');
+  expect(copied).toContain('"Optimize"');
+  expect(copied).not.toMatch(/^function /mu);
   expect(document.querySelector('#copy-status')!.textContent).toBe(
     'Copied to clipboard',
   );
@@ -98,11 +106,45 @@ async function showsMetricsDiagramAndCopiesTsv(): Promise<void> {
   expect(copied).toContain('Block rounds\t');
 }
 
+async function swapsFooterHelpByTab(): Promise<void> {
+  await bootApp();
+
+  const footer = document.querySelector<HTMLElement>('#output-footer')!;
+  const phpPane = document.querySelector<HTMLElement>(
+    '[data-output-footer="php"]',
+  )!;
+  const pipelinePane = document.querySelector<HTMLElement>(
+    '[data-output-footer="pipeline"]',
+  )!;
+  const metricsPane = document.querySelector<HTMLElement>(
+    '[data-output-footer="ir-metrics"]',
+  )!;
+
+  expect(footer.classList.contains('panel-footer--warning')).toBe(true);
+  expect(phpPane.hidden).toBe(false);
+  expect(pipelinePane.hidden).toBe(true);
+
+  document.querySelector<HTMLButtonElement>('#output-tab-pipeline')!.click();
+  expect(footer.classList.contains('panel-footer--info')).toBe(true);
+  expect(footer.classList.contains('panel-footer--warning')).toBe(false);
+  expect(pipelinePane.hidden).toBe(false);
+  expect(phpPane.hidden).toBe(true);
+  expect(pipelinePane.textContent).toMatch(/checker IR/u);
+  expect(pipelinePane.querySelector('#pipeline-expand-all')).not.toBeNull();
+
+  document.querySelector<HTMLButtonElement>('#output-tab-ir-metrics')!.click();
+  expect(metricsPane.hidden).toBe(false);
+  expect(pipelinePane.hidden).toBe(true);
+  expect(metricsPane.textContent).toMatch(/Render/u);
+}
+
 async function movesFocusAcrossTabsWithKeyboard(): Promise<void> {
   await bootApp();
 
   const phpTab = document.querySelector<HTMLButtonElement>('#output-tab-php')!;
-  const astTab = document.querySelector<HTMLButtonElement>('#output-tab-ast')!;
+  const pipelineTab = document.querySelector<HTMLButtonElement>(
+    '#output-tab-pipeline',
+  )!;
   phpTab.focus();
 
   // Listener is on the tablist; target must be the focused tab button.
@@ -113,9 +155,9 @@ async function movesFocusAcrossTabsWithKeyboard(): Promise<void> {
       cancelable: true,
     }),
   );
-  expect(document.activeElement).toBe(astTab);
+  expect(document.activeElement).toBe(pipelineTab);
 
-  astTab.dispatchEvent(
+  pipelineTab.dispatchEvent(
     new KeyboardEvent('keydown', {
       key: 'Enter',
       bubbles: true,
@@ -123,9 +165,9 @@ async function movesFocusAcrossTabsWithKeyboard(): Promise<void> {
     }),
   );
 
-  expect(astTab.getAttribute('aria-selected')).toBe('true');
+  expect(pipelineTab.getAttribute('aria-selected')).toBe('true');
   expect(
-    document.querySelector<HTMLElement>('#output-panel-ast')!.hidden,
+    document.querySelector<HTMLElement>('#output-panel-pipeline')!.hidden,
   ).toBe(false);
 }
 
@@ -140,6 +182,7 @@ describe('app UI output tabs', () => {
     'copies PHP from the active tab and announces status',
     copiesPhpFromActiveTab,
   );
+  it('swaps the output footer help by active tab', swapsFooterHelpByTab);
   it(
     'moves focus across output tabs with ArrowRight and activates with Enter',
     movesFocusAcrossTabsWithKeyboard,

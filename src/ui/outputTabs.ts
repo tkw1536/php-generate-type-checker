@@ -36,7 +36,24 @@ export function activateOutputTab(
     panel.tabIndex = active ? 0 : -1;
   });
 
+  syncOutputFooter(tabId);
   syncCopyButton();
+}
+
+function syncOutputFooter(tabId: OutputTabId): void {
+  const footer = document.querySelector<HTMLElement>('#output-footer');
+  const panes = document.querySelectorAll<HTMLElement>(
+    '.output-footer-pane[data-output-footer]',
+  );
+  panes.forEach((pane) => {
+    const active = pane.dataset.outputFooter === tabId;
+    pane.classList.toggle('active', active);
+    pane.hidden = !active;
+  });
+  if (footer !== null) {
+    footer.classList.toggle('panel-footer--warning', tabId === 'php');
+    footer.classList.toggle('panel-footer--info', tabId !== 'php');
+  }
 }
 
 export function setupOutputTabs(): void {

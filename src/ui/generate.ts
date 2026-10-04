@@ -127,47 +127,64 @@ function runTimedPipeline(
   };
 }
 
+type ParseStageJson = {
+  readonly aliasName: string | null;
+  readonly typeString: string;
+  readonly functionName: string;
+  readonly ast: ParsedCheckerEntry['ast'];
+};
+
+function parseStageJson(
+  entries: readonly ParsedCheckerEntry[],
+): readonly ParseStageJson[] {
+  return entries.map((entry) => ({
+    aliasName: entry.aliasName,
+    typeString: entry.typeString,
+    functionName: entry.functionName,
+    ast: entry.ast,
+  }));
+}
+
+function pipelineJson(
+  parse: readonly ParseStageJson[] | null,
+  generate: CheckerIR | null,
+  optimize: CheckerIR | null,
+): string {
+  return JSON.stringify(
+    {
+      Parse: parse,
+      Generate: generate,
+      Optimize: optimize,
+    },
+    null,
+    2,
+  );
+}
+
 function publishParseError(
   panels: OutputPanelSet,
   err: unknown,
   typeString: string,
 ): void {
   syncDocblockOptions(false);
-  panels.ast.setError(err, typeString);
-  panels.irBuild.setError(err, typeString);
-  panels.irOptimized.setError(err, typeString);
+  panels.pipeline.setError(err, typeString);
   panels.irMetrics.setError(err, typeString);
   panels.php.setError(err, typeString);
 }
 
-function publishAst(panels: OutputPanelSet, entries: readonly ParsedCheckerEntry[]): void {
-  panels.ast.setSuccess(
-    JSON.stringify(
-      entries.map((entry) => ({
-        aliasName: entry.aliasName,
-        typeString: entry.typeString,
-        functionName: entry.functionName,
-        ast: entry.ast,
-      })),
-      null,
-      2,
-    ),
-  );
-}
-
 function publishPipelineSuccess(
   panels: OutputPanelSet,
+  entries: readonly ParsedCheckerEntry[],
   result: PipelineResult,
   parseMs: number,
 ): void {
-  panels.irBuild.setSuccess(JSON.stringify(result.built.ir, null, 2));
-  if (result.stageTimings.optimizeRan) {
-    panels.irOptimized.setSuccess(JSON.stringify(result.irForPhp, null, 2));
-  } else {
-    panels.irOptimized.setSuccess(
-      'Optimizer skipped (Optimize is off).\nIR (optimized) matches IR (build).',
-    );
-  }
+  panels.pipeline.setSuccess(
+    pipelineJson(
+      parseStageJson(entries),
+      result.built.ir,
+      result.stageTimings.optimizeRan ? result.irForPhp : null,
+    ),
+  );
   panels.php.setSuccess(result.php);
   panels.irMetrics.setReport(
     { ...result.stageTimings, parseMs },
@@ -185,14 +202,14 @@ export function runGenerate(panels: OutputPanelSet): void {
 
   const entries = parseTimed.value.entries;
   syncDocblockOptions(hasPhpstanTypeAliases(entries));
-  publishAst(panels, entries);
 
   try {
     const result = runTimedPipeline(entries, typeString);
-    publishPipelineSuccess(panels, result, parseTimed.ms);
+    publishPipelineSuccess(panels, entries, result, parseTimed.ms);
   } catch (err) {
-    panels.irBuild.setError(err, typeString);
-    panels.irOptimized.setError(err, typeString);
+    panels.pipeline.setSuccess(
+      pipelineJson(parseStageJson(entries), null, null),
+    );
     panels.irMetrics.setError(err, typeString);
     panels.php.setError(err, typeString);
   }
