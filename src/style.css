@@ -1008,7 +1008,7 @@ body {
   z-index: 50;
 }
 
-/* Hidden tooltips must not expand scrollWidth (abspos ::after still counts). */
+/* Hidden tooltips must not expand scrollWidth (absolute ::after still counts). */
 .ir-metrics .metrics-help:hover::after,
 .ir-metrics .metrics-help:focus-visible::after {
   display: block;
