@@ -8,16 +8,15 @@ import {
 } from '../ir/index.ts';
 import { equals } from '../ir/equals.ts';
 import { isAAllowStringSubject } from './implies.ts';
-import { negateBinOp } from "./binOps.ts";
+import { negateBinOp } from './binOps.ts';
 
 export type FactEnv = {
   readonly trueFacts: readonly Expr[];
   readonly falseFacts: readonly Expr[];
-  readonly shadowed: ReadonlySet<number>;
 };
 
 export function emptyFactEnv(): FactEnv {
-  return { trueFacts: [], falseFacts: [], shadowed: new Set() };
+  return { trueFacts: [], falseFacts: [] };
 }
 
 // Environments are immutable.

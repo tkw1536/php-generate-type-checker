@@ -262,16 +262,16 @@ foreach ($value as $item) {
 return TRUE;
 ```
 
-| Type                         | Check                                                              |
-|------------------------------|--------------------------------------------------------------------|
-| `array<T>` / `T[]`           | `is_array($value)`, then `foreach` over values                     |
-| `array<K, V>`                | `foreach ($value as $key => $item)` checking key and value         |
-| `list<T>`                    | `is_array($value) && array_is_list($value)`, then `foreach` values |
-| `non-empty-*`                | Same as above, plus `$value !== []`                                |
-| `array<mixed>` / bare `list` | Container test only                                                |
-| `array<never>` / `array{}`   | `$value === []`                                                    |
-| Nested arrays                | Nested `foreach`                                                   |
-| Parameterized `iterable<…>`  | Not generated (foreach would not be side-effect-free)              |
+| Type                         | Check                                                                                                                          |
+|------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
+| `array<T>` / `T[]`           | `is_array($value)`, then `foreach` over values                                                                                 |
+| `array<K, V>`                | `foreach` checking key and value; tautological keys (`array-key`, `int\|string`, `int\|non-decimal-int-string`) optimized away |
+| `list<T>`                    | `is_array($value) && array_is_list($value)`, then `foreach` values                                                             |
+| `non-empty-*`                | Same as above, plus `$value !== []`                                                                                            |
+| `array<mixed>` / bare `list` | Container test only                                                                                                            |
+| `array<never>` / `array{}`   | `$value === []`                                                                                                                |
+| Nested arrays                | Nested `foreach`                                                                                                               |
+| Parameterized `iterable<…>`  | Not generated (foreach would not be side-effect-free)                                                                          |
 
 #### Shapes
 
@@ -370,9 +370,9 @@ The UI Metrics tab draws this under the Optimize stage.
 | Unnest                | Collapse nested single-body `if`s into one condition                                         | `if (a) { if (b) { … } }`                                                  | `if (a && b) { … }`                                                               |
 | Combine               | Merge consecutive `if`s that share the same body                                             | Separate fail-fast `if`s for `!is_array` and `!array_is_list`              | One `if` with `\|\|`                                                              |
 | Flatten               | Turn a trailing `if`/`return` pair into one `return` expression                              | `if (is_int($value)) return TRUE; return FALSE;`                           | `return is_int($value);` (via `($cond && $b) \|\| (!$cond && $c)`, then Simplify) |
-| Known facts           | Replace tests already proven true or false by earlier control flow                           | After `if (is_array($value)) return TRUE;`, later `if (!is_array($value))` | Later guard is dead                                                               |
+| Known facts           | Replace proven true/false tests; array `foreach` keys are int or non-decimal-int-string       | After `if (is_array($value)) return TRUE;`, later `if (!is_array($value))` | Later / tautological key guard is dead                                            |
 | Simplify              | Fold boolean algebra, contradictions, factoring, and related rewrites (see below)            |                                                                            |                                                                                   |
-| Dead-code elimination | Remove unreachable or empty statements                                                       | `if (FALSE) { … }`, code after `return`, empty `foreach`                   | Removed / spliced away                                                            |
+| Dead-code elimination | Remove unreachable or empty statements; drop unused foreach `$key`                           | `if (FALSE) { … }`, code after `return`, empty `foreach`                   | Removed / spliced away                                                            |
 | Prune helpers         | Delete helpers that nothing calls anymore                                                    | Helper with no remaining callers                                           | Helper deleted                                                                    |
 
 #### Simplify expressions

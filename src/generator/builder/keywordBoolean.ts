@@ -9,6 +9,10 @@ import {
   orExpr,
   refArg,
 } from '../ir/index.ts';
+import {
+  decimalIntStringExpr,
+  nonDecimalIntStringExpr,
+} from '../decimalIntString.ts';
 import { enumStringKeywordBoolean } from './classString.ts';
 
 export function keywordToBoolean(
@@ -158,23 +162,9 @@ function stringKeywordCased(keyword: string, s: Arg): Expr | null {
         binExpr('===', callArg('strtoupper', [s]), s),
       ]);
     case 'decimal-int-string':
-      return andExpr([
-        callExpr('is_string', [s]),
-        binExpr(
-          '===',
-          callArg('preg_match', [literalArg("'/^-?(?:0|[1-9]\\\\d*)$/'"), s]),
-          literalArg('1'),
-        ),
-      ]);
+      return decimalIntStringExpr(s);
     case 'non-decimal-int-string':
-      return andExpr([
-        callExpr('is_string', [s]),
-        binExpr(
-          '!==',
-          callArg('preg_match', [literalArg("'/^-?(?:0|[1-9]\\\\d*)$/'"), s]),
-          literalArg('1'),
-        ),
-      ]);
+      return nonDecimalIntStringExpr(s);
     case 'non-empty-lowercase-string':
       return andExpr([
         callExpr('is_string', [s]),

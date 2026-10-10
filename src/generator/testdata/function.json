@@ -348,6 +348,18 @@
     "expected": "/** @phpstan-assert-if-true array<int, Foo> $value */\nfunction isArrayIntFoo(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $key => $item) {\n        if (\n            !is_int($key) ||\n            !$item instanceof Foo\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
+    "input": "array<int|string, mixed>",
+    "expected": "/** @phpstan-assert-if-true array<int|string, mixed> $value */\nfunction isArrayIntStringMixed(mixed $value): bool\n{\n    return is_array($value);\n}\n"
+  },
+  {
+    "input": "array<array-key, mixed>",
+    "expected": "/** @phpstan-assert-if-true array<array-key, mixed> $value */\nfunction isArrayArrayKeyMixed(mixed $value): bool\n{\n    return is_array($value);\n}\n"
+  },
+  {
+    "input": "array<int|non-decimal-int-string, string>",
+    "expected": "/** @phpstan-assert-if-true array<int|non-decimal-int-string, string> $value */\nfunction isArrayIntNonDecimalIntStringString(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $item) {\n        if (!is_string($item)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+  },
+  {
     "input": "non-empty-array",
     "expected": "/** @phpstan-assert-if-true non-empty-array $value */\nfunction isNonEmptyArray(mixed $value): bool\n{\n    return (is_array($value) && $value !== []);\n}\n"
   },

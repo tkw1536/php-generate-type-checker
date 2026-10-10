@@ -62,7 +62,7 @@ export const RIGHT_PASS_BOXES: readonly PassMeta[] = [
     id: 'dce',
     label: 'Dead-code elimination',
     helpId: 'help-pass-dce',
-    help: 'Remove unreachable or empty statements (if (FALSE), code after return, empty foreach).',
+    help: 'Remove unreachable or empty statements (if (FALSE), code after return, empty foreach) and drop unused foreach keys.',
   },
   {
     id: 'simplify',
@@ -74,7 +74,7 @@ export const RIGHT_PASS_BOXES: readonly PassMeta[] = [
     id: 'facts',
     label: 'Known facts',
     helpId: 'help-pass-facts',
-    help: 'Replace tests already proven true or false by earlier control flow.',
+    help: 'Replace tests already proven true or false by earlier control flow. Inside array foreach, keys are known to be int|non-decimal-int-string.',
   },
 ];
 

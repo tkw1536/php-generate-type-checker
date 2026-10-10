@@ -6,12 +6,14 @@ import {
   refArg,
   returnStmt,
   parameterRef,
+  variableRef,
 } from '../ir/index.ts';
 import type { Block } from '../ir/types.ts';
 import { dce } from './dce.ts';
 
 const $v = parameterRef();
 const isArray = callExpr('is_array', [refArg($v)]);
+const $item = variableRef(1);
 
 const DCE_CASES = [
   [
@@ -75,6 +77,27 @@ const DCE_CASES = [
         keyVar: null,
         valueVar: 0,
         body: [returnStmt(boolLit(false))],
+      },
+    ],
+  ],
+  [
+    'drops unused foreach keyVar',
+    [
+      {
+        kind: 'foreach',
+        iterable: $v,
+        keyVar: 0,
+        valueVar: 1,
+        body: [failIfStmt(callExpr('is_string', [refArg($item)]))],
+      },
+    ],
+    [
+      {
+        kind: 'foreach',
+        iterable: $v,
+        keyVar: null,
+        valueVar: 1,
+        body: [failIfStmt(callExpr('is_string', [refArg($item)]))],
       },
     ],
   ],

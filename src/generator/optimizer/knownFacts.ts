@@ -1,90 +1,42 @@
-import type { Arg, Block, Expr, Stmt, ValueRef } from '../ir/types.ts';
-import { boolLit } from '../ir/index.ts';
+import type { Block, Expr, Stmt, ValueRef } from '../ir/types.ts';
+import {
+  andExpr,
+  binExpr,
+  boolLit,
+  callArg,
+  callExpr,
+  literalArg,
+  notExpr,
+  orExpr,
+  refArg,
+  variableRef,
+} from '../ir/index.ts';
 import { equals } from '../ir/equals.ts';
+import {
+  DECIMAL_INT_STRING_PATTERN,
+  nonDecimalIntStringExpr,
+} from '../decimalIntString.ts';
 import {
   type FactEnv,
   withFalseFact,
   withTrueFact,
 } from './knownFacts.env.ts';
 
-function valueRefUsesShadowed(
-  ref: ValueRef,
-  shadowed: ReadonlySet<number>,
-): boolean {
-  switch (ref.kind) {
-    case 'parameter':
-      return false;
-    case 'variable':
-      return shadowed.has(ref.id);
-    case 'array_access':
-      return valueRefUsesShadowed(ref.object, shadowed);
-    case 'property_access':
-      return valueRefUsesShadowed(ref.object, shadowed);
-    default:
-      throw new Error('never reached');
-  }
-}
-
-function argUsesShadowed(arg: Arg, shadowed: ReadonlySet<number>): boolean {
-  switch (arg.kind) {
-    case 'ref':
-      return valueRefUsesShadowed(arg.ref, shadowed);
-    case 'literal':
-      return false;
-    case 'call':
-      return arg.args.some((a) => argUsesShadowed(a, shadowed));
-    default:
-      throw new Error('never reached');
-  }
-}
-
-function exprUsesShadowed(expr: Expr, shadowed: ReadonlySet<number>): boolean {
-  switch (expr.kind) {
-    case 'bool':
-      return false;
-    case 'not':
-      return exprUsesShadowed(expr.expr, shadowed);
-    case 'and':
-    case 'or':
-      return expr.exprs.some((e) => exprUsesShadowed(e, shadowed));
-    case 'call':
-      return expr.args.some((a) => argUsesShadowed(a, shadowed));
-    case 'bin':
-      return (
-        argUsesShadowed(expr.left, shadowed) ||
-        argUsesShadowed(expr.right, shadowed)
-      );
-    case 'instanceof':
-      return argUsesShadowed(expr.subject, shadowed);
-    case 'call_checker':
-      return valueRefUsesShadowed(expr.subject, shadowed);
-    default:
-      throw new Error('never reached');
-  }
-}
-
 function matchesFact(expr: Expr, facts: readonly Expr[]): boolean {
   return facts.some((f) => equals(f, expr));
 }
 
 export function substituteFacts(expr: Expr, env: FactEnv): Expr {
-  if (env.shadowed.size > 0 && exprUsesShadowed(expr, env.shadowed)) {
-    return substituteFactsShallow(expr, env, true);
-  }
   if (matchesFact(expr, env.falseFacts)) {
     return boolLit(false);
   }
   if (matchesFact(expr, env.trueFacts)) {
     return boolLit(true);
   }
-  return substituteFactsShallow(expr, env, false);
+  return substituteFactsShallow(expr, env);
 }
 
-function substituteFactsShallow(
-  expr: Expr,
-  env: FactEnv,
-  skipLeafReplace: boolean,
-): Expr {
+function substituteFactsShallow(expr: Expr, env: FactEnv): Expr {
   switch (expr.kind) {
     case 'bool':
     case 'call':
@@ -94,7 +46,7 @@ function substituteFactsShallow(
       return expr;
     case 'not': {
       const inner = substituteFacts(expr.expr, env);
-      if (!skipLeafReplace && inner.kind === 'bool') {
+      if (inner.kind === 'bool') {
         return boolLit(!inner.value);
       }
       return inner === expr.expr ? expr : { kind: 'not', expr: inner };
@@ -184,16 +136,53 @@ function applyKnownFactsIf(
   };
 }
 
+/**
+ * IR `foreach` is only emitted for arrays (parameterized `iterable` is rejected).
+ * PHP array keys from foreach are always `int|non-decimal-int-string`.
+ *
+ * Body blocks are optimized in isolation first, which De Morgan-expands
+ * `!(int|…)` before this outer pass — so we also seed those expanded false forms.
+ */
+function seedForeachArrayKeyFacts(env: FactEnv, key: ValueRef): FactEnv {
+  const s = refArg(key);
+  const isInt = callExpr('is_int', [s]);
+  const isString = callExpr('is_string', [s]);
+  const nonDecimal = nonDecimalIntStringExpr(s);
+  const pregEq1 = binExpr(
+    '===',
+    callArg('preg_match', [literalArg(DECIMAL_INT_STRING_PATTERN), s]),
+    literalArg('1'),
+  );
+  const notNonDecimalExpanded = orExpr([notExpr(isString), pregEq1]);
+
+  let next = env;
+  for (const fact of [
+    orExpr([isInt, isString]),
+    orExpr([isString, isInt]),
+    orExpr([isInt, nonDecimal]),
+    orExpr([nonDecimal, isInt]),
+  ]) {
+    next = withTrueFact(next, fact);
+  }
+  for (const fact of [
+    andExpr([notExpr(isInt), notExpr(isString)]),
+    andExpr([notExpr(isString), notExpr(isInt)]),
+    andExpr([notExpr(isInt), notNonDecimalExpanded]),
+    andExpr([notNonDecimalExpanded, notExpr(isInt)]),
+  ]) {
+    next = withFalseFact(next, fact);
+  }
+  return next;
+}
+
 function applyKnownFactsForeach(
   stmt: Extract<Stmt, { kind: 'foreach' }>,
   env: FactEnv,
 ): Stmt {
-  const innerShadowed = new Set([
-    ...env.shadowed,
-    stmt.valueVar,
-    ...(stmt.keyVar === null ? [] : [stmt.keyVar]),
-  ]);
-  const bodyEnv: FactEnv = { ...env, shadowed: innerShadowed };
+  const bodyEnv =
+    stmt.keyVar === null
+      ? env
+      : seedForeachArrayKeyFacts(env, variableRef(stmt.keyVar));
   return {
     ...stmt,
     body: applyKnownFacts(stmt.body, bodyEnv),
