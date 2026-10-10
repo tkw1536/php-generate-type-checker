@@ -364,6 +364,10 @@
     "expected": "/** @phpstan-assert-if-true array<decimal-int-string, mixed> $value */\nfunction isArrayDecimalIntStringMixed(mixed $value): bool\n{\n    return (is_array($value) && $value === []);\n}\n"
   },
   {
+    "input": "array<resource, mixed>",
+    "expected": "/** @phpstan-assert-if-true array<resource, mixed> $value */\nfunction isArrayResourceMixed(mixed $value): bool\n{\n    return (is_array($value) && $value === []);\n}\n"
+  },
+  {
     "input": "array<non-decimal-int-string, mixed>",
     "expected": "/** @phpstan-assert-if-true array<non-decimal-int-string, mixed> $value */\nfunction isArrayNonDecimalIntStringMixed(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $key => $item) {\n        if (!is_string($key)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
@@ -529,11 +533,11 @@
   },
   {
     "input": "(array<string, int|null>|null)&Foo",
-    "expected": "/** @phpstan-assert-if-true (array<string, int|NULL>|NULL)&Foo $value */\nfunction isArrayStringIntNullNullFoo(mixed $value): bool\n{\n    return (\n        $value instanceof Foo &&\n        (\n            isArrayStringIntNull($value) ||\n            $value === NULL\n        )\n    );\n}\n\n\n/** @phpstan-assert-if-true array<string, int|NULL> $value */\nfunction isArrayStringIntNull(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $key => $item) {\n        if (\n            !is_string($key) ||\n            (\n                !is_int($item) &&\n                $item !== NULL\n            )\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+    "expected": "/** @phpstan-assert-if-true (array<string, int|NULL>|NULL)&Foo $value */\nfunction isArrayStringIntNullNullFoo(mixed $value): bool\n{\n    if (\n        !$value instanceof Foo ||\n        !is_array($value)\n    ) {\n        return FALSE;\n    }\n    foreach ($value as $key => $item) {\n        if (\n            !is_string($key) ||\n            (\n                !is_int($item) &&\n                $item !== NULL\n            )\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
     "input": "(int|string)&Foo",
-    "expected": "/** @phpstan-assert-if-true (int|string)&Foo $value */\nfunction isIntStringFoo(mixed $value): bool\n{\n    return (\n        $value instanceof Foo &&\n        (\n            is_int($value) ||\n            is_string($value)\n        )\n    );\n}\n"
+    "expected": "/** @phpstan-assert-if-true (int|string)&Foo $value */\nfunction isIntStringFoo(mixed $value): bool\n{\n    return FALSE;\n}\n"
   },
   {
     "input": "(array<string,mixed>)|null",

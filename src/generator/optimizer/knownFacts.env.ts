@@ -8,8 +8,11 @@ import {
 } from '../ir/index.ts';
 import { equals } from '../ir/equals.ts';
 import { canonicalizeFactExpr } from './factCanon.ts';
+import {
+  exclusiveTag,
+  otherExclusiveNegations,
+} from './exclusiveTypes.ts';
 import { isAAllowStringSubject } from './implies.ts';
-import { negateBinOp } from './binOps.ts';
 
 export type FactEnv = {
   readonly trueFacts: readonly Expr[];
@@ -42,6 +45,18 @@ export function withTrueFact(env: FactEnv, expr: Expr, flags?: Flags): FactEnv {
   return deriveTrueFacts(next, canon, flags);
 }
 
+function deriveExclusiveNegations(env: FactEnv, expr: Expr): FactEnv {
+  const tag = exclusiveTag(expr);
+  if (tag === null) {
+    return env;
+  }
+  let next = env;
+  for (const neg of otherExclusiveNegations(tag)) {
+    next = withTrueFact(next, neg);
+  }
+  return next;
+}
+
 function deriveTrueCallFacts(
   env: FactEnv,
   expr: Extract<Expr, { kind: 'call' }>,
@@ -52,13 +67,7 @@ function deriveTrueCallFacts(
     // `is_a($x, T::class, TRUE)` implies `class_exists($x)`.
     next = withTrueFact(next, callExpr('class_exists', [subject]));
   }
-  // is_int / is_string are mutually exclusive on the same value.
-  if (expr.name === 'is_int' && expr.args.length === 1) {
-    next = withTrueFact(next, notExpr(callExpr('is_string', [expr.args[0]])));
-  } else if (expr.name === 'is_string' && expr.args.length === 1) {
-    next = withTrueFact(next, notExpr(callExpr('is_int', [expr.args[0]])));
-  }
-  return next;
+  return deriveExclusiveNegations(next, expr);
 }
 
 function deriveTrueFacts(env: FactEnv, expr: Expr, flags?: Flags): FactEnv {
@@ -69,11 +78,11 @@ function deriveTrueFacts(env: FactEnv, expr: Expr, flags?: Flags): FactEnv {
         next = withTrueFact(next, conjunct);
       }
       return next;
-    case 'bin':
-      return withTrueFact(
-        next,
-        binExpr(negateBinOp(expr.op), expr.right, expr.left),
-      );
+    case 'bin': {
+      next = deriveExclusiveNegations(next, expr);
+      // Commute operands so `$x === null` and `null === $x` match as the same fact.
+      return withTrueFact(next, binExpr(expr.op, expr.right, expr.left));
+    }
     case 'not':
       return withFalseFact(next, expr.expr);
     case 'or':
@@ -120,7 +129,7 @@ export function withFalseFact(
     case 'bin':
       next = withFalseFact(
         next,
-        binExpr(negateBinOp(canon.op), canon.right, canon.left),
+        binExpr(canon.op, canon.right, canon.left),
       );
       break;
     case 'not':

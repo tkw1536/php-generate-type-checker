@@ -74,7 +74,7 @@ export const RIGHT_PASS_BOXES: readonly PassMeta[] = [
     id: 'facts',
     label: 'Known facts',
     helpId: 'help-pass-facts',
-    help: 'Replace tests proven true or false by control flow or entailed by known facts. Inside array foreach, keys are int|non-decimal-int-string (impossible key refinements fold away).',
+    help: 'Replace tests proven true or false by control flow or entailed by known facts. Inside array foreach, keys are int|non-decimal-int-string (impossible key refinements fold away). Primary type tags (bool/int/float/string/array/object/resource/null) are mutually exclusive.',
   },
 ];
 

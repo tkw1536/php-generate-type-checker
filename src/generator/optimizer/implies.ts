@@ -1,6 +1,7 @@
 import type { Arg, Expr } from '../ir/types.ts';
 import { callExpr } from '../ir/index.ts';
 import { equals } from '../ir/equals.ts';
+import { exclusiveTypeImplies } from './exclusiveTypes.ts';
 
 function isTrueLiteralArg(arg: Arg): boolean {
   return arg.kind === 'literal' && (arg.value === 'true' || arg.value === 'TRUE');
@@ -17,33 +18,6 @@ export function isAAllowStringSubject(expr: Expr): Arg | null {
     return null;
   }
   return expr.args[0];
-}
-
-function isUnaryTypeCall(expr: Expr, name: string): Arg | null {
-  if (expr.kind !== 'call' || expr.name !== name || expr.args.length !== 1) {
-    return null;
-  }
-  return expr.args[0];
-}
-
-function exclusiveTypeImplies(a: Expr, b: Expr): boolean {
-  const aInt = isUnaryTypeCall(a, 'is_int');
-  if (
-    aInt !== null &&
-    b.kind === 'not' &&
-    equals(callExpr('is_string', [aInt]), b.expr)
-  ) {
-    return true;
-  }
-  const aString = isUnaryTypeCall(a, 'is_string');
-  if (
-    aString !== null &&
-    b.kind === 'not' &&
-    equals(callExpr('is_int', [aString]), b.expr)
-  ) {
-    return true;
-  }
-  return false;
 }
 
 /** True when knowing `a` is enough to conclude `b`. */

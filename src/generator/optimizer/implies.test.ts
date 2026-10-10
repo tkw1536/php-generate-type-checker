@@ -45,9 +45,27 @@ describe('implies', () => {
     expect(implies(isInt, notExpr(isString))).toBe(true);
     expect(implies(isString, notExpr(isInt))).toBe(true);
   });
+
+  it('is_int implies not is_resource', () => {
+    const isResource = callExpr('is_resource', [refArg($v)]);
+    expect(implies(isInt, notExpr(isResource))).toBe(true);
+  });
+
+  it('=== null implies not is_array', () => {
+    const isNull = binExpr('===', refArg($v), literalArg('null'));
+    const isArray = callExpr('is_array', [refArg($v)]);
+    expect(implies(isNull, notExpr(isArray))).toBe(true);
+  });
 });
 
 describe('entails', () => {
+  it('is_int ∨ is_string entails not is_resource', () => {
+    const isResource = callExpr('is_resource', [refArg($v)]);
+    expect(
+      entails(orExpr([isInt, isString]), notExpr(isResource)),
+    ).toBe(true);
+  });
+
   it('true int|non-decimal entails not decimal-int-string', () => {
     const nonDecimal = andExpr([
       isString,
