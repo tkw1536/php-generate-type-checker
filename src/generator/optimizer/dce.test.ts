@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  binExpr,
   boolLit,
   callExpr,
   failIfStmt,
+  literalArg,
   refArg,
   returnStmt,
   parameterRef,
@@ -14,6 +16,7 @@ import { dce } from './dce.ts';
 const $v = parameterRef();
 const isArray = callExpr('is_array', [refArg($v)]);
 const $item = variableRef(1);
+const $key = variableRef(0);
 
 const DCE_CASES = [
   [
@@ -60,7 +63,7 @@ const DCE_CASES = [
     [returnStmt(boolLit(true))],
   ],
   [
-    'recurses into foreach body',
+    'recurses into foreach body then constant-return rewrite',
     [
       {
         kind: 'foreach',
@@ -72,10 +75,8 @@ const DCE_CASES = [
     ],
     [
       {
-        kind: 'foreach',
-        iterable: $v,
-        keyVar: null,
-        valueVar: 0,
+        kind: 'if',
+        cond: binExpr('!==', refArg($v), literalArg('[]')),
         body: [returnStmt(boolLit(false))],
       },
     ],
@@ -98,6 +99,67 @@ const DCE_CASES = [
         keyVar: null,
         valueVar: 1,
         body: [failIfStmt(callExpr('is_string', [refArg($item)]))],
+      },
+    ],
+  ],
+  [
+    'rewrites foreach with constant return to non-empty check',
+    [
+      {
+        kind: 'foreach',
+        iterable: $v,
+        keyVar: 0,
+        valueVar: 1,
+        body: [returnStmt(boolLit(false))],
+      },
+    ],
+    [
+      {
+        kind: 'if',
+        cond: binExpr('!==', refArg($v), literalArg('[]')),
+        body: [returnStmt(boolLit(false))],
+      },
+    ],
+  ],
+  [
+    'keeps foreach when return uses value var',
+    [
+      {
+        kind: 'foreach',
+        iterable: $v,
+        keyVar: null,
+        valueVar: 1,
+        body: [returnStmt(callExpr('is_string', [refArg($item)]))],
+      },
+    ],
+    [
+      {
+        kind: 'foreach',
+        iterable: $v,
+        keyVar: null,
+        valueVar: 1,
+        body: [returnStmt(callExpr('is_string', [refArg($item)]))],
+      },
+    ],
+  ],
+  [
+    'keeps foreach when return uses key var',
+    [
+      {
+        kind: 'foreach',
+        iterable: $v,
+        keyVar: 0,
+        valueVar: 1,
+        body: [returnStmt(callExpr('is_int', [refArg($key)]))],
+      },
+    ],
+    [
+      {
+        kind: 'foreach',
+        iterable: $v,
+        keyVar: 0,
+        valueVar: 1,
+        body: [returnStmt(callExpr('is_int', [refArg($key)]))],
       },
     ],
   ],

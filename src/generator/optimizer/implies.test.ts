@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import {
+  andExpr,
+  binExpr,
+  callArg,
   callExpr,
   instanceofExpr,
   literalArg,
+  notExpr,
+  orExpr,
   refArg,
   parameterRef,
 } from '../ir/index.ts';
-import { absorbImpliedOperands, implies } from './implies.ts';
+import { DECIMAL_INT_STRING_PATTERN } from '../decimalIntString.ts';
+import { absorbImpliedOperands, entails, implies } from './implies.ts';
+import { canonicalizeFactExpr } from './factCanon.ts';
 
 const $v = parameterRef();
 const isA = callExpr('is_a', [
@@ -17,6 +24,8 @@ const isA = callExpr('is_a', [
 const classExists = callExpr('class_exists', [refArg($v)]);
 const isInstance = instanceofExpr(refArg($v), 'Foo');
 const isObject = callExpr('is_object', [refArg($v)]);
+const isInt = callExpr('is_int', [refArg($v)]);
+const isString = callExpr('is_string', [refArg($v)]);
 
 describe('implies', () => {
   it('is_a implies class_exists for same subject', () => {
@@ -30,6 +39,39 @@ describe('implies', () => {
   it('does not imply reverse', () => {
     expect(implies(classExists, isA)).toBe(false);
     expect(implies(isObject, isInstance)).toBe(false);
+  });
+
+  it('is_int implies not is_string', () => {
+    expect(implies(isInt, notExpr(isString))).toBe(true);
+    expect(implies(isString, notExpr(isInt))).toBe(true);
+  });
+});
+
+describe('entails', () => {
+  it('true int|non-decimal entails not decimal-int-string', () => {
+    const nonDecimal = andExpr([
+      isString,
+      binExpr(
+        '!==',
+        callArg('preg_match', [literalArg(DECIMAL_INT_STRING_PATTERN), refArg($v)]),
+        literalArg('1'),
+      ),
+    ]);
+    const keyOk = orExpr([isInt, nonDecimal]);
+    const notDecimal = orExpr([
+      notExpr(isString),
+      binExpr(
+        '!==',
+        callArg('preg_match', [literalArg(DECIMAL_INT_STRING_PATTERN), refArg($v)]),
+        literalArg('1'),
+      ),
+    ]);
+    expect(
+      entails(
+        canonicalizeFactExpr(keyOk),
+        canonicalizeFactExpr(notDecimal),
+      ),
+    ).toBe(true);
   });
 });
 

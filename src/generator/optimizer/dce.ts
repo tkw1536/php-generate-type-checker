@@ -1,4 +1,5 @@
 import type { Arg, Block, Expr, Stmt, ValueRef } from '../ir/types.ts';
+import { binExpr, literalArg, refArg } from '../ir/index.ts';
 
 function isBoolLit(expr: Expr, value: boolean): boolean {
   return expr.kind === 'bool' && expr.value === value;
@@ -90,10 +91,37 @@ function blockUsesVar(block: Block, id: number): boolean {
   return false;
 }
 
+/**
+ * IR foreach is only over arrays. A body that is solely `return E` where `E`
+ * ignores the loop binders is equivalent to `if ($iter !== []) return E`
+ * (empty: skip; non-empty: return on first iteration without using the element).
+ */
+function foreachConstantReturn(stmt: Extract<Stmt, { kind: 'foreach' }>, body: Block): Stmt | null {
+  if (body.length !== 1 || body[0].kind !== 'return') {
+    return null;
+  }
+  const ret = body[0];
+  if (exprUsesVar(ret.expr, stmt.valueVar)) {
+    return null;
+  }
+  if (stmt.keyVar !== null && exprUsesVar(ret.expr, stmt.keyVar)) {
+    return null;
+  }
+  return {
+    kind: 'if',
+    cond: binExpr('!==', refArg(stmt.iterable), literalArg('[]')),
+    body: [ret],
+  };
+}
+
 function dceForeach(stmt: Extract<Stmt, { kind: 'foreach' }>): Stmt | null {
   const body = dce(stmt.body);
   if (body.length === 0) {
     return null;
+  }
+  const constantReturn = foreachConstantReturn(stmt, body);
+  if (constantReturn !== null) {
+    return constantReturn;
   }
   const keyVar =
     stmt.keyVar !== null && blockUsesVar(body, stmt.keyVar)

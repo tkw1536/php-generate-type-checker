@@ -7,6 +7,7 @@ import {
   orExpr,
 } from '../ir/index.ts';
 import { equals } from '../ir/equals.ts';
+import { canonicalizeFactExpr } from './factCanon.ts';
 import { isAAllowStringSubject } from './implies.ts';
 import { negateBinOp } from './binOps.ts';
 
@@ -31,13 +32,33 @@ type Flags = {
 };
 
 export function withTrueFact(env: FactEnv, expr: Expr, flags?: Flags): FactEnv {
+  const canon = canonicalizeFactExpr(expr);
   let next = env;
-  if (next.trueFacts.some((f) => equals(f, expr))) {
+  if (next.trueFacts.some((f) => equals(f, canon))) {
     return next;
   }
 
-  next = { ...next, trueFacts: [...next.trueFacts, expr] };
-  return deriveTrueFacts(next, expr, flags);
+  next = { ...next, trueFacts: [...next.trueFacts, canon] };
+  return deriveTrueFacts(next, canon, flags);
+}
+
+function deriveTrueCallFacts(
+  env: FactEnv,
+  expr: Extract<Expr, { kind: 'call' }>,
+): FactEnv {
+  let next = env;
+  const subject = isAAllowStringSubject(expr);
+  if (subject !== null) {
+    // `is_a($x, T::class, TRUE)` implies `class_exists($x)`.
+    next = withTrueFact(next, callExpr('class_exists', [subject]));
+  }
+  // is_int / is_string are mutually exclusive on the same value.
+  if (expr.name === 'is_int' && expr.args.length === 1) {
+    next = withTrueFact(next, notExpr(callExpr('is_string', [expr.args[0]])));
+  } else if (expr.name === 'is_string' && expr.args.length === 1) {
+    next = withTrueFact(next, notExpr(callExpr('is_int', [expr.args[0]])));
+  }
+  return next;
 }
 
 function deriveTrueFacts(env: FactEnv, expr: Expr, flags?: Flags): FactEnv {
@@ -66,14 +87,8 @@ function deriveTrueFacts(env: FactEnv, expr: Expr, flags?: Flags): FactEnv {
     case 'instanceof':
       // `$x instanceof T` implies `is_object($x)`.
       return withTrueFact(next, callExpr('is_object', [expr.subject]));
-    case 'call': {
-      const subject = isAAllowStringSubject(expr);
-      if (subject !== null) {
-        // `is_a($x, T::class, TRUE)` implies `class_exists($x)`.
-        return withTrueFact(next, callExpr('class_exists', [subject]));
-      }
-      return next;
-    }
+    case 'call':
+      return deriveTrueCallFacts(next, expr);
     case 'bool':
     case 'call_checker':
       return next;
@@ -87,33 +102,34 @@ export function withFalseFact(
   expr: Expr,
   flags?: Flags,
 ): FactEnv {
+  const canon = canonicalizeFactExpr(expr);
   let next = env;
   // if we already added this fact, then we're done.
-  if (next.falseFacts.some((f) => equals(f, expr))) {
+  if (next.falseFacts.some((f) => equals(f, canon))) {
     return next;
   }
 
   // add derived facts.
-  next = { ...next, falseFacts: [...next.falseFacts, expr] };
-  switch (expr.kind) {
+  next = { ...next, falseFacts: [...next.falseFacts, canon] };
+  switch (canon.kind) {
     case 'or':
-      for (const disjunct of expr.exprs) {
+      for (const disjunct of canon.exprs) {
         next = withFalseFact(next, disjunct);
       }
       break;
     case 'bin':
       next = withFalseFact(
         next,
-        binExpr(negateBinOp(expr.op), expr.right, expr.left),
+        binExpr(negateBinOp(canon.op), canon.right, canon.left),
       );
       break;
     case 'not':
-      next = withTrueFact(next, expr.expr);
+      next = withTrueFact(next, canon.expr);
       break;
     case 'and':
       if (flags?.skipDeMorgan !== true) {
         // !(x && y) => !x || !y
-        next = withTrueFact(next, orExpr(expr.exprs.map(notExpr)), {
+        next = withTrueFact(next, orExpr(canon.exprs.map(notExpr)), {
           skipDeMorgan: true,
         });
       }

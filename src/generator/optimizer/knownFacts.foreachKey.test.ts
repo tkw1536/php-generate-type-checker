@@ -17,6 +17,7 @@ import {
 import type { Block, Stmt } from '../ir/types.ts';
 import {
   DECIMAL_INT_STRING_PATTERN,
+  decimalIntStringExpr,
   nonDecimalIntStringExpr,
 } from '../decimalIntString.ts';
 import { simplifyExpression } from './expression.ts';
@@ -136,6 +137,55 @@ function foldsExpandedNonDecimalKeyNegationOnForeachKey(): void {
   );
 }
 
+function foldsDecimalIntStringFailIfToTrueOnForeachKey(): void {
+  const $key = variableRef(0);
+  const block: Block = [
+    {
+      kind: 'foreach',
+      iterable: $v,
+      keyVar: 0,
+      valueVar: 1,
+      body: [failIfStmt(decimalIntStringExpr(refArg($key)))],
+    },
+  ];
+  const result = applyKnownFacts(block, emptyFactEnv());
+  const innerIf = expectIf(expectForeach(result[0]).body[0]);
+  expect(innerIf.cond).toEqual(boolLit(true));
+}
+
+function absorbsPregIntoNotStringForNonDecimalFailIf(): void {
+  const $key = variableRef(0);
+  const s = refArg($key);
+  // Body-local simplify of !non-decimal-int-string:
+  // !is_string || preg === 1. Under key facts, preg === 1 ⇒ !is_string.
+  const failNonDecimal = orExpr([
+    notExpr(callExpr('is_string', [s])),
+    binExpr(
+      '===',
+      callArg('preg_match', [literalArg(DECIMAL_INT_STRING_PATTERN), s]),
+      literalArg('1'),
+    ),
+  ]);
+  const block: Block = [
+    {
+      kind: 'foreach',
+      iterable: $v,
+      keyVar: 0,
+      valueVar: 1,
+      body: [
+        {
+          kind: 'if',
+          cond: failNonDecimal,
+          body: [returnStmt(boolLit(false))],
+        },
+      ],
+    },
+  ];
+  const result = applyKnownFacts(block, emptyFactEnv());
+  const innerIf = expectIf(expectForeach(result[0]).body[0]);
+  expect(innerIf.cond).toEqual(notExpr(callExpr('is_string', [s])));
+}
+
 describe('applyKnownFacts foreach keys', () => {
   it(
     'folds array-key check on foreach key to false fail-if',
@@ -148,5 +198,13 @@ describe('applyKnownFacts foreach keys', () => {
   it(
     'folds expanded !(int|non-decimal-int-string) on foreach key',
     foldsExpandedNonDecimalKeyNegationOnForeachKey,
+  );
+  it(
+    'folds decimal-int-string fail-if to true on foreach key',
+    foldsDecimalIntStringFailIfToTrueOnForeachKey,
+  );
+  it(
+    'absorbs preg check into !is_string for non-decimal-int-string fail-if',
+    absorbsPregIntoNotStringForNonDecimalFailIf,
   );
 });

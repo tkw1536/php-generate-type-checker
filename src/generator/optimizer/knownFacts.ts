@@ -1,21 +1,17 @@
 import type { Block, Expr, Stmt, ValueRef } from '../ir/types.ts';
 import {
   andExpr,
-  binExpr,
   boolLit,
-  callArg,
   callExpr,
-  literalArg,
   notExpr,
   orExpr,
   refArg,
   variableRef,
 } from '../ir/index.ts';
 import { equals } from '../ir/equals.ts';
-import {
-  DECIMAL_INT_STRING_PATTERN,
-  nonDecimalIntStringExpr,
-} from '../decimalIntString.ts';
+import { nonDecimalIntStringExpr } from '../decimalIntString.ts';
+import { canonicalizeFactExpr } from './factCanon.ts';
+import { entails, implies } from './implies.ts';
 import {
   type FactEnv,
   withFalseFact,
@@ -26,14 +22,113 @@ function matchesFact(expr: Expr, facts: readonly Expr[]): boolean {
   return facts.some((f) => equals(f, expr));
 }
 
+function factProvesTrue(expr: Expr, env: FactEnv): boolean {
+  const canon = canonicalizeFactExpr(expr);
+  return (
+    matchesFact(canon, env.trueFacts) ||
+    env.trueFacts.some((t) => entails(t, canon))
+  );
+}
+
+function factProvesFalse(expr: Expr, env: FactEnv): boolean {
+  const canon = canonicalizeFactExpr(expr);
+  if (matchesFact(canon, env.falseFacts)) {
+    return true;
+  }
+  const notCanon = canonicalizeFactExpr(notExpr(canon));
+  return env.trueFacts.some((t) => entails(t, notCanon));
+}
+
+/** `a ⇒ b` structurally, or because `¬a ∨ b` is known true in `env`. */
+function impliesModuloFacts(a: Expr, b: Expr, env: FactEnv): boolean {
+  const ca = canonicalizeFactExpr(a);
+  const cb = canonicalizeFactExpr(b);
+  if (implies(ca, cb)) {
+    return true;
+  }
+  return factProvesTrue(orExpr([notExpr(a), b]), env);
+}
+
+/**
+ * Drop redundant operands using implication under `env`:
+ * - OR: drop stronger A when A ⇒ B
+ * - AND: drop weaker B when A ⇒ B
+ */
+function absorbOperandsModuloFacts(
+  exprs: readonly Expr[],
+  mode: 'and' | 'or',
+  env: FactEnv,
+): Expr[] {
+  return exprs.filter((candidate, i) => {
+    for (let j = 0; j < exprs.length; j++) {
+      if (i === j) {
+        continue;
+      }
+      const other = exprs[j];
+      if (
+        mode === 'or' &&
+        impliesModuloFacts(candidate, other, env) &&
+        !equals(canonicalizeFactExpr(candidate), canonicalizeFactExpr(other))
+      ) {
+        return false;
+      }
+      if (
+        mode === 'and' &&
+        impliesModuloFacts(other, candidate, env) &&
+        !equals(canonicalizeFactExpr(candidate), canonicalizeFactExpr(other))
+      ) {
+        return false;
+      }
+    }
+    return true;
+  });
+}
+
 export function substituteFacts(expr: Expr, env: FactEnv): Expr {
-  if (matchesFact(expr, env.falseFacts)) {
+  if (factProvesFalse(expr, env)) {
     return boolLit(false);
   }
-  if (matchesFact(expr, env.trueFacts)) {
+  if (factProvesTrue(expr, env)) {
     return boolLit(true);
   }
   return substituteFactsShallow(expr, env);
+}
+
+function substituteFactsAnd(expr: Extract<Expr, { kind: 'and' }>, env: FactEnv): Expr {
+  // Left-to-right: reaching a later conjunct means earlier ones were true.
+  let changed = false;
+  let currentEnv = env;
+  let exprs = expr.exprs.map((e) => {
+    const next = substituteFacts(e, currentEnv);
+    if (next !== e) {
+      changed = true;
+    }
+    currentEnv = withTrueFact(currentEnv, e);
+    return next;
+  });
+  const absorbed = absorbOperandsModuloFacts(exprs, 'and', env);
+  if (absorbed.length !== exprs.length) {
+    changed = true;
+    exprs = absorbed;
+  }
+  return changed ? andExpr(exprs) : expr;
+}
+
+function substituteFactsOr(expr: Extract<Expr, { kind: 'or' }>, env: FactEnv): Expr {
+  let changed = false;
+  let exprs = expr.exprs.map((e) => {
+    const next = substituteFacts(e, env);
+    if (next !== e) {
+      changed = true;
+    }
+    return next;
+  });
+  const absorbed = absorbOperandsModuloFacts(exprs, 'or', env);
+  if (absorbed.length !== exprs.length) {
+    changed = true;
+    exprs = absorbed;
+  }
+  return changed ? orExpr(exprs) : expr;
 }
 
 function substituteFactsShallow(expr: Expr, env: FactEnv): Expr {
@@ -51,31 +146,10 @@ function substituteFactsShallow(expr: Expr, env: FactEnv): Expr {
       }
       return inner === expr.expr ? expr : { kind: 'not', expr: inner };
     }
-    case 'and': {
-      // Left-to-right: reaching a later conjunct means earlier ones were true.
-      let changed = false;
-      let currentEnv = env;
-      const exprs = expr.exprs.map((e) => {
-        const next = substituteFacts(e, currentEnv);
-        if (next !== e) {
-          changed = true;
-        }
-        currentEnv = withTrueFact(currentEnv, e);
-        return next;
-      });
-      return changed ? { ...expr, exprs } : expr;
-    }
-    case 'or': {
-      let changed = false;
-      const exprs = expr.exprs.map((e) => {
-        const next = substituteFacts(e, env);
-        if (next !== e) {
-          changed = true;
-        }
-        return next;
-      });
-      return changed ? { ...expr, exprs } : expr;
-    }
+    case 'and':
+      return substituteFactsAnd(expr, env);
+    case 'or':
+      return substituteFactsOr(expr, env);
   }
   throw new Error('never reached');
 }
@@ -139,22 +213,12 @@ function applyKnownFactsIf(
 /**
  * IR `foreach` is only emitted for arrays (parameterized `iterable` is rejected).
  * PHP array keys from foreach are always `int|non-decimal-int-string`.
- *
- * Body blocks are optimized in isolation first, which De Morgan-expands
- * `!(int|…)` before this outer pass — so we also seed those expanded false forms.
  */
 function seedForeachArrayKeyFacts(env: FactEnv, key: ValueRef): FactEnv {
   const s = refArg(key);
   const isInt = callExpr('is_int', [s]);
   const isString = callExpr('is_string', [s]);
   const nonDecimal = nonDecimalIntStringExpr(s);
-  const pregEq1 = binExpr(
-    '===',
-    callArg('preg_match', [literalArg(DECIMAL_INT_STRING_PATTERN), s]),
-    literalArg('1'),
-  );
-  const notNonDecimalExpanded = orExpr([notExpr(isString), pregEq1]);
-
   let next = env;
   for (const fact of [
     orExpr([isInt, isString]),
@@ -163,14 +227,6 @@ function seedForeachArrayKeyFacts(env: FactEnv, key: ValueRef): FactEnv {
     orExpr([nonDecimal, isInt]),
   ]) {
     next = withTrueFact(next, fact);
-  }
-  for (const fact of [
-    andExpr([notExpr(isInt), notExpr(isString)]),
-    andExpr([notExpr(isString), notExpr(isInt)]),
-    andExpr([notExpr(isInt), notNonDecimalExpanded]),
-    andExpr([notNonDecimalExpanded, notExpr(isInt)]),
-  ]) {
-    next = withFalseFact(next, fact);
   }
   return next;
 }

@@ -107,6 +107,8 @@ array<int, Foo>
 array<int|string, mixed>
 array<array-key, mixed>
 array<int|non-decimal-int-string, string>
+array<decimal-int-string, mixed>
+array<non-decimal-int-string, mixed>
 non-empty-array
 non-empty-array<string>
 list
