@@ -11,6 +11,7 @@ import { canonicalizeFactExpr } from './factCanon.ts';
 import {
   exclusiveTag,
   otherExclusiveNegations,
+  typeCallImpliedByEquality,
 } from './exclusiveTypes.ts';
 import { isAAllowStringSubject } from './implies.ts';
 
@@ -80,6 +81,11 @@ function deriveTrueFacts(env: FactEnv, expr: Expr, flags?: Flags): FactEnv {
       return next;
     case 'bin': {
       next = deriveExclusiveNegations(next, expr);
+      const litType = typeCallImpliedByEquality(expr);
+      if (litType !== null) {
+        // `$x === 0` implies `is_int($x)` (same idea for other typed literals).
+        next = withTrueFact(next, litType);
+      }
       // Commute operands so `$x === null` and `null === $x` match as the same fact.
       return withTrueFact(next, binExpr(expr.op, expr.right, expr.left));
     }

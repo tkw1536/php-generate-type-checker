@@ -150,6 +150,9 @@ array{outer: object{inner: string}}
 object{outer: array{inner: string}}
 
 # --- Unions ---
+int|0
+string|''
+array|array{}
 int|string
 int|string|null
 int|array<string, bool>
@@ -157,6 +160,7 @@ false|null
 true|false
 
 # --- Intersections ---
+array&array{}
 Foo&Bar
 \stdClass&object{a: int}
 object{a: int}&\stdClass

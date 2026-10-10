@@ -388,6 +388,8 @@ The simplify phase simplifies boolean expressions.
 | `(is_int && is_string) \|\| (is_int && is_bool)`   | `is_int && (is_string \|\| is_bool)`                                               |
 | `is_a($x, Foo::class, TRUE) \|\| class_exists($x)` | `class_exists($x)` (OR keeps the weaker fact)                                      |
 | `is_a(…) && class_exists(…)`                       | `is_a(…)` (AND keeps the stronger fact; same idea for `instanceof` vs `is_object`) |
+| `is_int($x) \|\| $x === 0`                         | `is_int($x)` (typed literals imply their `is_*` tag; OR keeps the weaker fact)     |
+| `is_array($x) && $x === []`                        | `$x === []` (AND keeps the stronger fact)                                          |
 | `!($x !== [])`                                     | `$x === []`                                                                        |
 | `!($x > 0)`                                        | `$x <= 0`                                                                          |
 

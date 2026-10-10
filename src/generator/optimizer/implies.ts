@@ -1,7 +1,10 @@
 import type { Arg, Expr } from '../ir/types.ts';
 import { callExpr } from '../ir/index.ts';
 import { equals } from '../ir/equals.ts';
-import { exclusiveTypeImplies } from './exclusiveTypes.ts';
+import {
+  exclusiveTypeImplies,
+  typeCallImpliedByEquality,
+} from './exclusiveTypes.ts';
 
 function isTrueLiteralArg(arg: Arg): boolean {
   return arg.kind === 'literal' && (arg.value === 'true' || arg.value === 'TRUE');
@@ -36,6 +39,11 @@ export function implies(a: Expr, b: Expr): boolean {
     return true;
   }
   if (exclusiveTypeImplies(a, b)) {
+    return true;
+  }
+  // `$x === 0` ⇒ `is_int($x)` (and anything that type tag implies)
+  const litType = typeCallImpliedByEquality(a);
+  if (litType !== null && implies(litType, b)) {
     return true;
   }
   // A && B ⇒ A, A && B ⇒ B (and anything a conjunct implies)

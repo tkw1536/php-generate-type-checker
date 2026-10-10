@@ -232,6 +232,32 @@ const SIMPLIFY_CASES = [
     ]),
     andExpr([isString, callExpr('class_exists', [refArg($v)])]),
   ],
+  [
+    'absorb === 0 under is_int in or',
+    orExpr([isInt, binExpr('===', refArg($v), literalArg('0'))]),
+    isInt,
+  ],
+  [
+    'absorb is_int under === 0 in and',
+    andExpr([isInt, binExpr('===', refArg($v), literalArg('0'))]),
+    binExpr('===', refArg($v), literalArg('0')),
+  ],
+  [
+    'absorb is_array under === [] in and',
+    andExpr([
+      callExpr('is_array', [refArg($v)]),
+      binExpr('===', refArg($v), empty),
+    ]),
+    binExpr('===', refArg($v), empty),
+  ],
+  [
+    'absorb === [] under is_array in or',
+    orExpr([
+      callExpr('is_array', [refArg($v)]),
+      binExpr('===', refArg($v), empty),
+    ]),
+    callExpr('is_array', [refArg($v)]),
+  ],
 ] as [string, Expr, Expr][];
 
 const ne = binExpr('!==', refArg($v), empty);

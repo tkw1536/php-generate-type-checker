@@ -361,11 +361,11 @@
   },
   {
     "input": "array<decimal-int-string, mixed>",
-    "expected": "/** @phpstan-assert-if-true array<decimal-int-string, mixed> $value */\nfunction isArrayDecimalIntStringMixed(mixed $value): bool\n{\n    return (is_array($value) && $value === []);\n}\n"
+    "expected": "/** @phpstan-assert-if-true array<decimal-int-string, mixed> $value */\nfunction isArrayDecimalIntStringMixed(mixed $value): bool\n{\n    return $value === [];\n}\n"
   },
   {
     "input": "array<resource, mixed>",
-    "expected": "/** @phpstan-assert-if-true array<resource, mixed> $value */\nfunction isArrayResourceMixed(mixed $value): bool\n{\n    return (is_array($value) && $value === []);\n}\n"
+    "expected": "/** @phpstan-assert-if-true array<resource, mixed> $value */\nfunction isArrayResourceMixed(mixed $value): bool\n{\n    return $value === [];\n}\n"
   },
   {
     "input": "array<non-decimal-int-string, mixed>",
@@ -492,6 +492,18 @@
     "expected": "/** @phpstan-assert-if-true object{outer: array{inner: string}} $value */\nfunction isObjectOuterArrayInnerString(mixed $value): bool\n{\n    return (\n        is_object($value) &&\n        property_exists($value, 'outer') &&\n        is_array($value->outer) &&\n        array_key_exists('inner', $value->outer) &&\n        is_string($value->outer['inner'])\n    );\n}\n"
   },
   {
+    "input": "int|0",
+    "expected": "/** @phpstan-assert-if-true int|0 $value */\nfunction isInt0(mixed $value): bool\n{\n    return is_int($value);\n}\n"
+  },
+  {
+    "input": "string|''",
+    "expected": "/** @phpstan-assert-if-true string|'' $value */\nfunction isString(mixed $value): bool\n{\n    return is_string($value);\n}\n"
+  },
+  {
+    "input": "array|array{}",
+    "expected": "/** @phpstan-assert-if-true array|array{} $value */\nfunction isArrayArray(mixed $value): bool\n{\n    return is_array($value);\n}\n"
+  },
+  {
     "input": "int|string",
     "expected": "/** @phpstan-assert-if-true int|string $value */\nfunction isIntString(mixed $value): bool\n{\n    return (is_int($value) || is_string($value));\n}\n"
   },
@@ -510,6 +522,10 @@
   {
     "input": "true|false",
     "expected": "/** @phpstan-assert-if-true TRUE|FALSE $value */\nfunction isTrueFalse(mixed $value): bool\n{\n    return ($value === TRUE || $value === FALSE);\n}\n"
+  },
+  {
+    "input": "array&array{}",
+    "expected": "/** @phpstan-assert-if-true array&array{} $value */\nfunction isArrayArray(mixed $value): bool\n{\n    return $value === [];\n}\n"
   },
   {
     "input": "Foo&Bar",

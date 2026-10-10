@@ -49,6 +49,63 @@ function sameSubject(a: Arg, b: Arg): boolean {
   return false;
 }
 
+function isSubjectArg(arg: Arg): boolean {
+  return arg.kind === 'ref';
+}
+
+/** `is_*` call implied by `$x === LIT` / `LIT === $x`, or null (null literals use exclusive null tag). */
+export function typeCallImpliedByEquality(expr: Expr): Expr | null {
+  if (expr.kind !== 'bin' || expr.op !== '===') {
+    return null;
+  }
+  let subject: Arg;
+  let lit: Arg;
+  if (isSubjectArg(expr.left) && expr.right.kind === 'literal') {
+    subject = expr.left;
+    lit = expr.right;
+  } else if (isSubjectArg(expr.right) && expr.left.kind === 'literal') {
+    subject = expr.right;
+    lit = expr.left;
+  } else {
+    return null;
+  }
+  const name = exclusiveCallNameForLiteral(lit.value);
+  if (name === null) {
+    return null;
+  }
+  return callExpr(name, [subject]);
+}
+
+function exclusiveCallNameForLiteral(value: string): ExclusiveCallName | null {
+  if (value === 'null' || value === 'NULL') {
+    return null;
+  }
+  if (
+    value === 'true' ||
+    value === 'TRUE' ||
+    value === 'false' ||
+    value === 'FALSE'
+  ) {
+    return 'is_bool';
+  }
+  if (value === '[]') {
+    return 'is_array';
+  }
+  if (
+    (value.startsWith("'") && value.endsWith("'")) ||
+    (value.startsWith('"') && value.endsWith('"'))
+  ) {
+    return 'is_string';
+  }
+  if (/^-?\d+$/u.test(value)) {
+    return 'is_int';
+  }
+  if (/^-?(?:\d+\.\d+|\d+(?:\.\d+)?[eE][+-]?\d+)$/u.test(value)) {
+    return 'is_float';
+  }
+  return null;
+}
+
 function tagsEqual(a: ExclusiveTag, b: ExclusiveTag): boolean {
   if (a.kind !== b.kind || !sameSubject(a.subject, b.subject)) {
     return false;

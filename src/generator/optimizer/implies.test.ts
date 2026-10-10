@@ -56,6 +56,23 @@ describe('implies', () => {
     const isArray = callExpr('is_array', [refArg($v)]);
     expect(implies(isNull, notExpr(isArray))).toBe(true);
   });
+
+  it('=== 0 implies is_int', () => {
+    const eq0 = binExpr('===', refArg($v), literalArg('0'));
+    expect(implies(eq0, isInt)).toBe(true);
+    expect(implies(isInt, eq0)).toBe(false);
+  });
+
+  it('=== "" implies is_string', () => {
+    const eqEmpty = binExpr('===', refArg($v), literalArg("''"));
+    expect(implies(eqEmpty, isString)).toBe(true);
+  });
+
+  it('=== [] implies is_array', () => {
+    const eqArr = binExpr('===', refArg($v), literalArg('[]'));
+    const isArray = callExpr('is_array', [refArg($v)]);
+    expect(implies(eqArr, isArray)).toBe(true);
+  });
 });
 
 describe('entails', () => {
@@ -102,5 +119,15 @@ describe('absorbImpliedOperands', () => {
 
   it('and keeps stronger is_a', () => {
     expect(absorbImpliedOperands([isA, classExists], 'and')).toEqual([isA]);
+  });
+
+  it('or keeps weaker is_int over === 0', () => {
+    const eq0 = binExpr('===', refArg($v), literalArg('0'));
+    expect(absorbImpliedOperands([isInt, eq0], 'or')).toEqual([isInt]);
+  });
+
+  it('and keeps stronger === 0 over is_int', () => {
+    const eq0 = binExpr('===', refArg($v), literalArg('0'));
+    expect(absorbImpliedOperands([isInt, eq0], 'and')).toEqual([eq0]);
   });
 });
