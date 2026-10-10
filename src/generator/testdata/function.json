@@ -568,6 +568,10 @@
     "expected": "/** @phpstan-assert-if-true array{hello: string, world: list<string>} $value */\nfunction isArrayHelloStringWorldListString(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_key_exists('hello', $value) ||\n        !is_string($value['hello']) ||\n        !array_key_exists('world', $value) ||\n        !is_array($value['world']) ||\n        !array_is_list($value['world'])\n    ) {\n        return FALSE;\n    }\n    foreach ($value['world'] as $item) {\n        if (!is_string($item)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
+    "input": "array{a: int, b: array<string>, c: int}",
+    "expected": "/** @phpstan-assert-if-true array{a: int, b: array<string>, c: int} $value */\nfunction isArrayAIntBArrayStringCInt(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_key_exists('a', $value) ||\n        !is_int($value['a']) ||\n        !array_key_exists('b', $value) ||\n        !is_array($value['b']) ||\n        !array_key_exists('c', $value) ||\n        !is_int($value['c'])\n    ) {\n        return FALSE;\n    }\n    foreach ($value['b'] as $item) {\n        if (!is_string($item)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+  },
+  {
     "input": "array{world: list<string>}",
     "expected": "/** @phpstan-assert-if-true array{world: list<string>} $value */\nfunction isArrayWorldListString(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_key_exists('world', $value) ||\n        !is_array($value['world']) ||\n        !array_is_list($value['world'])\n    ) {\n        return FALSE;\n    }\n    foreach ($value['world'] as $item) {\n        if (!is_string($item)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },

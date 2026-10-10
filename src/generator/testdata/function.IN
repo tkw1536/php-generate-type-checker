@@ -173,6 +173,7 @@ A&B|C
 (array<string,mixed>)|null
 array{'hello:world': string, 'hello.world': string}
 array{'hello': string, 'world': list<string>}
+array{a: int, b: array<string>, c: int}
 array{world: list<string>}
 array{hello: string}
 array{left: array{}, right: never[]}|array{}

@@ -69,7 +69,9 @@ function isPostListResponse(mixed $value): bool
         !is_array($value) ||
         !array_key_exists('posts', $value) ||
         !is_array($value['posts']) ||
-        !array_is_list($value['posts'])
+        !array_is_list($value['posts']) ||
+        !array_key_exists('meta', $value) ||
+        !isPaginationMeta($value['meta'])
     ) {
         return FALSE;
     }
@@ -78,7 +80,7 @@ function isPostListResponse(mixed $value): bool
             return FALSE;
         }
     }
-    return (array_key_exists('meta', $value) && isPaginationMeta($value['meta']));
+    return TRUE;
 }
 ```
 
@@ -277,6 +279,7 @@ return TRUE;
 
 Shapes represent non-homogenous containers.
 These are typically represented by existence check, followed by a type check on each property.
+Collection field loops (`foreach`) are emitted after all key and non-loop field guards so Optimize can group them.
 For example for `array{name: string, age: int}`:
 
 ```php

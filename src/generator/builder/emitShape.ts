@@ -97,7 +97,13 @@ function emitShapeFields(
       out.push(...fieldBody);
     }
   }
-  return out;
+  // move the 'foreach' statements to the end
+  // so that all simple conditions can be grouoped by the optimizer.
+  // This is always sound, because any collection guards will still happen before foreach.
+  return [
+    ...out.filter((s) => s.kind !== 'foreach'),
+    ...out.filter((s) => s.kind === 'foreach'),
+  ];
 }
 
 function shapeRequiredKeyGuard(
