@@ -332,6 +332,10 @@
     "expected": "/** @phpstan-assert-if-true integer<0, 5> $value */\nfunction isInteger05(mixed $value): bool\n{\n    return (\n        is_int($value) &&\n        $value >= 0 &&\n        $value <= 5\n    );\n}\n"
   },
   {
+    "input": "array<never>",
+    "expected": "/** @phpstan-assert-if-true array<never> $value */\nfunction isArrayNever(mixed $value): bool\n{\n    return $value === [];\n}\n"
+  },
+  {
     "input": "array<int>",
     "expected": "/** @phpstan-assert-if-true array<int> $value */\nfunction isArrayInt(mixed $value): bool\n{\n    if (!is_array($value)) {\n        return FALSE;\n    }\n    foreach ($value as $item) {\n        if (!is_int($item)) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
@@ -350,6 +354,10 @@
   {
     "input": "array<int|string, mixed>",
     "expected": "/** @phpstan-assert-if-true array<int|string, mixed> $value */\nfunction isArrayIntStringMixed(mixed $value): bool\n{\n    return is_array($value);\n}\n"
+  },
+  {
+    "input": "array<int|string|bool, mixed>",
+    "expected": "/** @phpstan-assert-if-true array<int|string|bool, mixed> $value */\nfunction isArrayIntStringBoolMixed(mixed $value): bool\n{\n    return is_array($value);\n}\n"
   },
   {
     "input": "array<array-key, mixed>",
@@ -496,12 +504,40 @@
     "expected": "/** @phpstan-assert-if-true int|0 $value */\nfunction isInt0(mixed $value): bool\n{\n    return is_int($value);\n}\n"
   },
   {
+    "input": "0|int",
+    "expected": "/** @phpstan-assert-if-true 0|int $value */\nfunction isT0Int(mixed $value): bool\n{\n    return is_int($value);\n}\n"
+  },
+  {
+    "input": "int|42",
+    "expected": "/** @phpstan-assert-if-true int|42 $value */\nfunction isInt42(mixed $value): bool\n{\n    return is_int($value);\n}\n"
+  },
+  {
     "input": "string|''",
     "expected": "/** @phpstan-assert-if-true string|'' $value */\nfunction isString(mixed $value): bool\n{\n    return is_string($value);\n}\n"
   },
   {
     "input": "array|array{}",
     "expected": "/** @phpstan-assert-if-true array|array{} $value */\nfunction isArrayArray(mixed $value): bool\n{\n    return is_array($value);\n}\n"
+  },
+  {
+    "input": "bool|true",
+    "expected": "/** @phpstan-assert-if-true bool|TRUE $value */\nfunction isBoolTrue(mixed $value): bool\n{\n    return is_bool($value);\n}\n"
+  },
+  {
+    "input": "true|bool",
+    "expected": "/** @phpstan-assert-if-true TRUE|bool $value */\nfunction isTrueBool(mixed $value): bool\n{\n    return is_bool($value);\n}\n"
+  },
+  {
+    "input": "false|bool",
+    "expected": "/** @phpstan-assert-if-true FALSE|bool $value */\nfunction isFalseBool(mixed $value): bool\n{\n    return is_bool($value);\n}\n"
+  },
+  {
+    "input": "float|0.0",
+    "expected": "/** @phpstan-assert-if-true float|0.0 $value */\nfunction isFloat00(mixed $value): bool\n{\n    return is_float($value);\n}\n"
+  },
+  {
+    "input": "0.0|float",
+    "expected": "/** @phpstan-assert-if-true 0.0|float $value */\nfunction isT00Float(mixed $value): bool\n{\n    return is_float($value);\n}\n"
   },
   {
     "input": "int|string",
@@ -526,6 +562,18 @@
   {
     "input": "array&array{}",
     "expected": "/** @phpstan-assert-if-true array&array{} $value */\nfunction isArrayArray(mixed $value): bool\n{\n    return $value === [];\n}\n"
+  },
+  {
+    "input": "int&0",
+    "expected": "/** @phpstan-assert-if-true int&0 $value */\nfunction isInt0(mixed $value): bool\n{\n    return $value === 0;\n}\n"
+  },
+  {
+    "input": "0&int",
+    "expected": "/** @phpstan-assert-if-true 0&int $value */\nfunction isT0Int(mixed $value): bool\n{\n    return $value === 0;\n}\n"
+  },
+  {
+    "input": "string&''",
+    "expected": "/** @phpstan-assert-if-true string&'' $value */\nfunction isString(mixed $value): bool\n{\n    return $value === '';\n}\n"
   },
   {
     "input": "Foo&Bar",
@@ -554,6 +602,54 @@
   {
     "input": "(int|string)&Foo",
     "expected": "/** @phpstan-assert-if-true (int|string)&Foo $value */\nfunction isIntStringFoo(mixed $value): bool\n{\n    return FALSE;\n}\n"
+  },
+  {
+    "input": "int&string",
+    "expected": "/** @phpstan-assert-if-true int&string $value */\nfunction isIntString(mixed $value): bool\n{\n    return FALSE;\n}\n"
+  },
+  {
+    "input": "string&int",
+    "expected": "/** @phpstan-assert-if-true string&int $value */\nfunction isStringInt(mixed $value): bool\n{\n    return FALSE;\n}\n"
+  },
+  {
+    "input": "int&bool",
+    "expected": "/** @phpstan-assert-if-true int&bool $value */\nfunction isIntBool(mixed $value): bool\n{\n    return FALSE;\n}\n"
+  },
+  {
+    "input": "bool&string",
+    "expected": "/** @phpstan-assert-if-true bool&string $value */\nfunction isBoolString(mixed $value): bool\n{\n    return FALSE;\n}\n"
+  },
+  {
+    "input": "float&int",
+    "expected": "/** @phpstan-assert-if-true float&int $value */\nfunction isFloatInt(mixed $value): bool\n{\n    return FALSE;\n}\n"
+  },
+  {
+    "input": "null&int",
+    "expected": "/** @phpstan-assert-if-true NULL&int $value */\nfunction isNullInt(mixed $value): bool\n{\n    return FALSE;\n}\n"
+  },
+  {
+    "input": "string&null",
+    "expected": "/** @phpstan-assert-if-true string&NULL $value */\nfunction isStringNull(mixed $value): bool\n{\n    return FALSE;\n}\n"
+  },
+  {
+    "input": "array&object",
+    "expected": "/** @phpstan-assert-if-true array&object $value */\nfunction isArrayObject(mixed $value): bool\n{\n    return FALSE;\n}\n"
+  },
+  {
+    "input": "object&array",
+    "expected": "/** @phpstan-assert-if-true object&array $value */\nfunction isObjectArray(mixed $value): bool\n{\n    return FALSE;\n}\n"
+  },
+  {
+    "input": "resource&string",
+    "expected": "/** @phpstan-assert-if-true resource&string $value */\nfunction isResourceString(mixed $value): bool\n{\n    return FALSE;\n}\n"
+  },
+  {
+    "input": "non-empty-string&int",
+    "expected": "/** @phpstan-assert-if-true non-empty-string&int $value */\nfunction isNonEmptyStringInt(mixed $value): bool\n{\n    return FALSE;\n}\n"
+  },
+  {
+    "input": "non-empty-array&array{}",
+    "expected": "/** @phpstan-assert-if-true non-empty-array&array{} $value */\nfunction isNonEmptyArrayArray(mixed $value): bool\n{\n    return FALSE;\n}\n"
   },
   {
     "input": "(array<string,mixed>)|null",

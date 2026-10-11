@@ -799,6 +799,8 @@ body {
 
 .optimize-trace-focus,
 .optimize-trace-facts,
+.optimize-trace-implications,
+.optimize-trace-absorb,
 .optimize-trace-nested {
   margin: 0.35rem 0.75rem 0.35rem;
   font-size: 0.75rem;
@@ -806,6 +808,16 @@ body {
   font-family: var(--font-mono, ui-monospace, monospace);
   line-height: 1.45;
   word-break: break-word;
+}
+
+.optimize-trace-absorb {
+  margin: 0;
+}
+
+.optimize-trace-absorb > .optimize-trace-facts,
+.optimize-trace-absorb > .optimize-trace-implications {
+  margin-left: 0.75rem;
+  margin-right: 0.75rem;
 }
 
 .optimize-trace-meta-line {
@@ -816,6 +828,7 @@ body {
 }
 
 .optimize-trace-fact-line,
+.optimize-trace-implication-line,
 .optimize-trace-nested-line {
   display: flex;
   flex-wrap: wrap;
@@ -825,6 +838,7 @@ body {
 
 .optimize-trace-meta-line + .optimize-trace-meta-line,
 .optimize-trace-fact-line + .optimize-trace-fact-line,
+.optimize-trace-implication-line + .optimize-trace-implication-line,
 .optimize-trace-nested-line + .optimize-trace-nested-line {
   margin-top: 0.15rem;
 }
@@ -840,6 +854,7 @@ body {
 }
 
 .optimize-trace-facts > .optimize-trace-meta-label,
+.optimize-trace-implications > .optimize-trace-meta-label,
 .optimize-trace-nested > .optimize-trace-meta-label {
   display: block;
   margin-bottom: 0.2rem;

@@ -3,73 +3,19 @@ import { parseType } from '../../../parser/index.ts';
 import { buildMany } from '../../pipeline.ts';
 import { optimize } from '../index.ts';
 import { renderTraceSnapshot } from './render.ts';
-import type { OptimizeTraceDetail, OptimizeTraceEvent } from './types.ts';
-
-function factUsedCount(detail: OptimizeTraceDetail): number {
-  if (detail.kind !== 'facts') {
-    return 0;
-  }
-  return detail.used.length;
-}
-
-function factKnownLabels(detail: OptimizeTraceDetail): readonly string[] {
-  if (detail.kind !== 'facts') {
-    return [];
-  }
-  return detail.used.map((f) => f.known);
-}
-
-function factUsesFromEvents(
-  events: readonly OptimizeTraceEvent[],
-): readonly { readonly origin: string; readonly reason: string }[] {
-  const uses: { readonly origin: string; readonly reason: string }[] = [];
-  for (const e of events) {
-    if (e.detail.kind !== 'facts') {
-      continue;
-    }
-    for (const f of e.detail.used) {
-      uses.push({ origin: f.origin, reason: f.reason });
-    }
-  }
-  return uses;
-}
-
-function allFactUsesHaveSources(
-  uses: readonly { readonly origin: string; readonly reason: string }[],
-): boolean {
-  for (const f of uses) {
-    if (f.origin.length === 0 || f.reason.length === 0) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function nestedStepsFromEvents(
-  events: readonly OptimizeTraceEvent[],
-): readonly { readonly rule: string }[] {
-  const steps: { readonly rule: string }[] = [];
-  for (const e of events) {
-    if (e.detail.kind !== 'nested') {
-      continue;
-    }
-    for (const s of e.detail.steps) {
-      steps.push({ rule: s.rule });
-    }
-  }
-  return steps;
-}
-
-function allNestedStepsAreNormalize(
-  steps: readonly { readonly rule: string }[],
-): boolean {
-  for (const s of steps) {
-    if (!s.rule.startsWith('simplify.normalize.')) {
-      return false;
-    }
-  }
-  return true;
-}
+import type { OptimizeTraceEvent } from './types.ts';
+import {
+  absorbImplicationPhp,
+  allFactUsesHaveSources,
+  allNestedStepsAreNormalize,
+  eventExplainsFactsRule,
+  factKnownLabels,
+  factUsedCount,
+  factUsesFromEvents,
+  hasInstanceofObjectImplication,
+  isProveFactsRule,
+  nestedStepsFromEvents,
+} from './traceFactsHelpers.ts';
 
 const FACT_RULES = new Set([
   'facts.proveTrue',
@@ -268,23 +214,36 @@ describe('optimize trace scope for expr rewrites', () => {
 });
 
 describe('optimize trace facts detail', () => {
-  it('lists used facts with sources on every facts.* event', () => {
+  it('explains every facts.* event with facts or absorb implications', () => {
     const factEvents = optimizeListUnionTrace().filter((e) =>
       FACT_RULES.has(e.rule),
     );
     expect(factEvents.length).toBeGreaterThan(0);
-    expect(factEvents.every((e) => e.detail.kind === 'facts')).toBe(true);
+    expect(factEvents.every((e) => eventExplainsFactsRule(e))).toBe(true);
+    const proveEvents = factEvents.filter((e) => isProveFactsRule(e.rule));
+    expect(proveEvents.length).toBeGreaterThan(0);
     expect(
-      Math.min(...factEvents.map((e) => factUsedCount(e.detail))),
+      Math.min(...proveEvents.map((e) => factUsedCount(e.detail))),
     ).toBeGreaterThan(0);
-    const known = factEvents.flatMap((e) => factKnownLabels(e.detail));
+    const known = proveEvents.flatMap((e) => factKnownLabels(e.detail));
     expect(known.length).toBeGreaterThan(0);
     expect(known.every((k) => (['true', 'false'] as const).includes(k))).toBe(
       true,
     );
-    const uses = factUsesFromEvents(factEvents);
+    const uses = factUsesFromEvents(proveEvents);
     expect(uses.length).toBeGreaterThan(0);
     expect(allFactUsesHaveSources(uses)).toBe(true);
+  });
+
+  it('records instanceof ⇒ is_object on absorb for Thing|object', () => {
+    const ast = parseType('Thing|object');
+    const { ir: built } = buildMany([ast]);
+    const { trace } = optimize(built);
+    const absorbs = trace.filter((e) => e.rule === 'facts.absorb');
+    expect(absorbs.length).toBeGreaterThan(0);
+    expect(hasInstanceofObjectImplication(absorbImplicationPhp(absorbs))).toBe(
+      true,
+    );
   });
 
   it('nested normalize steps use simplify.normalize.* rules when present', () => {

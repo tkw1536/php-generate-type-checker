@@ -61,10 +61,6 @@ const REASON_INFO: Record<FactReasonId, FactSourceInfo> = {
     short: 'is_a',
     help: 'is_a(..., TRUE) implies class_exists on the subject.',
   },
-  structural: {
-    short: 'structural',
-    help: 'Operand dropped because another operand structurally implies it (no path fact required).',
-  },
 };
 
 /** Short label for Trace UI: origin when assumed, otherwise the implication reason. */

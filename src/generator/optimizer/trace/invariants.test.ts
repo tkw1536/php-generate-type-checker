@@ -99,11 +99,44 @@ const FACT_RULES = new Set([
   'facts.absorb',
 ]);
 
+function assertFactUsesHaveSources(
+  name: string,
+  rule: string,
+  used: readonly {
+    readonly origin: string;
+    readonly reason: string;
+  }[],
+): void {
+  for (const fact of used) {
+    expect(fact.origin.length, `${name}: ${rule} fact origin`).toBeGreaterThan(
+      0,
+    );
+    expect(fact.reason.length, `${name}: ${rule} fact reason`).toBeGreaterThan(
+      0,
+    );
+  }
+}
+
 function assertFactsEventHasSources(
   name: string,
   event: OptimizeTraceEvent,
 ): void {
   if (!FACT_RULES.has(event.rule)) {
+    return;
+  }
+  if (event.rule === 'facts.absorb') {
+    expect(
+      event.detail.kind === 'absorb',
+      `${name}: ${event.rule} must carry absorb detail`,
+    ).toBe(true);
+    if (event.detail.kind !== 'absorb') {
+      return;
+    }
+    expect(
+      event.detail.implications.length,
+      `${name}: ${event.rule} must list implications`,
+    ).toBeGreaterThan(0);
+    assertFactUsesHaveSources(name, event.rule, event.detail.used);
     return;
   }
   expect(
@@ -117,10 +150,7 @@ function assertFactsEventHasSources(
     event.detail.used.length,
     `${name}: ${event.rule} must list used facts`,
   ).toBeGreaterThan(0);
-  for (const fact of event.detail.used) {
-    expect(fact.origin.length, `${name}: fact origin`).toBeGreaterThan(0);
-    expect(fact.reason.length, `${name}: fact reason`).toBeGreaterThan(0);
-  }
+  assertFactUsesHaveSources(name, event.rule, event.detail.used);
 }
 
 function assertPruneTraceHonesty(

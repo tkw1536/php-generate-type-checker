@@ -1,13 +1,17 @@
 import { optimizeTraceRuleInfo } from '../generator/optimizer/trace/rules.ts';
-import { renderTraceSnapshot } from '../generator/optimizer/trace/render.ts';
 import type { OptimizeTraceEvent } from '../generator/optimizer/trace/types.ts';
 import { highlightCode } from '../highlight.ts';
 import { renderTraceRuleHelp } from './metricsHelp.ts';
 import {
+  renderAbsorbBlocks,
   renderFactsBlock,
   renderNestedBlock,
 } from './optimizeTraceDetailBlocks.ts';
 import { programGroupLabel } from './optimizeTraceList.ts';
+import {
+  eventTempNames,
+  renderEventSnapshot,
+} from './optimizeTraceRenderPhp.ts';
 import { type PhpDiffLine, type PhpDiffResult } from './phpDiff.ts';
 
 export type TraceDetailView = 'before' | 'after' | 'diff';
@@ -16,9 +20,10 @@ function focusPhp(event: OptimizeTraceEvent): {
   readonly before: string;
   readonly after: string;
 } {
+  const temps = eventTempNames(event);
   return {
-    before: renderTraceSnapshot(event.focus.before).replaceAll('\n', ' '),
-    after: renderTraceSnapshot(event.focus.after).replaceAll('\n', ' '),
+    before: renderEventSnapshot(event.focus.before, temps).replaceAll('\n', ' '),
+    after: renderEventSnapshot(event.focus.after, temps).replaceAll('\n', ' '),
   };
 }
 function appendMetaLine(parent: HTMLElement, label: string, body: string): void {
@@ -62,6 +67,7 @@ function renderDetailNote(event: OptimizeTraceEvent): HTMLElement | null {
   switch (event.detail.kind) {
     case 'none':
     case 'facts':
+    case 'absorb':
     case 'nested':
       return null;
     case 'inline': {
@@ -139,6 +145,23 @@ function renderDiffView(diff: PhpDiffResult, phpWhenEmpty: string): HTMLElement 
   return diffEl;
 }
 
+function appendOptional(parent: HTMLElement, child: HTMLElement | null): void {
+  if (child !== null) {
+    parent.append(child);
+  }
+}
+
+function appendRewriteDetails(
+  wrap: HTMLElement,
+  selected: OptimizeTraceEvent,
+): void {
+  wrap.append(renderFocusBlock(selected));
+  appendOptional(wrap, renderFactsBlock(selected));
+  appendOptional(wrap, renderAbsorbBlocks(selected));
+  appendOptional(wrap, renderNestedBlock(selected));
+  appendOptional(wrap, renderDetailNote(selected));
+}
+
 export function renderDetailHeader(selected: OptimizeTraceEvent): HTMLElement {
   const info = optimizeTraceRuleInfo(selected.rule);
   const wrap = document.createElement('div');
@@ -166,19 +189,7 @@ export function renderDetailHeader(selected: OptimizeTraceEvent): HTMLElement {
 
   wrap.append(meta, titleRow);
   if (selected.rule !== 'trace.baseline') {
-    wrap.append(renderFocusBlock(selected));
-    const facts = renderFactsBlock(selected);
-    if (facts !== null) {
-      wrap.append(facts);
-    }
-    const nested = renderNestedBlock(selected);
-    if (nested !== null) {
-      wrap.append(nested);
-    }
-    const note = renderDetailNote(selected);
-    if (note !== null) {
-      wrap.append(note);
-    }
+    appendRewriteDetails(wrap, selected);
   }
   return wrap;
 }

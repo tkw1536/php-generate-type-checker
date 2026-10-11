@@ -100,11 +100,13 @@ int<min, max>
 integer<0, 5>
 
 # --- Generic iterables (array / iterable / list) ---
+array<never>
 array<int>
 array<string, int>
 array<string, array<int, bool>>
 array<int, Foo>
 array<int|string, mixed>
+array<int|string|bool, mixed>
 array<array-key, mixed>
 array<int|non-decimal-int-string, string>
 array<decimal-int-string, mixed>
@@ -151,8 +153,15 @@ object{outer: array{inner: string}}
 
 # --- Unions ---
 int|0
+0|int
+int|42
 string|''
 array|array{}
+bool|true
+true|bool
+false|bool
+float|0.0
+0.0|float
 int|string
 int|string|null
 int|array<string, bool>
@@ -161,6 +170,9 @@ true|false
 
 # --- Intersections ---
 array&array{}
+int&0
+0&int
+string&''
 Foo&Bar
 \stdClass&object{a: int}
 object{a: int}&\stdClass
@@ -168,6 +180,20 @@ A&B&C
 A&B|C
 (array<string, int|null>|null)&Foo
 (int|string)&Foo
+
+# --- Exclusive / impossible intersections ---
+int&string
+string&int
+int&bool
+bool&string
+float&int
+null&int
+string&null
+array&object
+object&array
+resource&string
+non-empty-string&int
+non-empty-array&array{}
 
 # --- Custom Test Cases ---
 (array<string,mixed>)|null

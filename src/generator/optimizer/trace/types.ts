@@ -63,6 +63,12 @@ export type OptimizeTraceFactUse = {
   readonly reason: FactReasonId;
 };
 
+/** Operand implication that justifies dropping one arm of a junction. */
+export type OptimizeTraceImplication = {
+  readonly from: Expr;
+  readonly to: Expr;
+};
+
 /** A normalize rewrite collected under a parent De Morgan / doubleNeg / factor. */
 export type OptimizeTraceNestedStep = {
   readonly rule: OptimizeTraceRuleId;
@@ -73,6 +79,12 @@ export type OptimizeTraceNestedStep = {
 export type OptimizeTraceDetail =
   | { readonly kind: 'none' }
   | { readonly kind: 'facts'; readonly used: readonly OptimizeTraceFactUse[] }
+  | {
+      readonly kind: 'absorb';
+      readonly implications: readonly OptimizeTraceImplication[];
+      /** Env facts that justified the implication; may be empty when structural. */
+      readonly used: readonly OptimizeTraceFactUse[];
+    }
   | {
       readonly kind: 'nested';
       readonly steps: readonly OptimizeTraceNestedStep[];

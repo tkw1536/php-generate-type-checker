@@ -27,9 +27,7 @@ export type FactReasonId =
   | 'exclusive'
   | 'equalityType'
   | 'instanceofObject'
-  | 'isAClassExists'
-  /** Junction absorb justified by structural implication (no env fact needed). */
-  | 'structural';
+  | 'isAClassExists';
 
 export type FactEntry = {
   readonly expr: Expr;

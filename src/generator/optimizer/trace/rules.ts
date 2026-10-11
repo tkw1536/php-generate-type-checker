@@ -28,19 +28,19 @@ const RULES: Record<OptimizeTraceRuleId, OptimizeTraceRuleInfo> = {
   },
   'inline.substitute': {
     title: 'Inline helper call',
-    help: 'Replaces a call_checker with the callee’s body (or its single return expression) after substituting the subject. Sound when the callee is a non-entry helper that cannot recurse into the current program: the call’s meaning is defined as running that body on the same subject.',
+    help: 'Replaces a call_checker with the callee’s body (or its single return expression) after substituting the subject. The inlined helper name is listed under the rewrite. Sound when the callee is a non-entry helper that cannot recurse into the current program: the call’s meaning is defined as running that body on the same subject.',
   },
   'facts.proveTrue': {
     title: 'Prove expression true',
-    help: 'Replaces an expression with true because earlier control flow already established facts that entail it (for example after if (P) return, later code may know ¬P). Sound because any concrete value reaching this point already satisfies those facts, so the test cannot fail.',
+    help: 'Replaces an expression with true because earlier control flow already established facts that entail it (for example after if (P) return, later code may know ¬P). Used facts and how they were learned are listed under the rewrite. Sound because any concrete value reaching this point already satisfies those facts, so the test cannot fail.',
   },
   'facts.proveFalse': {
     title: 'Prove expression false',
-    help: 'Replaces an expression with false because known facts refute it (it equals a known-false fact, or a known-true fact entails its negation). Sound for the same reason: no value that passed the earlier guards can make this expression true.',
+    help: 'Replaces an expression with false because known facts refute it (it equals a known-false fact, or a known-true fact entails its negation). Used facts and how they were learned are listed under the rewrite. Sound for the same reason: no value that passed the earlier guards can make this expression true.',
   },
   'facts.absorb': {
     title: 'Absorb under facts',
-    help: 'Drops a redundant AND/OR operand when implication holds under the current facts (OR: drop a stronger arm implied by a weaker one; AND: drop a weaker conjunct implied by a stronger one). Sound because the kept operands already determine the junction’s truth value on every path that reaches them.',
+    help: 'Drops a redundant AND/OR operand when implication holds (OR: drop stronger A when A ⇒ B; AND: drop weaker B when A ⇒ B). The implication may be structural (e.g. instanceof ⇒ is_object) or justified by path facts; used implications (and any justifying facts) are listed under the rewrite. Sound because the kept operands already determine the junction’s truth value on every path that reaches them.',
   },
   'simplify.expand': {
     title: 'Expand binary ops',
@@ -60,15 +60,15 @@ const RULES: Record<OptimizeTraceRuleId, OptimizeTraceRuleInfo> = {
   },
   'simplify.normalize.doubleNeg': {
     title: 'Remove double negation',
-    help: 'Rewrites !!x into normalize(x) as one step. Sound because boolean negation is an involution: applying it twice yields the original truth value.',
+    help: 'Rewrites !!x into normalize(x) as one step. Nested cleanup from that normalize (if any) is listed under the rewrite. Sound because boolean negation is an involution: applying it twice yields the original truth value.',
   },
   'simplify.normalize.deMorgan': {
     title: 'Apply De Morgan',
-    help: 'Pushes negation through a junction and normalizes the result in one step (e.g. !(!a && !b) → a || b, including nested double-neg cleanup). Sound by De Morgan’s laws plus the soundness of the nested normalize.',
+    help: 'Pushes negation through a junction and normalizes the result in one step (e.g. !(!a && !b) → a || b). Nested cleanup from that normalize (double-neg, identity, etc.) is listed under the rewrite when present. Sound by De Morgan’s laws plus the soundness of the nested normalize.',
   },
   'simplify.normalize.factor': {
     title: 'Factor common operands',
-    help: 'Factors a shared conjunct out of an OR-of-ANDs (or dually for AND-of-ORs) and normalizes the factored form in one step. Sound by distributivity: (a && b) || (a && c) ≡ a && (b || c).',
+    help: 'Factors a shared conjunct out of an OR-of-ANDs (or dually for AND-of-ORs) and normalizes the factored form in one step. Nested cleanup from that normalize is listed under the rewrite when present. Sound by distributivity: (a && b) || (a && c) ≡ a && (b || c).',
   },
   'simplify.normalize.absorb': {
     title: 'Absorb implied operands',
@@ -108,7 +108,7 @@ const RULES: Record<OptimizeTraceRuleId, OptimizeTraceRuleInfo> = {
   },
   'prune.remove': {
     title: 'Prune unused helper',
-    help: 'Deletes a non-entry helper that nothing calls anymore. Sound because unreachable helpers are never invoked at runtime; entry checkers are never pruned, so the public API stays intact.',
+    help: 'Deletes a non-entry helper that nothing calls anymore. The removed helper name is listed under the rewrite. Sound because unreachable helpers are never invoked at runtime; entry checkers are never pruned, so the public API stays intact.',
   },
 };
 

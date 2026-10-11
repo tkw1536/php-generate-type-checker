@@ -40,7 +40,8 @@ yarn spellcheck
 - Prune events: last prune `checker.after` = final optimized IR; same chain and no-ghost rules
 - Trace-only fixes must not change optimizer/PHP output or edit generator golden `*.json`
 - When changing trace recording or enclosing-stack sync, keep those invariants green — do not weaken or skip the invariant test
-- Fact-trace detail: every `facts.*` event (`proveTrue` / `proveFalse` / `absorb`) must list non-empty used facts with path `origin` + implication `reason` (see `passes/facts/env.ts` / `factSource.ts`); prefer assumed, then equals over entails; structural absorb uses reason `structural`
+- Fact-trace detail: `proveTrue` / `proveFalse` list non-empty used facts with path `origin` + implication `reason` (see `passes/facts/env.ts` / `factSource.ts`); prefer assumed, then equals over entails
+- `facts.absorb` carries non-empty `implications` (`from` ⇒ `to`) plus optional env `used` facts (structural absorb may have empty `used`)
 - Composed simplify events (De Morgan / doubleNeg / factor) may attach nested normalize steps in event detail — still one checker-level event
 - Do not reintroduce `facts.commit`-style shadow repairs or bool-literal env facts; after a cond folds to `FALSE`, do not seed the env with that literal
 
