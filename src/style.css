@@ -848,22 +848,23 @@ body {
   align-items: start;
 }
 
-.optimize-trace-fact-line {
+.optimize-trace-fact-line,
+.optimize-trace-nested-line {
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
   align-items: stretch;
 }
 
-.optimize-trace-fact-meta {
+.optimize-trace-fact-meta,
+.optimize-trace-nested-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem 0.5rem;
   align-items: baseline;
 }
 
-.optimize-trace-implication-line,
-.optimize-trace-nested-line {
+.optimize-trace-implication-line {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem 0.5rem;

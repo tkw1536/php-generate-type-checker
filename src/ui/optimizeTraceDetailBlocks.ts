@@ -153,9 +153,12 @@ export function renderNestedBlock(
         const info = optimizeTraceRuleInfo(step.rule);
         const line = document.createElement('div');
         line.className = 'optimize-trace-nested-line';
+        const meta = document.createElement('div');
+        meta.className = 'optimize-trace-nested-meta';
         const title = document.createElement('span');
         title.className = 'optimize-trace-nested-title';
-        title.textContent = info.title;
+        const titleText = document.createElement('span');
+        titleText.textContent = info.title;
         const helpWrap = document.createElement('span');
         helpWrap.className = 'optimize-trace-help';
         helpWrap.innerHTML = renderTraceRuleHelp(
@@ -163,12 +166,14 @@ export function renderNestedBlock(
           info.title,
           info.help,
         );
-        const php = document.createElement('span');
+        title.append(titleText, helpWrap);
+        meta.append(title);
+        const php = document.createElement('div');
         php.className = 'optimize-trace-meta-body';
         const before = oneLineExpr(step.before, tempNames);
         const after = oneLineExpr(step.after, tempNames);
         php.textContent = `${before} → ${after}`;
-        line.append(title, helpWrap, php);
+        line.append(meta, php);
         body.append(line);
       }
     },
