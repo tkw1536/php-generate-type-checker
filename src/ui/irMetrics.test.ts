@@ -26,6 +26,10 @@ const SAMPLE_STATS: OptimizerStats = {
   },
   outerOptimizeLoops: 2,
   blockOptimizeLoops: 15,
+  outerFixpointCapped: false,
+  blockFixpointCapped: false,
+  simplifyFixpointCapped: false,
+  exprNormalizeCapped: false,
 };
 
 const SAMPLE_TIMINGS: StageTimings = {

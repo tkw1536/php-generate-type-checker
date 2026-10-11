@@ -6,12 +6,15 @@ import { renderTraceSnapshot } from './render.ts';
 import type { OptimizeTraceEvent } from './types.ts';
 import {
   absorbImplicationPhp,
+  allExclusiveViaUsesAreArrayKeyAssumed,
   allFactUsesHaveSources,
   allNestedStepsAreNormalize,
   eventExplainsFactsRule,
+  exclusiveViaUses,
   factKnownLabels,
   factUsedCount,
   factUsesFromEvents,
+  hasExclusiveVia,
   hasInstanceofObjectImplication,
   isProveFactsRule,
   nestedStepsFromEvents,
@@ -213,41 +216,83 @@ describe('optimize trace scope for expr rewrites', () => {
   });
 });
 
-describe('optimize trace facts detail', () => {
-  it('explains every facts.* event with facts or absorb implications', () => {
-    const factEvents = optimizeListUnionTrace().filter((e) =>
-      FACT_RULES.has(e.rule),
-    );
-    expect(factEvents.length).toBeGreaterThan(0);
-    expect(factEvents.every((e) => eventExplainsFactsRule(e))).toBe(true);
-    const proveEvents = factEvents.filter((e) => isProveFactsRule(e.rule));
-    expect(proveEvents.length).toBeGreaterThan(0);
-    expect(
-      Math.min(...proveEvents.map((e) => factUsedCount(e.detail))),
-    ).toBeGreaterThan(0);
-    const known = proveEvents.flatMap((e) => factKnownLabels(e.detail));
-    expect(known.length).toBeGreaterThan(0);
-    expect(known.every((k) => (['true', 'false'] as const).includes(k))).toBe(
-      true,
-    );
-    const uses = factUsesFromEvents(proveEvents);
-    expect(uses.length).toBeGreaterThan(0);
-    expect(allFactUsesHaveSources(uses)).toBe(true);
-  });
+function explainsFactsDetail(): void {
+  const factEvents = optimizeListUnionTrace().filter((e) =>
+    FACT_RULES.has(e.rule),
+  );
+  expect(factEvents.length).toBeGreaterThan(0);
+  expect(factEvents.every((e) => eventExplainsFactsRule(e))).toBe(true);
+  const proveEvents = factEvents.filter((e) => isProveFactsRule(e.rule));
+  expect(proveEvents.length).toBeGreaterThan(0);
+  expect(
+    Math.min(...proveEvents.map((e) => factUsedCount(e.detail))),
+  ).toBeGreaterThan(0);
+  const known = proveEvents.flatMap((e) => factKnownLabels(e.detail));
+  expect(known.length).toBeGreaterThan(0);
+  expect(known.every((k) => (['true', 'false'] as const).includes(k))).toBe(
+    true,
+  );
+  const uses = factUsesFromEvents(proveEvents);
+  expect(uses.length).toBeGreaterThan(0);
+  expect(allFactUsesHaveSources(uses)).toBe(true);
+}
 
-  it('records instanceof ⇒ is_object on absorb for Thing|object', () => {
-    const ast = parseType('Thing|object');
+function recordsInstanceofObjectAbsorb(): void {
+  const ast = parseType('Thing|object');
+  const { ir: built } = buildMany([ast]);
+  const { trace } = optimize(built);
+  const absorbs = trace.filter((e) => e.rule === 'facts.absorb');
+  expect(absorbs.length).toBeGreaterThan(0);
+  expect(hasInstanceofObjectImplication(absorbImplicationPhp(absorbs))).toBe(
+    true,
+  );
+}
+
+function tagsExclusiveViaForImpossibleArrayKey(): void {
+  const ast = parseType('array<array, mixed>');
+  const { ir: built } = buildMany([ast]);
+  const { trace } = optimize(built);
+  const proveTrue = trace.filter((e) => e.rule === 'facts.proveTrue');
+  expect(proveTrue.length).toBeGreaterThan(0);
+  expect(hasExclusiveVia(proveTrue)).toBe(true);
+  const withVia = exclusiveViaUses(proveTrue);
+  expect(withVia.length).toBeGreaterThan(0);
+  expect(allExclusiveViaUsesAreArrayKeyAssumed(withVia)).toBe(true);
+}
+
+function nestedNormalizeStepsAreNormalize(): void {
+  const steps = nestedStepsFromEvents(optimizeListUnionTrace());
+  expect(allNestedStepsAreNormalize(steps)).toBe(true);
+}
+
+describe('optimize trace facts detail', () => {
+  it(
+    'explains every facts.* event with facts or absorb implications',
+    explainsFactsDetail,
+  );
+  it(
+    'records instanceof ⇒ is_object on absorb for Thing|object',
+    recordsInstanceofObjectAbsorb,
+  );
+  it(
+    'tags exclusive via when array-key facts prove ¬is_array($key)',
+    tagsExclusiveViaForImpossibleArrayKey,
+  );
+  it(
+    'nested normalize steps use simplify.normalize.* rules when present',
+    nestedNormalizeStepsAreNormalize,
+  );
+});
+
+describe('optimize trace expand/absorb', () => {
+  it('does not ping-pong expand/absorb on positive-int confirmation rounds', () => {
+    const ast = parseType('positive-int');
     const { ir: built } = buildMany([ast]);
     const { trace } = optimize(built);
-    const absorbs = trace.filter((e) => e.rule === 'facts.absorb');
-    expect(absorbs.length).toBeGreaterThan(0);
-    expect(hasInstanceofObjectImplication(absorbImplicationPhp(absorbs))).toBe(
-      true,
-    );
-  });
-
-  it('nested normalize steps use simplify.normalize.* rules when present', () => {
-    const steps = nestedStepsFromEvents(optimizeListUnionTrace());
-    expect(allNestedStepsAreNormalize(steps)).toBe(true);
+    const expands = trace.filter((e) => e.rule === 'simplify.expand');
+    const absorbs = trace.filter((e) => e.rule === 'simplify.absorb');
+    // Transformative simplify may expand/absorb once; later confirmation rounds must not.
+    expect(expands.length).toBe(1);
+    expect(absorbs.length).toBe(1);
   });
 });

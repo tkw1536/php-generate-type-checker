@@ -40,6 +40,14 @@ export type OptimizerStats = {
   readonly outerOptimizeLoops: number;
   /** Sum of per-block inline/phase fixpoint iterations across the run. */
   readonly blockOptimizeLoops: number;
+  /** Outer IR loop exited by hitting maxOptimizationLoops while still changing. */
+  readonly outerFixpointCapped: boolean;
+  /** Any per-block inline/phase loop hit maxOptimizationLoops while still changing. */
+  readonly blockFixpointCapped: boolean;
+  /** Any simplifyPass inner fixpoint hit maxOptimizationLoops while still changing. */
+  readonly simplifyFixpointCapped: boolean;
+  /** Any normalizeExpr fixpoint hit maxExpressionSimplificationLoops while still changing. */
+  readonly exprNormalizeCapped: boolean;
 };
 
 export type OptimizeResult = {

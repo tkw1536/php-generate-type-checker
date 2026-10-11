@@ -35,12 +35,13 @@ yarn spellcheck
 - When changing generator output behavior, always add a generator golden for the new/changed case unless an equivalent `*.IN` case already exists
 - When changing parser, generator, optimizer, or render behavior described in README **Technical Overview** (type checks, optimizer passes, or pipeline phases), update that section to match
 - Optional: `yarn review_fixtures:generator` (interactive golden review)
+- Optimize fixpoints must converge under configured caps on success goldens: `outerFixpointCapped` / `blockFixpointCapped` / `simplifyFixpointCapped` / `exprNormalizeCapped` stay false (same invariants suite)
 - Optimize trace must stay honest: enforced by `src/generator/optimizer/trace/invariants.test.ts` over generator success fixtures (annotated `checker` IR, not rendered PHP)
 - Per checker program: first event `checker.before` = builder body; last event `checker.after` = optimized body when that program still exists after prune; consecutive `checker.after[i]` = `checker.before[i+1]`; no zero-diff rewrite events except `trace.baseline` when nothing changed
 - Prune events: last prune `checker.after` = final optimized IR; same chain and no-ghost rules
 - Trace-only fixes must not change optimizer/PHP output or edit generator golden `*.json`
 - When changing trace recording or enclosing-stack sync, keep those invariants green — do not weaken or skip the invariant test
-- Fact-trace detail: `proveTrue` / `proveFalse` list non-empty used facts with path `origin` + implication `reason` (see `passes/facts/env.ts` / `factSource.ts`); prefer assumed, then equals over entails
+- Fact-trace detail: `proveTrue` / `proveFalse` list non-empty used facts with path `origin` + implication `reason` (see `passes/facts/env.ts` / `factSource.ts`); prefer assumed, then equals over entails; when entailment uses primary-type exclusivity, set `via: ['exclusive']` (do not invent exclusive env rows)
 - `facts.absorb` carries non-empty `implications` (`from` ⇒ `to`) plus optional env `used` facts (structural absorb may have empty `used`)
 - Composed simplify events (De Morgan / doubleNeg / factor) may attach nested normalize steps in event detail — still one checker-level event
 - Do not reintroduce `facts.commit`-style shadow repairs or bool-literal env facts; after a cond folds to `FALSE`, do not seed the env with that literal

@@ -8,6 +8,7 @@ import type {
   OptimizeTraceFactUse,
 } from '../generator/optimizer/trace/types.ts';
 import { renderTraceRuleHelp } from './metricsHelp.ts';
+import { wrapTraceFold } from './optimizeTraceFold.ts';
 import {
   eventTempNames,
   renderEventExpr,
@@ -20,30 +21,27 @@ function oneLineExpr(
   return renderEventExpr(expr, tempNames).replaceAll('\n', ' ');
 }
 
-function appendUsedFacts(
+function appendFactLines(
   parent: HTMLElement,
   event: OptimizeTraceEvent,
   used: readonly OptimizeTraceFactUse[],
   tempNames: ReadonlyMap<number, string> | undefined,
 ): void {
-  if (used.length === 0) {
-    return;
-  }
-  const block = document.createElement('div');
-  block.className = 'optimize-trace-facts';
-  const heading = document.createElement('div');
-  heading.className = 'optimize-trace-meta-label';
-  heading.textContent = 'used facts';
-  block.append(heading);
   for (const [i, fact] of used.entries()) {
     const line = document.createElement('div');
     line.className = 'optimize-trace-fact-line';
+    const meta = document.createElement('div');
+    meta.className = 'optimize-trace-fact-meta';
     const polarity = document.createElement('span');
     polarity.className = `optimize-trace-fact-known optimize-trace-fact-known--${fact.known}`;
     polarity.textContent = fact.known;
     const source = document.createElement('span');
     source.className = 'optimize-trace-fact-source';
-    const sourceLabel = factSourceShort(fact.origin, fact.reason);
+    const sourceLabel = factSourceShort(
+      fact.origin,
+      fact.reason,
+      fact.via,
+    );
     const sourceText = document.createElement('span');
     sourceText.textContent = sourceLabel;
     const helpWrap = document.createElement('span');
@@ -51,27 +49,40 @@ function appendUsedFacts(
     helpWrap.innerHTML = renderTraceRuleHelp(
       `optimize-trace-fact-${event.index}-${i}`,
       sourceLabel,
-      factSourceHelp(fact.origin, fact.reason),
+      factSourceHelp(fact.origin, fact.reason, fact.via),
     );
     source.append(sourceText, helpWrap);
-    const expr = document.createElement('span');
+    meta.append(polarity, source);
+    const expr = document.createElement('div');
     expr.className = 'optimize-trace-meta-body';
     expr.textContent = oneLineExpr(fact.expr, tempNames);
-    line.append(polarity, source, expr);
-    block.append(line);
+    line.append(meta, expr);
+    parent.append(line);
   }
-  parent.append(block);
+}
+
+function renderUsedFactsFold(
+  event: OptimizeTraceEvent,
+  used: readonly OptimizeTraceFactUse[],
+  tempNames: ReadonlyMap<number, string> | undefined,
+): HTMLElement | null {
+  if (used.length === 0) {
+    return null;
+  }
+  return wrapTraceFold('Used Facts', used.length, 'optimize-trace-facts', (body) => {
+    appendFactLines(body, event, used, tempNames);
+  });
 }
 
 export function renderFactsBlock(event: OptimizeTraceEvent): HTMLElement | null {
   if (event.detail.kind !== 'facts' || event.detail.used.length === 0) {
     return null;
   }
-  const wrap = document.createElement('div');
-  appendUsedFacts(wrap, event, event.detail.used, eventTempNames(event));
-  return wrap.firstElementChild instanceof HTMLElement
-    ? wrap.firstElementChild
-    : null;
+  return renderUsedFactsFold(
+    event,
+    event.detail.used,
+    eventTempNames(event),
+  );
 }
 
 export function renderAbsorbBlocks(
@@ -80,39 +91,49 @@ export function renderAbsorbBlocks(
   if (event.detail.kind !== 'absorb') {
     return null;
   }
+  const { used, implications } = event.detail;
   const tempNames = eventTempNames(event);
   const wrap = document.createElement('div');
   wrap.className = 'optimize-trace-absorb';
 
-  const implBlock = document.createElement('div');
-  implBlock.className = 'optimize-trace-implications';
-  const heading = document.createElement('div');
-  heading.className = 'optimize-trace-meta-label';
-  heading.textContent = 'used implications';
-  implBlock.append(heading);
-  for (const [i, impl] of event.detail.implications.entries()) {
-    const line = document.createElement('div');
-    line.className = 'optimize-trace-implication-line';
-    const body = document.createElement('span');
-    body.className = 'optimize-trace-meta-body';
-    body.textContent = `${oneLineExpr(impl.from, tempNames)} ⇒ ${oneLineExpr(impl.to, tempNames)}`;
-    const helpWrap = document.createElement('span');
-    helpWrap.className = 'optimize-trace-help';
-    const help =
-      event.detail.used.length > 0
-        ? 'Operand dropped because this implication holds (path facts below may justify it).'
-        : 'Operand dropped because this implication holds structurally (no path fact required).';
-    helpWrap.innerHTML = renderTraceRuleHelp(
-      `optimize-trace-impl-${event.index}-${i}`,
-      'implication',
-      help,
-    );
-    line.append(body, helpWrap);
-    implBlock.append(line);
+  const facts = renderUsedFactsFold(event, used, tempNames);
+  if (facts !== null) {
+    wrap.append(facts);
   }
-  wrap.append(implBlock);
-  appendUsedFacts(wrap, event, event.detail.used, tempNames);
-  return wrap;
+
+  if (implications.length > 0) {
+    const hasUsedFacts = used.length > 0;
+    wrap.append(
+      wrapTraceFold(
+        'Used Implications',
+        implications.length,
+        'optimize-trace-implications',
+        (body) => {
+          for (const [i, impl] of implications.entries()) {
+            const line = document.createElement('div');
+            line.className = 'optimize-trace-implication-line';
+            const expr = document.createElement('span');
+            expr.className = 'optimize-trace-meta-body';
+            expr.textContent = `${oneLineExpr(impl.from, tempNames)} ⇒ ${oneLineExpr(impl.to, tempNames)}`;
+            const helpWrap = document.createElement('span');
+            helpWrap.className = 'optimize-trace-help';
+            const help = hasUsedFacts
+              ? 'Operand dropped because this implication holds (used facts above may justify it).'
+              : 'Operand dropped because this implication holds structurally (no path fact required).';
+            helpWrap.innerHTML = renderTraceRuleHelp(
+              `optimize-trace-impl-${event.index}-${i}`,
+              'implication',
+              help,
+            );
+            line.append(expr, helpWrap);
+            body.append(line);
+          }
+        },
+      ),
+    );
+  }
+
+  return wrap.childElementCount > 0 ? wrap : null;
 }
 
 export function renderNestedBlock(
@@ -121,34 +142,35 @@ export function renderNestedBlock(
   if (event.detail.kind !== 'nested' || event.detail.steps.length === 0) {
     return null;
   }
+  const { steps } = event.detail;
   const tempNames = eventTempNames(event);
-  const block = document.createElement('div');
-  block.className = 'optimize-trace-nested';
-  const heading = document.createElement('div');
-  heading.className = 'optimize-trace-meta-label';
-  heading.textContent = 'cleanup in this step';
-  block.append(heading);
-  for (const [i, step] of event.detail.steps.entries()) {
-    const info = optimizeTraceRuleInfo(step.rule);
-    const line = document.createElement('div');
-    line.className = 'optimize-trace-nested-line';
-    const title = document.createElement('span');
-    title.className = 'optimize-trace-nested-title';
-    title.textContent = info.title;
-    const helpWrap = document.createElement('span');
-    helpWrap.className = 'optimize-trace-help';
-    helpWrap.innerHTML = renderTraceRuleHelp(
-      `optimize-trace-nested-${event.index}-${i}`,
-      info.title,
-      info.help,
-    );
-    const php = document.createElement('span');
-    php.className = 'optimize-trace-meta-body';
-    const before = oneLineExpr(step.before, tempNames);
-    const after = oneLineExpr(step.after, tempNames);
-    php.textContent = `${before} → ${after}`;
-    line.append(title, helpWrap, php);
-    block.append(line);
-  }
-  return block;
+  return wrapTraceFold(
+    'Cleanup in This Step',
+    steps.length,
+    'optimize-trace-nested',
+    (body) => {
+      for (const [i, step] of steps.entries()) {
+        const info = optimizeTraceRuleInfo(step.rule);
+        const line = document.createElement('div');
+        line.className = 'optimize-trace-nested-line';
+        const title = document.createElement('span');
+        title.className = 'optimize-trace-nested-title';
+        title.textContent = info.title;
+        const helpWrap = document.createElement('span');
+        helpWrap.className = 'optimize-trace-help';
+        helpWrap.innerHTML = renderTraceRuleHelp(
+          `optimize-trace-nested-${event.index}-${i}`,
+          info.title,
+          info.help,
+        );
+        const php = document.createElement('span');
+        php.className = 'optimize-trace-meta-body';
+        const before = oneLineExpr(step.before, tempNames);
+        const after = oneLineExpr(step.after, tempNames);
+        php.textContent = `${before} → ${after}`;
+        line.append(title, helpWrap, php);
+        body.append(line);
+      }
+    },
+  );
 }

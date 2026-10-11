@@ -60,7 +60,13 @@ export type OptimizeTraceFactUse = {
   readonly expr: Expr;
   readonly known: 'true' | 'false';
   readonly origin: FactOriginId;
+  /** How the fact entered the env (assumed, exclusive derivation, …). */
   readonly reason: FactReasonId;
+  /**
+   * Extra prove-time steps connecting this env fact to the folded expr
+   * (e.g. `exclusive` when an OR of tags entails `¬is_array` via exclusivity).
+   */
+  readonly via?: readonly FactReasonId[];
 };
 
 /** Operand implication that justifies dropping one arm of a junction. */

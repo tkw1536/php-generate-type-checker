@@ -7,19 +7,38 @@ import type {
   OptimizeTraceRuleId,
 } from '../../trace/types.ts';
 
-/** Collects nested normalize steps without updating live IR. */
-export class QuietStepSink {
-  readonly #steps: OptimizeTraceNestedStep[] = [];
+/** One quiet normalize rewrite to commit later (or flatten into nested detail). */
+export type QuietCommitStep = {
+  readonly rule: OptimizeTraceRuleId;
+  readonly before: Expr;
+  readonly after: Expr;
+  /** Nested cleanup when this step is a composed parent (De Morgan / doubleNeg / factor). */
+  readonly nested: readonly OptimizeTraceNestedStep[];
+};
 
-  push(step: OptimizeTraceNestedStep): void {
+/** Flatten commit steps into nested-detail rows (parent + its nested cleanup). */
+export function quietStepsAsNested(
+  steps: readonly QuietCommitStep[],
+): readonly OptimizeTraceNestedStep[] {
+  const out: OptimizeTraceNestedStep[] = [];
+  for (const step of steps) {
+    out.push(
+      { rule: step.rule, before: step.before, after: step.after },
+      ...step.nested,
+    );
+  }
+  return out;
+}
+
+/** Collects structured normalize steps without updating live IR. */
+export class QuietStepSink {
+  readonly #steps: QuietCommitStep[] = [];
+
+  push(step: QuietCommitStep): void {
     this.#steps.push(step);
   }
 
-  pushAll(steps: readonly OptimizeTraceNestedStep[]): void {
-    this.#steps.push(...steps);
-  }
-
-  snapshot(): readonly OptimizeTraceNestedStep[] {
+  snapshot(): readonly QuietCommitStep[] {
     return this.#steps;
   }
 }
@@ -43,7 +62,7 @@ export function recordNormalize(
     return live;
   }
   if (quiet !== null) {
-    quiet.push({ rule, before, after });
+    quiet.push({ rule, before, after, nested: [] });
     return after;
   }
   if (ctx === undefined) {
@@ -78,7 +97,7 @@ export function recordNormalizeParent(
     return live;
   }
   if (quiet !== null) {
-    quiet.pushAll([{ rule, before, after }, ...nestedSteps]);
+    quiet.push({ rule, before, after, nested: nestedSteps });
     return after;
   }
   if (ctx === undefined) {

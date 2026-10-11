@@ -14,6 +14,10 @@ describe('optimize', () => {
     expect(stats.simplify.maxPasses).toBeLessThanOrEqual(stats.simplify.sumPasses);
     expect(stats.outerOptimizeLoops).toBeGreaterThanOrEqual(1);
     expect(stats.blockOptimizeLoops).toBeGreaterThanOrEqual(0);
+    expect(stats.outerFixpointCapped).toBe(false);
+    expect(stats.blockFixpointCapped).toBe(false);
+    expect(stats.simplifyFixpointCapped).toBe(false);
+    expect(stats.exprNormalizeCapped).toBe(false);
     expect(stats.passes.inline.calls).toBeGreaterThan(0);
     expect(stats.passes.dedupe.calls).toBe(stats.passes.inline.calls);
     expect(stats.passes.simplify.calls).toBe(stats.simplify.calls);
@@ -28,7 +32,21 @@ describe('optimize', () => {
     expect(stats.simplify.calls).toBeGreaterThan(0);
     expect(stats.outerOptimizeLoops).toBeGreaterThanOrEqual(1);
     expect(stats.blockOptimizeLoops).toBeGreaterThanOrEqual(0);
+    expect(stats.outerFixpointCapped).toBe(false);
+    expect(stats.blockFixpointCapped).toBe(false);
+    expect(stats.simplifyFixpointCapped).toBe(false);
+    expect(stats.exprNormalizeCapped).toBe(false);
     expect(stats.passes.dce.calls).toBeGreaterThan(0);
     expect(stats.passes.prune.calls).toBe(1);
+  });
+
+  it('converges without expand/absorb ping-pong on positive-int', () => {
+    const ast = parseType('positive-int');
+    const { ir: built } = buildMany([ast]);
+    const { stats } = optimize(built);
+    expect(stats.outerFixpointCapped).toBe(false);
+    expect(stats.blockFixpointCapped).toBe(false);
+    expect(stats.simplifyFixpointCapped).toBe(false);
+    expect(stats.exprNormalizeCapped).toBe(false);
   });
 });

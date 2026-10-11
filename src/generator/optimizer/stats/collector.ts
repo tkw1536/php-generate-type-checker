@@ -77,6 +77,10 @@ export class StatsCollector {
   private readonly simplifyStats = emptyPhaseStats();
   private outerLoops = 0;
   private blockLoops = 0;
+  private outerFixpointCapped = false;
+  private blockFixpointCapped = false;
+  private simplifyFixpointCapped = false;
+  private exprNormalizeCapped = false;
 
   bumpOuterLoop(): void {
     this.outerLoops++;
@@ -84,6 +88,22 @@ export class StatsCollector {
 
   bumpBlockLoop(): void {
     this.blockLoops++;
+  }
+
+  noteOuterFixpointCapped(): void {
+    this.outerFixpointCapped = true;
+  }
+
+  noteBlockFixpointCapped(): void {
+    this.blockFixpointCapped = true;
+  }
+
+  noteSimplifyFixpointCapped(): void {
+    this.simplifyFixpointCapped = true;
+  }
+
+  noteExprNormalizeCapped(): void {
+    this.exprNormalizeCapped = true;
   }
 
   noteCall(name: OptimizerPassName): void {
@@ -116,6 +136,10 @@ export class StatsCollector {
       simplify: freezePhase(this.simplifyStats),
       outerOptimizeLoops: this.outerLoops,
       blockOptimizeLoops: this.blockLoops,
+      outerFixpointCapped: this.outerFixpointCapped,
+      blockFixpointCapped: this.blockFixpointCapped,
+      simplifyFixpointCapped: this.simplifyFixpointCapped,
+      exprNormalizeCapped: this.exprNormalizeCapped,
     };
   }
 }

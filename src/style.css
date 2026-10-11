@@ -741,6 +741,9 @@ body {
   min-height: 0;
   /* visible so rule (?) tooltips are not clipped */
   overflow: visible;
+  /* Size tooltips against this pane (see .optimize-trace-rule-help::after). */
+  container-type: inline-size;
+  container-name: optimize-trace-detail;
 }
 
 .optimize-trace-meta {
@@ -776,13 +779,17 @@ body {
   z-index: 1;
 }
 
+/*
+ * Open leftward from the (?), capped to the detail pane width so titles and
+ * meta tips are not clipped on either edge.
+ */
 .optimize-trace-rule-help::after {
-  left: 0;
-  right: auto;
+  left: auto;
+  right: 0;
   bottom: auto;
   top: calc(100% + 0.35rem);
-  width: min(22rem, 70vw);
-  max-width: min(22rem, 70vw);
+  width: min(22rem, calc(100cqw - 1.5rem));
+  max-width: min(22rem, calc(100cqw - 1.5rem));
   white-space: normal;
   z-index: 30;
 }
@@ -797,27 +804,41 @@ body {
   font-family: var(--font-mono, ui-monospace, monospace);
 }
 
-.optimize-trace-focus,
-.optimize-trace-facts,
-.optimize-trace-implications,
-.optimize-trace-absorb,
-.optimize-trace-nested {
+.optimize-trace-fold,
+.optimize-trace-absorb {
   margin: 0.35rem 0.75rem 0.35rem;
   font-size: 0.75rem;
   color: var(--muted);
   font-family: var(--font-mono, ui-monospace, monospace);
   line-height: 1.45;
   word-break: break-word;
+  overflow: visible;
 }
 
 .optimize-trace-absorb {
   margin: 0;
 }
 
-.optimize-trace-absorb > .optimize-trace-facts,
-.optimize-trace-absorb > .optimize-trace-implications {
+.optimize-trace-absorb > .optimize-trace-fold {
   margin-left: 0.75rem;
   margin-right: 0.75rem;
+}
+
+.optimize-trace-fold-summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--muted);
+  /* Keep the disclosure triangle inside the padded fold, not on the panel border. */
+  list-style-position: inside;
+}
+
+.optimize-trace-fold-summary::-webkit-details-marker {
+  color: var(--muted);
+}
+
+.optimize-trace-fold-body {
+  margin-top: 0.25rem;
+  overflow: visible;
 }
 
 .optimize-trace-meta-line {
@@ -827,7 +848,20 @@ body {
   align-items: start;
 }
 
-.optimize-trace-fact-line,
+.optimize-trace-fact-line {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  align-items: stretch;
+}
+
+.optimize-trace-fact-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  align-items: baseline;
+}
+
 .optimize-trace-implication-line,
 .optimize-trace-nested-line {
   display: flex;
@@ -851,13 +885,6 @@ body {
 .optimize-trace-meta-body {
   color: var(--text);
   min-width: 0;
-}
-
-.optimize-trace-facts > .optimize-trace-meta-label,
-.optimize-trace-implications > .optimize-trace-meta-label,
-.optimize-trace-nested > .optimize-trace-meta-label {
-  display: block;
-  margin-bottom: 0.2rem;
 }
 
 .optimize-trace-fact-source,

@@ -7,6 +7,7 @@ import {
   renderFactsBlock,
   renderNestedBlock,
 } from './optimizeTraceDetailBlocks.ts';
+import { wrapTraceFold } from './optimizeTraceFold.ts';
 import { programGroupLabel } from './optimizeTraceList.ts';
 import {
   eventTempNames,
@@ -42,9 +43,9 @@ function appendMetaLine(parent: HTMLElement, label: string, body: string): void 
 function rewriteKindLabel(event: OptimizeTraceEvent): string {
   switch (event.focus.before.kind) {
     case 'expr':
-      return 'expression';
+      return 'Expression';
     case 'block':
-      return 'block';
+      return 'Block';
     case 'ir':
       return 'IR';
     default:
@@ -52,17 +53,34 @@ function rewriteKindLabel(event: OptimizeTraceEvent): string {
   }
 }
 
-function renderFocusBlock(event: OptimizeTraceEvent): HTMLElement {
-  const block = document.createElement('div');
-  block.className = 'optimize-trace-focus';
-  const { before, after } = focusPhp(event);
-  const kind = rewriteKindLabel(event);
-  appendMetaLine(block, `${kind} before`, before);
-  if (before !== after) {
-    appendMetaLine(block, `${kind} after`, after);
+function modifiedFocusTitle(event: OptimizeTraceEvent): string {
+  switch (event.focus.before.kind) {
+    case 'expr':
+      return 'Modified Expression';
+    case 'block':
+      return 'Modified Block';
+    case 'ir':
+      return 'Modified IR';
+    default:
+      throw new Error('never reached');
   }
-  return block;
 }
+
+function renderFocusBlock(event: OptimizeTraceEvent): HTMLElement {
+  const { before, after } = focusPhp(event);
+  return wrapTraceFold(
+    modifiedFocusTitle(event),
+    null,
+    'optimize-trace-focus',
+    (body) => {
+      appendMetaLine(body, 'Before', before);
+      if (before !== after) {
+        appendMetaLine(body, 'After', after);
+      }
+    },
+  );
+}
+
 function renderDetailNote(event: OptimizeTraceEvent): HTMLElement | null {
   switch (event.detail.kind) {
     case 'none':
@@ -71,16 +89,16 @@ function renderDetailNote(event: OptimizeTraceEvent): HTMLElement | null {
     case 'nested':
       return null;
     case 'inline': {
-      const note = document.createElement('div');
-      note.className = 'optimize-trace-focus';
-      appendMetaLine(note, 'inline', event.detail.callee);
-      return note;
+      const callee = event.detail.callee;
+      return wrapTraceFold('Inline', 1, 'optimize-trace-focus', (body) => {
+        appendMetaLine(body, 'Inline', callee);
+      });
     }
     case 'prune': {
-      const note = document.createElement('div');
-      note.className = 'optimize-trace-focus';
-      appendMetaLine(note, 'removed', event.detail.removed);
-      return note;
+      const removed = event.detail.removed;
+      return wrapTraceFold('Removed', 1, 'optimize-trace-focus', (body) => {
+        appendMetaLine(body, 'Removed', removed);
+      });
     }
     default:
       throw new Error('never reached');

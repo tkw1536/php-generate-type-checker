@@ -12,7 +12,12 @@ import {
   parameterRef,
 } from '../../ir/index.ts';
 import { DECIMAL_INT_STRING_PATTERN } from '../../decimalIntString.ts';
-import { absorbImpliedOperands, entails, implies } from './implies.ts';
+import {
+  absorbImpliedOperands,
+  entails,
+  entailsUsesExclusive,
+  implies,
+} from './implies.ts';
 import { canonicalizeFactExpr } from '../passes/facts/canon.ts';
 
 const $v = parameterRef();
@@ -107,6 +112,23 @@ describe('entails', () => {
         canonicalizeFactExpr(notDecimal),
       ),
     ).toBe(true);
+  });
+});
+
+describe('entailsUsesExclusive', () => {
+  it('is_int ∨ is_string entails ¬is_array via exclusivity', () => {
+    const isArray = callExpr('is_array', [refArg($v)]);
+    expect(
+      entailsUsesExclusive(orExpr([isInt, isString]), notExpr(isArray)),
+    ).toBe(true);
+  });
+
+  it('is_int entails is_int without exclusivity', () => {
+    expect(entailsUsesExclusive(isInt, isInt)).toBe(false);
+  });
+
+  it('is_a entails class_exists without exclusivity', () => {
+    expect(entailsUsesExclusive(isA, classExists)).toBe(false);
   });
 });
 

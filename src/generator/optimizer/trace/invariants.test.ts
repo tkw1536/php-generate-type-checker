@@ -220,10 +220,24 @@ describe('optimize trace honesty (generator fixtures)', () => {
       verbosePhpdoc: fixture.verbosePhpdoc,
       segmentSources: entries.map((e) => e.typeString),
     });
-    const { ir: optimized, trace } = optimize(built);
+    const { ir: optimized, stats, trace } = optimize(built);
     const byProgram = groupByProgram(trace);
     expect(built.order.length).toBeGreaterThan(0);
     assertAllProgramsHonest(built, optimized, byProgram);
     assertPruneGroup(byProgram.get('(prune)'), optimized);
+    expect(stats.outerFixpointCapped, `${fixture.name}: outer capped`).toBe(
+      false,
+    );
+    expect(stats.blockFixpointCapped, `${fixture.name}: block capped`).toBe(
+      false,
+    );
+    expect(
+      stats.simplifyFixpointCapped,
+      `${fixture.name}: simplify capped`,
+    ).toBe(false);
+    expect(
+      stats.exprNormalizeCapped,
+      `${fixture.name}: expr normalize capped`,
+    ).toBe(false);
   });
 });

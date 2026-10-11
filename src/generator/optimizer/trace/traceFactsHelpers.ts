@@ -105,3 +105,37 @@ export function hasInstanceofObjectImplication(
   }
   return false;
 }
+
+/** Used facts that record exclusivity as a prove-time via. */
+export function exclusiveViaUses(
+  events: readonly OptimizeTraceEvent[],
+): readonly {
+  readonly origin: string;
+  readonly reason: string;
+}[] {
+  const out: { readonly origin: string; readonly reason: string }[] = [];
+  for (const e of events) {
+    if (e.detail.kind !== 'facts' && e.detail.kind !== 'absorb') {
+      continue;
+    }
+    for (const f of e.detail.used) {
+      if (f.via?.includes('exclusive') === true) {
+        out.push({ origin: f.origin, reason: f.reason });
+      }
+    }
+  }
+  return out;
+}
+
+/** True when any prove/absorb used-fact records exclusivity as a prove-time via. */
+export function hasExclusiveVia(
+  events: readonly OptimizeTraceEvent[],
+): boolean {
+  return exclusiveViaUses(events).length > 0;
+}
+
+export function allExclusiveViaUsesAreArrayKeyAssumed(
+  uses: readonly { readonly origin: string; readonly reason: string }[],
+): boolean {
+  return uses.every((f) => f.origin === 'arrayKey' && f.reason === 'assumed');
+}

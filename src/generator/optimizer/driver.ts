@@ -60,6 +60,7 @@ function runOuterFixpoint(
   ctx: Readonly<OptimizeContext>,
 ): CheckerIR {
   let current = ir;
+  let converged = false;
   for (let iter = 0; iter < ctx.params.maxOptimizationLoops; iter++) {
     ctx.stats.bumpOuterLoop();
     ctx.setOuterLoop(iter + 1);
@@ -85,8 +86,12 @@ function runOuterFixpoint(
     };
     ctx.setIr(current);
     if (!changed) {
+      converged = true;
       break;
     }
+  }
+  if (!converged) {
+    ctx.stats.noteOuterFixpointCapped();
   }
   return current;
 }
@@ -117,6 +122,7 @@ function optimizeBlock(block: Block, ctx: Readonly<OptimizeContext>): Block {
       current = next;
     }
 
+    ctx.stats.noteBlockFixpointCapped();
     return current;
   } finally {
     ctx.popEnclosingBlock();

@@ -6,7 +6,7 @@ import {
   absorbBinOps,
   expandBinOps,
 } from './binOps.ts';
-import { normalizeExpr } from './normalize.ts';
+import { normalizeExpr, normalizeQuiet } from './normalize.ts';
 
 export function simplify(
   block: Block,
@@ -48,30 +48,77 @@ function simplifyStatement(
   }
 }
 
+/**
+ * Expand → normalize* → absorb. Quiet-compute first; if the net result equals
+ * the input, return without touching live IR / trace (kills confirmation-round
+ * `>` ⇄ `!(<=)` ping-pong). Only when the net result differs do we commit with
+ * live tracing (normalize with ctx), so checker snapshots stay honest.
+ */
 export function simplifyExpression(
   expr: Expr,
   params: OptimizerParams,
   ctx?: Readonly<OptimizeContext>,
 ): Expr {
-  const expanded = expandBinOps(expr);
-  if (!equals(expr, expanded)) {
-    ctx?.trace.recordExpr('simplify.expand', expr, expanded);
+  const quietResult = simplifyQuiet(expr, params, ctx);
+  if (equals(expr, quietResult)) {
+    return expr;
   }
+  if (ctx === undefined) {
+    return quietResult;
+  }
+  return simplifyTraced(expr, params, ctx);
+}
+
+/** Value-only expand → normalize* → absorb (no live IR / trace updates). */
+function simplifyQuiet(
+  expr: Expr,
+  params: OptimizerParams,
+  ctx: Readonly<OptimizeContext> | undefined,
+): Expr {
+  const expanded = expandBinOps(expr);
   let current = expanded;
+  let converged = false;
   for (let i = 0; i < params.maxExpressionSimplificationLoops; i++) {
-    const next = normalizeExpr(current, ctx);
+    const next = normalizeQuiet(current).result;
     if (equals(current, next)) {
+      converged = true;
       break;
     }
     current = next;
   }
+  if (!converged) {
+    ctx?.stats.noteExprNormalizeCapped();
+  }
+  return absorbBinOps(current);
+}
+
+/** Live expand → normalize* → absorb with trace records. */
+function simplifyTraced(
+  expr: Expr,
+  params: OptimizerParams,
+  ctx: Readonly<OptimizeContext>,
+): Expr {
+  const expanded = expandBinOps(expr);
+  if (!equals(expr, expanded)) {
+    ctx.trace.recordExpr('simplify.expand', expr, expanded);
+  }
+  let current = expanded;
+  let converged = false;
+  for (let i = 0; i < params.maxExpressionSimplificationLoops; i++) {
+    const next = normalizeExpr(current, ctx);
+    if (equals(current, next)) {
+      converged = true;
+      break;
+    }
+    current = next;
+  }
+  if (!converged) {
+    ctx.stats.noteExprNormalizeCapped();
+  }
   const absorbed = absorbBinOps(current);
   if (!equals(current, absorbed)) {
-    ctx?.trace.recordExpr('simplify.absorb', current, absorbed);
+    ctx.trace.recordExpr('simplify.absorb', current, absorbed);
   }
-  // Normalize may return a folded expr while skipped records left the live IR
-  // behind (flat junction ≠ nested form). Commit the return value so checker
-  // snapshots stay chained.
   syncLiveExpr(ctx, expr, absorbed);
   return absorbed;
 }

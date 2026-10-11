@@ -78,6 +78,53 @@ export function entails(premise: Expr, conclusion: Expr): boolean {
 }
 
 /**
+ * True when `implies` / case-split uses primary-type exclusivity somewhere
+ * (not mere equality / is_a / instanceof / OR-weaken).
+ */
+function impliesUsesExclusive(a: Expr, b: Expr): boolean {
+  if (equals(a, b)) {
+    return false;
+  }
+  if (exclusiveTypeImplies(a, b)) {
+    return true;
+  }
+  const litType = typeCallImpliedByEquality(a);
+  if (litType !== null && impliesUsesExclusive(litType, b)) {
+    return true;
+  }
+  if (a.kind === 'and' && a.exprs.some((c) => impliesUsesExclusive(c, b))) {
+    return true;
+  }
+  if (b.kind === 'or' && b.exprs.some((d) => impliesUsesExclusive(a, d))) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * True when `entails(premise, conclusion)` and the proof uses exclusivity
+ * (e.g. `is_int ∨ is_string` entails `¬is_array`).
+ */
+export function entailsUsesExclusive(
+  premise: Expr,
+  conclusion: Expr,
+): boolean {
+  if (!entails(premise, conclusion)) {
+    return false;
+  }
+  if (impliesUsesExclusive(premise, conclusion)) {
+    return true;
+  }
+  if (premise.kind === 'or') {
+    return premise.exprs.some((d) => entailsUsesExclusive(d, conclusion));
+  }
+  if (premise.kind === 'and') {
+    return premise.exprs.some((c) => entailsUsesExclusive(c, conclusion));
+  }
+  return false;
+}
+
+/**
  * Drop operands made redundant by implication:
  * - OR: drop stronger A when weaker B is present (A ⇒ B)
  * - AND: drop weaker B when stronger A is present (A ⇒ B)

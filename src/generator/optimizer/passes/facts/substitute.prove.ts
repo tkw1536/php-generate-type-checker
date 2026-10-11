@@ -1,10 +1,10 @@
 import type { Expr } from '../../../ir/types.ts';
 import { notExpr, orExpr } from '../../../ir/index.ts';
 import { equals } from '../../../ir/equals.ts';
-import { entails, implies } from '../../lib/implies.ts';
+import { entails, entailsUsesExclusive, implies } from '../../lib/implies.ts';
 import type { OptimizeTraceFactUse } from '../../trace/types.ts';
 import { canonicalizeFactExpr } from './canon.ts';
-import type { FactEntry, FactEnv } from './env.ts';
+import type { FactEntry, FactEnv, FactReasonId } from './env.ts';
 
 type FactMatch = {
   readonly entry: FactEntry;
@@ -12,20 +12,34 @@ type FactMatch = {
   readonly known: 'true' | 'false';
 };
 
-function toFactUse(m: FactMatch): OptimizeTraceFactUse {
-  return {
+function toFactUse(
+  m: FactMatch,
+  conclusion: Expr,
+): OptimizeTraceFactUse {
+  const base: OptimizeTraceFactUse = {
     expr: m.entry.expr,
     known: m.known,
     origin: m.entry.origin,
     reason: m.entry.reason,
   };
+  if (
+    m.how === 'entails' &&
+    entailsUsesExclusive(m.entry.expr, conclusion)
+  ) {
+    const via: readonly FactReasonId[] = ['exclusive'];
+    return { ...base, via };
+  }
+  return base;
 }
 
 /**
  * Prefer equals over entails, then assumed over derived implications.
  * Drops noisy entailing siblings once a tighter match exists.
  */
-function pickJustifying(matches: readonly FactMatch[]): OptimizeTraceFactUse[] {
+function pickJustifying(
+  matches: readonly FactMatch[],
+  conclusion: Expr,
+): OptimizeTraceFactUse[] {
   if (matches.length === 0) {
     return [];
   }
@@ -35,7 +49,7 @@ function pickJustifying(matches: readonly FactMatch[]): OptimizeTraceFactUse[] {
   if (assumed.length > 0) {
     pool = assumed;
   }
-  return pool.map((m) => toFactUse(m));
+  return pool.map((m) => toFactUse(m, conclusion));
 }
 
 export function factsProvingTrue(
@@ -51,7 +65,7 @@ export function factsProvingTrue(
       matches.push({ entry: t, how: 'entails', known: 'true' });
     }
   }
-  return pickJustifying(matches);
+  return pickJustifying(matches, canon);
 }
 
 export function factsProvingFalse(
@@ -73,7 +87,7 @@ export function factsProvingFalse(
       matches.push({ entry: t, how: 'entails', known: 'true' });
     }
   }
-  return pickJustifying(matches);
+  return pickJustifying(matches, notCanon);
 }
 
 /** `a ⇒ b` structurally, or because `¬a ∨ b` is known true in `env`. */

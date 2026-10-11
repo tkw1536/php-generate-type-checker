@@ -3,6 +3,7 @@ import { andExpr, boolLit, notExpr, orExpr } from '../../../ir/index.ts';
 import type { OptimizeContext } from '../../context.ts';
 import {
   QuietStepSink,
+  quietStepsAsNested,
   recordNormalize,
   recordNormalizeParent,
 } from './normalize.trace.ts';
@@ -24,15 +25,18 @@ export function normalizeExpr(expr: Expr, ctx?: Readonly<OptimizeContext>): Expr
 
 /**
  * Normalize without live IR updates, collecting nested rewrite steps for the
- * parent De Morgan / doubleNeg / factor event.
+ * parent De Morgan / doubleNeg / factor event (and for deferred simplify commits).
  */
-function normalizeQuiet(expr: Expr): {
+export function normalizeQuiet(expr: Expr): {
   readonly result: Expr;
   readonly steps: ReturnType<QuietStepSink['snapshot']>;
+  /** Flattened rows for attaching as nested detail under a parent event. */
+  readonly nested: ReturnType<typeof quietStepsAsNested>;
 } {
   const quiet = new QuietStepSink();
   const result = normalizeExprInner(expr, undefined, quiet);
-  return { result, steps: quiet.snapshot() };
+  const steps = quiet.snapshot();
+  return { result, steps, nested: quietStepsAsNested(steps) };
 }
 
 function normalizeExprInner(
@@ -73,7 +77,7 @@ function collapseDoubleNeg(
     before,
     folded.result,
     live,
-    folded.steps,
+    folded.nested,
   );
   return folded.result;
 }
@@ -93,7 +97,7 @@ function applyDeMorgan(
     before,
     folded.result,
     live,
-    folded.steps,
+    folded.nested,
   );
   return folded.result;
 }
@@ -149,7 +153,7 @@ function factorJunction(
     before,
     folded.result,
     live,
-    folded.steps,
+    folded.nested,
   );
   return folded.result;
 }
