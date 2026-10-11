@@ -45,7 +45,7 @@ export function renderEventSnapshot(
 /** Render an IR expr with the same temp names as the Diff pane. */
 export function renderEventExpr(
   expr: Expr,
-  tempNames: ReadonlyMap<number, string> | undefined,
+  tempNames?: ReadonlyMap<number, string>,
 ): string {
   return renderExpr(expr, { tempNames });
 }

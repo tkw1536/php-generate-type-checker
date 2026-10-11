@@ -216,7 +216,6 @@ describe('optimize trace honesty (generator fixtures)', () => {
     const entries = parseCheckerInput(fixture.input, {});
     const { ir: built } = buildEntries(entries, {
       output: fixture.output,
-      emitPhpstanTypeAliases: fixture.emitPhpstanTypeAliases,
       verbosePhpdoc: fixture.verbosePhpdoc,
       segmentSources: entries.map((e) => e.typeString),
     });

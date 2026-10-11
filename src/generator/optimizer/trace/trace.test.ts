@@ -142,8 +142,7 @@ describe('optimize trace checker snapshots', () => {
     expect(entryEvents.some((e) => e.rule === 'simplify.normalize.identity')).toBe(
       true,
     );
-    const last = entryEvents.at(-1);
-    expect(last).toBeDefined();
+    const last = entryEvents.at(-1)!;
     const lastPhp = renderTraceSnapshot(last.checker.after).replaceAll(
       /\s+/gu,
       ' ',
@@ -229,9 +228,7 @@ function explainsFactsDetail(): void {
   ).toBeGreaterThan(0);
   const known = proveEvents.flatMap((e) => factKnownLabels(e.detail));
   expect(known.length).toBeGreaterThan(0);
-  expect(known.every((k) => (['true', 'false'] as const).includes(k))).toBe(
-    true,
-  );
+  expect(known.every((k) => k === 'true' || k === 'false')).toBe(true);
   const uses = factUsesFromEvents(proveEvents);
   expect(uses.length).toBeGreaterThan(0);
   expect(allFactUsesHaveSources(uses)).toBe(true);

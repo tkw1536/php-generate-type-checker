@@ -98,7 +98,7 @@ function emitShapeFields(
     }
   }
   // move the 'foreach' statements to the end
-  // so that all simple conditions can be grouoped by the optimizer.
+  // so that all simple conditions can be grouped by the optimizer.
   // This is always sound, because any collection guards will still happen before foreach.
   return [
     ...out.filter((s) => s.kind !== 'foreach'),
