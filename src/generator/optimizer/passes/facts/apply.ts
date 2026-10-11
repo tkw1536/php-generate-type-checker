@@ -1,5 +1,4 @@
 import type { Block, Stmt, ValueRef } from '../../../ir/types.ts';
-import { blockEquals } from '../../../ir/equals.ts';
 import {
   callExpr,
   orExpr,
@@ -69,24 +68,12 @@ export function applyKnownFacts(
   }
 }
 
-/**
- * When fine-grained fact records leave the enclosing frame behind the rebuilt
- * return block, commit the block-level result so checker snapshots chain.
- */
+/** Keep the enclosing frame in sync with the rebuilt block for later traces. */
 function syncFactsBlock(
   ctx: Readonly<OptimizeContext> | undefined,
   out: Block,
 ): void {
-  if (ctx === undefined) {
-    return;
-  }
-  const live = ctx.enclosingBlock;
-  if (live !== null && !blockEquals(live, out)) {
-    // Block-level catch-up when expr replace-all could not mirror the rebuilt
-    // return value (e.g. skipped bool-literal records).
-    ctx.trace.recordBlock('facts.commit', live, out);
-  }
-  ctx.replaceTopEnclosingBlock(out);
+  ctx?.replaceTopEnclosingBlock(out);
 }
 
 function applyKnownFactsIf(
@@ -95,12 +82,12 @@ function applyKnownFactsIf(
   ctx?: Readonly<OptimizeContext>,
 ): { stmt: Stmt; env: FactEnv } {
   const cond = substituteFacts(stmt.cond, env, ctx);
-  const bodyEnv = withTrueFact(env, cond);
+  const bodyEnv = withTrueFact(env, cond, 'ifTrue');
   const newBody = applyKnownFacts(stmt.body, bodyEnv, ctx);
   return {
     stmt: { kind: 'if', cond, body: newBody },
     env: blockAlwaysExitsWhenEntered(stmt.body)
-      ? withFalseFact(env, cond)
+      ? withFalseFact(env, cond, 'ifFalse')
       : env,
   };
 }
@@ -121,7 +108,7 @@ function seedForeachArrayKeyFacts(env: FactEnv, key: ValueRef): FactEnv {
     orExpr([isInt, nonDecimal]),
     orExpr([nonDecimal, isInt]),
   ]) {
-    next = withTrueFact(next, fact);
+    next = withTrueFact(next, fact, 'arrayKey');
   }
   return next;
 }

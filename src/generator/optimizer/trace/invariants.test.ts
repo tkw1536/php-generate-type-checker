@@ -89,6 +89,37 @@ function assertProgramTraceHonesty(
         !scopeSnapEquals(event.checker.before, event.checker.after),
       `${name}: ghost rewrite ${event.rule}`,
     ).toBe(true);
+    assertFactsEventHasSources(name, event);
+  }
+}
+
+const FACT_RULES = new Set([
+  'facts.proveTrue',
+  'facts.proveFalse',
+  'facts.absorb',
+]);
+
+function assertFactsEventHasSources(
+  name: string,
+  event: OptimizeTraceEvent,
+): void {
+  if (!FACT_RULES.has(event.rule)) {
+    return;
+  }
+  expect(
+    event.detail.kind === 'facts',
+    `${name}: ${event.rule} must carry facts detail`,
+  ).toBe(true);
+  if (event.detail.kind !== 'facts') {
+    return;
+  }
+  expect(
+    event.detail.used.length,
+    `${name}: ${event.rule} must list used facts`,
+  ).toBeGreaterThan(0);
+  for (const fact of event.detail.used) {
+    expect(fact.origin.length, `${name}: fact origin`).toBeGreaterThan(0);
+    expect(fact.reason.length, `${name}: fact reason`).toBeGreaterThan(0);
   }
 }
 

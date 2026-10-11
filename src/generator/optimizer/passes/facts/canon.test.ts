@@ -51,7 +51,10 @@ describe('canonicalizeFactExpr', () => {
     const env = withTrueFact(
       emptyFactEnv(),
       orExpr([callExpr('is_int', [s]), nonDecimal]),
+      'ifTrue',
     );
-    expect(env.falseFacts.some((f) => equals(f, expandedNotKeyOk))).toBe(true);
+    expect(
+      env.falseFacts.some((f) => equals(f.expr, expandedNotKeyOk)),
+    ).toBe(true);
   });
 });

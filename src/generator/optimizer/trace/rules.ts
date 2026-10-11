@@ -42,10 +42,6 @@ const RULES: Record<OptimizeTraceRuleId, OptimizeTraceRuleInfo> = {
     title: 'Absorb under facts',
     help: 'Drops a redundant AND/OR operand when implication holds under the current facts (OR: drop a stronger arm implied by a weaker one; AND: drop a weaker conjunct implied by a stronger one). Sound because the kept operands already determine the junction’s truth value on every path that reaches them.',
   },
-  'facts.commit': {
-    title: 'Commit fact rewrites',
-    help: 'Updates the checker body to the block rebuilt by fact substitution when fine-grained expression records could not mirror every local return-path fold (for example after skipping bool-literal replace-all). Sound because the committed block is exactly the facts pass result that later phases optimize.',
-  },
   'simplify.expand': {
     title: 'Expand binary ops',
     help: 'Rewrites selected comparisons into equivalent call/boolean forms (for example so later passes can share structure with is_* checks). Sound because each expansion is an identity on PHP values for the operators we emit.',

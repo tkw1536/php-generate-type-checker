@@ -1,4 +1,8 @@
 import type { Block, CheckerIR, Expr } from '../../ir/types.ts';
+import type {
+  FactOriginId,
+  FactReasonId,
+} from '../passes/facts/env.ts';
 
 export type OptimizeTraceSnapshot =
   | {
@@ -33,7 +37,6 @@ export type OptimizeTraceRuleId =
   | 'facts.proveTrue'
   | 'facts.proveFalse'
   | 'facts.absorb'
-  | 'facts.commit'
   | 'simplify.expand'
   | 'simplify.absorb'
   | 'simplify.normalize.boolFold'
@@ -56,11 +59,24 @@ export type OptimizeTraceRuleId =
 export type OptimizeTraceFactUse = {
   readonly expr: Expr;
   readonly known: 'true' | 'false';
+  readonly origin: FactOriginId;
+  readonly reason: FactReasonId;
+};
+
+/** A normalize rewrite collected under a parent De Morgan / doubleNeg / factor. */
+export type OptimizeTraceNestedStep = {
+  readonly rule: OptimizeTraceRuleId;
+  readonly before: Expr;
+  readonly after: Expr;
 };
 
 export type OptimizeTraceDetail =
   | { readonly kind: 'none' }
   | { readonly kind: 'facts'; readonly used: readonly OptimizeTraceFactUse[] }
+  | {
+      readonly kind: 'nested';
+      readonly steps: readonly OptimizeTraceNestedStep[];
+    }
   | { readonly kind: 'inline'; readonly callee: string }
   | { readonly kind: 'prune'; readonly removed: string };
 

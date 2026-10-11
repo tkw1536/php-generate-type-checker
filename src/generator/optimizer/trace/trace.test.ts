@@ -19,6 +19,58 @@ function factKnownLabels(detail: OptimizeTraceDetail): readonly string[] {
   return detail.used.map((f) => f.known);
 }
 
+function factUsesFromEvents(
+  events: readonly OptimizeTraceEvent[],
+): readonly { readonly origin: string; readonly reason: string }[] {
+  const uses: { readonly origin: string; readonly reason: string }[] = [];
+  for (const e of events) {
+    if (e.detail.kind !== 'facts') {
+      continue;
+    }
+    for (const f of e.detail.used) {
+      uses.push({ origin: f.origin, reason: f.reason });
+    }
+  }
+  return uses;
+}
+
+function allFactUsesHaveSources(
+  uses: readonly { readonly origin: string; readonly reason: string }[],
+): boolean {
+  for (const f of uses) {
+    if (f.origin.length === 0 || f.reason.length === 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function nestedStepsFromEvents(
+  events: readonly OptimizeTraceEvent[],
+): readonly { readonly rule: string }[] {
+  const steps: { readonly rule: string }[] = [];
+  for (const e of events) {
+    if (e.detail.kind !== 'nested') {
+      continue;
+    }
+    for (const s of e.detail.steps) {
+      steps.push({ rule: s.rule });
+    }
+  }
+  return steps;
+}
+
+function allNestedStepsAreNormalize(
+  steps: readonly { readonly rule: string }[],
+): boolean {
+  for (const s of steps) {
+    if (!s.rule.startsWith('simplify.normalize.')) {
+      return false;
+    }
+  }
+  return true;
+}
+
 const FACT_RULES = new Set([
   'facts.proveTrue',
   'facts.proveFalse',
@@ -216,14 +268,12 @@ describe('optimize trace scope for expr rewrites', () => {
 });
 
 describe('optimize trace facts detail', () => {
-  it('includes used facts on facts.prove* events when facts fire', () => {
+  it('lists used facts with sources on every facts.* event', () => {
     const factEvents = optimizeListUnionTrace().filter((e) =>
       FACT_RULES.has(e.rule),
     );
     expect(factEvents.length).toBeGreaterThan(0);
-    expect(factEvents.map((e) => e.detail.kind)).toEqual(
-      factEvents.map(() => 'facts'),
-    );
+    expect(factEvents.every((e) => e.detail.kind === 'facts')).toBe(true);
     expect(
       Math.min(...factEvents.map((e) => factUsedCount(e.detail))),
     ).toBeGreaterThan(0);
@@ -232,5 +282,13 @@ describe('optimize trace facts detail', () => {
     expect(known.every((k) => (['true', 'false'] as const).includes(k))).toBe(
       true,
     );
+    const uses = factUsesFromEvents(factEvents);
+    expect(uses.length).toBeGreaterThan(0);
+    expect(allFactUsesHaveSources(uses)).toBe(true);
+  });
+
+  it('nested normalize steps use simplify.normalize.* rules when present', () => {
+    const steps = nestedStepsFromEvents(optimizeListUnionTrace());
+    expect(allNestedStepsAreNormalize(steps)).toBe(true);
   });
 });

@@ -365,7 +365,7 @@ The UI Metrics tab draws this under the Optimize stage.
 **Yes × N** on each loop is the round count (**IR rounds** / **Block rounds**).
 The UI Trace tab groups rewrite applications by checker function (then Prune).
 Checkers with no rewrites still appear with an Unchanged baseline showing their initial body.
-For each event, Before / After show the full checker body as PHP; Diff is the enclosing block (or IR for prune).
+For each event, Before / After / Diff show the full checker as PHP (with a `function name(mixed $value): bool` header; Diff is a unified hunk over that same text).
 
 ![Diagram showing the optimize passes](docs/optimize.svg)
 

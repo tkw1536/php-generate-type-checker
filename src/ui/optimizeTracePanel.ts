@@ -1,13 +1,13 @@
 import type { OptimizeTraceEvent } from '../generator/optimizer/trace/types.ts';
 import { describeError, renderErrorHtml } from './errorDisplay.ts';
 import { renderEventList } from './optimizeTraceList.ts';
+import { checkerPhpForEvent } from './optimizeTracePhp.ts';
 import {
   type TraceDetailView,
   copyTextForView,
   renderDetailHeader,
   renderViewBody,
   renderViewTabs,
-  scopePhpForEvent,
 } from './optimizeTraceRender.ts';
 
 /** Split list + before/after/diff PHP for fine-grained optimize rewrites. */
@@ -57,7 +57,7 @@ export class OptimizeTracePanel {
       return;
     }
 
-    const { beforePhp, afterPhp, diff } = scopePhpForEvent(selected);
+    const { beforePhp, afterPhp, diff } = checkerPhpForEvent(selected);
     this.rawText = copyTextForView(
       this.detailView,
       beforePhp,

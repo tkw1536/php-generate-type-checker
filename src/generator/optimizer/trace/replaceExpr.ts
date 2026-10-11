@@ -70,6 +70,137 @@ export function replaceExprInBlock(block: Block, from: Expr, to: Expr): Block {
 }
 
 /**
+ * Replace `from` → `to` only inside the first structural match of `host`
+ * (so fact folds do not rewrite the same subexpr in other statements).
+ */
+export function replaceExprInBlockInsideHost(
+  block: Block,
+  host: Expr,
+  from: Expr,
+  to: Expr,
+): Block {
+  let replacedHost = false;
+  const next = block.map((stmt) => {
+    if (replacedHost) {
+      return stmt;
+    }
+    const patched = replaceInsideHostInStmt(stmt, host, from, to);
+    if (patched !== stmt) {
+      replacedHost = true;
+    }
+    return patched;
+  });
+  return replacedHost ? next : block;
+}
+
+function replaceInsideHostInStmt(
+  stmt: Stmt,
+  host: Expr,
+  from: Expr,
+  to: Expr,
+): Stmt {
+  switch (stmt.kind) {
+    case 'if': {
+      if (equals(stmt.cond, host)) {
+        const cond = replaceExpr(stmt.cond, from, to);
+        return cond === stmt.cond
+          ? stmt
+          : { kind: 'if' as const, cond, body: stmt.body };
+      }
+      const cond = replaceInsideHostExpr(stmt.cond, host, from, to);
+      if (cond !== stmt.cond) {
+        return { kind: 'if' as const, cond, body: stmt.body };
+      }
+      const body = replaceExprInBlockInsideHost(stmt.body, host, from, to);
+      return body === stmt.body
+        ? stmt
+        : { kind: 'if' as const, cond: stmt.cond, body };
+    }
+    case 'foreach': {
+      const body = replaceExprInBlockInsideHost(stmt.body, host, from, to);
+      return body === stmt.body ? stmt : { ...stmt, body };
+    }
+    case 'return': {
+      if (equals(stmt.expr, host)) {
+        const expr = replaceExpr(stmt.expr, from, to);
+        return expr === stmt.expr
+          ? stmt
+          : { kind: 'return' as const, expr };
+      }
+      const expr = replaceInsideHostExpr(stmt.expr, host, from, to);
+      return expr === stmt.expr
+        ? stmt
+        : { kind: 'return' as const, expr };
+    }
+    default:
+      throw new Error('never reached');
+  }
+}
+
+function replaceInsideHostExpr(
+  expr: Expr,
+  host: Expr,
+  from: Expr,
+  to: Expr,
+): Expr {
+  if (equals(expr, host)) {
+    return replaceExpr(expr, from, to);
+  }
+  switch (expr.kind) {
+    case 'not': {
+      const inner = replaceInsideHostExpr(expr.expr, host, from, to);
+      return inner === expr.expr ? expr : { kind: 'not', expr: inner };
+    }
+    case 'and':
+    case 'or': {
+      let changed = false;
+      let found = false;
+      const exprs = expr.exprs.map((e) => {
+        if (found) {
+          return e;
+        }
+        if (equals(e, host) || exprContains(e, host)) {
+          found = true;
+          changed = true;
+          return replaceInsideHostExpr(e, host, from, to);
+        }
+        return e;
+      });
+      return changed ? { ...expr, exprs } : expr;
+    }
+    case 'bool':
+    case 'bin':
+    case 'call':
+    case 'call_checker':
+    case 'instanceof':
+      return expr;
+    default:
+      throw new Error('never reached');
+  }
+}
+
+function exprContains(expr: Expr, host: Expr): boolean {
+  if (equals(expr, host)) {
+    return true;
+  }
+  switch (expr.kind) {
+    case 'not':
+      return exprContains(expr.expr, host);
+    case 'and':
+    case 'or':
+      return expr.exprs.some((e) => exprContains(e, host));
+    case 'bool':
+    case 'bin':
+    case 'call':
+    case 'call_checker':
+    case 'instanceof':
+      return false;
+    default:
+      throw new Error('never reached');
+  }
+}
+
+/**
  * Apply a block-level rewrite (`before` → `after`) inside `root`.
  * Matches the whole root, a nested if/foreach body, or a contiguous stmt run.
  */
@@ -115,7 +246,7 @@ function replaceStmtSequence(
           return stmt;
         }
         changed = true;
-        return { kind: 'if', cond: stmt.cond, body };
+        return { kind: 'if' as const, cond: stmt.cond, body };
       }
       case 'foreach': {
         const body = replaceStmtSequence(stmt.body, before, after);

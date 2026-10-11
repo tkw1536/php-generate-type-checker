@@ -16,7 +16,7 @@ import { simplifyExpression } from '../simplify/expression.ts';
 import { createOptimizerParams } from '../../params.ts';
 import { applyKnownFacts } from './apply.ts';
 import { equals } from '../../../ir/equals.ts';
-import { emptyFactEnv } from './env.ts';
+import { emptyFactEnv, factEntry } from './env.ts';
 
 const defaultParams = createOptimizerParams({
   programs: {},
@@ -91,7 +91,10 @@ function simplifiesListGuardFollowUp(): void {
 }
 
 function stillAppliesOuterFactsInsideForeach(): void {
-  const env = { ...emptyFactEnv(), falseFacts: [isArray] };
+  const env = {
+    ...emptyFactEnv(),
+    falseFacts: [factEntry(isArray, 'ifFalse')],
+  };
   const block: Block = [
     {
       kind: 'foreach',

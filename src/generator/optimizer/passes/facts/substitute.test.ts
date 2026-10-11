@@ -17,7 +17,7 @@ import {
   applyKnownFacts,
   blockAlwaysExitsWhenEntered,
 } from './apply.ts';
-import { emptyFactEnv } from './env.ts';
+import { emptyFactEnv, factEntry } from './env.ts';
 import { substituteFacts } from './substitute.ts';
 
 const $v = parameterRef();
@@ -40,7 +40,10 @@ function expectReturn(stmt: Stmt | undefined): Extract<Stmt, { kind: 'return' }>
 }
 
 function replacesExprKnownFalse(): void {
-  const env = { ...emptyFactEnv(), falseFacts: [isArray] };
+  const env = {
+    ...emptyFactEnv(),
+    falseFacts: [factEntry(isArray, 'ifFalse')],
+  };
   expect(substituteFacts(isArray, env)).toEqual(boolLit(false));
 }
 

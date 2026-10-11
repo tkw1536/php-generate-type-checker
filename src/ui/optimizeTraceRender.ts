@@ -3,8 +3,12 @@ import { renderTraceSnapshot } from '../generator/optimizer/trace/render.ts';
 import type { OptimizeTraceEvent } from '../generator/optimizer/trace/types.ts';
 import { highlightCode } from '../highlight.ts';
 import { renderTraceRuleHelp } from './metricsHelp.ts';
+import {
+  renderFactsBlock,
+  renderNestedBlock,
+} from './optimizeTraceDetailBlocks.ts';
 import { programGroupLabel } from './optimizeTraceList.ts';
-import { type PhpDiffLine, type PhpDiffResult, phpDiff } from './phpDiff.ts';
+import { type PhpDiffLine, type PhpDiffResult } from './phpDiff.ts';
 
 export type TraceDetailView = 'before' | 'after' | 'diff';
 
@@ -54,35 +58,11 @@ function renderFocusBlock(event: OptimizeTraceEvent): HTMLElement {
   }
   return block;
 }
-function renderFactsBlock(event: OptimizeTraceEvent): HTMLElement | null {
-  if (event.detail.kind !== 'facts' || event.detail.used.length === 0) {
-    return null;
-  }
-  const block = document.createElement('div');
-  block.className = 'optimize-trace-facts';
-  const heading = document.createElement('div');
-  heading.className = 'optimize-trace-meta-label';
-  heading.textContent = 'used facts';
-  block.append(heading);
-  for (const fact of event.detail.used) {
-    const line = document.createElement('div');
-    line.className = 'optimize-trace-fact-line';
-    const polarity = document.createElement('span');
-    polarity.className = `optimize-trace-fact-known optimize-trace-fact-known--${fact.known}`;
-    polarity.textContent = fact.known;
-    const expr = document.createElement('span');
-    expr.className = 'optimize-trace-meta-body';
-    expr.textContent = renderTraceSnapshot({ kind: 'expr', expr: fact.expr });
-    line.append(polarity, expr);
-    block.append(line);
-  }
-  return block;
-}
-
 function renderDetailNote(event: OptimizeTraceEvent): HTMLElement | null {
   switch (event.detail.kind) {
     case 'none':
     case 'facts':
+    case 'nested':
       return null;
     case 'inline': {
       const note = document.createElement('div');
@@ -96,17 +76,6 @@ function renderDetailNote(event: OptimizeTraceEvent): HTMLElement | null {
       appendMetaLine(note, 'removed', event.detail.removed);
       return note;
     }
-    default:
-      throw new Error('never reached');
-  }
-}
-
-function scopeKindLabel(event: OptimizeTraceEvent): string {
-  switch (event.scope.before.kind) {
-    case 'block':
-      return 'enclosing block';
-    case 'ir':
-      return 'full IR';
     default:
       throw new Error('never reached');
   }
@@ -156,7 +125,7 @@ function renderDiffView(diff: PhpDiffResult, phpWhenEmpty: string): HTMLElement 
 
   const diffEl = document.createElement('div');
   diffEl.className = 'optimize-trace-pane optimize-trace-diff';
-  diffEl.setAttribute('aria-label', 'Unified PHP diff of enclosing scope');
+  diffEl.setAttribute('aria-label', 'Unified PHP diff of full checker');
 
   for (const hunk of diff.hunks) {
     const header = document.createElement('div');
@@ -176,7 +145,7 @@ export function renderDetailHeader(selected: OptimizeTraceEvent): HTMLElement {
 
   const meta = document.createElement('div');
   meta.className = 'optimize-trace-meta';
-  meta.textContent = `${programGroupLabel(selected.program)} · IR round ${selected.outerLoop} · block ${selected.blockLoop} · ${scopeKindLabel(selected)}`;
+  meta.textContent = `${programGroupLabel(selected.program)} · IR round ${selected.outerLoop} · block ${selected.blockLoop} · ${rewriteKindLabel(selected)}`;
 
   const titleRow = document.createElement('div');
   titleRow.className = 'optimize-trace-title';
@@ -201,6 +170,10 @@ export function renderDetailHeader(selected: OptimizeTraceEvent): HTMLElement {
     const facts = renderFactsBlock(selected);
     if (facts !== null) {
       wrap.append(facts);
+    }
+    const nested = renderNestedBlock(selected);
+    if (nested !== null) {
+      wrap.append(nested);
     }
     const note = renderDetailNote(selected);
     if (note !== null) {
@@ -277,23 +250,4 @@ export function renderViewBody(
     default:
       throw new Error('never reached');
   }
-}
-
-/**
- * Before/After = full checker body; Diff = enclosing scope only.
- */
-export function scopePhpForEvent(event: OptimizeTraceEvent): {
-  readonly beforePhp: string;
-  readonly afterPhp: string;
-  readonly diff: PhpDiffResult;
-} {
-  const beforePhp = renderTraceSnapshot(event.checker.before);
-  const afterPhp = renderTraceSnapshot(event.checker.after);
-  const scopeBefore = renderTraceSnapshot(event.scope.before);
-  const scopeAfter = renderTraceSnapshot(event.scope.after);
-  return {
-    beforePhp,
-    afterPhp,
-    diff: phpDiff(scopeBefore, scopeAfter),
-  };
 }

@@ -1,8 +1,8 @@
 import type { Block, CheckerIR, CheckerProgram, Expr } from '../../ir/types.ts';
-import { returnStmt } from '../../ir/index.ts';
 import { assignTempNames } from '../../render/refs.ts';
 import type { OptimizeContext } from '../context.ts';
 import { attachScopeTempNames, attachTempNames } from './attachTemp.ts';
+import { exprApply, exprSnapshots } from './exprRecord.ts';
 import { applyBlockRewrite, replaceExprInBlock } from './replaceExpr.ts';
 import { scopeSnapEquals } from './snapEquals.ts';
 import type {
@@ -121,6 +121,9 @@ export class TraceCollector {
    * with the old expr in place vs the block with that expr replaced.
    * Checker is the full program body with the same replacement.
    *
+   * When `within` is set, `before` → `after` is applied only inside the first
+   * match of that host expression (fact folds must not rewrite other stmts).
+   *
    * @returns true when an event was recorded and live frames were updated.
    */
   recordExpr(
@@ -128,6 +131,7 @@ export class TraceCollector {
     before: Expr,
     after: Expr,
     detail?: OptimizeTraceDetail,
+    within?: Expr,
   ): boolean {
     const ctx = this.requireCtx();
     const enclosing = ctx.enclosingBlock;
@@ -137,38 +141,23 @@ export class TraceCollector {
     if (before.kind === 'bool') {
       return false;
     }
-    // Skip temps / already-applied rewrites (nothing visible in the live IR).
     if (!exprRewriteAffectsLiveIr(root, enclosing, before, after)) {
       return false;
     }
-    const scopeBefore: TraceScopeSnapshot =
-      enclosing === null
-        ? blockSnap([returnStmt(before)])
-        : blockSnap(enclosing);
-    const scopeAfter: TraceScopeSnapshot =
-      enclosing === null
-        ? blockSnap([returnStmt(after)])
-        : blockSnap(replaceExprInBlock(enclosing, before, after));
-    const checkerBefore: TraceScopeSnapshot =
-      root === null ? scopeBefore : blockSnap(root);
-    const checkerAfter: TraceScopeSnapshot =
-      root === null
-        ? scopeAfter
-        : blockSnap(replaceExprInBlock(root, before, after));
-    if (scopeSnapEquals(checkerBefore, checkerAfter)) {
+    const apply = exprApply(before, after, within);
+    const snaps = exprSnapshots(
+      enclosing,
+      root,
+      before,
+      after,
+      apply,
+      blockSnap,
+    );
+    if (scopeSnapEquals(snaps.checker.before, snaps.checker.after)) {
       return false;
     }
-    this.record({
-      rule,
-      detail,
-      focus: {
-        before: { kind: 'expr', expr: before },
-        after: { kind: 'expr', expr: after },
-      },
-      scope: { before: scopeBefore, after: scopeAfter },
-      checker: { before: checkerBefore, after: checkerAfter },
-    });
-    ctx.mapEnclosingBlocks((block) => replaceExprInBlock(block, before, after));
+    this.record({ rule, detail, focus: snaps.focus, scope: snaps.scope, checker: snaps.checker });
+    ctx.mapEnclosingBlocks((block) => apply(block));
     return true;
   }
 

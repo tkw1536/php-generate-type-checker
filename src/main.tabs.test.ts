@@ -183,6 +183,12 @@ function expectFactDetail(panel: HTMLElement): void {
   factItems[0].click();
   expect(panel.querySelector('.optimize-trace-facts')).not.toBeNull();
   expect(panel.querySelector('.optimize-trace-fact-known')).not.toBeNull();
+  expect(panel.querySelector('.optimize-trace-fact-source')).not.toBeNull();
+  const factHelp = panel.querySelector<HTMLButtonElement>(
+    '.optimize-trace-fact-source .optimize-trace-rule-help',
+  );
+  expect(factHelp).not.toBeNull();
+  expect(factHelp?.dataset.tooltip?.length).toBeGreaterThan(10);
   expect(panel.querySelector('.optimize-trace-focus')).not.toBeNull();
   expect(panel.querySelector('.optimize-trace-meta-line')).not.toBeNull();
 }
