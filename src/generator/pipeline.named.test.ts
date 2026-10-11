@@ -8,7 +8,7 @@ function buildEntriesDelegatesToEntryCheckers(): void {
  * @phpstan-type PostListResponse array{posts: list<PostSummary>}
  */`);
   const { ir, typesByName, docStringsByName } = buildEntries(entries);
-  const php = renderChecker(optimize(ir), {
+  const php = renderChecker(optimize(ir).ir, {
     typeString: 'docblock',
     typesByName,
     docStringsByName,

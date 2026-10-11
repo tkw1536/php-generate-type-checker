@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { OptimizerStats } from '../generator/optimizer/statsTypes.ts';
+import type { OptimizerStats } from '../generator/optimizer/stats/types.ts';
 import {
   metricsReportCopyText,
   renderMetricsReport,

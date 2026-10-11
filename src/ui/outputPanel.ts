@@ -11,13 +11,15 @@ import {
   setJsonTreeExpanded,
 } from './jsonTreeExpand.ts';
 import { parseJsonValue, renderJsonTree } from './jsonTreeView.ts';
+import { OptimizeTracePanel } from './optimizeTracePanel.ts';
 
-/** Left → right: Pipeline → Metrics → PHP */
-export type OutputTabId = 'pipeline' | 'ir-metrics' | 'php';
+/** Left → right: Pipeline → Metrics → Trace → PHP */
+export type OutputTabId = 'pipeline' | 'ir-metrics' | 'optimize-trace' | 'php';
 
 const OUTPUT_TAB_IDS: ReadonlySet<string> = new Set([
   'pipeline',
   'ir-metrics',
+  'optimize-trace',
   'php',
 ]);
 
@@ -87,6 +89,7 @@ export class OutputPanel {
 export type OutputPanelRef = Readonly<OutputPanel>;
 
 export type IrMetricsPanelRef = Readonly<IrMetricsPanel>;
+export type OptimizeTracePanelRef = Readonly<OptimizeTracePanel>;
 
 export type CopyablePanel = {
   readonly tabId: OutputTabId;
@@ -96,11 +99,13 @@ export type CopyablePanel = {
 export type OutputPanelSet = {
   readonly pipeline: OutputPanelRef;
   readonly irMetrics: IrMetricsPanelRef;
+  readonly optimizeTrace: OptimizeTracePanelRef;
   readonly php: OutputPanelRef;
 };
 
 const outputPanels: OutputPanel[] = [];
 let irMetricsPanel: IrMetricsPanel | undefined;
+let optimizeTracePanel: OptimizeTracePanel | undefined;
 let activeOutputTab: OutputTabId = 'php';
 
 const copyBtn = document.querySelector<HTMLButtonElement>('#output-copy')!;
@@ -146,6 +151,12 @@ export function getActiveOutputPanel(): CopyablePanel {
   if (activeOutputTab === 'ir-metrics' && irMetricsPanel !== undefined) {
     return irMetricsPanel;
   }
+  if (
+    activeOutputTab === 'optimize-trace' &&
+    optimizeTracePanel !== undefined
+  ) {
+    return optimizeTracePanel;
+  }
   return (
     outputPanels.find((p: OutputPanelRef) => p.tabId === activeOutputTab) ??
     outputPanels[0]
@@ -174,6 +185,10 @@ export function setupOutputPanels(): OutputPanelSet {
     '#ir-metrics-output-body',
   )!;
   irMetricsPanel = new IrMetricsPanel(metricsBody);
+  const traceBody = document.querySelector<HTMLElement>(
+    '#optimize-trace-output-body',
+  )!;
+  optimizeTracePanel = new OptimizeTracePanel(traceBody);
   setupPipelineTreeActions();
   return {
     pipeline: setupOutputPanel(
@@ -183,6 +198,7 @@ export function setupOutputPanels(): OutputPanelSet {
       'json',
     ),
     irMetrics: irMetricsPanel,
+    optimizeTrace: optimizeTracePanel,
     php: setupOutputPanel('php', 'php-output-body', 'php-output', 'php'),
   };
 }

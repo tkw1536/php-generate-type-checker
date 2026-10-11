@@ -10,11 +10,8 @@ import { Builder } from './builder/index.ts';
 import {
   createFunctionNameRegistry,
 } from './builder/registry/index.ts';
-import {
-  optimize as optimizeIr,
-  optimizeWithStats as optimizeIrWithStats,
-} from './optimizer/index.ts';
-import type { OptimizeWithStatsResult } from './optimizer/statsTypes.ts';
+import { optimize as optimizeIr } from './optimizer/index.ts';
+import type { OptimizeResult } from './optimizer/stats/types.ts';
 import {
   DEFAULT_CHECKER_OUTPUT,
   type GenerateCheckerOptions,
@@ -169,12 +166,8 @@ export function buildMany(
   };
 }
 
-export function optimize(ir: CheckerIR): CheckerIR {
+export function optimize(ir: CheckerIR): OptimizeResult {
   return optimizeIr(ir);
-}
-
-export function optimizeWithStats(ir: CheckerIR): OptimizeWithStatsResult {
-  return optimizeIrWithStats(ir);
 }
 
 export function renderChecker(

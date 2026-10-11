@@ -363,6 +363,9 @@ IR `yes` enters the pass body again and `no` goes to **Prune**.
 Block `yes` restarts at Inline and `no` returns to the IR question.
 The UI Metrics tab draws this under the Optimize stage.
 **Yes × N** on each loop is the round count (**IR rounds** / **Block rounds**).
+The UI Trace tab groups rewrite applications by checker function (then Prune).
+Checkers with no rewrites still appear with an Unchanged baseline showing their initial body.
+For each event, Before / After show the full checker body as PHP; Diff is the enclosing block (or IR for prune).
 
 ![Diagram showing the optimize passes](docs/optimize.svg)
 

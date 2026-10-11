@@ -1,11 +1,11 @@
 /**
- * Aggregate optimizeWithStats over generator fixture inputs (.IN).
+ * Aggregate optimize over generator fixture inputs (.IN).
  * Run from repo root: yarn report:optimizer-stats
  */
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { parseCheckerInput } from '../../parser/parseInput.ts';
-import { buildEntries, optimizeWithStats } from '../pipeline.ts';
+import { buildEntries, optimize } from '../pipeline.ts';
 
 const testdataDir = import.meta.dirname;
 
@@ -211,7 +211,7 @@ for (const input of inputs) {
     const { ir: built } = buildEntries(entries, {
       segmentSources: entries.map((e) => e.typeString),
     });
-    const { stats } = optimizeWithStats(built);
+    const { stats } = optimize(built);
     ok++;
     simplifyAgg.add(stats.simplify);
     inlineCalls += stats.passes.inline.calls;

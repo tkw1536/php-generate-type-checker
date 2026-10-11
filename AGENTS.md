@@ -35,6 +35,11 @@ yarn spellcheck
 - When changing generator output behavior, always add a generator golden for the new/changed case unless an equivalent `*.IN` case already exists
 - When changing parser, generator, optimizer, or render behavior described in README **Technical Overview** (type checks, optimizer passes, or pipeline phases), update that section to match
 - Optional: `yarn review_fixtures:generator` (interactive golden review)
+- Optimize trace must stay honest: enforced by `src/generator/optimizer/trace/invariants.test.ts` over generator success fixtures (annotated `checker` IR, not rendered PHP)
+- Per checker program: first event `checker.before` = builder body; last event `checker.after` = optimized body when that program still exists after prune; consecutive `checker.after[i]` = `checker.before[i+1]`; no zero-diff rewrite events except `trace.baseline` when nothing changed
+- Prune events: last prune `checker.after` = final optimized IR; same chain and no-ghost rules
+- Trace-only fixes must not change optimizer/PHP output or edit generator golden `*.json`
+- When changing trace recording or enclosing-stack sync, keep those invariants green — do not weaken or skip the invariant test
 
 ## Code style
 
@@ -79,6 +84,7 @@ Keep Markdown tables column-aligned in the source (pad cells so `|` separators l
 - Never invent `package.json` scripts; only use scripts that exist.
 - Keep URL fragment state backwards compatible (`src/ui/fragmentState.ts`).
 - Do not hand-edit golden `*.json`; regenerate from `*.IN`.
+- Do not edit generator golden `*.json` when fixing optimize-trace honesty; keep emitted IR/PHP identical and fix the tracer instead.
 - Do not treat this as a published library API. There is **no** library-consumer backwards compatibility — rename/remove internal exports freely; update all in-repo call sites instead of leaving compatibility shims.
 - Always keep existing CI checks passing.
 - Generated PHP must be nicely formatted and pass PHPStan at level 10 (max / strictest). Anything else is a bug.

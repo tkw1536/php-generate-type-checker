@@ -2,7 +2,7 @@ import type {
   OptimizerPassName,
   OptimizerStats,
   PassStats,
-} from '../generator/optimizer/statsTypes.ts';
+} from '../generator/optimizer/stats/types.ts';
 
 export type PassBox = {
   readonly id: OptimizerPassName;

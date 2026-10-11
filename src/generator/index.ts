@@ -32,7 +32,7 @@ export function generateChecker(
   const ir =
     options?.prioritizeReadabilityOverCompactness === true
       ? built
-      : optimize(built);
+      : optimize(built).ir;
   return renderChecker(ir, {
     ...options,
     typeString: typeString.trim(),

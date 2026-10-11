@@ -24,7 +24,7 @@ function buildManyEmitsTwoEntryCheckers(): void {
 function optimizeKeepsAllEntryCheckers(): void {
   const { segments } = parseTypes('string int');
   const { ir: built } = buildMany(segments.map((s) => s.ast));
-  const optimized = optimize(built);
+  const optimized = optimize(built).ir;
   expect(optimized.entries).toEqual(['isString', 'isInt']);
   expect(optimized.programs.isString).toBeDefined();
   expect(optimized.programs.isInt).toBeDefined();
@@ -121,7 +121,7 @@ function negativeIntHelperDocMatchesKeyword(): void {
 function buildManyUsesInstanceofWithoutAliasMap(): void {
   const ast = parseType('Foo');
   const { ir, typesByName } = buildMany([ast]);
-  const php = renderChecker(optimize(ir), {
+  const php = renderChecker(optimize(ir).ir, {
     typeString: 'Foo',
     typesByName,
     output: 'function',
@@ -132,7 +132,7 @@ function buildManyUsesInstanceofWithoutAliasMap(): void {
 function classAndObjectShapeDropsRedundantIsObject(): void {
   const ast = parseType('\\stdClass&object{a: int}');
   const { ir, typesByName } = buildMany([ast]);
-  const php = renderChecker(optimize(ir), {
+  const php = renderChecker(optimize(ir).ir, {
     typeString: '\\stdClass&object{a: int}',
     typesByName,
     output: 'function',
@@ -146,7 +146,7 @@ function classAndObjectShapeDropsRedundantIsObject(): void {
 function objectShapeAndClassDropsRedundantIsObject(): void {
   const ast = parseType('object{a: int}&\\stdClass');
   const { ir, typesByName } = buildMany([ast]);
-  const php = renderChecker(optimize(ir), {
+  const php = renderChecker(optimize(ir).ir, {
     typeString: 'object{a: int}&\\stdClass',
     typesByName,
     output: 'function',

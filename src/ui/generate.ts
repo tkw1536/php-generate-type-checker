@@ -1,11 +1,12 @@
 import {
   buildEntries,
-  optimizeWithStats,
+  optimize as runOptimize,
   renderChecker,
 } from '../generator/pipeline.ts';
 import type { BuildResult } from '../generator/pipeline.ts';
 import type { CheckerIR } from '../generator/ir/types.ts';
-import type { OptimizerStats } from '../generator/optimizer/statsTypes.ts';
+import type { OptimizerStats } from '../generator/optimizer/stats/types.ts';
+import type { OptimizeTraceEvent } from '../generator/optimizer/trace/types.ts';
 import type { ParsedCheckerEntry } from '../parser/parseInput.ts';
 import {
   hasPhpstanTypeAliases,
@@ -64,18 +65,20 @@ type OptimizeStage = {
   readonly ms: number;
   readonly ran: boolean;
   readonly stats: OptimizerStats | null;
+  readonly trace: readonly OptimizeTraceEvent[];
 };
 
 function runOptimizeStage(ir: CheckerIR): OptimizeStage {
   if (!wouldRunOptimizer()) {
-    return { ir, ms: 0, ran: false, stats: null };
+    return { ir, ms: 0, ran: false, stats: null, trace: [] };
   }
-  const timed = timedValue(() => optimizeWithStats(ir));
+  const timed = timedValue(() => runOptimize(ir));
   return {
     ir: timed.value.ir,
     ms: timed.ms,
     ran: true,
     stats: timed.value.stats,
+    trace: timed.value.trace,
   };
 }
 
@@ -85,6 +88,7 @@ type PipelineResult = {
   readonly php: string;
   readonly stageTimings: StageTimings;
   readonly optimizerStats: OptimizerStats | null;
+  readonly optimizerTrace: readonly OptimizeTraceEvent[];
 };
 
 function runTimedPipeline(
@@ -99,10 +103,10 @@ function runTimedPipeline(
     }),
   );
   const built = buildTimed.value;
-  const optimize = runOptimizeStage(built.ir);
+  const optimizeStage = runOptimizeStage(built.ir);
   let php = '';
   const renderMs = timedMs(() => {
-    php = renderChecker(optimize.ir, {
+    php = renderChecker(optimizeStage.ir, {
       ...genOpts,
       typeString,
       typesByName: built.typesByName,
@@ -114,15 +118,16 @@ function runTimedPipeline(
   });
   return {
     built,
-    irForPhp: optimize.ir,
+    irForPhp: optimizeStage.ir,
     php,
-    optimizerStats: optimize.stats,
+    optimizerStats: optimizeStage.stats,
+    optimizerTrace: optimizeStage.trace,
     stageTimings: {
       parseMs: 0,
       generateMs: buildTimed.ms,
-      optimizeMs: optimize.ms,
+      optimizeMs: optimizeStage.ms,
       renderMs,
-      optimizeRan: optimize.ran,
+      optimizeRan: optimizeStage.ran,
     },
   };
 }
@@ -169,6 +174,7 @@ function publishParseError(
   syncDocblockOptions(false);
   panels.pipeline.setError(err, typeString);
   panels.irMetrics.setError(err, typeString);
+  panels.optimizeTrace.setError(err, typeString);
   panels.php.setError(err, typeString);
 }
 
@@ -189,6 +195,10 @@ function publishPipelineSuccess(
   panels.irMetrics.setReport(
     { ...result.stageTimings, parseMs },
     result.optimizerStats,
+  );
+  panels.optimizeTrace.setTrace(
+    result.optimizerTrace,
+    result.stageTimings.optimizeRan,
   );
 }
 
@@ -211,6 +221,7 @@ export function runGenerate(panels: OutputPanelSet): void {
       pipelineJson(parseStageJson(entries), null, null),
     );
     panels.irMetrics.setError(err, typeString);
+    panels.optimizeTrace.setError(err, typeString);
     panels.php.setError(err, typeString);
   }
 }

@@ -1,4 +1,4 @@
-import type { OptimizerStats } from '../generator/optimizer/statsTypes.ts';
+import type { OptimizerStats } from '../generator/optimizer/stats/types.ts';
 import { describeError, renderErrorHtml } from './errorDisplay.ts';
 import {
   metricsReportCopyText,

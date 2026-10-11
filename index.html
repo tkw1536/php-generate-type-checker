@@ -162,6 +162,18 @@
               <button
                 type="button"
                 role="tab"
+                id="output-tab-optimize-trace"
+                class="output-tab"
+                aria-selected="false"
+                aria-controls="output-panel-optimize-trace"
+                tabindex="-1"
+                data-output-tab="optimize-trace"
+              >
+                Trace
+              </button>
+              <button
+                type="button"
+                role="tab"
                 id="output-tab-php"
                 class="output-tab active"
                 aria-selected="true"
@@ -206,6 +218,19 @@
             >
               <div class="output-tab-panel-inner" id="ir-metrics-output-body">
                 <p class="ir-metrics-empty">Run generate to see output</p>
+              </div>
+            </div>
+            <div
+              id="output-panel-optimize-trace"
+              class="output-tab-panel"
+              role="tabpanel"
+              aria-labelledby="output-tab-optimize-trace"
+              tabindex="-1"
+              data-output-panel="optimize-trace"
+              hidden
+            >
+              <div class="output-tab-panel-inner" id="optimize-trace-output-body">
+                <p class="optimize-trace-empty">Run generate to see output</p>
               </div>
             </div>
             <div
@@ -266,6 +291,18 @@
                 <strong>Render</strong>,
                 plus the Optimize pass diagram when Optimize ran.
                 Hover <code>?</code> for details on each stage and pass.
+              </p>
+            </div>
+            <div
+              class="output-footer-pane"
+              data-output-footer="optimize-trace"
+              hidden
+            >
+              <p class="output-footer-help">
+                Optimize rewrites grouped by checker function (then Prune).
+                Unchanged checkers still appear with their initial IR.
+                Before / After show the full checker; Diff shows the enclosing block (or IR).
+                Copy copies the active view as plaintext.
               </p>
             </div>
             <div

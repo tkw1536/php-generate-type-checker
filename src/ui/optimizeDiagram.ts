@@ -1,4 +1,4 @@
-import type { OptimizerStats } from '../generator/optimizer/statsTypes.ts';
+import type { OptimizerStats } from '../generator/optimizer/stats/types.ts';
 import { renderLabeledHelp, renderMetricsHelp } from './metricsHelp.ts';
 import {
   ARROW_HEAD,
