@@ -284,7 +284,7 @@ function absorbBinOpsThroughAnd(): void {
 
 describe('simplifyExpression', () => {
   it.each(SIMPLIFY_CASES)('%s', (_name, input, expected) => {
-    expect(simplifyExpression(input, defaultParams)).toEqual(expected);
+    expect(simplifyExpression(input, defaultParams).expr).toEqual(expected);
   });
 });
 

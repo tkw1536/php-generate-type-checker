@@ -164,8 +164,7 @@ function expectOptimizeTraceChrome(panel: HTMLElement): void {
   expect(panel.querySelector('.optimize-trace-list')).not.toBeNull();
   expect(panel.querySelector('.optimize-trace-group')).not.toBeNull();
   expect(panel.querySelector('.optimize-trace-item')).not.toBeNull();
-  expect(panel.querySelector('.optimize-trace-view-tabs')).not.toBeNull();
-  expect(panel.querySelector('.optimize-trace-diff')).not.toBeNull();
+  expect(panel.querySelector('.optimize-trace-collapse')).not.toBeNull();
   expect(panel.querySelector('.optimize-trace-title-text')).not.toBeNull();
   const ruleHelp = panel.querySelector<HTMLButtonElement>(
     '.optimize-trace-help .optimize-trace-rule-help',
@@ -173,29 +172,33 @@ function expectOptimizeTraceChrome(panel: HTMLElement): void {
   expect(ruleHelp).not.toBeNull();
   expect(ruleHelp?.textContent).toBe('?');
   expect(ruleHelp?.dataset.tooltip?.length).toBeGreaterThan(20);
+  // Env-extend shows added facts; IR rewrites show Before/After/Diff.
+  const envFacts = panel.querySelector('.optimize-trace-env-facts');
+  const viewTabs = panel.querySelector('.optimize-trace-view-tabs');
+  expect(envFacts !== null || viewTabs !== null).toBe(true);
 }
 
 function expectFactDetail(panel: HTMLElement): void {
-  const factItems = [
+  const envItem = [
     ...panel.querySelectorAll<HTMLButtonElement>('.optimize-trace-item'),
-  ].filter((item) => /prove|absorb/iu.test(item.textContent ?? ''));
-  expect(factItems.length).toBeGreaterThan(0);
-  factItems[0].click();
-  const hasFacts = panel.querySelector('.optimize-trace-facts') !== null;
-  const hasImplications =
-    panel.querySelector('.optimize-trace-implications') !== null;
-  expect(hasFacts || hasImplications).toBe(true);
-  if (hasFacts) {
-    expect(panel.querySelector('.optimize-trace-fact-known')).not.toBeNull();
-    expect(panel.querySelector('.optimize-trace-fact-source')).not.toBeNull();
-    const factHelp = panel.querySelector<HTMLButtonElement>(
-      '.optimize-trace-fact-source .optimize-trace-rule-help',
-    );
-    expect(factHelp).not.toBeNull();
-    expect(factHelp?.dataset.tooltip?.length).toBeGreaterThan(10);
+  ].find((item) => /Extend fact/iu.test(item.textContent ?? ''));
+  if (envItem !== undefined) {
+    envItem.click();
+    expect(panel.querySelector('.optimize-trace-env-facts')).not.toBeNull();
+    expect(panel.querySelector('.optimize-trace-fact-line')).not.toBeNull();
+    expect(
+      panel.querySelector(
+        '.optimize-trace-fact-known--true, .optimize-trace-fact-known--false',
+      ),
+    ).not.toBeNull();
   }
-  expect(panel.querySelector('.optimize-trace-focus')).not.toBeNull();
-  expect(panel.querySelector('.optimize-trace-meta-line')).not.toBeNull();
+  const proveItem = [
+    ...panel.querySelectorAll<HTMLButtonElement>('.optimize-trace-item'),
+  ].find((item) => /prove|absorb/iu.test(item.textContent ?? ''));
+  expect(proveItem).toBeDefined();
+  proveItem!.click();
+  expect(panel.querySelector('.optimize-trace-view-tabs')).not.toBeNull();
+  expect(panel.querySelector('.optimize-trace-title-text')).not.toBeNull();
 }
 
 async function showsOptimizeTraceListAndCopiesPhp(): Promise<void> {

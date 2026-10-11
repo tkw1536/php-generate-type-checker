@@ -1,27 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import { parseType } from '../parser/index.ts';
 import { buildMany, optimize } from '../generator/pipeline.ts';
-import { checkerPhpForEvent } from './optimizeTracePhp.ts';
+import { checkerPhpForStep } from './optimizeTracePhp.ts';
 
-function requireRewriteEvent(
-  trace: ReturnType<typeof optimize>['trace'],
+function requireRewriteStep(
+  steps: ReturnType<typeof optimize>['steps'],
   program: string,
 ) {
-  for (const event of trace) {
-    if (event.program === program && event.rule !== 'trace.baseline') {
-      return event;
+  for (const step of steps) {
+    if (step.program === program && step.reason.rule !== 'trace.baseline') {
+      return step;
     }
   }
-  throw new Error(`missing rewrite event for ${program}`);
+  throw new Error(`missing rewrite step for ${program}`);
 }
 
-describe('checkerPhpForEvent', () => {
+describe('checkerPhpForStep', () => {
   it('wraps before/after in a function header and diffs the full checker', () => {
     const ast = parseType('positive-int');
     const { ir: built } = buildMany([ast]);
-    const { trace } = optimize(built);
-    const event = requireRewriteEvent(trace, 'isPositiveInt');
-    const { beforePhp, afterPhp, diff } = checkerPhpForEvent(event);
+    const { steps } = optimize(built);
+    const step = requireRewriteStep(steps, 'isPositiveInt');
+    const { beforePhp, afterPhp, diff } = checkerPhpForStep(step);
     expect(
       beforePhp.startsWith('function isPositiveInt(mixed $value): bool\n{'),
     ).toBe(true);

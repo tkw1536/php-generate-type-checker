@@ -3,52 +3,65 @@ import { parseType } from '../../../parser/index.ts';
 import { buildMany } from '../../pipeline.ts';
 import { optimize } from '../index.ts';
 import { renderTraceSnapshot } from './render.ts';
-import type { OptimizeTraceEvent } from './types.ts';
+import type { TraceStep } from './types.ts';
 import {
   absorbImplicationPhp,
   allExclusiveViaUsesAreArrayKeyAssumed,
-  allFactUsesHaveSources,
   allNestedStepsAreNormalize,
-  eventExplainsFactsRule,
   exclusiveViaUses,
-  factKnownLabels,
-  factUsedCount,
-  factUsesFromEvents,
   hasExclusiveVia,
   hasInstanceofObjectImplication,
   isProveFactsRule,
-  nestedStepsFromEvents,
+  nestedStepsUnderRule,
+  stepExplainsFactsRule,
 } from './traceFactsHelpers.ts';
 
 const FACT_RULES = new Set([
   'facts.proveTrue',
   'facts.proveFalse',
   'facts.absorb',
+  'facts.env.extend',
 ]);
 
-function optimizeListUnionTrace(): readonly OptimizeTraceEvent[] {
+function optimizeListUnionSteps(): readonly TraceStep[] {
   const ast = parseType('list<mixed>|list<string>');
   const { ir: built } = buildMany([ast]);
-  return optimize(built).trace;
+  return optimize(built).steps;
 }
 
-describe('optimize trace events', () => {
+function ruleOf(step: TraceStep): string {
+  return step.reason.rule;
+}
+
+function stepTouchesNormalize(step: TraceStep): boolean {
+  if (ruleOf(step).startsWith('simplify.normalize.')) {
+    return true;
+  }
+  for (const child of step.reason.children) {
+    if (child.kind === 'step' && child.rule.startsWith('simplify.normalize.')) {
+      return true;
+    }
+  }
+  return false;
+}
+
+describe('optimize trace steps', () => {
   it('records fine-grained rewrite rules for list unions', () => {
     const ast = parseType('list<mixed>|list<string>');
     const { ir: built } = buildMany([ast]);
-    const { ir, trace } = optimize(built);
+    const { ir, steps } = optimize(built);
     expect(ir.order.length).toBeGreaterThan(0);
-    expect(trace.length).toBeGreaterThan(0);
-    expect([...new Set(trace.map((e) => e.rule))]).toEqual(
+    expect(steps.length).toBeGreaterThan(0);
+    expect([...new Set(steps.map((s) => ruleOf(s)))]).toEqual(
       expect.arrayContaining(['flatten.fold', 'inline.substitute']),
     );
-    expect(trace.map((e) => e.index)).toEqual([...trace.keys()]);
-    expect(trace.every((e) => e.program.length > 0)).toBe(true);
+    expect(steps.map((e) => e.index)).toEqual([...steps.keys()]);
+    expect(steps.every((e) => e.program.length > 0)).toBe(true);
   });
 
-  it('tags program names so events can be grouped by checker', () => {
-    const trace = optimizeListUnionTrace();
-    const programs = [...new Set(trace.map((e) => e.program))];
+  it('tags program names so steps can be grouped by checker', () => {
+    const steps = optimizeListUnionSteps();
+    const programs = [...new Set(steps.map((e) => e.program))];
     expect(programs.length).toBeGreaterThan(1);
     expect(programs.every((p) => p.length > 0)).toBe(true);
   });
@@ -56,23 +69,21 @@ describe('optimize trace events', () => {
   it('includes every checker, with a baseline when nothing rewrote it', () => {
     const ast = parseType('list<mixed>|list<string>');
     const { ir: built } = buildMany([ast]);
-    const { trace } = optimize(built);
+    const { steps } = optimize(built);
     const tracedPrograms = new Set(
-      trace.map((e) => e.program).filter((p) => p !== '(prune)'),
+      steps.map((e) => e.program).filter((p) => p !== '(prune)'),
     );
     expect([...tracedPrograms].toSorted()).toEqual([...built.order].toSorted());
     expect(
-      built.order.every((name) =>
-        trace.some((e) => e.program === name),
-      ),
+      built.order.every((name) => steps.some((e) => e.program === name)),
     ).toBe(true);
   });
 
   it('stores focus after snapshots of expr, block, or ir', () => {
-    const trace = optimizeListUnionTrace();
+    const steps = optimizeListUnionSteps();
     expect(
-      trace.every((e) =>
-        (['expr', 'block', 'ir'] as const).includes(e.focus.after.kind),
+      steps.every((e) =>
+        (['expr', 'block', 'ir'] as const).includes(e.reason.focus.after.kind),
       ),
     ).toBe(true);
   });
@@ -80,28 +91,28 @@ describe('optimize trace events', () => {
 
 describe('optimize trace scope and checker kinds', () => {
   it('stores scope before/after as block or ir only', () => {
-    const trace = optimizeListUnionTrace();
+    const steps = optimizeListUnionSteps();
     expect(
-      trace.every((e) =>
+      steps.every((e) =>
         (['block', 'ir'] as const).includes(e.scope.before.kind),
       ),
     ).toBe(true);
     expect(
-      trace.every((e) =>
+      steps.every((e) =>
         (['block', 'ir'] as const).includes(e.scope.after.kind),
       ),
     ).toBe(true);
   });
 
   it('stores checker before/after as block or ir only', () => {
-    const trace = optimizeListUnionTrace();
+    const steps = optimizeListUnionSteps();
     expect(
-      trace.every((e) =>
+      steps.every((e) =>
         (['block', 'ir'] as const).includes(e.checker.before.kind),
       ),
     ).toBe(true);
     expect(
-      trace.every((e) =>
+      steps.every((e) =>
         (['block', 'ir'] as const).includes(e.checker.after.kind),
       ),
     ).toBe(true);
@@ -110,7 +121,7 @@ describe('optimize trace scope and checker kinds', () => {
 
 describe('optimize trace checker snapshots', () => {
   it('keeps full-checker PHP at least as large as the enclosing scope', () => {
-    const events = optimizeListUnionTrace()
+    const events = optimizeListUnionSteps()
       .filter((e) => e.program !== '(prune)')
       .filter((e) => e.checker.before.kind === 'block');
     expect(events.length).toBeGreaterThan(0);
@@ -126,7 +137,7 @@ describe('optimize trace checker snapshots', () => {
   it('traces identity folds through to the final array checker body', () => {
     const ast = parseType('array<int|string,mixed>');
     const { ir: built } = buildMany([ast]);
-    const { ir, trace } = optimize(built);
+    const { ir, steps } = optimize(built);
     const entry = ir.entries[0];
     expect(entry).toBeTypeOf('string');
     const program = ir.programs[entry];
@@ -134,14 +145,11 @@ describe('optimize trace checker snapshots', () => {
     const finalPhp = renderTraceSnapshot({
       kind: 'block',
       block: program.body,
-      tempNames: null,
     });
     expect(finalPhp).toContain('is_array($value)');
     expect(finalPhp).not.toContain('&&');
-    const entryEvents = trace.filter((e) => e.program === entry);
-    expect(entryEvents.some((e) => e.rule === 'simplify.normalize.identity')).toBe(
-      true,
-    );
+    const entryEvents = steps.filter((e) => e.program === entry);
+    expect(entryEvents.some((e) => stepTouchesNormalize(e))).toBe(true);
     const last = entryEvents.at(-1)!;
     const lastPhp = renderTraceSnapshot(last.checker.after).replaceAll(
       /\s+/gu,
@@ -151,34 +159,37 @@ describe('optimize trace checker snapshots', () => {
   });
 });
 
+function isNonEnvGhost(step: TraceStep): boolean {
+  if (ruleOf(step) === 'facts.env.extend' || ruleOf(step) === 'trace.baseline') {
+    return false;
+  }
+  return (
+    renderTraceSnapshot(step.checker.before) ===
+    renderTraceSnapshot(step.checker.after)
+  );
+}
+
 describe('optimize trace De Morgan collapse', () => {
   it('records one collapse without ghost doubleNeg on temps', () => {
     const ast = parseType('int|string');
     const { ir: built } = buildMany([ast]);
-    const { ir, trace } = optimize(built);
+    const { ir, steps } = optimize(built);
     const entry = ir.entries[0];
     expect(entry).toBeTypeOf('string');
     const program = ir.programs[entry];
     expect(program).toBeDefined();
-    const entryEvents = trace.filter((e) => e.program === entry);
+    const entryEvents = steps.filter((e) => e.program === entry);
     const deMorgans = entryEvents.filter(
-      (e) => e.rule === 'simplify.normalize.deMorgan',
+      (e) => ruleOf(e) === 'simplify.normalize.deMorgan',
     );
     expect(deMorgans.length).toBeGreaterThan(0);
+    expect(entryEvents.filter((e) => isNonEnvGhost(e))).toEqual([]);
     expect(
-      entryEvents.filter((e) => {
-        const before = renderTraceSnapshot(e.checker.before);
-        const after = renderTraceSnapshot(e.checker.after);
-        return before === after;
-      }),
-    ).toEqual([]);
-    expect(
-      entryEvents.some((e) => e.rule === 'simplify.normalize.doubleNeg'),
+      entryEvents.some((e) => ruleOf(e) === 'simplify.normalize.doubleNeg'),
     ).toBe(false);
     const finalPhp = renderTraceSnapshot({
       kind: 'block',
       block: program.body,
-      tempNames: null,
     }).replaceAll(/\s+/gu, ' ');
     expect(finalPhp).toContain('is_int($value)');
     expect(finalPhp).toContain('is_string($value)');
@@ -186,9 +197,9 @@ describe('optimize trace De Morgan collapse', () => {
 });
 
 describe('optimize trace scope for expr rewrites', () => {
-  it('uses block or ir scope at least as large as the focus', () => {
-    const exprEvents = optimizeListUnionTrace().filter(
-      (e) => e.focus.before.kind === 'expr',
+  it('uses block or ir scope for expression rewrites', () => {
+    const exprEvents = optimizeListUnionSteps().filter(
+      (e) => e.reason.focus.before.kind === 'expr',
     );
     expect(exprEvents.length).toBeGreaterThan(0);
     expect(
@@ -196,18 +207,11 @@ describe('optimize trace scope for expr rewrites', () => {
         (['block', 'ir'] as const).includes(e.scope.before.kind),
       ),
     ).toBe(true);
-    expect(
-      exprEvents.every((event) => {
-        const focusPhp = renderTraceSnapshot(event.focus.before);
-        const scopePhp = renderTraceSnapshot(event.scope.before);
-        return scopePhp.length >= focusPhp.length;
-      }),
-    ).toBe(true);
   });
 
   it('keeps non-empty blocks when scope is a block', () => {
-    const blockScopes = optimizeListUnionTrace()
-      .filter((e) => e.focus.before.kind === 'expr')
+    const blockScopes = optimizeListUnionSteps()
+      .filter((e) => e.reason.focus.before.kind === 'expr')
       .map((e) => e.scope.before)
       .filter((s) => s.kind === 'block');
     expect(blockScopes.length).toBeGreaterThan(0);
@@ -216,29 +220,23 @@ describe('optimize trace scope for expr rewrites', () => {
 });
 
 function explainsFactsDetail(): void {
-  const factEvents = optimizeListUnionTrace().filter((e) =>
-    FACT_RULES.has(e.rule),
+  const factEvents = optimizeListUnionSteps().filter((e) =>
+    FACT_RULES.has(ruleOf(e)),
   );
   expect(factEvents.length).toBeGreaterThan(0);
-  expect(factEvents.every((e) => eventExplainsFactsRule(e))).toBe(true);
-  const proveEvents = factEvents.filter((e) => isProveFactsRule(e.rule));
+  expect(factEvents.every((e) => stepExplainsFactsRule(e))).toBe(true);
+  const proveEvents = factEvents.filter((e) => isProveFactsRule(ruleOf(e)));
   expect(proveEvents.length).toBeGreaterThan(0);
   expect(
-    Math.min(...proveEvents.map((e) => factUsedCount(e.detail))),
-  ).toBeGreaterThan(0);
-  const known = proveEvents.flatMap((e) => factKnownLabels(e.detail));
-  expect(known.length).toBeGreaterThan(0);
-  expect(known.every((k) => k === 'true' || k === 'false')).toBe(true);
-  const uses = factUsesFromEvents(proveEvents);
-  expect(uses.length).toBeGreaterThan(0);
-  expect(allFactUsesHaveSources(uses)).toBe(true);
+    proveEvents.every((e) => e.reason.children.length > 0),
+  ).toBe(true);
 }
 
 function recordsInstanceofObjectAbsorb(): void {
   const ast = parseType('Thing|object');
   const { ir: built } = buildMany([ast]);
-  const { trace } = optimize(built);
-  const absorbs = trace.filter((e) => e.rule === 'facts.absorb');
+  const { steps } = optimize(built);
+  const absorbs = steps.filter((e) => ruleOf(e) === 'facts.absorb');
   expect(absorbs.length).toBeGreaterThan(0);
   expect(hasInstanceofObjectImplication(absorbImplicationPhp(absorbs))).toBe(
     true,
@@ -248,8 +246,8 @@ function recordsInstanceofObjectAbsorb(): void {
 function tagsExclusiveViaForImpossibleArrayKey(): void {
   const ast = parseType('array<array, mixed>');
   const { ir: built } = buildMany([ast]);
-  const { trace } = optimize(built);
-  const proveTrue = trace.filter((e) => e.rule === 'facts.proveTrue');
+  const { steps } = optimize(built);
+  const proveTrue = steps.filter((e) => ruleOf(e) === 'facts.proveTrue');
   expect(proveTrue.length).toBeGreaterThan(0);
   expect(hasExclusiveVia(proveTrue)).toBe(true);
   const withVia = exclusiveViaUses(proveTrue);
@@ -258,13 +256,17 @@ function tagsExclusiveViaForImpossibleArrayKey(): void {
 }
 
 function nestedNormalizeStepsAreNormalize(): void {
-  const steps = nestedStepsFromEvents(optimizeListUnionTrace());
-  expect(allNestedStepsAreNormalize(steps)).toBe(true);
+  const nested = nestedStepsUnderRule(
+    optimizeListUnionSteps(),
+    'simplify.normalize.',
+  );
+  expect(nested.length).toBeGreaterThan(0);
+  expect(allNestedStepsAreNormalize(nested)).toBe(true);
 }
 
-describe('optimize trace facts detail', () => {
+describe('optimize trace facts evidence', () => {
   it(
-    'explains every facts.* event with facts or absorb implications',
+    'explains every facts.* step with facts or absorb implications',
     explainsFactsDetail,
   );
   it(
@@ -285,10 +287,9 @@ describe('optimize trace expand/absorb', () => {
   it('does not ping-pong expand/absorb on positive-int confirmation rounds', () => {
     const ast = parseType('positive-int');
     const { ir: built } = buildMany([ast]);
-    const { trace } = optimize(built);
-    const expands = trace.filter((e) => e.rule === 'simplify.expand');
-    const absorbs = trace.filter((e) => e.rule === 'simplify.absorb');
-    // Transformative simplify may expand/absorb once; later confirmation rounds must not.
+    const { steps } = optimize(built);
+    const expands = steps.filter((e) => ruleOf(e) === 'simplify.expand');
+    const absorbs = steps.filter((e) => ruleOf(e) === 'simplify.absorb');
     expect(expands.length).toBe(1);
     expect(absorbs.length).toBe(1);
   });

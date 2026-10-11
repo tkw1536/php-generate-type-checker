@@ -708,14 +708,82 @@ body {
   font-family: var(--font-mono, ui-monospace, monospace);
 }
 
-.optimize-trace-item {
-  display: block;
+.optimize-trace-item-row {
+  display: flex;
+  align-items: center;
   width: 100%;
+  border-left: 2px solid transparent;
+}
+
+.optimize-trace-item-row:hover {
+  background: var(--surface);
+}
+
+.optimize-trace-item-row:has(.optimize-trace-item.active) {
+  background: var(--surface);
+  border-left-color: var(--accent, var(--text));
+}
+
+.optimize-trace-collapse,
+.optimize-trace-collapse-spacer {
+  flex: 0 0 1.25rem;
+  width: 1.25rem;
+  height: 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 0 0.35rem;
+  padding: 0;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.optimize-trace-collapse-spacer {
+  border: none;
+  background: transparent;
+}
+
+.optimize-trace-collapse {
+  box-sizing: border-box;
+  width: 1.1rem;
+  flex: 0 0 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.optimize-trace-collapse::before {
+  content: '+';
+}
+
+.optimize-trace-collapse[aria-expanded='true']::before {
+  content: '−';
+}
+
+.optimize-trace-collapse:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.optimize-trace-collapse:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.optimize-trace-item {
+  flex: 1;
+  min-width: 0;
+  display: block;
   text-align: left;
   background: transparent;
   border: none;
-  border-left: 2px solid transparent;
-  padding: 0.35rem 0.65rem 0.35rem 1rem;
+  padding: 0.35rem 0.65rem 0.35rem 0.15rem;
   font-size: 0.75rem;
   font-family: inherit;
   line-height: 1.35;
@@ -723,15 +791,57 @@ body {
   color: var(--muted);
 }
 
-.optimize-trace-item:hover {
-  background: var(--surface);
+.optimize-trace-item-row:hover .optimize-trace-item,
+.optimize-trace-item.active {
   color: var(--text);
 }
 
-.optimize-trace-item.active {
+.optimize-trace-env-facts {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0.65rem 1.1rem 1rem;
+}
+
+.optimize-trace-env-facts-heading {
+  margin: 0 0 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.optimize-trace-env-facts .optimize-trace-fact-line {
+  gap: 0.25rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
   background: var(--surface);
-  color: var(--text);
-  border-left-color: var(--accent, var(--text));
+}
+
+.optimize-trace-env-facts .optimize-trace-fact-line + .optimize-trace-fact-line {
+  margin-top: 0.5rem;
+}
+
+.optimize-trace-env-facts .optimize-trace-fact-source {
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.optimize-trace-env-facts .optimize-trace-meta-body {
+  padding-left: 0.1rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+/*
+ * Fact-source (?) sits on the left of the detail pane — open the tip
+ * rightward so it stays inside the pane (title tips still open leftward).
+ */
+.optimize-trace-env-facts .optimize-trace-rule-help::after {
+  left: 0;
+  right: auto;
 }
 
 .optimize-trace-detail {

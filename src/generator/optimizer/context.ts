@@ -1,9 +1,10 @@
-import type { Block, CheckerIR } from '../ir/types.ts';
+import type { CheckerIR } from '../ir/types.ts';
 import type { OptimizerParams } from './params.ts';
 import type { StatsCollector } from './stats/collector.ts';
 import type { TraceCollector } from './trace/collector.ts';
+import type { TraceMeta } from './trace/types.ts';
 
-/** Mutable run state threaded through every pass. */
+/** Run handle: params, stats, and step log — no mutable IR frames. */
 export class OptimizeContext {
   readonly params: OptimizerParams;
   readonly stats: Readonly<StatsCollector>;
@@ -12,9 +13,6 @@ export class OptimizeContext {
   #program = '';
   #outerLoop = 0;
   #blockLoop = 0;
-  #tempNames: ReadonlyMap<number, string> | null = null;
-  /** Stack of blocks currently being rewritten (innermost last). */
-  readonly #enclosingBlocks: Block[] = [];
 
   constructor(
     params: OptimizerParams,
@@ -44,18 +42,12 @@ export class OptimizeContext {
     return this.#blockLoop;
   }
 
-  get tempNames(): ReadonlyMap<number, string> | null {
-    return this.#tempNames;
-  }
-
-  /** Innermost enclosing block, if any. */
-  get enclosingBlock(): Block | null {
-    return this.#enclosingBlocks.at(-1) ?? null;
-  }
-
-  /** Outermost enclosing block (current checker body under optimize). */
-  get enclosingRoot(): Block | null {
-    return this.#enclosingBlocks[0] ?? null;
+  meta(): TraceMeta {
+    return {
+      program: this.#program,
+      outerLoop: this.#outerLoop,
+      blockLoop: this.#blockLoop,
+    };
   }
 
   setIr(ir: CheckerIR): void {
@@ -72,35 +64,5 @@ export class OptimizeContext {
 
   setBlockLoop(n: number): void {
     this.#blockLoop = n;
-  }
-
-  setTempNames(names: ReadonlyMap<number, string> | null): void {
-    this.#tempNames = names;
-  }
-
-  pushEnclosingBlock(block: Block): void {
-    this.#enclosingBlocks.push(block);
-  }
-
-  popEnclosingBlock(): void {
-    this.#enclosingBlocks.pop();
-  }
-
-  /** Replace the innermost enclosing block (e.g. after a block-loop step). */
-  replaceTopEnclosingBlock(block: Block): void {
-    if (this.#enclosingBlocks.length === 0) {
-      throw new Error('no enclosing block to replace');
-    }
-    this.#enclosingBlocks[this.#enclosingBlocks.length - 1] = block;
-  }
-
-  /**
-   * Rewrite every enclosing frame in place (outermost first) so later trace
-   * records see prior rewrites from the same pass.
-   */
-  mapEnclosingBlocks(fn: (block: Block) => Block): void {
-    for (let i = 0; i < this.#enclosingBlocks.length; i++) {
-      this.#enclosingBlocks[i] = fn(this.#enclosingBlocks[i]);
-    }
   }
 }

@@ -6,23 +6,23 @@ import {
 } from '../generator/ir/index.ts';
 import { parseType } from '../parser/index.ts';
 import { buildMany, optimize } from '../generator/pipeline.ts';
-import { checkerPhpForEvent } from './optimizeTracePhp.ts';
+import { checkerPhpForStep } from './optimizeTracePhp.ts';
 import {
-  eventTempNames,
   renderEventExpr,
   renderEventSnapshot,
+  stepTempNames,
 } from './optimizeTraceRenderPhp.ts';
 
-function requireEventWithTemps(
-  trace: ReturnType<typeof optimize>['trace'],
-): (typeof trace)[number] {
-  for (const event of trace) {
-    const temps = eventTempNames(event);
+function requireStepWithTemps(
+  steps: ReturnType<typeof optimize>['steps'],
+): (typeof steps)[number] {
+  for (const step of steps) {
+    const temps = stepTempNames(step);
     if (temps !== undefined && temps.size > 0) {
-      return event;
+      return step;
     }
   }
-  throw new Error('missing event with temp names');
+  throw new Error('missing step with temp names');
 }
 
 function focusAvoidsTmpAliases(
@@ -45,17 +45,17 @@ describe('optimizeTraceRenderPhp', () => {
     expect(renderEventExpr(expr)).toBe('is_string($tmp0)');
   });
 
-  it('uses Diff checker temp names for event snapshots', () => {
+  it('uses Diff checker temp names for step snapshots', () => {
     const ast = parseType('non-empty-list<string>');
     const { ir: built } = buildMany([ast]);
-    const { trace } = optimize(built);
-    const event = requireEventWithTemps(trace);
-    const temps = eventTempNames(event)!;
-    const { beforePhp } = checkerPhpForEvent(event);
+    const { steps } = optimize(built);
+    const step = requireStepWithTemps(steps);
+    const temps = stepTempNames(step)!;
+    const { beforePhp } = checkerPhpForStep(step);
     for (const name of temps.values()) {
       expect(beforePhp).toContain(name);
     }
-    const focusPhp = renderEventSnapshot(event.focus.before, temps);
+    const focusPhp = renderEventSnapshot(step.reason.focus.before, temps);
     expect(focusAvoidsTmpAliases(focusPhp, temps)).toBe(true);
   });
 });

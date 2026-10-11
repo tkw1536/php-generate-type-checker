@@ -85,6 +85,6 @@ const FLATTEN_CASES = [
 
 describe('flatten', () => {
   it.each(FLATTEN_CASES)('%s', (_name, input, expected) => {
-    expect(flatten(input)).toEqual(expected);
+    expect(flatten(input).block).toEqual(expected);
   });
 });

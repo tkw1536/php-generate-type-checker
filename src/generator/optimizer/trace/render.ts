@@ -3,17 +3,18 @@ import { renderBlock, renderProgramBody } from '../../render/php.ts';
 import { renderExpr } from '../../render/phpExpr.ts';
 import type { OptimizeTraceSnapshot, TraceScopeSnapshot } from './types.ts';
 
-/** Render a trace snapshot as PHP for the Optimize Trace UI. */
+/** Render a trace snapshot as PHP (no temp names — UI assigns those). */
 export function renderTraceSnapshot(
   snap: OptimizeTraceSnapshot | TraceScopeSnapshot,
+  tempNames?: ReadonlyMap<number, string>,
 ): string {
   switch (snap.kind) {
     case 'expr':
-      return renderExpr(snap.expr);
+      return renderExpr(snap.expr, { tempNames });
     case 'block':
       return formatBody(
         renderBlock(snap.block, 0, {
-          tempNames: snap.tempNames ?? undefined,
+          tempNames,
         }),
       );
     case 'ir': {

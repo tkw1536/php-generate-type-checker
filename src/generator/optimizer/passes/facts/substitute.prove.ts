@@ -1,101 +1,197 @@
 import type { Expr } from '../../../ir/types.ts';
 import { notExpr, orExpr } from '../../../ir/index.ts';
 import { equals } from '../../../ir/equals.ts';
-import { entails, entailsUsesExclusive, implies } from '../../lib/implies.ts';
-import type { OptimizeTraceFactUse } from '../../trace/types.ts';
+import { entailProof, implyProof } from '../../lib/implyProof.ts';
+import type { ProveProof } from '../../proof/types.ts';
 import { canonicalizeFactExpr } from './canon.ts';
-import type { FactEntry, FactEnv, FactReasonId } from './env.ts';
+import {
+  type FactEntry,
+  type FactEnv,
+  factEntryAsEnvFact,
+} from './env.types.ts';
 
 type FactMatch = {
   readonly entry: FactEntry;
-  readonly how: 'equals' | 'entails';
   readonly known: 'true' | 'false';
+  readonly proof: ProveProof;
 };
 
-function toFactUse(
-  m: FactMatch,
-  conclusion: Expr,
-): OptimizeTraceFactUse {
-  const base: OptimizeTraceFactUse = {
-    expr: m.entry.expr,
-    known: m.known,
-    origin: m.entry.origin,
-    reason: m.entry.reason,
-  };
-  if (
-    m.how === 'entails' &&
-    entailsUsesExclusive(m.entry.expr, conclusion)
-  ) {
-    const via: readonly FactReasonId[] = ['exclusive'];
-    return { ...base, via };
-  }
-  return base;
-}
-
-/**
- * Prefer equals over entails, then assumed over derived implications.
- * Drops noisy entailing siblings once a tighter match exists.
- */
-function pickJustifying(
-  matches: readonly FactMatch[],
-  conclusion: Expr,
-): OptimizeTraceFactUse[] {
+function pickBest(matches: readonly FactMatch[]): ProveProof | null {
   if (matches.length === 0) {
-    return [];
+    return null;
   }
-  const equalsMatches = matches.filter((m) => m.how === 'equals');
+  const equalsMatches = matches.filter((m) => m.proof.kind === 'equals');
   let pool = equalsMatches.length > 0 ? equalsMatches : matches;
-  const assumed = pool.filter((m) => m.entry.reason === 'assumed');
+  const assumed = pool.filter(
+    (m) => m.entry.how.kind === 'assumed' || m.entry.reason === 'assumed',
+  );
   if (assumed.length > 0) {
     pool = assumed;
   }
-  return pool.map((m) => toFactUse(m, conclusion));
+  return pool[0].proof;
 }
 
-export function factsProvingTrue(
+function canonNote(
+  original: Expr,
+  canon: Expr,
+): ProveProof['canon'] | undefined {
+  if (equals(original, canon)) {
+    return undefined;
+  }
+  return { from: original, to: canon };
+}
+
+export function proveTrueProof(
   expr: Expr,
   env: FactEnv,
-): OptimizeTraceFactUse[] {
+): ProveProof | null {
   const canon = canonicalizeFactExpr(expr);
   const matches: FactMatch[] = [];
   for (const t of env.trueFacts) {
     if (equals(t.expr, canon)) {
-      matches.push({ entry: t, how: 'equals', known: 'true' });
-    } else if (entails(t.expr, canon)) {
-      matches.push({ entry: t, how: 'entails', known: 'true' });
+      matches.push({
+        entry: t,
+        known: 'true',
+        proof: {
+          kind: 'equals',
+          fact: factEntryAsEnvFact(t, 'true'),
+          conclusion: canon,
+          canon: canonNote(expr, canon),
+        },
+      });
+    } else {
+      const bridge = entailProof(t.expr, canon);
+      if (bridge !== null) {
+        matches.push({
+          entry: t,
+          known: 'true',
+          proof: {
+            kind: 'entails',
+            fact: factEntryAsEnvFact(t, 'true'),
+            conclusion: canon,
+            bridge,
+            canon: canonNote(expr, canon),
+          },
+        });
+      }
     }
   }
-  return pickJustifying(matches, canon);
+  return pickBest(matches);
+}
+
+function matchesFalseEquals(
+  expr: Expr,
+  canon: Expr,
+  env: FactEnv,
+): FactMatch[] {
+  const matches: FactMatch[] = [];
+  for (const f of env.falseFacts) {
+    if (equals(f.expr, canon)) {
+      matches.push({
+        entry: f,
+        known: 'false',
+        proof: {
+          kind: 'equals',
+          fact: factEntryAsEnvFact(f, 'false'),
+          conclusion: canon,
+          canon: canonNote(expr, canon),
+        },
+      });
+    }
+  }
+  return matches;
+}
+
+function matchesTrueNot(
+  expr: Expr,
+  notCanon: Expr,
+  env: FactEnv,
+): FactMatch[] {
+  const matches: FactMatch[] = [];
+  for (const t of env.trueFacts) {
+    if (equals(t.expr, notCanon)) {
+      matches.push({
+        entry: t,
+        known: 'true',
+        proof: {
+          kind: 'equals',
+          fact: factEntryAsEnvFact(t, 'true'),
+          conclusion: notCanon,
+          canon: canonNote(notExpr(expr), notCanon),
+        },
+      });
+      continue;
+    }
+    const bridge = entailProof(t.expr, notCanon);
+    if (bridge !== null) {
+      matches.push({
+        entry: t,
+        known: 'true',
+        proof: {
+          kind: 'entails',
+          fact: factEntryAsEnvFact(t, 'true'),
+          conclusion: notCanon,
+          bridge,
+          canon: canonNote(notExpr(expr), notCanon),
+        },
+      });
+    }
+  }
+  return matches;
+}
+
+export function proveFalseProof(
+  expr: Expr,
+  env: FactEnv,
+): ProveProof | null {
+  const canon = canonicalizeFactExpr(expr);
+  const notCanon = canonicalizeFactExpr(notExpr(canon));
+  return pickBest([
+    ...matchesFalseEquals(expr, canon, env),
+    ...matchesTrueNot(expr, notCanon, env),
+  ]);
+}
+
+/** Legacy list shape for tests that still inspect uses — prefer prove*Proof. */
+export function factsProvingTrue(
+  expr: Expr,
+  env: FactEnv,
+): ProveProof[] {
+  const p = proveTrueProof(expr, env);
+  return p === null ? [] : [p];
 }
 
 export function factsProvingFalse(
   expr: Expr,
   env: FactEnv,
-): OptimizeTraceFactUse[] {
-  const canon = canonicalizeFactExpr(expr);
-  const matches: FactMatch[] = [];
-  for (const f of env.falseFacts) {
-    if (equals(f.expr, canon)) {
-      matches.push({ entry: f, how: 'equals', known: 'false' });
-    }
-  }
-  const notCanon = canonicalizeFactExpr(notExpr(canon));
-  for (const t of env.trueFacts) {
-    if (equals(t.expr, notCanon)) {
-      matches.push({ entry: t, how: 'equals', known: 'true' });
-    } else if (entails(t.expr, notCanon)) {
-      matches.push({ entry: t, how: 'entails', known: 'true' });
-    }
-  }
-  return pickJustifying(matches, notCanon);
+): ProveProof[] {
+  const p = proveFalseProof(expr, env);
+  return p === null ? [] : [p];
 }
 
-/** `a ⇒ b` structurally, or because `¬a ∨ b` is known true in `env`. */
-export function impliesModuloFacts(a: Expr, b: Expr, env: FactEnv): boolean {
-  const ca = canonicalizeFactExpr(a);
-  const cb = canonicalizeFactExpr(b);
-  if (implies(ca, cb)) {
-    return true;
+/**
+ * `a ⇒ b` structurally, or because `¬a ∨ b` is known true in `env`.
+ * Returns a ProveProof when modulo facts, or uses implyProof for structural.
+ */
+export function impliesModuloFactsProof(
+  a: Expr,
+  b: Expr,
+  env: FactEnv,
+):
+  | { readonly kind: 'structural'; readonly imply: NonNullable<ReturnType<typeof implyProof>> }
+  | { readonly kind: 'moduloFacts'; readonly prove: ProveProof }
+  | null {
+  const structural = implyProof(a, b);
+  if (structural !== null) {
+    return { kind: 'structural', imply: structural };
   }
-  return factsProvingTrue(orExpr([notExpr(a), b]), env).length > 0;
+  const prove = proveTrueProof(orExpr([notExpr(a), b]), env);
+  if (prove !== null) {
+    return { kind: 'moduloFacts', prove };
+  }
+  return null;
+}
+
+export function impliesModuloFacts(a: Expr, b: Expr, env: FactEnv): boolean {
+  return impliesModuloFactsProof(a, b, env) !== null;
 }

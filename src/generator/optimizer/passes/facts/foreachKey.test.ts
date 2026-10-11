@@ -23,7 +23,7 @@ import {
 import { simplifyExpression } from '../simplify/expression.ts';
 import { createOptimizerParams } from '../../params.ts';
 import { applyKnownFacts } from './apply.ts';
-import { emptyFactEnv } from './env.ts';
+import { emptyFactEnv } from './env.types.ts';
 
 const defaultParams = createOptimizerParams({
   programs: {},
@@ -66,7 +66,7 @@ function foldsArrayKeyCheckOnForeachKey(): void {
       body: [failIfStmt(arrayKey)],
     },
   ];
-  const result = applyKnownFacts(block, emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv()).block;
   const innerIf = expectIf(expectForeach(result[0]).body[0]);
   expect(innerIf.cond).toEqual(boolLit(false));
 }
@@ -92,7 +92,7 @@ function foldsIntOrNonDecimalIntStringOnForeachKey(): void {
       ],
     },
   ];
-  const result = applyKnownFacts(block, emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv()).block;
   const innerIf = expectIf(expectForeach(result[0]).body[0]);
   expect(innerIf.cond).toEqual(boolLit(true));
 }
@@ -130,9 +130,9 @@ function foldsExpandedNonDecimalKeyNegationOnForeachKey(): void {
       ],
     },
   ];
-  const result = applyKnownFacts(block, emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv()).block;
   const innerIf = expectIf(expectForeach(result[0]).body[0]);
-  expect(simplifyExpression(innerIf.cond, defaultParams)).toEqual(
+  expect(simplifyExpression(innerIf.cond, defaultParams).expr).toEqual(
     notExpr(callExpr('is_string', [refArg($item)])),
   );
 }
@@ -148,7 +148,7 @@ function foldsDecimalIntStringFailIfToTrueOnForeachKey(): void {
       body: [failIfStmt(decimalIntStringExpr(refArg($key)))],
     },
   ];
-  const result = applyKnownFacts(block, emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv()).block;
   const innerIf = expectIf(expectForeach(result[0]).body[0]);
   expect(innerIf.cond).toEqual(boolLit(true));
 }
@@ -181,7 +181,7 @@ function absorbsPregIntoNotStringForNonDecimalFailIf(): void {
       ],
     },
   ];
-  const result = applyKnownFacts(block, emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv()).block;
   const innerIf = expectIf(expectForeach(result[0]).body[0]);
   expect(innerIf.cond).toEqual(notExpr(callExpr('is_string', [s])));
 }

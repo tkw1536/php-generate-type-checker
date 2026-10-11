@@ -1,4 +1,4 @@
-import type { FactOriginId, FactReasonId } from './env.ts';
+import type { FactOriginId, FactReasonId } from './env.types.ts';
 
 export type FactSourceInfo = {
   readonly short: string;

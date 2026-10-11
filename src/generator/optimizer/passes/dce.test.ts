@@ -167,6 +167,6 @@ const DCE_CASES = [
 
 describe('dce', () => {
   it.each(DCE_CASES)('%s', (_name, input, expected) => {
-    expect(dce(input)).toEqual(expected);
+    expect(dce(input).block).toEqual(expected);
   });
 });

@@ -1,32 +1,39 @@
 import { optimizeTraceRuleInfo } from '../generator/optimizer/trace/rules.ts';
-import type { OptimizeTraceEvent } from '../generator/optimizer/trace/types.ts';
+import type {
+  TraceStep,
+  TraceStepReason,
+} from '../generator/optimizer/trace/types.ts';
 import { highlightCode } from '../highlight.ts';
 import { renderTraceRuleHelp } from './metricsHelp.ts';
-import {
-  renderAbsorbBlocks,
-  renderFactsBlock,
-  renderNestedBlock,
-} from './optimizeTraceDetailBlocks.ts';
+import { renderEvidenceBlocks } from './optimizeTraceDetailBlocks.ts';
+import { isEnvTraceRule } from './optimizeTraceEnvDetail.ts';
 import { wrapTraceFold } from './optimizeTraceFold.ts';
 import { programGroupLabel } from './optimizeTraceList.ts';
 import {
-  eventTempNames,
   renderEventSnapshot,
+  stepTempNames,
 } from './optimizeTraceRenderPhp.ts';
 import { type PhpDiffLine, type PhpDiffResult } from './phpDiff.ts';
 
 export type TraceDetailView = 'before' | 'after' | 'diff';
 
-function focusPhp(event: OptimizeTraceEvent): {
+function focusPhp(
+  reason: TraceStepReason,
+  step: TraceStep,
+): {
   readonly before: string;
   readonly after: string;
 } {
-  const temps = eventTempNames(event);
+  const temps = stepTempNames(step);
   return {
-    before: renderEventSnapshot(event.focus.before, temps).replaceAll('\n', ' '),
-    after: renderEventSnapshot(event.focus.after, temps).replaceAll('\n', ' '),
+    before: renderEventSnapshot(reason.focus.before, temps).replaceAll(
+      '\n',
+      ' ',
+    ),
+    after: renderEventSnapshot(reason.focus.after, temps).replaceAll('\n', ' '),
   };
 }
+
 function appendMetaLine(parent: HTMLElement, label: string, body: string): void {
   const line = document.createElement('div');
   line.className = 'optimize-trace-meta-line';
@@ -40,8 +47,11 @@ function appendMetaLine(parent: HTMLElement, label: string, body: string): void 
   parent.append(line);
 }
 
-function rewriteKindLabel(event: OptimizeTraceEvent): string {
-  switch (event.focus.before.kind) {
+function rewriteKindLabel(reason: TraceStepReason): string {
+  if (isEnvTraceRule(reason.rule)) {
+    return 'Facts';
+  }
+  switch (reason.focus.before.kind) {
     case 'expr':
       return 'Expression';
     case 'block':
@@ -53,8 +63,8 @@ function rewriteKindLabel(event: OptimizeTraceEvent): string {
   }
 }
 
-function modifiedFocusTitle(event: OptimizeTraceEvent): string {
-  switch (event.focus.before.kind) {
+function modifiedFocusTitle(reason: TraceStepReason): string {
+  switch (reason.focus.before.kind) {
     case 'expr':
       return 'Modified Expression';
     case 'block':
@@ -66,10 +76,13 @@ function modifiedFocusTitle(event: OptimizeTraceEvent): string {
   }
 }
 
-function renderFocusBlock(event: OptimizeTraceEvent): HTMLElement {
-  const { before, after } = focusPhp(event);
+function renderFocusBlock(
+  step: TraceStep,
+  reason: TraceStepReason,
+): HTMLElement {
+  const { before, after } = focusPhp(reason, step);
   return wrapTraceFold(
-    modifiedFocusTitle(event),
+    modifiedFocusTitle(reason),
     null,
     'optimize-trace-focus',
     (body) => {
@@ -79,30 +92,6 @@ function renderFocusBlock(event: OptimizeTraceEvent): HTMLElement {
       }
     },
   );
-}
-
-function renderDetailNote(event: OptimizeTraceEvent): HTMLElement | null {
-  switch (event.detail.kind) {
-    case 'none':
-    case 'facts':
-    case 'absorb':
-    case 'nested':
-      return null;
-    case 'inline': {
-      const callee = event.detail.callee;
-      return wrapTraceFold('Inline', 1, 'optimize-trace-focus', (body) => {
-        appendMetaLine(body, 'Inline', callee);
-      });
-    }
-    case 'prune': {
-      const removed = event.detail.removed;
-      return wrapTraceFold('Removed', 1, 'optimize-trace-focus', (body) => {
-        appendMetaLine(body, 'Removed', removed);
-      });
-    }
-    default:
-      throw new Error('never reached');
-  }
 }
 
 function gutter(kind: PhpDiffLine['kind']): string {
@@ -144,7 +133,11 @@ function renderPhpPreview(php: string, ariaLabel: string): HTMLElement {
 
 function renderDiffView(diff: PhpDiffResult, phpWhenEmpty: string): HTMLElement {
   if (diff.hunks.length === 0) {
-    return renderPhpPreview(phpWhenEmpty, 'Checker PHP (no textual diff)');
+    // Env-only steps (facts.env.extend) have identical checker PHP — still
+    // expose the Diff pane chrome so the UI stays consistent.
+    const empty = renderPhpPreview(phpWhenEmpty, 'Checker PHP (no textual diff)');
+    empty.classList.add('optimize-trace-diff');
+    return empty;
   }
 
   const diffEl = document.createElement('div');
@@ -169,24 +162,18 @@ function appendOptional(parent: HTMLElement, child: HTMLElement | null): void {
   }
 }
 
-function appendRewriteDetails(
-  wrap: HTMLElement,
-  selected: OptimizeTraceEvent,
-): void {
-  wrap.append(renderFocusBlock(selected));
-  appendOptional(wrap, renderFactsBlock(selected));
-  appendOptional(wrap, renderAbsorbBlocks(selected));
-  appendOptional(wrap, renderNestedBlock(selected));
-  appendOptional(wrap, renderDetailNote(selected));
-}
-
-export function renderDetailHeader(selected: OptimizeTraceEvent): HTMLElement {
-  const info = optimizeTraceRuleInfo(selected.rule);
+export function renderDetailHeader(
+  step: TraceStep,
+  reason: TraceStepReason,
+  topLevel: boolean,
+): HTMLElement {
+  const info = optimizeTraceRuleInfo(reason.rule);
   const wrap = document.createElement('div');
 
   const meta = document.createElement('div');
   meta.className = 'optimize-trace-meta';
-  meta.textContent = `${programGroupLabel(selected.program)} · IR round ${selected.outerLoop} · block ${selected.blockLoop} · ${rewriteKindLabel(selected)}`;
+  const nest = topLevel ? '' : ' · nested';
+  meta.textContent = `${programGroupLabel(step.program)} · IR round ${step.outerLoop} · block ${step.blockLoop} · ${rewriteKindLabel(reason)}${nest}`;
 
   const titleRow = document.createElement('div');
   titleRow.className = 'optimize-trace-title';
@@ -196,18 +183,24 @@ export function renderDetailHeader(selected: OptimizeTraceEvent): HTMLElement {
   const helpWrap = document.createElement('span');
   helpWrap.className = 'optimize-trace-help';
   helpWrap.innerHTML = renderTraceRuleHelp(
-    `optimize-trace-help-${selected.index}`,
+    `optimize-trace-help-${step.index}-${reason.rule}`,
     info.title,
     info.help,
   );
   const ruleId = document.createElement('span');
   ruleId.className = 'optimize-trace-rule-id';
-  ruleId.textContent = selected.rule;
+  ruleId.textContent = reason.rule;
   titleRow.append(title, helpWrap, ruleId);
 
   wrap.append(meta, titleRow);
-  if (selected.rule !== 'trace.baseline') {
-    appendRewriteDetails(wrap, selected);
+  if (reason.rule !== 'trace.baseline' && !isEnvTraceRule(reason.rule)) {
+    // Nested selections use the Before/After/Diff pane for focus; keep the
+    // collapsed fold only as a compact summary on top-level IR rewrites.
+    // Env-only steps show added facts in the detail pane instead.
+    if (topLevel) {
+      wrap.append(renderFocusBlock(step, reason));
+    }
+    appendOptional(wrap, renderEvidenceBlocks(step, reason));
   }
   return wrap;
 }
@@ -215,11 +208,12 @@ export function renderDetailHeader(selected: OptimizeTraceEvent): HTMLElement {
 export function renderViewTabs(
   active: TraceDetailView,
   onSelect: (view: TraceDetailView) => void,
+  ariaLabel = 'Checker PHP view',
 ): HTMLElement {
   const tabs = document.createElement('div');
   tabs.className = 'optimize-trace-view-tabs';
   tabs.setAttribute('role', 'tablist');
-  tabs.setAttribute('aria-label', 'Checker PHP view');
+  tabs.setAttribute('aria-label', ariaLabel);
 
   const views: readonly {
     readonly id: TraceDetailView;
@@ -268,12 +262,16 @@ export function renderViewBody(
   beforePhp: string,
   afterPhp: string,
   diff: PhpDiffResult,
+  labels: {
+    readonly before: string;
+    readonly after: string;
+  },
 ): HTMLElement {
   switch (view) {
     case 'before':
-      return renderPhpPreview(beforePhp, 'Full checker PHP before rewrite');
+      return renderPhpPreview(beforePhp, labels.before);
     case 'after':
-      return renderPhpPreview(afterPhp, 'Full checker PHP after rewrite');
+      return renderPhpPreview(afterPhp, labels.after);
     case 'diff':
       return renderDiffView(diff, afterPhp);
     default:

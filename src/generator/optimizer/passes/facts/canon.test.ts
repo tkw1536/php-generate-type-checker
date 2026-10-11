@@ -13,7 +13,8 @@ import {
 import { equals } from '../../../ir/equals.ts';
 import { DECIMAL_INT_STRING_PATTERN } from '../../../decimalIntString.ts';
 import { canonicalizeFactExpr } from './canon.ts';
-import { withTrueFact, emptyFactEnv } from './env.ts';
+import { withTrueFact } from './env.ts';
+import { emptyFactEnv } from './env.types.ts';
 
 const $key = variableRef(0);
 const s = refArg($key);

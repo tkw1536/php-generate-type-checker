@@ -6,7 +6,7 @@ import {
 import type { BuildResult } from '../generator/pipeline.ts';
 import type { CheckerIR } from '../generator/ir/types.ts';
 import type { OptimizerStats } from '../generator/optimizer/stats/types.ts';
-import type { OptimizeTraceEvent } from '../generator/optimizer/trace/types.ts';
+import type { TraceStep } from '../generator/optimizer/trace/types.ts';
 import type { ParsedCheckerEntry } from '../parser/parseInput.ts';
 import {
   hasPhpstanTypeAliases,
@@ -65,12 +65,12 @@ type OptimizeStage = {
   readonly ms: number;
   readonly ran: boolean;
   readonly stats: OptimizerStats | null;
-  readonly trace: readonly OptimizeTraceEvent[];
+  readonly steps: readonly TraceStep[];
 };
 
 function runOptimizeStage(ir: CheckerIR): OptimizeStage {
   if (!wouldRunOptimizer()) {
-    return { ir, ms: 0, ran: false, stats: null, trace: [] };
+    return { ir, ms: 0, ran: false, stats: null, steps: [] };
   }
   const timed = timedValue(() => runOptimize(ir));
   return {
@@ -78,7 +78,7 @@ function runOptimizeStage(ir: CheckerIR): OptimizeStage {
     ms: timed.ms,
     ran: true,
     stats: timed.value.stats,
-    trace: timed.value.trace,
+    steps: timed.value.steps,
   };
 }
 
@@ -88,7 +88,7 @@ type PipelineResult = {
   readonly php: string;
   readonly stageTimings: StageTimings;
   readonly optimizerStats: OptimizerStats | null;
-  readonly optimizerTrace: readonly OptimizeTraceEvent[];
+  readonly optimizerSteps: readonly TraceStep[];
 };
 
 function runTimedPipeline(
@@ -121,7 +121,7 @@ function runTimedPipeline(
     irForPhp: optimizeStage.ir,
     php,
     optimizerStats: optimizeStage.stats,
-    optimizerTrace: optimizeStage.trace,
+    optimizerSteps: optimizeStage.steps,
     stageTimings: {
       parseMs: 0,
       generateMs: buildTimed.ms,
@@ -197,7 +197,7 @@ function publishPipelineSuccess(
     result.optimizerStats,
   );
   panels.optimizeTrace.setTrace(
-    result.optimizerTrace,
+    result.optimizerSteps,
     result.stageTimings.optimizeRan,
   );
 }

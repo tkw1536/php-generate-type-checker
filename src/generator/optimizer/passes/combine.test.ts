@@ -100,6 +100,6 @@ const COMBINE_CASES = [
 
 describe('combine', () => {
   it.each(COMBINE_CASES)('%s', (_name, input, expected) => {
-    expect(combine(input)).toEqual(expected);
+    expect(combine(input).block).toEqual(expected);
   });
 });

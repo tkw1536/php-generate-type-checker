@@ -1,10 +1,10 @@
 import type { Arg, Expr } from '../../ir/types.ts';
-import { callExpr } from '../../ir/index.ts';
-import { equals } from '../../ir/equals.ts';
+import type { EntailProof, ImplyProof } from '../proof/types.ts';
 import {
-  exclusiveTypeImplies,
-  typeCallImpliedByEquality,
-} from './exclusiveTypes.ts';
+  absorbImpliedOperandsProof,
+  entailProof,
+  implyProof,
+} from './implyProof.ts';
 
 function isTrueLiteralArg(arg: Arg): boolean {
   return arg.kind === 'literal' && (arg.value === 'true' || arg.value === 'TRUE');
@@ -25,36 +25,7 @@ export function isAAllowStringSubject(expr: Expr): Arg | null {
 
 /** True when knowing `a` is enough to conclude `b`. */
 export function implies(a: Expr, b: Expr): boolean {
-  if (equals(a, b)) {
-    return true;
-  }
-  const isASubject = isAAllowStringSubject(a);
-  if (isASubject !== null && equals(callExpr('class_exists', [isASubject]), b)) {
-    return true;
-  }
-  if (
-    a.kind === 'instanceof' &&
-    equals(callExpr('is_object', [a.subject]), b)
-  ) {
-    return true;
-  }
-  if (exclusiveTypeImplies(a, b)) {
-    return true;
-  }
-  // `$x === 0` ⇒ `is_int($x)` (and anything that type tag implies)
-  const litType = typeCallImpliedByEquality(a);
-  if (litType !== null && implies(litType, b)) {
-    return true;
-  }
-  // A && B ⇒ A, A && B ⇒ B (and anything a conjunct implies)
-  if (a.kind === 'and' && a.exprs.some((c) => implies(c, b))) {
-    return true;
-  }
-  // A ⇒ A || … (and anything that implies a disjunct)
-  if (b.kind === 'or' && b.exprs.some((d) => implies(a, d))) {
-    return true;
-  }
-  return false;
+  return implyProof(a, b) !== null;
 }
 
 /**
@@ -62,43 +33,7 @@ export function implies(a: Expr, b: Expr): boolean {
  * including case-split on a true OR (every disjunct must entail).
  */
 export function entails(premise: Expr, conclusion: Expr): boolean {
-  if (implies(premise, conclusion)) {
-    return true;
-  }
-  if (premise.kind === 'or') {
-    return (
-      premise.exprs.length > 0 &&
-      premise.exprs.every((d) => entails(d, conclusion))
-    );
-  }
-  if (premise.kind === 'and') {
-    return premise.exprs.some((c) => entails(c, conclusion));
-  }
-  return false;
-}
-
-/**
- * True when `implies` / case-split uses primary-type exclusivity somewhere
- * (not mere equality / is_a / instanceof / OR-weaken).
- */
-function impliesUsesExclusive(a: Expr, b: Expr): boolean {
-  if (equals(a, b)) {
-    return false;
-  }
-  if (exclusiveTypeImplies(a, b)) {
-    return true;
-  }
-  const litType = typeCallImpliedByEquality(a);
-  if (litType !== null && impliesUsesExclusive(litType, b)) {
-    return true;
-  }
-  if (a.kind === 'and' && a.exprs.some((c) => impliesUsesExclusive(c, b))) {
-    return true;
-  }
-  if (b.kind === 'or' && b.exprs.some((d) => impliesUsesExclusive(a, d))) {
-    return true;
-  }
-  return false;
+  return entailProof(premise, conclusion) !== null;
 }
 
 /**
@@ -109,19 +44,42 @@ export function entailsUsesExclusive(
   premise: Expr,
   conclusion: Expr,
 ): boolean {
-  if (!entails(premise, conclusion)) {
+  const proof = entailProof(premise, conclusion);
+  if (proof === null) {
     return false;
   }
-  if (impliesUsesExclusive(premise, conclusion)) {
-    return true;
+  return entailUsesExclusive(proof);
+}
+
+function implyUsesExclusive(p: ImplyProof): boolean {
+  switch (p.kind) {
+    case 'exclusive':
+      return true;
+    case 'equalityType':
+    case 'andConjunct':
+    case 'orDisjunct':
+    case 'canon':
+      return implyUsesExclusive(p.via);
+    case 'refl':
+    case 'instanceofObject':
+    case 'isAClassExists':
+      return false;
+    default:
+      throw new Error('never reached');
   }
-  if (premise.kind === 'or') {
-    return premise.exprs.some((d) => entailsUsesExclusive(d, conclusion));
+}
+
+function entailUsesExclusive(p: EntailProof): boolean {
+  switch (p.kind) {
+    case 'byImplies':
+      return implyUsesExclusive(p.imply);
+    case 'orCases':
+      return p.cases.some(entailUsesExclusive);
+    case 'andPick':
+      return entailUsesExclusive(p.via);
+    default:
+      throw new Error('never reached');
   }
-  if (premise.kind === 'and') {
-    return premise.exprs.some((c) => entailsUsesExclusive(c, conclusion));
-  }
-  return false;
 }
 
 /**
@@ -133,19 +91,5 @@ export function absorbImpliedOperands(
   exprs: readonly Expr[],
   mode: 'and' | 'or',
 ): Expr[] {
-  return exprs.filter((candidate, i) => {
-    for (let j = 0; j < exprs.length; j++) {
-      if (i === j) {
-        continue;
-      }
-      const other = exprs[j];
-      if (mode === 'or' && implies(candidate, other) && !equals(candidate, other)) {
-        return false;
-      }
-      if (mode === 'and' && implies(other, candidate) && !equals(candidate, other)) {
-        return false;
-      }
-    }
-    return true;
-  });
+  return absorbImpliedOperandsProof(exprs, mode).exprs;
 }

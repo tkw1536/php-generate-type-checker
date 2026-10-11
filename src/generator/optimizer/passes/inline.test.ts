@@ -62,7 +62,7 @@ function nestsArrayAccessOffSubstitutedSubject(): void {
 }
 
 function inlinesReturnCallChecker(): void {
-  const result = inlineBlock(HELPER_IR.programs.main.body, HELPER_IR, 'main');
+  const result = inlineBlock(HELPER_IR.programs.main.body, HELPER_IR, 'main').block;
   expect(result.length).toBeGreaterThan(1);
   expect(result.some((s) => isNotGuardIf(s))).toBe(true);
 }
@@ -83,7 +83,7 @@ function inlinesSingleReturnHelper(): void {
     singleReturnIr.programs.main.body,
     singleReturnIr,
     'main',
-  );
+  ).block;
   expect(result).toEqual([returnStmt(callExpr('is_int', [refArg($elem)]))]);
 }
 
@@ -139,7 +139,7 @@ function inlinesThroughNotOrInIfCondition(): void {
     nestedUnionIr.programs.main.body,
     nestedUnionIr,
     'main',
-  );
+  ).block;
   const foreachStmt = expectForeach(result.find((s) => s.kind === 'foreach'));
   const failIf = expectIf(foreachStmt.body[0]);
   expect(failIf.cond).toEqual(
@@ -172,7 +172,7 @@ function inlinesCallCheckerNestedUnderNotInsideOr(): void {
     },
     ['main', 'helper'],
   );
-  const result = inlineBlock(peelIr.programs.main.body, peelIr, 'main');
+  const result = inlineBlock(peelIr.programs.main.body, peelIr, 'main').block;
   expect(result).toEqual([
     returnStmt(
       orExpr([notExpr(helperExpr), callExpr('is_string', [refArg($v)])]),
@@ -199,7 +199,7 @@ function peelsOrBeforeInlining(): void {
     },
     ['main', 'helper'],
   );
-  const result = inlineBlock(orIr.programs.main.body, orIr, 'main');
+  const result = inlineBlock(orIr.programs.main.body, orIr, 'main').block;
   expect(result).toEqual([
     {
       kind: 'if',

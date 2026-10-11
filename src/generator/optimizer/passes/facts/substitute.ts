@@ -1,289 +1,255 @@
 import type { Expr } from '../../../ir/types.ts';
-import {
-  andExpr,
-  boolLit,
-  notExpr,
-  orExpr,
-} from '../../../ir/index.ts';
+import { andExpr, boolLit, orExpr } from '../../../ir/index.ts';
 import { equals } from '../../../ir/equals.ts';
 import type { OptimizeContext } from '../../context.ts';
-import { replaceExpr } from '../../trace/replaceExpr.ts';
-import type {
-  OptimizeTraceDetail,
-  OptimizeTraceFactUse,
-  OptimizeTraceImplication,
-} from '../../trace/types.ts';
-import { canonicalizeFactExpr } from './canon.ts';
-import { type FactEnv, envOrigin, withTrueFact } from './env.ts';
 import {
-  factsProvingFalse,
-  factsProvingTrue,
-  impliesModuloFacts,
-} from './substitute.prove.ts';
+  envEventsToChildren,
+  proveProofToChildren,
+} from '../../proof/toTrace.ts';
+import { commitEnvExtend, commitReason } from '../../trace/commit.ts';
+import { exprRewrite } from '../../trace/rewrite.ts';
+import type { TracePos } from '../../trace/types.ts';
+import { withTrueFact } from './env.ts';
+import {
+  type EnvTraceSink,
+  type FactEnv,
+  EnvTraceSink as EnvSink,
+  envOrigin,
+} from './env.types.ts';
+import {
+  absorbOperandsModuloFacts,
+  HostCursor,
+} from './substitute.absorb.ts';
+import { proveFalseProof, proveTrueProof } from './substitute.prove.ts';
 
-/** Tracks the live form of the top-level expr being substituted for scoped records. */
-class HostCursor {
-  #current: Expr;
-
-  constructor(expr: Expr) {
-    this.#current = expr;
-  }
-
-  get current(): Expr {
-    return this.#current;
-  }
-
-  apply(before: Expr, after: Expr): void {
-    this.#current = replaceExpr(this.#current, before, after);
-  }
-}
-
-function factsDetail(
-  used: readonly OptimizeTraceFactUse[],
-): Extract<OptimizeTraceDetail, { kind: 'facts' }> {
-  if (used.length === 0) {
-    throw new Error('facts.prove* events require at least one used fact');
-  }
-  return { kind: 'facts', used };
-}
-
-function absorbDetail(
-  implications: readonly OptimizeTraceImplication[],
-  used: readonly OptimizeTraceFactUse[],
-): Extract<OptimizeTraceDetail, { kind: 'absorb' }> {
-  if (implications.length === 0) {
-    throw new Error('facts.absorb requires at least one implication');
-  }
-  return { kind: 'absorb', implications, used };
-}
-
-function junction(mode: 'and' | 'or', exprs: readonly Expr[]): Expr {
-  return mode === 'and' ? andExpr(exprs) : orExpr(exprs);
-}
-
-function recordProveExpr(
+function flushEnv(
   ctx: Readonly<OptimizeContext> | undefined,
+  pos: TracePos,
+  sink: EnvTraceSink | undefined,
+): void {
+  if (ctx === undefined || sink === undefined) {
+    return;
+  }
+  const events = sink.take();
+  if (events.length === 0) {
+    return;
+  }
+  commitEnvExtend(ctx, pos, envEventsToChildren(events));
+}
+
+function commitProve(
+  ctx: Readonly<OptimizeContext> | undefined,
+  pos: TracePos,
   host: HostCursor,
   rule: 'facts.proveTrue' | 'facts.proveFalse',
   before: Expr,
   after: Expr,
-  used: readonly OptimizeTraceFactUse[],
-): void {
+  proof: NonNullable<ReturnType<typeof proveTrueProof>>,
+): TracePos {
   if (ctx === undefined || equals(before, after)) {
-    return;
+    return pos;
   }
-  if (
-    ctx.trace.recordExpr(rule, before, after, factsDetail(used), host.current)
-  ) {
-    host.apply(before, after);
-  }
-}
-
-type DropJustification = {
-  readonly implication: OptimizeTraceImplication;
-  readonly used: readonly OptimizeTraceFactUse[];
-};
-
-function shouldDropOperand(
-  candidate: Expr,
-  other: Expr,
-  mode: 'and' | 'or',
-  env: FactEnv,
-): DropJustification | null {
-  if (equals(canonicalizeFactExpr(candidate), canonicalizeFactExpr(other))) {
-    return null;
-  }
-  if (mode === 'or' && impliesModuloFacts(candidate, other, env)) {
-    // Drop stronger candidate: candidate ⇒ other.
-    return {
-      implication: { from: candidate, to: other },
-      used: factsProvingTrue(orExpr([notExpr(candidate), other]), env),
-    };
-  }
-  if (mode === 'and' && impliesModuloFacts(other, candidate, env)) {
-    // Drop weaker candidate: other ⇒ candidate.
-    return {
-      implication: { from: other, to: candidate },
-      used: factsProvingTrue(orExpr([notExpr(other), candidate]), env),
-    };
-  }
-  return null;
-}
-
-/**
- * Drop redundant operands using implication under `env`:
- * - OR: drop stronger A when A ⇒ B
- * - AND: drop weaker B when A ⇒ B
- *
- * Records the junction rewrite (not operand→operand replace-all).
- */
-function absorbOperandsModuloFacts(
-  exprs: readonly Expr[],
-  mode: 'and' | 'or',
-  env: FactEnv,
-  ctx: Readonly<OptimizeContext> | undefined,
-  host: HostCursor,
-): Expr[] {
-  const kept: Expr[] = [];
-  const implications: OptimizeTraceImplication[] = [];
-  const usedAll: OptimizeTraceFactUse[] = [];
-  for (let i = 0; i < exprs.length; i++) {
-    const candidate = exprs[i];
-    let drop = false;
-    for (let j = 0; j < exprs.length; j++) {
-      if (i === j) {
-        continue;
-      }
-      const just = shouldDropOperand(candidate, exprs[j], mode, env);
-      if (just !== null) {
-        implications.push(just.implication);
-        usedAll.push(...just.used);
-        drop = true;
-        break;
-      }
-    }
-    if (!drop) {
-      kept.push(candidate);
-    }
-  }
-  if (kept.length !== exprs.length && ctx !== undefined) {
-    const before = junction(mode, exprs);
-    const after = junction(mode, kept);
-    if (
-      !equals(before, after) &&
-      ctx.trace.recordExpr(
-        'facts.absorb',
-        before,
-        after,
-        absorbDetail(implications, usedAll),
-        host.current,
-      )
-    ) {
-      host.apply(before, after);
-    }
-  }
-  return kept;
+  const children = proveProofToChildren(before, after, proof);
+  const rewrite = exprRewrite(rule, before, after, children);
+  const next = commitReason(ctx, pos, rewrite.reason, host.current);
+  host.apply(before, after);
+  return next;
 }
 
 export function substituteFacts(
   expr: Expr,
   env: FactEnv,
   ctx?: Readonly<OptimizeContext>,
-): Expr {
-  return substituteFactsInner(expr, env, ctx, new HostCursor(expr));
+  pos?: TracePos,
+  sink?: EnvTraceSink,
+): { readonly expr: Expr; readonly pos: TracePos } {
+  const host = new HostCursor(expr);
+  const startPos = pos ?? { checker: [], scope: [] };
+  return substituteFactsInner(expr, env, ctx, startPos, host, sink);
 }
 
 function substituteFactsInner(
   expr: Expr,
   env: FactEnv,
   ctx: Readonly<OptimizeContext> | undefined,
+  pos: TracePos,
   host: HostCursor,
-): Expr {
+  sink: EnvTraceSink | undefined,
+): { readonly expr: Expr; readonly pos: TracePos } {
   if (expr.kind === 'bool') {
-    return expr;
+    return { expr, pos };
   }
-  const falseUsed = factsProvingFalse(expr, env);
-  if (falseUsed.length > 0) {
-    const next = boolLit(false);
-    recordProveExpr(ctx, host, 'facts.proveFalse', expr, next, falseUsed);
-    return next;
+  const falseProof = proveFalseProof(expr, env);
+  if (falseProof !== null) {
+    const after = boolLit(false);
+    return {
+      expr: after,
+      pos: commitProve(
+        ctx,
+        pos,
+        host,
+        'facts.proveFalse',
+        expr,
+        after,
+        falseProof,
+      ),
+    };
   }
-  const trueUsed = factsProvingTrue(expr, env);
-  if (trueUsed.length > 0) {
-    const next = boolLit(true);
-    recordProveExpr(ctx, host, 'facts.proveTrue', expr, next, trueUsed);
-    return next;
+  const trueProof = proveTrueProof(expr, env);
+  if (trueProof !== null) {
+    const after = boolLit(true);
+    return {
+      expr: after,
+      pos: commitProve(ctx, pos, host, 'facts.proveTrue', expr, after, trueProof),
+    };
   }
-  return substituteFactsShallow(expr, env, ctx, host);
+  return substituteFactsShallow(expr, env, ctx, pos, host, sink);
+}
+
+function seedAndConjunct(
+  env: FactEnv,
+  conjunct: Expr,
+  ctx: Readonly<OptimizeContext> | undefined,
+  pos: TracePos,
+  host: HostCursor,
+  sink: EnvTraceSink | undefined,
+): { readonly expr: Expr; readonly env: FactEnv; readonly pos: TracePos } {
+  const next = substituteFactsInner(conjunct, env, ctx, pos, host, sink);
+  const seeded = withTrueFact(
+    env,
+    conjunct,
+    envOrigin(env),
+    'assumed',
+    undefined,
+    sink,
+  );
+  flushEnv(ctx, next.pos, sink);
+  return { expr: next.expr, env: seeded, pos: next.pos };
 }
 
 function substituteFactsAnd(
   expr: Extract<Expr, { kind: 'and' }>,
   env: FactEnv,
   ctx: Readonly<OptimizeContext> | undefined,
+  pos: TracePos,
   host: HostCursor,
-): Expr {
-  // Left-to-right: reaching a later conjunct means earlier ones were true.
-  let changed = false;
+  sink: EnvTraceSink | undefined,
+): { readonly expr: Expr; readonly pos: TracePos } {
+  let currentPos = pos;
   let currentEnv = env;
+  let changed = false;
+  const localSink = ctx === undefined ? sink : (sink ?? new EnvSink());
   let exprs = expr.exprs.map((e) => {
-    const next = substituteFactsInner(e, currentEnv, ctx, host);
-    if (next !== e) {
-      changed = true;
-    }
-    currentEnv = withTrueFact(currentEnv, e, envOrigin(currentEnv));
-    return next;
+    const next = seedAndConjunct(currentEnv, e, ctx, currentPos, host, localSink);
+    changed = changed || next.expr !== e;
+    currentPos = next.pos;
+    currentEnv = next.env;
+    return next.expr;
   });
-  const absorbed = absorbOperandsModuloFacts(exprs, 'and', env, ctx, host);
-  if (absorbed.length !== exprs.length) {
-    changed = true;
-    exprs = absorbed;
-  }
-  return changed ? andExpr(exprs) : expr;
+  const absorbed = absorbOperandsModuloFacts(
+    exprs,
+    'and',
+    env,
+    ctx,
+    currentPos,
+    host,
+  );
+  changed = changed || absorbed.exprs.length !== exprs.length;
+  exprs = absorbed.exprs;
+  return {
+    expr: changed ? andExpr(exprs) : expr,
+    pos: absorbed.pos,
+  };
 }
 
 function substituteFactsOr(
   expr: Extract<Expr, { kind: 'or' }>,
   env: FactEnv,
   ctx: Readonly<OptimizeContext> | undefined,
+  pos: TracePos,
   host: HostCursor,
-): Expr {
+  sink: EnvTraceSink | undefined,
+): { readonly expr: Expr; readonly pos: TracePos } {
+  let currentPos = pos;
   let changed = false;
   let exprs = expr.exprs.map((e) => {
-    const next = substituteFactsInner(e, env, ctx, host);
-    if (next !== e) {
+    const next = substituteFactsInner(e, env, ctx, currentPos, host, sink);
+    if (next.expr !== e) {
       changed = true;
     }
-    return next;
+    currentPos = next.pos;
+    return next.expr;
   });
-  const absorbed = absorbOperandsModuloFacts(exprs, 'or', env, ctx, host);
-  if (absorbed.length !== exprs.length) {
+  const absorbed = absorbOperandsModuloFacts(
+    exprs,
+    'or',
+    env,
+    ctx,
+    currentPos,
+    host,
+  );
+  if (absorbed.exprs.length !== exprs.length) {
     changed = true;
-    exprs = absorbed;
+    exprs = absorbed.exprs;
   }
-  return changed ? orExpr(exprs) : expr;
+  return {
+    expr: changed ? orExpr(exprs) : expr,
+    pos: absorbed.pos,
+  };
+}
+
+function substituteFactsNot(
+  expr: Extract<Expr, { kind: 'not' }>,
+  env: FactEnv,
+  ctx: Readonly<OptimizeContext> | undefined,
+  pos: TracePos,
+  host: HostCursor,
+  sink: EnvTraceSink | undefined,
+): { readonly expr: Expr; readonly pos: TracePos } {
+  const inner = substituteFactsInner(expr.expr, env, ctx, pos, host, sink);
+  if (inner.expr.kind !== 'bool') {
+    return {
+      expr: inner.expr === expr.expr ? expr : { kind: 'not', expr: inner.expr },
+      pos: inner.pos,
+    };
+  }
+  const before: Expr = { kind: 'not', expr: inner.expr };
+  const next = boolLit(!inner.expr.value);
+  if (ctx === undefined || equals(before, next)) {
+    return { expr: next, pos: inner.pos };
+  }
+  const nextPos = commitReason(
+    ctx,
+    inner.pos,
+    exprRewrite('simplify.normalize.boolFold', before, next).reason,
+    host.current,
+  );
+  host.apply(before, next);
+  return { expr: next, pos: nextPos };
 }
 
 function substituteFactsShallow(
   expr: Expr,
   env: FactEnv,
   ctx: Readonly<OptimizeContext> | undefined,
+  pos: TracePos,
   host: HostCursor,
-): Expr {
+  sink: EnvTraceSink | undefined,
+): { readonly expr: Expr; readonly pos: TracePos } {
   switch (expr.kind) {
     case 'bool':
     case 'call':
     case 'bin':
     case 'instanceof':
     case 'call_checker':
-      return expr;
-    case 'not': {
-      const inner = substituteFactsInner(expr.expr, env, ctx, host);
-      if (inner.kind === 'bool') {
-        const before: Expr = { kind: 'not', expr: inner };
-        const next = boolLit(!inner.value);
-        // Keep live IR in sync when !FALSE/!TRUE folds after a prove*.
-        if (
-          ctx !== undefined &&
-          !equals(before, next) &&
-          ctx.trace.recordExpr(
-            'simplify.normalize.boolFold',
-            before,
-            next,
-            undefined,
-            host.current,
-          )
-        ) {
-          host.apply(before, next);
-        }
-        return next;
-      }
-      return inner === expr.expr ? expr : { kind: 'not', expr: inner };
-    }
+      return { expr, pos };
+    case 'not':
+      return substituteFactsNot(expr, env, ctx, pos, host, sink);
     case 'and':
-      return substituteFactsAnd(expr, env, ctx, host);
+      return substituteFactsAnd(expr, env, ctx, pos, host, sink);
     case 'or':
-      return substituteFactsOr(expr, env, ctx, host);
+      return substituteFactsOr(expr, env, ctx, pos, host, sink);
+    default:
+      throw new Error('never reached');
   }
-  throw new Error('never reached');
 }

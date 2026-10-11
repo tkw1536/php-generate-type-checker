@@ -1,36 +1,26 @@
 import type { Expr } from '../../../ir/types.ts';
 import { equals } from '../../../ir/equals.ts';
-import type { OptimizeContext } from '../../context.ts';
+import {
+  exprStep,
+  seqReason,
+  unchangedExpr,
+} from '../../trace/rewrite.ts';
 import type {
-  OptimizeTraceDetail,
-  OptimizeTraceNestedStep,
+  ExprRewrite,
   OptimizeTraceRuleId,
+  TraceReasoning,
+  TraceStepReason,
 } from '../../trace/types.ts';
 
-/** One quiet normalize rewrite to commit later (or flatten into nested detail). */
+/** One normalize rewrite collected while building a pure ExprRewrite. */
 export type QuietCommitStep = {
   readonly rule: OptimizeTraceRuleId;
   readonly before: Expr;
   readonly after: Expr;
-  /** Nested cleanup when this step is a composed parent (De Morgan / doubleNeg / factor). */
-  readonly nested: readonly OptimizeTraceNestedStep[];
+  readonly nested: readonly TraceStepReason[];
 };
 
-/** Flatten commit steps into nested-detail rows (parent + its nested cleanup). */
-export function quietStepsAsNested(
-  steps: readonly QuietCommitStep[],
-): readonly OptimizeTraceNestedStep[] {
-  const out: OptimizeTraceNestedStep[] = [];
-  for (const step of steps) {
-    out.push(
-      { rule: step.rule, before: step.before, after: step.after },
-      ...step.nested,
-    );
-  }
-  return out;
-}
-
-/** Collects structured normalize steps without updating live IR. */
+/** Collects structured normalize steps without committing to the checker head. */
 export class QuietStepSink {
   readonly #steps: QuietCommitStep[] = [];
 
@@ -41,74 +31,72 @@ export class QuietStepSink {
   snapshot(): readonly QuietCommitStep[] {
     return this.#steps;
   }
+
+  asReason(): TraceReasoning {
+    return seqReason(this.#steps.map((step) => quietStepToReason(step)));
+  }
 }
 
-/**
- * Record a rewrite against `before`, falling back to `live` when the
- * reconstructed `before` is not present in the live IR (e.g. flat junction
- * vs nested and/or). Returns the updated live expr when a record applies.
- *
- * When `quiet` is set, append nested steps instead of updating live IR.
- */
-export function recordNormalize(
-  ctx: Readonly<OptimizeContext> | undefined,
-  quiet: QuietStepSink | null,
+function quietStepToReason(step: QuietCommitStep): TraceStepReason {
+  return exprStep(step.rule, step.before, step.after, step.nested);
+}
+
+/** Note a rewrite; returns `after` as the continuing expr form. */
+export function noteNormalize(
+  quiet: QuietStepSink,
   rule: OptimizeTraceRuleId,
   before: Expr,
   after: Expr,
-  live: Expr,
 ): Expr {
   if (equals(before, after)) {
-    return live;
+    return before;
   }
-  if (quiet !== null) {
-    quiet.push({ rule, before, after, nested: [] });
-    return after;
-  }
-  if (ctx === undefined) {
-    return live;
-  }
-  if (ctx.trace.recordExpr(rule, before, after)) {
-    return after;
-  }
-  if (!equals(live, before) && ctx.trace.recordExpr(rule, live, after)) {
-    return after;
-  }
-  return live;
+  quiet.push({ rule, before, after, nested: [] });
+  return after;
 }
 
-function nestedDetail(
-  steps: readonly OptimizeTraceNestedStep[],
-): OptimizeTraceDetail | undefined {
-  return steps.length > 0 ? { kind: 'nested', steps } : undefined;
-}
-
-/** Record a composed parent rewrite, attaching nested quiet steps as detail. */
-export function recordNormalizeParent(
-  ctx: Readonly<OptimizeContext> | undefined,
-  quiet: QuietStepSink | null,
+/** Note a composed parent rewrite with nested quiet cleanup as children. */
+export function noteNormalizeParent(
+  quiet: QuietStepSink,
   rule: OptimizeTraceRuleId,
   before: Expr,
   after: Expr,
-  live: Expr,
-  nestedSteps: readonly OptimizeTraceNestedStep[],
+  nested: readonly QuietCommitStep[],
 ): Expr {
   if (equals(before, after)) {
-    return live;
+    return before;
   }
-  if (quiet !== null) {
-    quiet.push({ rule, before, after, nested: nestedSteps });
-    return after;
+  quiet.push({
+    rule,
+    before,
+    after,
+    nested: nested.map((step) => quietStepToReason(step)),
+  });
+  return after;
+}
+
+/** Note a rewrite with already-built nested proof children. */
+export function noteNormalizeWithChildren(
+  quiet: QuietStepSink,
+  rule: OptimizeTraceRuleId,
+  before: Expr,
+  after: Expr,
+  nested: readonly TraceStepReason[],
+): Expr {
+  if (equals(before, after)) {
+    return before;
   }
-  if (ctx === undefined) {
-    return live;
+  quiet.push({ rule, before, after, nested });
+  return after;
+}
+
+export function rewriteFromQuiet(
+  expr: Expr,
+  quiet: QuietStepSink,
+): ExprRewrite {
+  const reason = quiet.asReason();
+  if (reason.kind === 'none') {
+    return unchangedExpr(expr);
   }
-  const detail = nestedDetail(nestedSteps);
-  if (ctx.trace.recordExpr(rule, before, after, detail)) {
-    return after;
-  }
-  if (!equals(live, before) && ctx.trace.recordExpr(rule, live, after, detail)) {
-    return after;
-  }
-  return live;
+  return { expr, reason };
 }

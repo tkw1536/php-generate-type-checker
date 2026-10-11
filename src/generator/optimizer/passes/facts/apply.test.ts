@@ -16,7 +16,7 @@ import { simplifyExpression } from '../simplify/expression.ts';
 import { createOptimizerParams } from '../../params.ts';
 import { applyKnownFacts } from './apply.ts';
 import { equals } from '../../../ir/equals.ts';
-import { emptyFactEnv, factEntry } from './env.ts';
+import { emptyFactEnv, factEntry } from './env.types.ts';
 
 const defaultParams = createOptimizerParams({
   programs: {},
@@ -59,11 +59,11 @@ function recordsFalseGuardAfterEarlyReturn(): void {
       body: [returnStmt(boolLit(false))],
     },
   ];
-  const result = applyKnownFacts(block, emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv()).block;
   const simplified = simplifyExpression(
     expectIf(result[1]).cond,
     defaultParams,
-  );
+  ).expr;
   expect(simplified).toEqual(boolLit(true));
 }
 
@@ -82,11 +82,11 @@ function simplifiesListGuardFollowUp(): void {
     },
     returnStmt(boolLit(true)),
   ];
-  const result = applyKnownFacts(block, emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv()).block;
   const simplified = simplifyExpression(
     expectIf(result[1]).cond,
     defaultParams,
-  );
+  ).expr;
   expect(simplified).toEqual(boolLit(true));
 }
 
@@ -110,7 +110,7 @@ function stillAppliesOuterFactsInsideForeach(): void {
       ],
     },
   ];
-  const result = applyKnownFacts(block, env);
+  const result = applyKnownFacts(block, env).block;
   const innerIf = expectIf(expectForeach(result[0]).body[0]);
   expect(innerIf.cond).toEqual(boolLit(false));
 }
@@ -120,7 +120,7 @@ function flipsFalseNotFactAfterExitingIf(): void {
     { kind: 'if', cond: notExpr(isArray), body: [returnStmt(boolLit(true))] },
     { kind: 'if', cond: isArray, body: [returnStmt(boolLit(false))] },
   ];
-  const result = applyKnownFacts(block, emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv()).block;
   expect(expectIf(result[1]).cond).toEqual(boolLit(true));
 }
 
@@ -134,7 +134,7 @@ function recordsEachDisjunctAsFalse(): void {
     },
     { kind: 'if', cond: isArray, body: [returnStmt(boolLit(false))] },
   ];
-  const result = applyKnownFacts(block, emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv()).block;
   expect(expectIf(result[1]).cond).toEqual(boolLit(false));
 }
 
@@ -149,7 +149,7 @@ function recordsEachConjunctAsTrue(): void {
       ],
     },
   ];
-  const result = applyKnownFacts(block, emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv()).block;
   const innerIf = expectIf(expectIf(result[0]).body[0]);
   expect(innerIf.cond).toEqual(boolLit(true));
 }
@@ -159,7 +159,7 @@ function doesNotRecordFalseWhenBodyFallsThrough(): void {
     { kind: 'if', cond: isArray, body: [] },
     failIfStmt(isArray),
   ];
-  const result = applyKnownFacts(block, emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv()).block;
   expect(equals(expectIf(result[1]).cond, notExpr(isArray))).toBe(true);
 }
 
@@ -167,7 +167,7 @@ function dropsIsObjectAfterInstanceofFailIf(): void {
   const isInstance = instanceofExpr(refArg($v), 'Foo');
   const isObject = callExpr('is_object', [refArg($v)]);
   const block: Block = [failIfStmt(isInstance), failIfStmt(isObject)];
-  const result = applyKnownFacts(block, emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv()).block;
   expect(expectIf(result[1]).cond).toEqual(boolLit(false));
 }
 
@@ -181,7 +181,7 @@ function dropsIsObjectInsideInstanceofBody(): void {
       body: [{ kind: 'if', cond: isObject, body: [returnStmt(boolLit(true))] }],
     },
   ];
-  const result = applyKnownFacts(block, emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv()).block;
   const innerIf = expectIf(expectIf(result[0]).body[0]);
   expect(innerIf.cond).toEqual(boolLit(true));
 }

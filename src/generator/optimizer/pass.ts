@@ -2,10 +2,20 @@ import type { Block, CheckerIR } from '../ir/types.ts';
 import { blockEquals } from '../ir/equals.ts';
 import type { OptimizeContext } from './context.ts';
 import type { OptimizerPassName } from './stats/types.ts';
+import type { TracePos } from './trace/types.ts';
+
+export type BlockPassResult = {
+  readonly block: Block;
+  readonly pos: TracePos;
+};
 
 export type BlockPass = {
   readonly id: Exclude<OptimizerPassName, 'prune'>;
-  run(block: Block, ctx: Readonly<OptimizeContext>): Block;
+  run(
+    block: Block,
+    ctx: Readonly<OptimizeContext>,
+    pos: TracePos,
+  ): BlockPassResult;
 };
 
 export type IrPass = {
@@ -17,18 +27,14 @@ export function runBlockPass(
   pass: BlockPass,
   block: Block,
   ctx: Readonly<OptimizeContext>,
-): Block {
-  // Keep the optimizeBlock frame aligned with the block this pass sees
-  // (e.g. after inline expands a body) so checker snapshots stay accurate.
-  if (ctx.enclosingBlock !== null) {
-    ctx.replaceTopEnclosingBlock(block);
-  }
+  pos: TracePos,
+): BlockPassResult {
   if (pass.id === 'simplify') {
-    return pass.run(block, ctx);
+    return pass.run(block, ctx, pos);
   }
   ctx.stats.noteCall(pass.id);
-  const next = pass.run(block, ctx);
-  if (!blockEquals(block, next)) {
+  const next = pass.run(block, ctx, pos);
+  if (!blockEquals(block, next.block)) {
     ctx.stats.noteChanged(pass.id);
   }
   return next;

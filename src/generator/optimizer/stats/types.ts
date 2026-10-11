@@ -1,5 +1,5 @@
 import type { CheckerIR } from '../../ir/types.ts';
-import type { OptimizeTraceEvent } from '../trace/types.ts';
+import type { TraceStep } from '../trace/types.ts';
 
 /** Per-pass call / changed counters for one optimize run. */
 export type PassStats = {
@@ -51,7 +51,10 @@ export type OptimizerStats = {
 };
 
 export type OptimizeResult = {
+  /** Sole optimize result — final IR for render / goldens. */
   readonly ir: CheckerIR;
+  /** Explanation: ordered honest steps (UI Trace). */
+  readonly steps: readonly TraceStep[];
+  /** Metrics telemetry (UI Metrics diagram). */
   readonly stats: OptimizerStats;
-  readonly trace: readonly OptimizeTraceEvent[];
 };

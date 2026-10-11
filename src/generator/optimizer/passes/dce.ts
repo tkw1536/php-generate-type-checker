@@ -1,7 +1,10 @@
 import type { Arg, Block, Expr, Stmt, ValueRef } from '../../ir/types.ts';
 import { binExpr, literalArg, refArg } from '../../ir/index.ts';
 import type { OptimizeContext } from '../context.ts';
-import type { BlockPass } from '../pass.ts';
+import type { BlockPass, BlockPassResult } from '../pass.ts';
+import { commitReason, withScope } from '../trace/commit.ts';
+import { blockStep } from '../trace/rewrite.ts';
+import type { TracePos } from '../trace/types.ts';
 
 function isBoolLit(expr: Expr, value: boolean): boolean {
   return expr.kind === 'bool' && expr.value === value;
@@ -98,7 +101,10 @@ function blockUsesVar(block: Block, id: number): boolean {
  * ignores the loop binders is equivalent to `if ($iter !== []) return E`
  * (empty: skip; non-empty: return on first iteration without using the element).
  */
-function foreachConstantReturn(stmt: Extract<Stmt, { kind: 'foreach' }>, body: Block): Stmt | null {
+function foreachConstantReturn(
+  stmt: Extract<Stmt, { kind: 'foreach' }>,
+  body: Block,
+): Stmt | null {
   if (body.length !== 1 || body[0].kind !== 'return') {
     return null;
   }
@@ -118,90 +124,135 @@ function foreachConstantReturn(stmt: Extract<Stmt, { kind: 'foreach' }>, body: B
 
 function dceForeach(
   stmt: Extract<Stmt, { kind: 'foreach' }>,
-  ctx?: Readonly<OptimizeContext>,
-): Stmt | null {
-  const body = dce(stmt.body, ctx);
+  ctx: Readonly<OptimizeContext> | undefined,
+  pos: TracePos,
+): { readonly stmt: Stmt | null; readonly pos: TracePos } {
+  const bodyResult = dce(stmt.body, ctx, withScope(pos, stmt.body));
+  let currentPos = bodyResult.pos;
+  const body = bodyResult.block;
   const withBody = { ...stmt, body };
   if (body.length === 0) {
-    // Record against the post-DCE foreach (empty body). The pre-DCE stmt may
-    // no longer appear in the live IR after nested dropFalse/etc.
-    ctx?.trace.recordBlock('dce.dropEmptyForeach', [withBody], []);
-    return null;
+    if (ctx !== undefined) {
+      currentPos = commitReason(
+        ctx,
+        currentPos,
+        blockStep('dce.dropEmptyForeach', [withBody], []),
+      );
+    }
+    return { stmt: null, pos: currentPos };
   }
   const constantReturn = foreachConstantReturn(stmt, body);
   if (constantReturn !== null) {
-    ctx?.trace.recordBlock(
-      'dce.foldForeach',
-      [withBody],
-      [constantReturn],
-    );
-    return constantReturn;
+    if (ctx !== undefined) {
+      currentPos = commitReason(
+        ctx,
+        currentPos,
+        blockStep('dce.foldForeach', [withBody], [constantReturn]),
+      );
+    }
+    return { stmt: constantReturn, pos: currentPos };
   }
   const keyVar =
     stmt.keyVar !== null && blockUsesVar(body, stmt.keyVar)
       ? stmt.keyVar
       : null;
   if (stmt.keyVar !== null && keyVar === null) {
-    ctx?.trace.recordBlock(
-      'dce.dropUnusedKey',
-      [withBody],
-      [{ ...stmt, keyVar: null, body }],
-    );
+    const after = { ...stmt, keyVar: null, body };
+    if (ctx !== undefined) {
+      currentPos = commitReason(
+        ctx,
+        currentPos,
+        blockStep('dce.dropUnusedKey', [withBody], [after]),
+      );
+    }
+    return { stmt: after, pos: currentPos };
   }
-  return { ...stmt, keyVar, body };
+  return { stmt: { ...stmt, keyVar, body }, pos: currentPos };
 }
 
 function dceIf(
   stmt: Extract<Stmt, { kind: 'if' }>,
   prefix: Block,
-  ctx?: Readonly<OptimizeContext>,
-): { readonly append: Block; readonly reachable: boolean } {
+  ctx: Readonly<OptimizeContext> | undefined,
+  pos: TracePos,
+): {
+  readonly append: Block;
+  readonly reachable: boolean;
+  readonly pos: TracePos;
+} {
   if (isBoolLit(stmt.cond, false)) {
-    ctx?.trace.recordBlock('dce.dropFalse', [...prefix, stmt], prefix);
-    return { append: [], reachable: true };
+    let currentPos = pos;
+    if (ctx !== undefined) {
+      currentPos = commitReason(
+        ctx,
+        pos,
+        blockStep('dce.dropFalse', [...prefix, stmt], prefix),
+      );
+    }
+    return { append: [], reachable: true, pos: currentPos };
   }
   if (isBoolLit(stmt.cond, true)) {
-    const inlined = dce(stmt.body, ctx);
-    ctx?.trace.recordBlock(
-      'dce.spliceTrue',
-      [...prefix, stmt],
-      [...prefix, ...inlined],
-    );
-    return { append: inlined, reachable: blockMayFallThrough(inlined) };
+    const inlined = dce(stmt.body, ctx, withScope(pos, stmt.body));
+    let currentPos = inlined.pos;
+    if (ctx !== undefined) {
+      currentPos = commitReason(
+        ctx,
+        currentPos,
+        blockStep(
+          'dce.spliceTrue',
+          [...prefix, stmt],
+          [...prefix, ...inlined.block],
+        ),
+      );
+    }
+    return {
+      append: inlined.block,
+      reachable: blockMayFallThrough(inlined.block),
+      pos: currentPos,
+    };
   }
+  const body = dce(stmt.body, ctx, withScope(pos, stmt.body));
   return {
-    append: [
-      {
-        kind: 'if',
-        cond: stmt.cond,
-        body: dce(stmt.body, ctx),
-      },
-    ],
+    append: [{ kind: 'if', cond: stmt.cond, body: body.block }],
     reachable: true,
+    pos: body.pos,
   };
 }
 
-export function dce(block: Block, ctx?: Readonly<OptimizeContext>): Block {
+export function dce(
+  block: Block,
+  ctx?: Readonly<OptimizeContext>,
+  pos?: TracePos,
+): BlockPassResult {
+  let currentPos = pos ?? { checker: block, scope: block };
   const out: Stmt[] = [];
   let reachable = true;
 
   for (const stmt of block) {
     if (!reachable) {
-      ctx?.trace.recordBlock('dce.dropUnreachable', [...out, stmt], [...out]);
+      if (ctx !== undefined) {
+        currentPos = commitReason(
+          ctx,
+          currentPos,
+          blockStep('dce.dropUnreachable', [...out, stmt], [...out]),
+        );
+      }
       continue;
     }
 
     switch (stmt.kind) {
       case 'if': {
-        const next = dceIf(stmt, out, ctx);
+        const next = dceIf(stmt, out, ctx, currentPos);
         out.push(...next.append);
         reachable = next.reachable;
+        currentPos = next.pos;
         break;
       }
       case 'foreach': {
-        const next = dceForeach(stmt, ctx);
-        if (next !== null) {
-          out.push(next);
+        const next = dceForeach(stmt, ctx, currentPos);
+        currentPos = next.pos;
+        if (next.stmt !== null) {
+          out.push(next.stmt);
         }
         break;
       }
@@ -209,19 +260,17 @@ export function dce(block: Block, ctx?: Readonly<OptimizeContext>): Block {
         out.push(stmt);
         reachable = false;
         break;
-      default: {
-        const exhaustive: never = stmt;
-        out.push(exhaustive);
-      }
+      default:
+        throw new Error('never reached');
     }
   }
 
-  return out;
+  return { block: out, pos: currentPos };
 }
 
 export const dcePass: BlockPass = {
   id: 'dce',
-  run(block, ctx) {
-    return dce(block, ctx);
+  run(block, ctx, pos) {
+    return dce(block, ctx, pos);
   },
 };

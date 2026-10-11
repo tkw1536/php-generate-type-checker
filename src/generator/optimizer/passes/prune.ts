@@ -3,6 +3,25 @@ import { collectCallCheckerNames } from '../../ir/substitute.ts';
 import type { OptimizeContext } from '../context.ts';
 import type { IrPass } from '../pass.ts';
 import type { OptimizerParams } from '../params.ts';
+import { commitReason } from '../trace/commit.ts';
+import type { TraceStepReason } from '../trace/types.ts';
+
+function pruneStep(
+  before: CheckerIR,
+  after: CheckerIR,
+  removed: string,
+): TraceStepReason {
+  return {
+    kind: 'step',
+    rule: 'prune.remove',
+    focus: {
+      before: { kind: 'ir', ir: before },
+      after: { kind: 'ir', ir: after },
+    },
+    children: [],
+    evidence: { kind: 'prune', removed },
+  };
+}
 
 export function prunePrograms(
   ir: CheckerIR,
@@ -28,10 +47,14 @@ export function prunePrograms(
     }
     const before = current;
     current = removeProgram(current, name);
-    ctx?.trace.recordIr('prune.remove', before, current, {
-      kind: 'prune',
-      removed: name,
-    });
+    if (ctx !== undefined) {
+      // IR commits ignore TracePos; pass a dummy pos.
+      commitReason(
+        ctx,
+        { checker: [], scope: [] },
+        pruneStep(before, current, name),
+      );
+    }
   }
   return current;
 }

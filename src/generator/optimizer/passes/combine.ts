@@ -2,9 +2,17 @@ import type { Block, Stmt } from '../../ir/types.ts';
 import { blockEquals } from '../../ir/equals.ts';
 import { orExpr } from '../../ir/index.ts';
 import type { OptimizeContext } from '../context.ts';
-import type { BlockPass } from '../pass.ts';
+import type { BlockPass, BlockPassResult } from '../pass.ts';
+import { commitReason } from '../trace/commit.ts';
+import { blockStep } from '../trace/rewrite.ts';
+import type { TracePos } from '../trace/types.ts';
 
-export function combine(block: Block, ctx?: Readonly<OptimizeContext>): Block {
+export function combine(
+  block: Block,
+  ctx?: Readonly<OptimizeContext>,
+  pos?: TracePos,
+): BlockPassResult {
+  let currentPos = pos ?? { checker: block, scope: block };
   const out: Stmt[] = [];
   let i = 0;
   while (i < block.length) {
@@ -35,17 +43,23 @@ export function combine(block: Block, ctx?: Readonly<OptimizeContext>): Block {
       };
       const before = [...out, ...block.slice(i)];
       const after = [...out, merged, ...block.slice(j)];
-      ctx?.trace.recordBlock('combine.merge', before, after);
+      if (ctx !== undefined) {
+        currentPos = commitReason(
+          ctx,
+          currentPos,
+          blockStep('combine.merge', before, after),
+        );
+      }
       out.push(merged);
     }
     i = j;
   }
-  return out;
+  return { block: out, pos: currentPos };
 }
 
 export const combinePass: BlockPass = {
   id: 'combine',
-  run(block, ctx) {
-    return combine(block, ctx);
+  run(block, ctx, pos) {
+    return combine(block, ctx, pos);
   },
 };

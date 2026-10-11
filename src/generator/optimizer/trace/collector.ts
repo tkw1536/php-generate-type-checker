@@ -1,187 +1,117 @@
-import type { Block, CheckerIR, CheckerProgram, Expr } from '../../ir/types.ts';
-import { assignTempNames } from '../../render/refs.ts';
-import type { OptimizeContext } from '../context.ts';
-import { attachScopeTempNames, attachTempNames } from './attachTemp.ts';
-import { exprApply, exprSnapshots } from './exprRecord.ts';
-import { applyBlockRewrite, replaceExprInBlock } from './replaceExpr.ts';
+import type { Block, CheckerIR, CheckerProgram } from '../../ir/types.ts';
 import { scopeSnapEquals } from './snapEquals.ts';
 import type {
-  OptimizeTraceDetail,
-  OptimizeTraceEvent,
-  OptimizeTraceRuleId,
-  OptimizeTraceSnapshot,
+  TraceMeta,
   TraceScopeSnapshot,
+  TraceStep,
+  TraceStepReason,
 } from './types.ts';
 
-type RecordInput = {
-  readonly rule: OptimizeTraceRuleId;
-  readonly detail?: OptimizeTraceDetail;
-  readonly focus: {
-    readonly before: OptimizeTraceSnapshot;
-    readonly after: OptimizeTraceSnapshot;
-  };
+type CommitInput = {
+  readonly reason: TraceStepReason;
   readonly scope: {
     readonly before: TraceScopeSnapshot;
     readonly after: TraceScopeSnapshot;
   };
-  readonly checker: {
-    readonly before: TraceScopeSnapshot;
-    readonly after: TraceScopeSnapshot;
-  };
+  /** Checker (or IR) after this rewrite — before is the program head. */
+  readonly after: TraceScopeSnapshot;
 };
 
-/** Append-only fine-grained rewrite log for one optimize run. */
+/** Append-only head-advancing step log for one optimize run. */
 export class TraceCollector {
-  private readonly events: OptimizeTraceEvent[] = [];
-  private ctx: Readonly<OptimizeContext> | null = null;
+  private readonly steps: TraceStep[] = [];
+  /** Per-program checker/IR head (last after). */
+  private readonly head = new Map<string, TraceScopeSnapshot>();
 
-  bind(ctx: Readonly<OptimizeContext>): void {
-    this.ctx = ctx;
+  beginProgram(program: string, body: Block): void {
+    this.head.set(program, { kind: 'block', block: body });
   }
 
-  record(input: Readonly<RecordInput>): void {
-    const ctx = this.ctx;
-    if (ctx === null) {
-      throw new Error('trace collector not bound');
-    }
-    const tempNames = ctx.tempNames;
-    this.events.push({
-      index: this.events.length,
-      rule: input.rule,
-      program: ctx.program,
-      outerLoop: ctx.outerLoop,
-      blockLoop: ctx.blockLoop,
-      detail: input.detail ?? { kind: 'none' },
-      focus: {
-        before: attachTempNames(input.focus.before, tempNames),
-        after: attachTempNames(input.focus.after, tempNames),
-      },
-      scope: {
-        before: attachScopeTempNames(input.scope.before, tempNames),
-        after: attachScopeTempNames(input.scope.after, tempNames),
-      },
-      checker: {
-        before: attachScopeTempNames(input.checker.before, tempNames),
-        after: attachScopeTempNames(input.checker.after, tempNames),
-      },
-    });
+  beginIr(program: string, ir: CheckerIR): void {
+    this.head.set(program, { kind: 'ir', ir });
   }
 
   /**
-   * Block-level rewrite: focus and scope are the same before/after blocks.
-   * Skips ghosts (no checker-level change).
+   * Commit a rewrite. `checker.before` is the current head; advances head to
+   * `after`. Ghosts (before equals after) are skipped except `facts.env.extend`
+   * (env-only bookkeeping). Consecutive `facts.env.extend` on the same program
+   * are merged into one step (children appended).
    */
-  recordBlock(
-    rule: OptimizeTraceRuleId,
-    before: Block,
-    after: Block,
-    detail?: OptimizeTraceDetail,
-  ): void {
-    const ctx = this.requireCtx();
-    const beforeSnap = blockSnap(before);
-    const afterSnap = blockSnap(after);
-    const checker = checkerFromBlockRewrite(ctx, before, after);
-    if (scopeSnapEquals(checker.before, checker.after)) {
-      return;
+  commit(meta: TraceMeta, input: CommitInput): boolean {
+    const before = this.head.get(meta.program);
+    if (before === undefined) {
+      throw new Error(`trace head missing for ${meta.program}`);
     }
-    this.record({
-      rule,
-      detail,
-      focus: { before: beforeSnap, after: afterSnap },
-      scope: { before: beforeSnap, after: afterSnap },
-      checker,
+    const ghost = scopeSnapEquals(before, input.after);
+    if (ghost && input.reason.rule === 'facts.env.extend') {
+      if (this.mergeEnvExtend(meta.program, input)) {
+        return true;
+      }
+    } else if (ghost) {
+      return false;
+    }
+    this.steps.push({
+      index: this.steps.length,
+      program: meta.program,
+      outerLoop: meta.outerLoop,
+      blockLoop: meta.blockLoop,
+      scope: input.scope,
+      checker: { before, after: input.after },
+      reason: input.reason,
     });
-    // Compose into live frames so later records in this pass see this rewrite.
-    ctx.mapEnclosingBlocks((block) => applyBlockRewrite(block, before, after));
-  }
-
-  /** IR-level rewrite (prune). Skips ghosts. */
-  recordIr(
-    rule: OptimizeTraceRuleId,
-    before: CheckerIR,
-    after: CheckerIR,
-    detail?: OptimizeTraceDetail,
-  ): void {
-    const beforeSnap: TraceScopeSnapshot = { kind: 'ir', ir: before };
-    const afterSnap: TraceScopeSnapshot = { kind: 'ir', ir: after };
-    if (scopeSnapEquals(beforeSnap, afterSnap)) {
-      return;
-    }
-    this.record({
-      rule,
-      detail,
-      focus: { before: beforeSnap, after: afterSnap },
-      scope: { before: beforeSnap, after: afterSnap },
-      checker: { before: beforeSnap, after: afterSnap },
-    });
-  }
-
-  /**
-   * Expr-level rewrite: focus is the expr pair; scope is the enclosing block
-   * with the old expr in place vs the block with that expr replaced.
-   * Checker is the full program body with the same replacement.
-   *
-   * When `within` is set, `before` → `after` is applied only inside the first
-   * match of that host expression (fact folds must not rewrite other stmts).
-   *
-   * @returns true when an event was recorded and live frames were updated.
-   */
-  recordExpr(
-    rule: OptimizeTraceRuleId,
-    before: Expr,
-    after: Expr,
-    detail?: OptimizeTraceDetail,
-    within?: Expr,
-  ): boolean {
-    const ctx = this.requireCtx();
-    const enclosing = ctx.enclosingBlock;
-    const root = ctx.enclosingRoot;
-    // Replacing a bool literal would rewrite every TRUE/FALSE in the checker
-    // (replace-all) and leave the live IR out of sync with pass return values.
-    if (before.kind === 'bool') {
-      return false;
-    }
-    if (!exprRewriteAffectsLiveIr(root, enclosing, before, after)) {
-      return false;
-    }
-    const apply = exprApply(before, after, within);
-    const snaps = exprSnapshots(
-      enclosing,
-      root,
-      before,
-      after,
-      apply,
-      blockSnap,
-    );
-    if (scopeSnapEquals(snaps.checker.before, snaps.checker.after)) {
-      return false;
-    }
-    this.record({ rule, detail, focus: snaps.focus, scope: snaps.scope, checker: snaps.checker });
-    ctx.mapEnclosingBlocks((block) => apply(block));
+    this.head.set(meta.program, input.after);
     return true;
   }
 
-  snapshot(): readonly OptimizeTraceEvent[] {
-    return this.events.slice();
+  /**
+   * Append children onto the previous same-program `facts.env.extend`, if that
+   * program’s latest step is still an env extend (ignores other programs).
+   */
+  private mergeEnvExtend(program: string, input: CommitInput): boolean {
+    for (let i = this.steps.length - 1; i >= 0; i--) {
+      const last = this.steps.at(i);
+      if (last === undefined || last.program !== program) {
+        continue;
+      }
+      if (last.reason.rule !== 'facts.env.extend') {
+        return false;
+      }
+      this.steps[i] = {
+        ...last,
+        scope: {
+          before: last.scope.before,
+          after: input.scope.after,
+        },
+        reason: {
+          ...last.reason,
+          children: [...last.reason.children, ...input.reason.children],
+        },
+      };
+      return true;
+    }
+    return false;
+  }
+
+  snapshot(): readonly TraceStep[] {
+    return this.steps.slice();
   }
 
   /**
-   * Ensure every checker in `initial` appears in the trace.
-   * Programs with no rewrites get a baseline (unchanged) event showing their
-   * initial body. Groups follow `initial.order`, then prune events.
+   * Ensure every checker in `initial` appears. Programs with no rewrites get a
+   * baseline (unchanged) step. Groups follow `initial.order`, then prune.
    */
-  finalize(initial: CheckerIR): readonly OptimizeTraceEvent[] {
-    const byProgram = new Map<string, OptimizeTraceEvent[]>();
-    for (const event of this.events) {
-      const existing = byProgram.get(event.program);
+  finalize(initial: CheckerIR): readonly TraceStep[] {
+    const byProgram = new Map<string, TraceStep[]>();
+    for (const step of this.steps) {
+      const existing = byProgram.get(step.program);
       if (existing === undefined) {
-        byProgram.set(event.program, [event]);
+        byProgram.set(step.program, [step]);
       } else {
-        existing.push(event);
+        existing.push(step);
       }
     }
 
-    const out: OptimizeTraceEvent[] = [];
+    const out: TraceStep[] = [];
     for (const name of initial.order) {
       const existing = byProgram.get(name);
       if (existing !== undefined && existing.length > 0) {
@@ -192,74 +122,33 @@ export class TraceCollector {
       if (program === undefined) {
         continue;
       }
-      out.push(baselineEvent(name, program));
+      out.push(baselineStep(name, program));
     }
-    const pruneEvents = byProgram.get('(prune)');
-    if (pruneEvents !== undefined) {
-      out.push(...pruneEvents);
+    const pruneSteps = byProgram.get('(prune)');
+    if (pruneSteps !== undefined) {
+      out.push(...pruneSteps);
     }
-    return out.map((event, index) => Object.assign({}, event, { index }));
-  }
-
-  private requireCtx(): Readonly<OptimizeContext> {
-    if (this.ctx === null) {
-      throw new Error('trace collector not bound');
-    }
-    return this.ctx;
+    return out.map((step, index) => Object.assign({}, step, { index }));
   }
 }
 
-function blockSnap(
-  block: Block,
-  tempNames: ReadonlyMap<number, string> | null = null,
-): TraceScopeSnapshot {
-  return { kind: 'block', block, tempNames };
-}
-
-function exprRewriteAffectsLiveIr(
-  root: Block | null,
-  enclosing: Block | null,
-  before: Expr,
-  after: Expr,
-): boolean {
-  if (root !== null) {
-    return replaceExprInBlock(root, before, after) !== root;
-  }
-  if (enclosing !== null) {
-    return replaceExprInBlock(enclosing, before, after) !== enclosing;
-  }
-  return true;
-}
-
-function baselineEvent(
-  program: string,
-  checker: CheckerProgram,
-): OptimizeTraceEvent {
-  const snap = blockSnap(checker.body, assignTempNames(checker));
+function baselineStep(program: string, checker: CheckerProgram): TraceStep {
+  const snap: TraceScopeSnapshot = { kind: 'block', block: checker.body };
   return {
     index: 0,
-    rule: 'trace.baseline',
     program,
     outerLoop: 0,
     blockLoop: 0,
-    detail: { kind: 'none' },
-    focus: { before: snap, after: snap },
     scope: { before: snap, after: snap },
     checker: { before: snap, after: snap },
-  };
-}
-
-function checkerFromBlockRewrite(
-  ctx: Readonly<OptimizeContext>,
-  before: Block,
-  after: Block,
-): { readonly before: TraceScopeSnapshot; readonly after: TraceScopeSnapshot } {
-  const root = ctx.enclosingRoot;
-  if (root === null) {
-    return { before: blockSnap(before), after: blockSnap(after) };
-  }
-  return {
-    before: blockSnap(root),
-    after: blockSnap(applyBlockRewrite(root, before, after)),
+    reason: {
+      kind: 'step',
+      rule: 'trace.baseline',
+      focus: {
+        before: { kind: 'block', block: checker.body },
+        after: { kind: 'block', block: checker.body },
+      },
+      children: [],
+    },
   };
 }

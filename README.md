@@ -363,9 +363,9 @@ IR `yes` enters the pass body again and `no` goes to **Prune**.
 Block `yes` restarts at Inline and `no` returns to the IR question.
 The UI Metrics tab draws this under the Optimize stage.
 **Yes × N** on each loop is the round count (**IR rounds** / **Block rounds**).
-The UI Trace tab groups rewrite applications by checker function (then Prune).
+The UI Trace tab is the ordered list of optimize steps, grouped by checker function (then Prune), with nested proof/reasoning (simplify normalize, fact env construction, prove/absorb implications, inline negation) as indented children.
 Checkers with no rewrites still appear with an Unchanged baseline showing their initial body.
-For each event, Before / After / Diff show the full checker as PHP (with a `function name(mixed $value): bool` header; Diff is a unified hunk over that same text).
+For each top-level step, Before / After / Diff show the full checker as PHP (with a `function name(mixed $value): bool` header; Diff is a unified hunk over that same text).
 
 ![Diagram showing the optimize passes](docs/optimize.svg)
 
@@ -376,7 +376,7 @@ For each event, Before / After / Diff show the full checker as PHP (with a `func
 | Unnest                | Collapse nested single-body `if`s into one condition                                         | `if (a) { if (b) { … } }`                                                  | `if (a && b) { … }`                                                               |
 | Combine               | Merge consecutive `if`s that share the same body                                             | Separate fail-fast `if`s for `!is_array` and `!array_is_list`              | One `if` with `\|\|`                                                              |
 | Flatten               | Turn a trailing `if`/`return` pair into one `return` expression                              | `if (is_int($value)) return TRUE; return FALSE;`                           | `return is_int($value);` (via `($cond && $b) \|\| (!$cond && $c)`, then Simplify) |
-| Known facts           | Replace proven/entailed tests; array `foreach` keys are int or non-decimal-int-string; primary type tags (`bool`/`int`/`float`/`string`/`array`/`object`/`resource`/`null`) are mutually exclusive | After `if (is_array($value)) return TRUE;`, later `if (!is_array($value))` | Later / tautological or impossible key guard is dead                              |
+| Known facts           | Replace proven/entailed tests with a full proof trace (env seeds + derivations + equals/entails); array `foreach` keys are int or non-decimal-int-string; primary type tags are mutually exclusive | After `if (is_array($value)) return TRUE;`, later `if (!is_array($value))`   | Later / tautological or impossible key guard is dead; Trace lists env extend + prove children |
 | Simplify              | Fold boolean algebra, contradictions, factoring, and related rewrites (see below)            |                                                                            |                                                                                   |
 | Dead-code elimination | Remove unreachable or empty statements; drop unused foreach `$key`; `foreach { return E }` → `if (!== [])` when `E` ignores binders | `if (FALSE) { … }`, constant-return `foreach`                              | Removed / spliced / non-empty `if`                                                |
 | Prune helpers         | Delete helpers that nothing calls anymore                                                    | Helper with no remaining callers                                           | Helper deleted                                                                    |

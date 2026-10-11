@@ -3,7 +3,8 @@ import {
   collectCallCheckerNames,
   substituteExpr,
 } from '../../ir/substitute.ts';
-import type { OptimizeContext } from '../context.ts';
+import { exprRewrite } from '../trace/rewrite.ts';
+import type { ExprRewrite } from '../trace/types.ts';
 
 export function isSingleReturn(
   program: CheckerProgram,
@@ -47,8 +48,7 @@ export function inlineCallCheckerExpr(
   expr: Extract<Expr, { kind: 'call_checker' }>,
   ir: CheckerIR,
   programName: string,
-  ctx?: Readonly<OptimizeContext>,
-): Expr | null {
+): ExprRewrite | null {
   const callee = getCallee(ir, expr.name);
   if (callee === null || !canInline(expr.name, callee, programName, ir)) {
     return null;
@@ -57,11 +57,10 @@ export function inlineCallCheckerExpr(
     return null;
   }
   const next = substituteExpr(callee.body[0].expr, expr.subject);
-  ctx?.trace.recordExpr('inline.substitute', expr, next, {
+  return exprRewrite('inline.substitute', expr, next, [], {
     kind: 'inline',
     callee: expr.name,
   });
-  return next;
 }
 
 export function findFirstCallChecker(

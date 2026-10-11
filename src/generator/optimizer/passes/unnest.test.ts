@@ -138,6 +138,6 @@ const UNNEST_CASES = [
 
 describe('unnest', () => {
   it.each(UNNEST_CASES)('%s', (_name, input, expected) => {
-    expect(unnest(input)).toEqual(expected);
+    expect(unnest(input).block).toEqual(expected);
   });
 });

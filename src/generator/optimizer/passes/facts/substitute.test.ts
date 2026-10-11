@@ -17,7 +17,7 @@ import {
   applyKnownFacts,
   blockAlwaysExitsWhenEntered,
 } from './apply.ts';
-import { emptyFactEnv, factEntry } from './env.ts';
+import { emptyFactEnv, factEntry } from './env.types.ts';
 import { substituteFacts } from './substitute.ts';
 
 const $v = parameterRef();
@@ -44,7 +44,7 @@ function replacesExprKnownFalse(): void {
     ...emptyFactEnv(),
     falseFacts: [factEntry(isArray, 'ifFalse')],
   };
-  expect(substituteFacts(isArray, env)).toEqual(boolLit(false));
+  expect(substituteFacts(isArray, env).expr).toEqual(boolLit(false));
 }
 
 function replacesConjunctsKnownTrue(): void {
@@ -56,7 +56,7 @@ function replacesConjunctsKnownTrue(): void {
       body: [returnStmt(andExpr([isArray, isList]))],
     },
   ];
-  const result = applyKnownFacts(block, emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv()).block;
   const ret = expectReturn(expectIf(result[0]).body[0]);
   expect(ret.expr).toEqual(boolLit(true));
 }
@@ -75,7 +75,7 @@ function replacesDisjunctsKnownFalse(): void {
       body: [returnStmt(boolLit(false))],
     },
   ];
-  const result = applyKnownFacts(block, emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv()).block;
   expect(expectIf(result[1]).cond).toEqual(boolLit(false));
 }
 
@@ -89,7 +89,7 @@ function flipsTrueNotFact(): void {
       ],
     },
   ];
-  const result = applyKnownFacts(block, emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv()).block;
   const innerIf = expectIf(expectIf(result[0]).body[0]);
   expect(innerIf.cond).toEqual(boolLit(false));
 }
@@ -103,7 +103,7 @@ function appliesDeMorganViaNotThenOr(): void {
       body: [returnStmt(orExpr([isArray, isInt]))],
     },
   ];
-  const result = applyKnownFacts(block, emptyFactEnv());
+  const result = applyKnownFacts(block, emptyFactEnv()).block;
   const ret = expectReturn(expectIf(result[0]).body[0]);
   expect(ret.expr).toEqual(boolLit(false));
 }
@@ -112,7 +112,7 @@ function instanceofImpliesIsObjectInAnd(): void {
   const isInstance = instanceofExpr(refArg($v), 'Foo');
   const isObject = callExpr('is_object', [refArg($v)]);
   expect(
-    substituteFacts(andExpr([isInstance, isObject]), emptyFactEnv()),
+    substituteFacts(andExpr([isInstance, isObject]), emptyFactEnv()).expr,
   ).toEqual(andExpr([isInstance, boolLit(true)]));
 }
 
@@ -123,7 +123,7 @@ function isAImpliesClassExistsInAnd(): void {
     literalArg('true'),
   ]);
   const classExists = callExpr('class_exists', [refArg($v)]);
-  expect(substituteFacts(andExpr([isA, classExists]), emptyFactEnv())).toEqual(
+  expect(substituteFacts(andExpr([isA, classExists]), emptyFactEnv()).expr).toEqual(
     andExpr([isA, boolLit(true)]),
   );
 }

@@ -1,146 +1,211 @@
 import type { Block, Expr, Stmt } from '../../../ir/types.ts';
 import { equals } from '../../../ir/equals.ts';
 import type { OptimizeContext } from '../../context.ts';
+import type { BlockPassResult } from '../../pass.ts';
 import type { OptimizerParams } from '../../params.ts';
+import { commitReason, withScope } from '../../trace/commit.ts';
 import {
-  absorbBinOps,
-  expandBinOps,
-} from './binOps.ts';
-import { normalizeExpr, normalizeQuiet } from './normalize.ts';
+  exprRewrite,
+  exprStep,
+  flattenReasons,
+  seqReason,
+} from '../../trace/rewrite.ts';
+import type { ExprRewrite, TracePos, TraceReasoning } from '../../trace/types.ts';
+import { absorbBinOps, expandBinOps } from './binOps.ts';
+import { normalizeExpr } from './normalize.ts';
 
 export function simplify(
   block: Block,
   params: OptimizerParams,
   ctx?: Readonly<OptimizeContext>,
-): Block {
-  ctx?.pushEnclosingBlock(block);
-  try {
-    return block.map((stmt) => simplifyStatement(stmt, params, ctx));
-  } finally {
-    ctx?.popEnclosingBlock();
+  pos?: TracePos,
+): BlockPassResult {
+  let currentPos = pos ?? { checker: block, scope: block };
+  const out: Stmt[] = [];
+  for (const stmt of block) {
+    const next = simplifyStatement(stmt, params, ctx, currentPos);
+    out.push(next.stmt);
+    currentPos = next.pos;
   }
+  return { block: out, pos: currentPos };
 }
 
 function simplifyStatement(
   stmt: Stmt,
   params: OptimizerParams,
-  ctx?: Readonly<OptimizeContext>,
-): Stmt {
+  ctx: Readonly<OptimizeContext> | undefined,
+  pos: TracePos,
+): { readonly stmt: Stmt; readonly pos: TracePos } {
   switch (stmt.kind) {
-    case 'if':
+    case 'if': {
+      const cond = simplifyExpression(stmt.cond, params, ctx, pos);
+      const body = simplify(
+        stmt.body,
+        params,
+        ctx,
+        withScope(cond.pos, stmt.body),
+      );
       return {
-        kind: 'if',
-        cond: simplifyExpression(stmt.cond, params, ctx),
-        body: simplify(stmt.body, params, ctx),
+        stmt: { kind: 'if', cond: cond.expr, body: body.block },
+        pos: body.pos,
       };
-    case 'foreach':
+    }
+    case 'foreach': {
+      const body = simplify(stmt.body, params, ctx, withScope(pos, stmt.body));
       return {
-        ...stmt,
-        body: simplify(stmt.body, params, ctx),
+        stmt: { ...stmt, body: body.block },
+        pos: body.pos,
       };
-    case 'return':
+    }
+    case 'return': {
+      const expr = simplifyExpression(stmt.expr, params, ctx, pos);
       return {
-        kind: 'return',
-        expr: simplifyExpression(stmt.expr, params, ctx),
+        stmt: { kind: 'return', expr: expr.expr },
+        pos: expr.pos,
       };
+    }
     default:
-      return stmt;
+      throw new Error('never reached');
   }
 }
 
 /**
  * Expand → normalize* → absorb. Quiet-compute first; if the net result equals
- * the input, return without touching live IR / trace (kills confirmation-round
- * `>` ⇄ `!(<=)` ping-pong). Only when the net result differs do we commit with
- * live tracing (normalize with ctx), so checker snapshots stay honest.
+ * the input, return reason none (no commits). Otherwise commit each step.
  */
 export function simplifyExpression(
   expr: Expr,
   params: OptimizerParams,
   ctx?: Readonly<OptimizeContext>,
-): Expr {
+  pos?: TracePos,
+): { readonly expr: Expr; readonly pos: TracePos } {
+  const currentPos = pos ?? { checker: [], scope: [] };
   const quietResult = simplifyQuiet(expr, params, ctx);
-  if (equals(expr, quietResult)) {
-    return expr;
+  if (equals(expr, quietResult.expr)) {
+    return { expr, pos: currentPos };
   }
   if (ctx === undefined) {
-    return quietResult;
+    return { expr: quietResult.expr, pos: currentPos };
   }
-  return simplifyTraced(expr, params, ctx);
+  return simplifyTraced(expr, params, ctx, currentPos);
 }
 
-/** Value-only expand → normalize* → absorb (no live IR / trace updates). */
+/** Value-only expand → normalize* → absorb (builds reason, no commits). */
 function simplifyQuiet(
   expr: Expr,
   params: OptimizerParams,
   ctx: Readonly<OptimizeContext> | undefined,
-): Expr {
+): ExprRewrite {
   const expanded = expandBinOps(expr);
-  let current = expanded;
+  const parts: TraceReasoning[] = [];
+  let current = expr;
+  if (!equals(expr, expanded)) {
+    parts.push(exprRewrite('simplify.expand', expr, expanded).reason);
+    current = expanded;
+  }
   let converged = false;
   for (let i = 0; i < params.maxExpressionSimplificationLoops; i++) {
-    const next = normalizeQuiet(current).result;
-    if (equals(current, next)) {
+    const next = normalizeExpr(current);
+    if (next.reason.kind === 'none') {
       converged = true;
       break;
     }
-    current = next;
+    parts.push(next.reason);
+    current = next.expr;
   }
   if (!converged) {
     ctx?.stats.noteExprNormalizeCapped();
   }
-  return absorbBinOps(current);
+  const absorbed = absorbBinOps(current);
+  if (!equals(current, absorbed)) {
+    parts.push(exprRewrite('simplify.absorb', current, absorbed).reason);
+    current = absorbed;
+  }
+  return { expr: current, reason: seqReason(parts) };
 }
 
-/** Live expand → normalize* → absorb with trace records. */
-function simplifyTraced(
+function commitExpand(
+  ctx: Readonly<OptimizeContext>,
+  pos: TracePos,
+  before: Expr,
+  expanded: Expr,
+): { readonly expr: Expr; readonly pos: TracePos } {
+  if (equals(before, expanded)) {
+    return { expr: before, pos };
+  }
+  return {
+    expr: expanded,
+    pos: commitReason(
+      ctx,
+      pos,
+      exprRewrite('simplify.expand', before, expanded).reason,
+    ),
+  };
+}
+
+function commitNormalizeFixpoint(
+  ctx: Readonly<OptimizeContext>,
+  pos: TracePos,
   expr: Expr,
   params: OptimizerParams,
-  ctx: Readonly<OptimizeContext>,
-): Expr {
-  const expanded = expandBinOps(expr);
-  if (!equals(expr, expanded)) {
-    ctx.trace.recordExpr('simplify.expand', expr, expanded);
-  }
-  let current = expanded;
+): { readonly expr: Expr; readonly pos: TracePos } {
+  // Normalize may record reconstructed junctions that are not literally in the
+  // live IR. Commit one before→after for the whole fixpoint; nest micro-steps.
+  const beforeNorm = expr;
+  const normParts: TraceReasoning[] = [];
+  let current = expr;
   let converged = false;
   for (let i = 0; i < params.maxExpressionSimplificationLoops; i++) {
-    const next = normalizeExpr(current, ctx);
-    if (equals(current, next)) {
+    const next = normalizeExpr(current);
+    if (next.reason.kind === 'none') {
       converged = true;
       break;
     }
-    current = next;
+    normParts.push(next.reason);
+    current = next.expr;
   }
   if (!converged) {
     ctx.stats.noteExprNormalizeCapped();
   }
-  const absorbed = absorbBinOps(current);
-  if (!equals(current, absorbed)) {
-    ctx.trace.recordExpr('simplify.absorb', current, absorbed);
+  if (equals(beforeNorm, current)) {
+    return { expr: current, pos };
   }
-  syncLiveExpr(ctx, expr, absorbed);
-  return absorbed;
+  const children = flattenReasons(seqReason(normParts));
+  const rule = children[0]?.rule ?? 'simplify.normalize.identity';
+  return {
+    expr: current,
+    pos: commitReason(
+      ctx,
+      pos,
+      exprStep(rule, beforeNorm, current, children),
+    ),
+  };
 }
 
-/** Ensure enclosing live IR matches the simplify return value. */
-function syncLiveExpr(
-  ctx: Readonly<OptimizeContext> | undefined,
-  original: Expr,
-  result: Expr,
-): void {
-  if (ctx === undefined || equals(original, result)) {
-    return;
+/** Live expand → normalize* → absorb with checker commits. */
+function simplifyTraced(
+  expr: Expr,
+  params: OptimizerParams,
+  ctx: Readonly<OptimizeContext>,
+  pos: TracePos,
+): { readonly expr: Expr; readonly pos: TracePos } {
+  const expanded = commitExpand(ctx, pos, expr, expandBinOps(expr));
+  const normalized = commitNormalizeFixpoint(
+    ctx,
+    expanded.pos,
+    expanded.expr,
+    params,
+  );
+  const absorbed = absorbBinOps(normalized.expr);
+  if (equals(normalized.expr, absorbed)) {
+    return normalized;
   }
-  if (ctx.trace.recordExpr('simplify.normalize.identity', original, result)) {
-    return;
-  }
-  const root = ctx.enclosingRoot;
-  if (root === null || root.length !== 1 || root[0].kind !== 'return') {
-    return;
-  }
-  const live = root[0].expr;
-  if (!equals(live, result)) {
-    ctx.trace.recordExpr('simplify.normalize.identity', live, result);
-  }
+  return {
+    expr: absorbed,
+    pos: commitReason(
+      ctx,
+      normalized.pos,
+      exprRewrite('simplify.absorb', normalized.expr, absorbed).reason,
+    ),
+  };
 }

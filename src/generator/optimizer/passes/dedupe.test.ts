@@ -72,10 +72,10 @@ const DEDUPE_FOREACH_CASES = [
 
 describe('dedupeBlock', () => {
   it.each(DEDUPE_IF_CASES)('%s', (_name, input, expected) => {
-    expect(dedupe(input)).toEqual(expected);
+    expect(dedupe(input).block).toEqual(expected);
   });
 
   it.each(DEDUPE_FOREACH_CASES)('%s', (_name, input, expected) => {
-    expect(dedupe(input)).toEqual(expected);
+    expect(dedupe(input).block).toEqual(expected);
   });
 });

@@ -5,18 +5,18 @@ import { blockEquals } from '../../ir/equals.ts';
 import type { Block, CheckerIR, CheckerProgram } from '../../ir/types.ts';
 import { buildEntries, optimize } from '../../pipeline.ts';
 import { checkerIrEquals, scopeSnapEquals } from './snapEquals.ts';
-import type { OptimizeTraceEvent } from './types.ts';
+import type { TraceReasoning, TraceStep, TraceStepReason } from './types.ts';
 
 function groupByProgram(
-  trace: readonly OptimizeTraceEvent[],
-): Map<string, OptimizeTraceEvent[]> {
-  const byProgram = new Map<string, OptimizeTraceEvent[]>();
-  for (const event of trace) {
-    const existing = byProgram.get(event.program);
+  steps: readonly TraceStep[],
+): Map<string, TraceStep[]> {
+  const byProgram = new Map<string, TraceStep[]>();
+  for (const step of steps) {
+    const existing = byProgram.get(step.program);
     if (existing === undefined) {
-      byProgram.set(event.program, [event]);
+      byProgram.set(step.program, [step]);
     } else {
-      existing.push(event);
+      existing.push(step);
     }
   }
   return byProgram;
@@ -30,15 +30,11 @@ function requireProgram(built: CheckerIR, name: string): CheckerProgram {
   return program;
 }
 
-function eventsFor(
-  byProgram: ReadonlyMap<string, OptimizeTraceEvent[]>,
+function stepsFor(
+  byProgram: ReadonlyMap<string, TraceStep[]>,
   name: string,
-): readonly OptimizeTraceEvent[] {
-  const events = byProgram.get(name);
-  if (events === undefined) {
-    return [];
-  }
-  return events;
+): readonly TraceStep[] {
+  return byProgram.get(name) ?? [];
 }
 
 function optimizedBodyFor(
@@ -50,15 +46,15 @@ function optimizedBodyFor(
 
 function assertProgramTraceHonesty(
   name: string,
-  events: readonly OptimizeTraceEvent[],
+  steps: readonly TraceStep[],
   builtBody: Block,
   optimizedBody: Block | undefined,
 ): void {
-  expect(events.length, `${name}: expected at least one event`).toBeGreaterThan(
+  expect(steps.length, `${name}: expected at least one step`).toBeGreaterThan(
     0,
   );
-  const first = events.at(0);
-  const last = events.at(-1);
+  const first = steps.at(0);
+  const last = steps.at(-1);
   expect(first).toBeDefined();
   expect(last).toBeDefined();
   expect(
@@ -76,88 +72,136 @@ function assertProgramTraceHonesty(
     `${name}: last checker.after must equal optimized body`,
   ).toBe(true);
 
-  for (let i = 0; i < events.length - 1; i++) {
-    expect(
-      scopeSnapEquals(events[i].checker.after, events[i + 1].checker.before),
-      `${name}: checker.after[${i}] (${events[i].rule}) must equal checker.before[${i + 1}] (${events[i + 1].rule})`,
-    ).toBe(true);
-  }
+  assertCheckerChain(name, steps);
+  assertNoConsecutiveEnvExtend(name, steps);
 
-  for (const event of events) {
+  for (const step of steps) {
     expect(
-      event.rule === 'trace.baseline' ||
-        !scopeSnapEquals(event.checker.before, event.checker.after),
-      `${name}: ghost rewrite ${event.rule}`,
+      step.reason.rule === 'trace.baseline' ||
+        step.reason.rule === 'facts.env.extend' ||
+        !scopeSnapEquals(step.checker.before, step.checker.after),
+      `${name}: ghost rewrite ${step.reason.rule}`,
     ).toBe(true);
-    assertFactsEventHasSources(name, event);
+    assertReasonProofs(name, step.reason);
   }
 }
 
-const FACT_RULES = new Set([
-  'facts.proveTrue',
-  'facts.proveFalse',
-  'facts.absorb',
-]);
-
-function assertFactUsesHaveSources(
-  name: string,
-  rule: string,
-  used: readonly {
-    readonly origin: string;
-    readonly reason: string;
-  }[],
-): void {
-  for (const fact of used) {
-    expect(fact.origin.length, `${name}: ${rule} fact origin`).toBeGreaterThan(
-      0,
-    );
-    expect(fact.reason.length, `${name}: ${rule} fact reason`).toBeGreaterThan(
-      0,
-    );
+function assertCheckerChain(name: string, steps: readonly TraceStep[]): void {
+  for (let i = 0; i < steps.length - 1; i++) {
+    expect(
+      scopeSnapEquals(steps[i].checker.after, steps[i + 1].checker.before),
+      `${name}: checker.after[${i}] (${steps[i].reason.rule}) must equal checker.before[${i + 1}] (${steps[i + 1].reason.rule})`,
+    ).toBe(true);
   }
 }
 
-function assertFactsEventHasSources(
+function assertNoConsecutiveEnvExtend(
   name: string,
-  event: OptimizeTraceEvent,
+  steps: readonly TraceStep[],
 ): void {
-  if (!FACT_RULES.has(event.rule)) {
-    return;
-  }
-  if (event.rule === 'facts.absorb') {
+  for (let i = 0; i < steps.length - 1; i++) {
     expect(
-      event.detail.kind === 'absorb',
-      `${name}: ${event.rule} must carry absorb detail`,
+      !(
+        steps[i].reason.rule === 'facts.env.extend' &&
+        steps[i + 1].reason.rule === 'facts.env.extend'
+      ),
+      `${name}: consecutive facts.env.extend must be merged`,
     ).toBe(true);
-    if (event.detail.kind !== 'absorb') {
+  }
+}
+
+function childRules(reason: TraceStepReason): readonly string[] {
+  const out: string[] = [];
+  const walk = (r: TraceReasoning): void => {
+    if (r.kind === 'seq') {
+      for (const p of r.parts) {
+        walk(p);
+      }
       return;
     }
+    if (r.kind !== 'step') {
+      return;
+    }
+    out.push(r.rule);
+    for (const c of r.children) {
+      walk(c);
+    }
+  };
+  for (const c of reason.children) {
+    walk(c);
+  }
+  return out;
+}
+
+function bottomsOutAtAssumed(reason: TraceStepReason): boolean {
+  return (
+    childRules(reason).includes('facts.env.assumed') ||
+    reason.rule === 'facts.env.assumed'
+  );
+}
+
+function assertReasonProofs(name: string, reason: TraceReasoning): void {
+  if (reason.kind === 'seq') {
+    for (const part of reason.parts) {
+      assertReasonProofs(name, part);
+    }
+    return;
+  }
+  if (reason.kind !== 'step') {
+    return;
+  }
+  assertFactsStepHasProof(name, reason);
+  for (const child of reason.children) {
+    assertReasonProofs(name, child);
+  }
+}
+
+function assertFactsStepHasProof(name: string, reason: TraceStepReason): void {
+  const rule = reason.rule;
+  if (rule === 'facts.env.extend') {
     expect(
-      event.detail.implications.length,
-      `${name}: ${event.rule} must list implications`,
+      reason.children.length,
+      `${name}: facts.env.extend must have children`,
     ).toBeGreaterThan(0);
-    assertFactUsesHaveSources(name, event.rule, event.detail.used);
+    expect(
+      childRules(reason).some((r) => r.startsWith('facts.env.')),
+      `${name}: facts.env.extend children`,
+    ).toBe(true);
     return;
   }
-  expect(
-    event.detail.kind === 'facts',
-    `${name}: ${event.rule} must carry facts detail`,
-  ).toBe(true);
-  if (event.detail.kind !== 'facts') {
+  if (rule === 'facts.absorb') {
+    expect(
+      childRules(reason).some(
+        (r) => r === 'facts.absorb.implies' || r.startsWith('facts.imply.'),
+      ),
+      `${name}: facts.absorb must nest implication proof`,
+    ).toBe(true);
     return;
   }
-  expect(
-    event.detail.used.length,
-    `${name}: ${event.rule} must list used facts`,
-  ).toBeGreaterThan(0);
-  assertFactUsesHaveSources(name, event.rule, event.detail.used);
+  if (rule === 'facts.proveTrue' || rule === 'facts.proveFalse') {
+    expect(
+      childRules(reason).length,
+      `${name}: ${rule} must nest proof children`,
+    ).toBeGreaterThan(0);
+    expect(
+      bottomsOutAtAssumed(reason),
+      `${name}: ${rule} proof must bottom out at facts.env.assumed`,
+    ).toBe(true);
+    return;
+  }
+  if (rule === 'simplify.normalize.absorb') {
+    expect(
+      childRules(reason).some((r) => r.startsWith('facts.imply.')),
+      `${name}: simplify.normalize.absorb must nest imply proof`,
+    ).toBe(true);
+  }
 }
 
 function assertPruneTraceHonesty(
-  events: readonly OptimizeTraceEvent[],
+  steps: readonly TraceStep[],
   optimized: CheckerIR,
 ): void {
-  const last = events.at(-1);
+  const last = steps.at(-1);
   expect(last).toBeDefined();
   expect(
     last !== undefined &&
@@ -166,17 +210,17 @@ function assertPruneTraceHonesty(
     'last prune checker.after must equal optimized IR',
   ).toBe(true);
 
-  for (let i = 0; i < events.length - 1; i++) {
+  for (let i = 0; i < steps.length - 1; i++) {
     expect(
-      scopeSnapEquals(events[i].checker.after, events[i + 1].checker.before),
+      scopeSnapEquals(steps[i].checker.after, steps[i + 1].checker.before),
       `prune: checker.after[${i}] must equal checker.before[${i + 1}]`,
     ).toBe(true);
   }
 
-  for (const event of events) {
+  for (const step of steps) {
     expect(
-      !scopeSnapEquals(event.checker.before, event.checker.after),
-      `prune: ghost rewrite ${event.rule}`,
+      !scopeSnapEquals(step.checker.before, step.checker.after),
+      `prune: ghost rewrite ${step.reason.rule}`,
     ).toBe(true);
   }
 }
@@ -184,13 +228,13 @@ function assertPruneTraceHonesty(
 function assertAllProgramsHonest(
   built: CheckerIR,
   optimized: CheckerIR,
-  byProgram: ReadonlyMap<string, OptimizeTraceEvent[]>,
+  byProgram: ReadonlyMap<string, TraceStep[]>,
 ): void {
   for (const name of built.order) {
     const program = requireProgram(built, name);
     assertProgramTraceHonesty(
       name,
-      eventsFor(byProgram, name),
+      stepsFor(byProgram, name),
       program.body,
       optimizedBodyFor(optimized, name),
     );
@@ -198,10 +242,10 @@ function assertAllProgramsHonest(
 }
 
 function assertPruneGroup(
-  events: readonly OptimizeTraceEvent[] | undefined,
+  steps: readonly TraceStep[] | undefined,
   optimized: CheckerIR,
 ): void {
-  const list = events ?? [];
+  const list = steps ?? [];
   expect(Array.isArray(list)).toBe(true);
   if (list.length === 0) {
     return;
@@ -219,8 +263,8 @@ describe('optimize trace honesty (generator fixtures)', () => {
       verbosePhpdoc: fixture.verbosePhpdoc,
       segmentSources: entries.map((e) => e.typeString),
     });
-    const { ir: optimized, stats, trace } = optimize(built);
-    const byProgram = groupByProgram(trace);
+    const { ir: optimized, stats, steps } = optimize(built);
+    const byProgram = groupByProgram(steps);
     expect(built.order.length).toBeGreaterThan(0);
     assertAllProgramsHonest(built, optimized, byProgram);
     assertPruneGroup(byProgram.get('(prune)'), optimized);

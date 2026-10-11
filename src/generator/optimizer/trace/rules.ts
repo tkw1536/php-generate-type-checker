@@ -30,17 +30,109 @@ const RULES: Record<OptimizeTraceRuleId, OptimizeTraceRuleInfo> = {
     title: 'Inline helper call',
     help: 'Replaces a call_checker with the callee’s body (or its single return expression) after substituting the subject. The inlined helper name is listed under the rewrite. Sound when the callee is a non-entry helper that cannot recurse into the current program: the call’s meaning is defined as running that body on the same subject.',
   },
+  'inline.negate': {
+    title: 'Negate inlined body',
+    help: 'Flips return polarity when inlining under NOT (return E becomes return !E, recursively through if/foreach bodies). Sound because the meaning of !f(x) is the negation of f(x)’s result.',
+  },
+  'facts.env.extend': {
+    title: 'Extend fact environment',
+    help: 'Records facts assumed or derived on a control-flow path (if-true body, if-false fallthrough, foreach key, AND conjunct). Nested steps show each add. Does not change checker IR by itself.',
+  },
+  'facts.env.assumed': {
+    title: 'Assume fact',
+    help: 'Seeds a fact directly from the path (if condition held/failed, or foreach array key shape).',
+  },
+  'facts.env.andSplit': {
+    title: 'Split AND fact',
+    help: 'From a known-true AND, each conjunct is also true.',
+  },
+  'facts.env.orSplit': {
+    title: 'Split OR fact',
+    help: 'From a known-false OR, each disjunct is also false.',
+  },
+  'facts.env.notFlip': {
+    title: 'Flip NOT fact',
+    help: 'Known-true ¬P means P is false (and the reverse).',
+  },
+  'facts.env.commute': {
+    title: 'Commute equality fact',
+    help: 'Swaps === / !== operands so either order matches as the same fact.',
+  },
+  'facts.env.deMorgan': {
+    title: 'De Morgan fact',
+    help: 'Rewrites a junction via De Morgan when expanding the fact environment.',
+  },
+  'facts.env.exclusive': {
+    title: 'Exclusive type fact',
+    help: 'Other primary-type tags are false when one tag is known.',
+  },
+  'facts.env.equalityType': {
+    title: 'Equality type fact',
+    help: 'Typed literal equality implies the matching is_* check.',
+  },
+  'facts.env.instanceofObject': {
+    title: 'Instanceof object fact',
+    help: 'From $x instanceof T implying is_object($x).',
+  },
+  'facts.env.isAClassExists': {
+    title: 'is_a class_exists fact',
+    help: 'is_a(..., TRUE) implies class_exists on the subject.',
+  },
   'facts.proveTrue': {
     title: 'Prove expression true',
-    help: 'Replaces an expression with true because earlier control flow already established facts that entail it (for example after if (P) return, later code may know ¬P). Used facts and how they were learned are listed under the rewrite. Sound because any concrete value reaching this point already satisfies those facts, so the test cannot fail.',
+    help: 'Replaces an expression with true because path facts entail it. Nested children are a full proof (env derivation + equals/entails). Sound because any value reaching this point already satisfies those facts.',
   },
   'facts.proveFalse': {
     title: 'Prove expression false',
-    help: 'Replaces an expression with false because known facts refute it (it equals a known-false fact, or a known-true fact entails its negation). Used facts and how they were learned are listed under the rewrite. Sound for the same reason: no value that passed the earlier guards can make this expression true.',
+    help: 'Replaces an expression with false because path facts refute it. Nested children are a full proof. Sound for the same reason as prove-true.',
+  },
+  'facts.prove.equals': {
+    title: 'Fact equals conclusion',
+    help: 'The folded expression equals a known fact (after canonicalization when needed).',
+  },
+  'facts.prove.entails': {
+    title: 'Fact entails conclusion',
+    help: 'A known fact entails the folded expression (or its negation); nested children show the entailment bridge.',
+  },
+  'facts.imply.refl': {
+    title: 'Implication refl',
+    help: 'A ⇒ A by reflexivity.',
+  },
+  'facts.imply.exclusive': {
+    title: 'Implication exclusive',
+    help: 'Primary-type exclusivity: knowing one tag implies another tag is false / incompatible form.',
+  },
+  'facts.imply.instanceofObject': {
+    title: 'Implication instanceof',
+    help: '$x instanceof T ⇒ is_object($x).',
+  },
+  'facts.imply.isAClassExists': {
+    title: 'Implication is_a',
+    help: 'is_a(..., TRUE) ⇒ class_exists on the subject.',
+  },
+  'facts.imply.equalityType': {
+    title: 'Implication equality type',
+    help: 'Typed literal equality implies an is_* check (then further implications).',
+  },
+  'facts.imply.andConjunct': {
+    title: 'Implication AND conjunct',
+    help: 'A ∧ B ⇒ C because a conjunct implies C.',
+  },
+  'facts.imply.orDisjunct': {
+    title: 'Implication OR disjunct',
+    help: 'A ⇒ A ∨ B (or A implies some disjunct).',
+  },
+  'facts.imply.canon': {
+    title: 'Canonicalize for match',
+    help: 'Expands bins / pushes NOTs so two expressions match as the same fact.',
   },
   'facts.absorb': {
     title: 'Absorb under facts',
-    help: 'Drops a redundant AND/OR operand when implication holds (OR: drop stronger A when A ⇒ B; AND: drop weaker B when A ⇒ B). The implication may be structural (e.g. instanceof ⇒ is_object) or justified by path facts; used implications (and any justifying facts) are listed under the rewrite. Sound because the kept operands already determine the junction’s truth value on every path that reaches them.',
+    help: 'Drops a redundant AND/OR operand when implication holds. Nested children prove each A ⇒ B (structural or via path facts).',
+  },
+  'facts.absorb.implies': {
+    title: 'Absorb implication',
+    help: 'One operand implies another, justifying the drop; nested children are the implication proof.',
   },
   'simplify.expand': {
     title: 'Expand binary ops',
@@ -81,6 +173,10 @@ const RULES: Record<OptimizeTraceRuleId, OptimizeTraceRuleInfo> = {
   'simplify.normalize.dedupe': {
     title: 'Dedupe operands',
     help: 'Removes duplicate operands inside an AND/OR (after sorting for a canonical order). Sound because a && a ≡ a and a || a ≡ a; duplicates do not change the truth value.',
+  },
+  'simplify.normalize.reorder': {
+    title: 'Reorder operands',
+    help: 'Sorts AND/OR operands into a canonical order (type proofs before member checks). Sound because ∧/∨ are commutative and associative for boolean values.',
   },
   'dce.dropFalse': {
     title: 'Drop if (false)',
