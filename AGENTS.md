@@ -39,7 +39,7 @@ yarn spellcheck
 - Optimize result is final IR (`OptimizeResult.ir`); explanation is `steps` (UI Trace). Snapshots never store temp names — UI assigns them at render time.
 - Rewriters return value + reason (`ExprRewrite` / `BlockRewrite`); every real modification appears in the step tree (top-level or nested `reason.children`). Identity = `reason: { kind: 'none' }`.
 - Optimize trace must stay honest: enforced by `src/generator/optimizer/trace/invariants.test.ts` over generator success fixtures (annotated `checker` IR, not rendered PHP). Rewrite that test freely when step types change; keep the semantics.
-- Per checker program: first top-level step `checker.before` = builder body; last top-level `checker.after` = optimized body when that program still exists after prune; consecutive `checker.after[i]` = `checker.before[i+1]`; no zero-diff top-level rewrites except `trace.baseline` (nothing changed) and `facts.env.extend` (env-only bookkeeping); consecutive same-program `facts.env.extend` steps are merged (children appended)
+- Per checker program: first top-level step is always `trace.initial` (Build IR; `checker.before` = builder body); last top-level `checker.after` = optimized body when that program still exists after prune; consecutive `checker.after[i]` = `checker.before[i+1]`; no zero-diff top-level rewrites except `trace.initial` and `facts.env.extend` (env-only bookkeeping); consecutive same-program `facts.env.extend` steps are merged (children appended)
 - Prune steps: last prune `checker.after` = final optimized IR; same chain and no-ghost rules
 - Trace-only fixes must not change optimizer/PHP output or edit generator golden `*.json`
 - When changing trace recording, keep those invariants green — do not weaken or skip the invariant test

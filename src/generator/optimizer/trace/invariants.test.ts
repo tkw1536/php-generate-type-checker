@@ -58,6 +58,10 @@ function assertProgramTraceHonesty(
   expect(first).toBeDefined();
   expect(last).toBeDefined();
   expect(
+    first !== undefined && first.reason.rule === 'trace.initial',
+    `${name}: first step must be trace.initial`,
+  ).toBe(true);
+  expect(
     first !== undefined &&
       first.checker.before.kind === 'block' &&
       blockEquals(first.checker.before.block, builtBody),
@@ -77,7 +81,7 @@ function assertProgramTraceHonesty(
 
   for (const step of steps) {
     expect(
-      step.reason.rule === 'trace.baseline' ||
+      step.reason.rule === 'trace.initial' ||
         step.reason.rule === 'facts.env.extend' ||
         !scopeSnapEquals(step.checker.before, step.checker.after),
       `${name}: ghost rewrite ${step.reason.rule}`,

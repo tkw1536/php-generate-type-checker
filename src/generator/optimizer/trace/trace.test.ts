@@ -66,7 +66,7 @@ describe('optimize trace steps', () => {
     expect(programs.every((p) => p.length > 0)).toBe(true);
   });
 
-  it('includes every checker, with a baseline when nothing rewrote it', () => {
+  it('includes every checker, each starting with trace.initial', () => {
     const ast = parseType('list<mixed>|list<string>');
     const { ir: built } = buildMany([ast]);
     const { steps } = optimize(built);
@@ -75,7 +75,10 @@ describe('optimize trace steps', () => {
     );
     expect([...tracedPrograms].toSorted()).toEqual([...built.order].toSorted());
     expect(
-      built.order.every((name) => steps.some((e) => e.program === name)),
+      built.order.every((name) => {
+        const first = steps.find((e) => e.program === name);
+        return first?.reason.rule === 'trace.initial';
+      }),
     ).toBe(true);
   });
 
@@ -160,7 +163,7 @@ describe('optimize trace checker snapshots', () => {
 });
 
 function isNonEnvGhost(step: TraceStep): boolean {
-  if (ruleOf(step) === 'facts.env.extend' || ruleOf(step) === 'trace.baseline') {
+  if (ruleOf(step) === 'facts.env.extend' || ruleOf(step) === 'trace.initial') {
     return false;
   }
   return (

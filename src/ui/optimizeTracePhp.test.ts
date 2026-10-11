@@ -8,7 +8,7 @@ function requireRewriteStep(
   program: string,
 ) {
   for (const step of steps) {
-    if (step.program === program && step.reason.rule !== 'trace.baseline') {
+    if (step.program === program && step.reason.rule !== 'trace.initial') {
       return step;
     }
   }

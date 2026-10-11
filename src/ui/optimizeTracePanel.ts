@@ -11,6 +11,7 @@ import {
   type TraceDetailView,
   copyTextForView,
   renderDetailHeader,
+  renderPhpPreview,
   renderViewBody,
   renderViewTabs,
 } from './optimizeTraceRender.ts';
@@ -58,12 +59,24 @@ function appendRewriteViews(
   return copyTextForView(detailView, php.beforePhp, php.afterPhp, php.diff);
 }
 
+function appendInitialCheckerView(
+  detail: HTMLElement,
+  selected: TraceTreeNode,
+): string {
+  const php = checkerPhpForStep(selected.step).beforePhp;
+  detail.append(renderPhpPreview(php, 'Initial checker PHP (unoptimized)'));
+  return php;
+}
+
 function appendDetailViews(
   detail: HTMLElement,
   selected: TraceTreeNode,
   detailView: TraceDetailView,
   onView: (view: TraceDetailView) => void,
 ): string {
+  if (selected.reason.rule === 'trace.initial') {
+    return appendInitialCheckerView(detail, selected);
+  }
   if (isEnvTraceRule(selected.reason.rule)) {
     const pane = renderEnvFactsPane(selected.step, selected.reason);
     detail.append(pane.el);

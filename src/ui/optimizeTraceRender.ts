@@ -120,7 +120,7 @@ function renderDiffLine(line: PhpDiffLine): HTMLElement {
   return row;
 }
 
-function renderPhpPreview(php: string, ariaLabel: string): HTMLElement {
+export function renderPhpPreview(php: string, ariaLabel: string): HTMLElement {
   const preview = document.createElement('pre');
   preview.className = 'output-pre optimize-trace-pane';
   preview.setAttribute('aria-label', ariaLabel);
@@ -193,7 +193,7 @@ export function renderDetailHeader(
   titleRow.append(title, helpWrap, ruleId);
 
   wrap.append(meta, titleRow);
-  if (reason.rule !== 'trace.baseline' && !isEnvTraceRule(reason.rule)) {
+  if (reason.rule !== 'trace.initial' && !isEnvTraceRule(reason.rule)) {
     // Nested selections use the Before/After/Diff pane for focus; keep the
     // collapsed fold only as a compact summary on top-level IR rewrites.
     // Env-only steps show added facts in the detail pane instead.

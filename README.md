@@ -364,8 +364,8 @@ Block `yes` restarts at Inline and `no` returns to the IR question.
 The UI Metrics tab draws this under the Optimize stage.
 **Yes × N** on each loop is the round count (**IR rounds** / **Block rounds**).
 The UI Trace tab is the ordered list of optimize steps, grouped by checker function (then Prune), with nested proof/reasoning (simplify normalize, fact env construction, prove/absorb implications, inline negation) as indented children.
-Checkers with no rewrites still appear with an Unchanged baseline showing their initial body.
-For each top-level step, Before / After / Diff show the full checker as PHP (with a `function name(mixed $value): bool` header; Diff is a unified hunk over that same text).
+Each checker group starts with an Initial checker step (Build IR, shown as full PHP with no Diff).
+For later top-level steps, Before / After / Diff show the full checker as PHP (with a `function name(mixed $value): bool` header; Diff is a unified hunk over that same text).
 
 ![Diagram showing the optimize passes](docs/optimize.svg)
 

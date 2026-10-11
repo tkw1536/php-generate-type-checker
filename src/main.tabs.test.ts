@@ -146,7 +146,7 @@ async function swapsFooterHelpByTab(): Promise<void> {
     .click();
   expect(tracePane.hidden).toBe(false);
   expect(metricsPane.hidden).toBe(true);
-  expect(tracePane.textContent).toMatch(/initial IR/u);
+  expect(tracePane.textContent).toMatch(/Initial checker/u);
 }
 
 function listUnionTraceHash(): string {
@@ -172,10 +172,17 @@ function expectOptimizeTraceChrome(panel: HTMLElement): void {
   expect(ruleHelp).not.toBeNull();
   expect(ruleHelp?.textContent).toBe('?');
   expect(ruleHelp?.dataset.tooltip?.length).toBeGreaterThan(20);
-  // Env-extend shows added facts; IR rewrites show Before/After/Diff.
+  // Initial = full PHP pane; env-extend = facts; rewrites = Before/After/Diff.
+  const initialPhp = panel.querySelector('.optimize-trace-pane');
   const envFacts = panel.querySelector('.optimize-trace-env-facts');
   const viewTabs = panel.querySelector('.optimize-trace-view-tabs');
-  expect(envFacts !== null || viewTabs !== null).toBe(true);
+  expect(initialPhp !== null || envFacts !== null || viewTabs !== null).toBe(
+    true,
+  );
+  const initialItem = [
+    ...panel.querySelectorAll<HTMLButtonElement>('.optimize-trace-item'),
+  ].find((item) => /Initial checker/iu.test(item.textContent ?? ''));
+  expect(initialItem).toBeDefined();
 }
 
 function expectFactDetail(panel: HTMLElement): void {

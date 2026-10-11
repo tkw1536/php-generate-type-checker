@@ -6,9 +6,9 @@ export type OptimizeTraceRuleInfo = {
 };
 
 const RULES: Record<OptimizeTraceRuleId, OptimizeTraceRuleInfo> = {
-  'trace.baseline': {
-    title: 'Unchanged',
-    help: 'No Optimize rewrite touched this checker. The body is exactly the IR produced by Build, so the runtime check is unchanged and still matches the generated semantics.',
+  'trace.initial': {
+    title: 'Initial checker',
+    help: 'The checker IR produced by Build, before any Optimize rewrite. Always listed first for each program so you can compare the unoptimized body to later steps.',
   },
   'dedupe.drop': {
     title: 'Drop duplicate statement',

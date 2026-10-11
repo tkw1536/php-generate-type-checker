@@ -15,7 +15,7 @@ export type TraceScopeSnapshot =
   | { readonly kind: 'ir'; readonly ir: CheckerIR };
 
 export type OptimizeTraceRuleId =
-  | 'trace.baseline'
+  | 'trace.initial'
   | 'dedupe.drop'
   | 'unnest.collapse'
   | 'combine.merge'

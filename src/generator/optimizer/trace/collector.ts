@@ -97,8 +97,8 @@ export class TraceCollector {
   }
 
   /**
-   * Ensure every checker in `initial` appears. Programs with no rewrites get a
-   * baseline (unchanged) step. Groups follow `initial.order`, then prune.
+   * Ensure every checker in `initial` appears, each starting with a
+   * `trace.initial` step (Build IR). Groups follow `initial.order`, then prune.
    */
   finalize(initial: CheckerIR): readonly TraceStep[] {
     const byProgram = new Map<string, TraceStep[]>();
@@ -113,16 +113,15 @@ export class TraceCollector {
 
     const out: TraceStep[] = [];
     for (const name of initial.order) {
-      const existing = byProgram.get(name);
-      if (existing !== undefined && existing.length > 0) {
-        out.push(...existing);
-        continue;
-      }
       const program = initial.programs[name];
       if (program === undefined) {
         continue;
       }
-      out.push(baselineStep(name, program));
+      out.push(initialStep(name, program));
+      const existing = byProgram.get(name);
+      if (existing !== undefined) {
+        out.push(...existing);
+      }
     }
     const pruneSteps = byProgram.get('(prune)');
     if (pruneSteps !== undefined) {
@@ -132,7 +131,7 @@ export class TraceCollector {
   }
 }
 
-function baselineStep(program: string, checker: CheckerProgram): TraceStep {
+function initialStep(program: string, checker: CheckerProgram): TraceStep {
   const snap: TraceScopeSnapshot = { kind: 'block', block: checker.body };
   return {
     index: 0,
@@ -143,7 +142,7 @@ function baselineStep(program: string, checker: CheckerProgram): TraceStep {
     checker: { before: snap, after: snap },
     reason: {
       kind: 'step',
-      rule: 'trace.baseline',
+      rule: 'trace.initial',
       focus: {
         before: { kind: 'block', block: checker.body },
         after: { kind: 'block', block: checker.body },
