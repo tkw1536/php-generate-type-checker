@@ -112,16 +112,16 @@
             </div>
             <div class="panel-footer-options">
               <div class="panel-footer-option-row">
-                <label class="panel-footer-option" for="generate-allow-unsafe-string-keys">
+                <label class="panel-footer-option" for="generate-unsafe-string-array-keys">
                   <input
                     type="checkbox"
-                    id="generate-allow-unsafe-string-keys"
+                    id="generate-unsafe-string-array-keys"
                   >
-                  <span>Allow unsafe string keys</span>
+                  <span>Unsafe string array keys</span>
                 </label>
                 <button
                   type="button"
-                  id="allow-unsafe-string-keys-unsound-badge"
+                  id="unsafe-string-array-keys-unsound-badge"
                   class="option-unsound-badge"
                   aria-label="Unsound"
                   aria-describedby="help-unsound-badge"
@@ -130,11 +130,11 @@
                 <button
                   type="button"
                   class="option-help"
-                  aria-label="Help: Allow unsafe string keys"
-                  aria-describedby="help-allow-unsafe-string-keys"
+                  aria-label="Help: Unsafe string array keys"
+                  aria-describedby="help-unsafe-string-array-keys"
                   data-tooltip="When on, array and non-empty-array keys written as string are checked like int|non-decimal-int-string (PHPStan reportUnsafeArrayStringKeyCasting: detect), matching real PHP key casting. When off (default), keys stay string checks — same runtime accept set as PHPStan default/prevent. @phpstan-assert-if-true still uses the input type."
                 >?</button>
-                <span id="help-allow-unsafe-string-keys" class="visually-hidden">When on, array and non-empty-array keys written as string are checked like int|non-decimal-int-string (PHPStan reportUnsafeArrayStringKeyCasting: detect), matching real PHP key casting. When off (default), keys stay string checks — same runtime accept set as PHPStan default/prevent. @phpstan-assert-if-true still uses the input type.</span>
+                <span id="help-unsafe-string-array-keys" class="visually-hidden">When on, array and non-empty-array keys written as string are checked like int|non-decimal-int-string (PHPStan reportUnsafeArrayStringKeyCasting: detect), matching real PHP key casting. When off (default), keys stay string checks — same runtime accept set as PHPStan default/prevent. @phpstan-assert-if-true still uses the input type.</span>
               </div>
               <div class="panel-footer-option-row">
                 <label class="panel-footer-option" for="generate-unseal-array-shapes">

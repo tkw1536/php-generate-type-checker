@@ -36,7 +36,7 @@ export interface GenerateCheckerOptions {
    * use the input type. When `false` (default), keep `string` key checks
    * (same runtime accept set as PHPStan default / `prevent` for real arrays).
    */
-  readonly allowUnsafeArrayStringKeys?: boolean;
+  readonly unsafeStringArrayKeys?: boolean;
 }
 
 export const DEFAULT_CHECKER_OUTPUT: CheckerOutputMode = 'function';

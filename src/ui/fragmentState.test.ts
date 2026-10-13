@@ -8,7 +8,7 @@ import {
 const sample: AppFragmentState = {
   optimize: false,
   verbosePhpdoc: true,
-  allowUnsafeArrayStringKeys: true,
+  unsafeStringArrayKeys: true,
   unsealArrayShapes: true,
   emit: 'public_static',
   emitAliases: true,

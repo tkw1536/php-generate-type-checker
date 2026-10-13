@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { parseType } from '../parser/index.ts';
 import { formatType } from '../parser/format.ts';
 import { generateChecker } from './index.ts';
-import { allowUnsafeArrayStringKeysInType } from './allowUnsafeArrayStringKeys.ts';
+import { unsafeStringArrayKeysInType } from './unsafeStringArrayKeys.ts';
 
 function rewritten(source: string): string {
-  return formatType(allowUnsafeArrayStringKeysInType(parseType(source)));
+  return formatType(unsafeStringArrayKeysInType(parseType(source)));
 }
 
-describe('allowUnsafeArrayStringKeysInType', () => {
+describe('unsafeStringArrayKeysInType', () => {
   it('rewrites exact string keys on array and non-empty-array', () => {
     expect(rewritten('array<string, int>')).toBe(
       'array<int|non-decimal-int-string, int>',
@@ -43,11 +43,11 @@ describe('allowUnsafeArrayStringKeysInType', () => {
   });
 });
 
-describe('generateChecker allowUnsafeArrayStringKeys', () => {
+describe('generateChecker unsafeStringArrayKeys', () => {
   it('drops string key check while keeping assert docs', () => {
     const strict = generateChecker('array<string, int>');
     const detect = generateChecker('array<string, int>', {
-      allowUnsafeArrayStringKeys: true,
+      unsafeStringArrayKeys: true,
     });
     expect(strict).toContain('!is_string($key)');
     expect(detect).not.toContain('is_string($key)');

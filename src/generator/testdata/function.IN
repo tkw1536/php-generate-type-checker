@@ -135,6 +135,7 @@ array{foo: int, ...}
 array{foo: int, ...<string>}
 array{foo: int, ...<string, int>}
 array{0: int, 1?: string}
+array{'123': int, '08': string}
 array{'field-one': int}
 array{'field-one'?: int}
 array{timeout?: positive-int}

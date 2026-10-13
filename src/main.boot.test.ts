@@ -40,7 +40,7 @@ async function restoresControlsFromUrlFragment(): Promise<void> {
   const fragment = encodeFragmentState({
     optimize: true,
     verbosePhpdoc: true,
-    allowUnsafeArrayStringKeys: true,
+    unsafeStringArrayKeys: true,
     unsealArrayShapes: true,
     emit: 'public_static',
     emitAliases: false,
@@ -62,7 +62,7 @@ async function restoresControlsFromUrlFragment(): Promise<void> {
   ).toBe(true);
   expect(
     document.querySelector<HTMLInputElement>(
-      '#generate-allow-unsafe-string-keys',
+      '#generate-unsafe-string-array-keys',
     )!.checked,
   ).toBe(true);
   expect(

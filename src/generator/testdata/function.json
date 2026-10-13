@@ -456,6 +456,10 @@
     "expected": "/** @phpstan-assert-if-true array{0: int, 1?: string} $value */\nfunction isArray0Int1String(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        !array_key_exists(0, $value) ||\n        !is_int($value[0]) ||\n        (\n            array_key_exists(1, $value) &&\n            !is_string($value[1])\n        )\n    ) {\n        return FALSE;\n    }\n    foreach ($value as $key => $item) {\n        if (\n            $key !== 0 &&\n            $key !== 1\n        ) {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
   },
   {
+    "input": "array{'123': int, '08': string}",
+    "expected": "/** @phpstan-assert-if-true array{'123': int, '08': string} $value */\nfunction isArray123Int08String(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_key_exists(123, $value) &&\n        array_key_exists('08', $value) &&\n        is_int($value[123]) &&\n        is_string($value['08']) &&\n        count($value) === 2\n    );\n}\n"
+  },
+  {
     "input": "array{'field-one': int}",
     "expected": "/** @phpstan-assert-if-true array{'field-one': int} $value */\nfunction isArrayFieldOneInt(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_key_exists('field-one', $value) &&\n        is_int($value['field-one']) &&\n        count($value) === 1\n    );\n}\n"
   },

@@ -29,13 +29,6 @@ export function listElementType(
   return { kind: 'keyword', keyword: 'mixed' };
 }
 
-export function phpKeyLiteral(key: string | number): string {
-  if (typeof key === 'number') {
-    return String(key);
-  }
-  return `'${key.replaceAll('\\', '\\\\').replaceAll('\'', "\\'")}'`;
-}
-
 export function phpLiteralFromNode(
   node: Extract<TypeNode, { kind: 'literal' }>,
 ): string | null {

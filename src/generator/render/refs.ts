@@ -1,4 +1,5 @@
 import type { Block, CheckerProgram, Stmt, ValueRef } from '../ir/types.ts';
+import { phpArrayKeyLiteral } from '../phpArrayKey.ts';
 
 const PHP_RESERVED_OBJECT_PROPERTIES = new Set([
   'class',
@@ -55,15 +56,12 @@ function needsBracedPropertyAccess(name: string): boolean {
 }
 
 function arrayIndexExpr(key: string | number): string {
-  return typeof key === 'number' ? String(key) : phpQuotedString(key);
+  return phpArrayKeyLiteral(key);
 }
 
 /** PHP literal for a shape key in `array_key_exists` / `property_exists` args. */
 export function phpStringLiteral(key: string | number): string {
-  if (typeof key === 'number') {
-    return String(key);
-  }
-  return phpQuotedString(key);
+  return phpArrayKeyLiteral(key);
 }
 
 /**

@@ -21,7 +21,8 @@ import {
 } from './ast/collection.ts';
 import { isMixed } from './ast/classify.ts';
 import type { EmitCtx } from './emitCtx.ts';
-import { phpKeyLiteral, stripTrailingTrueReturn } from './helpers.ts';
+import { phpArrayKeyLiteral } from '../phpArrayKey.ts';
+import { stripTrailingTrueReturn } from './helpers.ts';
 
 export function emitShape(
   ctx: EmitCtx,
@@ -114,7 +115,7 @@ function emitShapeFields(
       key = field.key;
     }
     knownKeys.push(key);
-    const keyLit = phpKeyLiteral(key);
+    const keyLit = phpArrayKeyLiteral(key);
     const fieldRef = objectShape
       ? propertyAccessRef(base, String(key))
       : arrayAccessRef(base, key);
@@ -241,7 +242,7 @@ function knownKeysMatchExpr(
   knownKeys: readonly (string | number)[],
 ): Expr {
   const parts = knownKeys.map((key) =>
-    binExpr('===', refArg(keyRef), literalArg(phpKeyLiteral(key))),
+    binExpr('===', refArg(keyRef), literalArg(phpArrayKeyLiteral(key))),
   );
   return orExpr(parts);
 }

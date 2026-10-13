@@ -196,7 +196,7 @@ function listUnionTraceHash(): string {
   return `#${encodeFragmentState({
     optimize: true,
     verbosePhpdoc: false,
-    allowUnsafeArrayStringKeys: false,
+    unsafeStringArrayKeys: false,
     unsealArrayShapes: false,
     emit: 'function',
     emitAliases: false,

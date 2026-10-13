@@ -37,8 +37,8 @@ const emitAliasesCheckbox =
 const resolveAliasesCheckbox = document.querySelector<HTMLInputElement>(
   '#generate-resolve-aliases',
 )!;
-const allowUnsafeStringKeysCheckbox = document.querySelector<HTMLInputElement>(
-  '#generate-allow-unsafe-string-keys',
+const unsafeStringArrayKeysCheckbox = document.querySelector<HTMLInputElement>(
+  '#generate-unsafe-string-array-keys',
 )!;
 const unsealArrayShapesCheckbox = document.querySelector<HTMLInputElement>(
   '#generate-unseal-array-shapes',
@@ -50,7 +50,7 @@ prioritizeReadabilityCheckbox.addEventListener('change', generateNow);
 verbosePhpdocCheckbox.addEventListener('change', generateNow);
 emitAliasesCheckbox.addEventListener('change', generateNow);
 resolveAliasesCheckbox.addEventListener('change', generateNow);
-allowUnsafeStringKeysCheckbox.addEventListener('change', () => {
+unsafeStringArrayKeysCheckbox.addEventListener('change', () => {
   syncUnsoundOptionsUi();
   generateNow();
 });

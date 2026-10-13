@@ -18,8 +18,8 @@ import {
 } from './options.ts';
 import { render } from './render/index.ts';
 import { formatTypeForPhpstanDoc } from './render/phpdoc.ts';
-import { allowUnsafeArrayStringKeysInType } from './allowUnsafeArrayStringKeys.ts';
 import { unsealArrayShapesInType } from './unsealArrayShapes.ts';
+import { unsafeStringArrayKeysInType } from './unsafeStringArrayKeys.ts';
 
 export type BuildOptions = GenerateCheckerOptions & {
   readonly parameter?: string;
@@ -109,8 +109,8 @@ function effectiveAstForOptions(
   options?: BuildOptions,
 ): TypeNode {
   let result = ast;
-  if (options?.allowUnsafeArrayStringKeys === true) {
-    result = allowUnsafeArrayStringKeysInType(result);
+  if (options?.unsafeStringArrayKeys === true) {
+    result = unsafeStringArrayKeysInType(result);
   }
   if (options?.unsealArrayShapes === true) {
     result = unsealArrayShapesInType(result);
