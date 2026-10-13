@@ -8,7 +8,7 @@ Parse [PHPDoc types as supported by PHPStan](https://phpstan.org/writing-php-cod
 
 **[Open the live demo](https://check.guys.wtf)** — paste a PHPDoc `@phpstan-type` block (or plain types) and copy the generated PHP.
 
-![Light-theme UI: PHPDoc @phpstan-type UserAddress input on the left with generate options; Pipeline / Metrics / PHP Code tabs on the right with the generated isUserAddress checker](docs/ui.png)
+![Light-theme UI: PHPDoc @phpstan-type UserAddress input on the left with generate options; Pipeline / Metrics / Trace / PHP Code tabs on the right with the generated isUserAddress checker; footer with build time and GitHub credit](docs/ui.png)
 
 ## Features
 
@@ -276,7 +276,7 @@ return TRUE;
 | Nested arrays                | Nested `foreach`                                                                                                               |
 | Parameterized `iterable<…>`  | Not generated (foreach would not be side-effect-free)                                                                          |
 
-The UI option **Unsafe string array keys** (URL fragment `unsafekeys=1`) rewrites `array` / `non-empty-array` keys that are exactly `string` to `int|non-decimal-int-string` for runtime checks only, matching PHPStan [`reportUnsafeArrayStringKeyCasting: detect`](https://phpstan.org/blog/why-array-string-keys-are-not-type-safe).
+The UI option **Unsafe string array keys** rewrites `array` / `non-empty-array` keys that are exactly `string` to `int|non-decimal-int-string` for runtime checks only, matching PHPStan [`reportUnsafeArrayStringKeyCasting: detect`](https://phpstan.org/blog/why-array-string-keys-are-not-type-safe).
 Off (default) keeps `string` key checks — the same runtime accept set as PHPStan default / `prevent` for real PHP arrays (decimal-int-string keys are already cast to `int` before `foreach`).
 `@phpstan-assert-if-true` still uses the input type as written.
 Lists, value-only `array<T>`, shape rests, and other key types are unchanged.
@@ -287,7 +287,10 @@ Shape field keys that are decimal-int-strings (e.g. `'123'`) are always emitted 
 Shapes represent non-homogenous containers.
 These are typically represented by existence check, followed by a type check on each property.
 Array and list shapes are sealed by default (extra keys are rejected); trailing `...` makes them unsealed, matching [PHPStan 2.2](https://phpstan.org/blog/phpstan-2-2-unsealed-array-shapes-safer-array-keys).
-The UI option **Unseal array shapes** (URL fragment `unseal=1`) treats shapes without `...` as unsealed for runtime checks only (matching older PHPStan behavior); `@phpstan-assert-if-true` still uses the input type as written.
+
+The UI option **Unseal array shapes** treats shapes without `...` as unsealed for runtime checks only (matching older PHPStan behavior).
+`@phpstan-assert-if-true` still uses the input type as written - producing potentially unsound code.
+
 Object shapes stay unsealed (no extra-property rejection; `...` is not supported on objects).
 Collection field loops (`foreach`) are emitted after all key and non-loop field guards so Optimize can group them.
 For example for `array{name: string, age: int}` (all keys required), the sealed check is `count($value) === 2` after the field checks:
