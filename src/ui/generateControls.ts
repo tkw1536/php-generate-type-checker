@@ -162,7 +162,7 @@ export function syncDocblockOptions(hasAliases: boolean): void {
 const PHP_WARNING_DEFAULT =
   'Always review generated PHP before using it in production.';
 const PHP_WARNING_UNSOUND =
-  'Generated code is unsound because of selected options and can produce incorrect results at runtime. Always review it before using it in production.';
+  'Generated code may be unsound because of selected options and can produce incorrect results at runtime. Always review it before using it in production.';
 
 /** Sync UNSOUND badges and PHP output footer severity with unsound options. */
 export function syncUnsoundOptionsUi(): void {
