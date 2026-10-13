@@ -65,24 +65,7 @@ function compactCollectionKind(
       : listOk;
   }
   if ('value' in type && !isNever(type.value) && isMixed(type.value)) {
-    if (isListKeyword(type.keyword)) {
-      const listCompact = compactListElementTest(
-        type.keyword,
-        type.value,
-        subject,
-      );
-      if (listCompact !== null) {
-        return listCompact;
-      }
-    }
-    const guard = isIterableKeyword(type.keyword) ? 'is_iterable' : 'is_array';
-    const arrOk = callExpr(guard, [refArg(subject)]);
-    return isNonEmptyKeyword(type.keyword)
-      ? andExpr([
-          arrOk,
-          binExpr('!==', refArg(subject), literalArg('[]')),
-        ])
-      : arrOk;
+    return compactMixedValueCollection(type, subject);
   }
   if (
     'value' in type &&
@@ -94,6 +77,36 @@ function compactCollectionKind(
       : binExpr('===', refArg(subject), literalArg('[]'));
   }
   return null;
+}
+
+function compactMixedValueCollection(
+  type: Extract<TypeNode, { kind: 'collection'; value: TypeNode }>,
+  subject: ValueRef,
+): Expr | null {
+  if (isListKeyword(type.keyword)) {
+    const listCompact = compactListElementTest(
+      type.keyword,
+      type.value,
+      subject,
+    );
+    if (listCompact !== null) {
+      return listCompact;
+    }
+  }
+  // Keyed collections may need a foreach over keys (e.g. array<string, mixed>).
+  // Do not collapse those to a bare is_array boolean — emit a helper / statements
+  // instead and let Optimize drop empty or tautological foreach bodies.
+  if ('key' in type && !isMixed(type.key)) {
+    return null;
+  }
+  const guard = isIterableKeyword(type.keyword) ? 'is_iterable' : 'is_array';
+  const arrOk = callExpr(guard, [refArg(subject)]);
+  return isNonEmptyKeyword(type.keyword)
+    ? andExpr([
+        arrOk,
+        binExpr('!==', refArg(subject), literalArg('[]')),
+      ])
+    : arrOk;
 }
 
 function compactEmptyShape(type: TypeNode, subject: ValueRef): Expr | null {

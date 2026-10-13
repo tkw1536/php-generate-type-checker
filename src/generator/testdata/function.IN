@@ -212,6 +212,7 @@ non-empty-string&int
 non-empty-array&array{}
 
 # --- Custom Test Cases ---
+array<string,mixed>
 (array<string,mixed>)|null
 array{'hello:world': string, 'hello.world': string}
 array{'hello': string, 'world': list<string>}

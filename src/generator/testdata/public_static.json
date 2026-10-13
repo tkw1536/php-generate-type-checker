@@ -1,7 +1,7 @@
 [
   {
     "input": "(array<string,mixed>)|null",
-    "expected": "class TypeChecker\n{\n    /** @phpstan-assert-if-true array<string, mixed>|NULL $value */\n    public static function isArrayStringMixedNull(mixed $value): bool\n    {\n        return (is_array($value) || $value === NULL);\n    }\n}\n"
+    "expected": "class TypeChecker\n{\n    /** @phpstan-assert-if-true array<string, mixed>|NULL $value */\n    public static function isArrayStringMixedNull(mixed $value): bool\n    {\n        if ($value === NULL) {\n            return TRUE;\n        }\n        if (!is_array($value)) {\n            return FALSE;\n        }\n        foreach ($value as $key => $item) {\n            if (!is_string($key)) {\n                return FALSE;\n            }\n        }\n        return TRUE;\n    }\n}\n"
   },
   {
     "input": "int",

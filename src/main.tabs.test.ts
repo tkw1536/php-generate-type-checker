@@ -4,6 +4,10 @@ import {
   bootApp,
   pipelineCodeText,
 } from '../test-utils/appTestHarness.ts';
+import {
+  expectFactDetail,
+  expectOptimizeTraceChrome,
+} from '../test-utils/optimizeTraceTestHelpers.ts';
 import { encodeFragmentState } from './ui/fragmentState.ts';
 
 function resetDom(): void {
@@ -107,64 +111,85 @@ async function showsMetricsDiagramAndCopiesTsv(): Promise<void> {
   expect(copied).toContain('Block rounds\t');
 }
 
-async function swapsFooterHelpByTab(): Promise<void> {
-  await bootApp();
+type FooterPanes = {
+  readonly footer: HTMLElement;
+  readonly php: HTMLElement;
+  readonly pipeline: HTMLElement;
+  readonly metrics: HTMLElement;
+  readonly trace: HTMLElement;
+};
 
-  const footer = document.querySelector<HTMLElement>('#output-footer')!;
-  const phpPane = document.querySelector<HTMLElement>(
-    '[data-output-footer="php"]',
-  )!;
-  const pipelinePane = document.querySelector<HTMLElement>(
-    '[data-output-footer="pipeline"]',
-  )!;
-  const metricsPane = document.querySelector<HTMLElement>(
-    '[data-output-footer="ir-metrics"]',
-  )!;
-  const tracePane = document.querySelector<HTMLElement>(
-    '[data-output-footer="optimize-trace"]',
-  )!;
+function footerPanes(): FooterPanes {
+  return {
+    footer: document.querySelector<HTMLElement>('#output-footer')!,
+    php: document.querySelector<HTMLElement>('[data-output-footer="php"]')!,
+    pipeline: document.querySelector<HTMLElement>(
+      '[data-output-footer="pipeline"]',
+    )!,
+    metrics: document.querySelector<HTMLElement>(
+      '[data-output-footer="ir-metrics"]',
+    )!,
+    trace: document.querySelector<HTMLElement>(
+      '[data-output-footer="optimize-trace"]',
+    )!,
+  };
+}
 
-  expect(footer.classList.contains('panel-footer--caution')).toBe(true);
-  expect(footer.classList.contains('panel-footer--warning')).toBe(false);
-  expect(phpPane.hidden).toBe(false);
-  expect(pipelinePane.hidden).toBe(true);
-  expect(phpPane.textContent).toMatch(/Always review generated PHP/u);
+function expectDefaultPhpFooter(panes: FooterPanes): void {
+  expect(panes.footer.classList.contains('panel-footer--caution')).toBe(true);
+  expect(panes.footer.classList.contains('panel-footer--warning')).toBe(false);
+  expect(panes.php.hidden).toBe(false);
+  expect(panes.pipeline.hidden).toBe(true);
+  expect(panes.php.textContent).toMatch(/Always review generated PHP/u);
+}
 
+function expectUnsealWarningFooter(panes: FooterPanes): void {
   document.querySelector<HTMLInputElement>(
     '#generate-unseal-array-shapes',
   )!.checked = true;
   document
     .querySelector<HTMLInputElement>('#generate-unseal-array-shapes')!
     .dispatchEvent(new Event('change'));
-  expect(footer.classList.contains('panel-footer--warning')).toBe(true);
-  expect(footer.classList.contains('panel-footer--caution')).toBe(false);
-  expect(phpPane.textContent).toMatch(/unsound/iu);
+  expect(panes.footer.classList.contains('panel-footer--warning')).toBe(true);
+  expect(panes.footer.classList.contains('panel-footer--caution')).toBe(false);
+  expect(panes.php.textContent).toMatch(/unsound/iu);
   expect(
     document
       .querySelector('#unseal-array-shapes-unsound-badge')!
       .classList.contains('option-unsound-badge--active'),
   ).toBe(true);
+}
 
+function expectFooterAfterTabClicks(panes: FooterPanes): void {
   document.querySelector<HTMLButtonElement>('#output-tab-pipeline')!.click();
-  expect(footer.classList.contains('panel-footer--info')).toBe(true);
-  expect(footer.classList.contains('panel-footer--warning')).toBe(false);
-  expect(footer.classList.contains('panel-footer--caution')).toBe(false);
-  expect(pipelinePane.hidden).toBe(false);
-  expect(phpPane.hidden).toBe(true);
-  expect(pipelinePane.textContent).toMatch(/checker IR/u);
-  expect(pipelinePane.querySelector('#pipeline-expand-all')).not.toBeNull();
+  expect(panes.footer.classList.contains('panel-footer--info')).toBe(true);
+  expect(panes.footer.classList.contains('panel-footer--warning')).toBe(false);
+  expect(panes.footer.classList.contains('panel-footer--caution')).toBe(false);
+  expect(panes.pipeline.hidden).toBe(false);
+  expect(panes.php.hidden).toBe(true);
+  expect(panes.pipeline.textContent).toMatch(/checker IR/u);
+  expect(panes.pipeline.querySelector('#pipeline-expand-all')).not.toBeNull();
 
   document.querySelector<HTMLButtonElement>('#output-tab-ir-metrics')!.click();
-  expect(metricsPane.hidden).toBe(false);
-  expect(pipelinePane.hidden).toBe(true);
-  expect(metricsPane.textContent).toMatch(/Render/u);
+  expect(panes.metrics.hidden).toBe(false);
+  expect(panes.pipeline.hidden).toBe(true);
+  expect(panes.metrics.textContent).toMatch(/Render/u);
 
   document
     .querySelector<HTMLButtonElement>('#output-tab-optimize-trace')!
     .click();
-  expect(tracePane.hidden).toBe(false);
-  expect(metricsPane.hidden).toBe(true);
-  expect(tracePane.textContent).toMatch(/Initial checker/u);
+  expect(panes.trace.hidden).toBe(false);
+  expect(panes.metrics.hidden).toBe(true);
+  expect(panes.trace.textContent).toMatch(/Initial checker/u);
+}
+
+async function swapsFooterHelpByTab(): Promise<void> {
+  await bootApp();
+  const panes = footerPanes();
+  expectDefaultPhpFooter(panes);
+  expectUnsealWarningFooter(panes);
+  expectFooterAfterTabClicks(panes);
+  expect(panes.footer.hidden).toBe(false);
 }
 
 function listUnionTraceHash(): string {
@@ -177,54 +202,6 @@ function listUnionTraceHash(): string {
     resolveAliases: true,
     input: 'list<mixed>|list<string>',
   })}`;
-}
-
-function expectOptimizeTraceChrome(panel: HTMLElement): void {
-  expect(panel.querySelector('.optimize-trace-list')).not.toBeNull();
-  expect(panel.querySelector('.optimize-trace-group')).not.toBeNull();
-  expect(panel.querySelector('.optimize-trace-item')).not.toBeNull();
-  expect(panel.querySelector('.optimize-trace-collapse')).not.toBeNull();
-  expect(panel.querySelector('.optimize-trace-title-text')).not.toBeNull();
-  const ruleHelp = panel.querySelector<HTMLButtonElement>(
-    '.optimize-trace-help .optimize-trace-rule-help',
-  );
-  expect(ruleHelp).not.toBeNull();
-  expect(ruleHelp?.textContent).toBe('?');
-  expect(ruleHelp?.dataset.tooltip?.length).toBeGreaterThan(20);
-  // Initial = full PHP pane; env-extend = facts; rewrites = Before/After/Diff.
-  const initialPhp = panel.querySelector('.optimize-trace-pane');
-  const envFacts = panel.querySelector('.optimize-trace-env-facts');
-  const viewTabs = panel.querySelector('.optimize-trace-view-tabs');
-  expect(initialPhp !== null || envFacts !== null || viewTabs !== null).toBe(
-    true,
-  );
-  const initialItem = [
-    ...panel.querySelectorAll<HTMLButtonElement>('.optimize-trace-item'),
-  ].find((item) => /Initial checker/iu.test(item.textContent ?? ''));
-  expect(initialItem).toBeDefined();
-}
-
-function expectFactDetail(panel: HTMLElement): void {
-  const envItem = [
-    ...panel.querySelectorAll<HTMLButtonElement>('.optimize-trace-item'),
-  ].find((item) => /Extend fact/iu.test(item.textContent ?? ''));
-  if (envItem !== undefined) {
-    envItem.click();
-    expect(panel.querySelector('.optimize-trace-env-facts')).not.toBeNull();
-    expect(panel.querySelector('.optimize-trace-fact-line')).not.toBeNull();
-    expect(
-      panel.querySelector(
-        '.optimize-trace-fact-known--true, .optimize-trace-fact-known--false',
-      ),
-    ).not.toBeNull();
-  }
-  const proveItem = [
-    ...panel.querySelectorAll<HTMLButtonElement>('.optimize-trace-item'),
-  ].find((item) => /prove|absorb/iu.test(item.textContent ?? ''));
-  expect(proveItem).toBeDefined();
-  proveItem!.click();
-  expect(panel.querySelector('.optimize-trace-view-tabs')).not.toBeNull();
-  expect(panel.querySelector('.optimize-trace-title-text')).not.toBeNull();
 }
 
 async function showsOptimizeTraceListAndCopiesPhp(): Promise<void> {
