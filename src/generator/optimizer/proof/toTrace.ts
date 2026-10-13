@@ -58,6 +58,8 @@ function implyRule(kind: ImplyProof['kind']): OptimizeTraceRuleId {
       return 'facts.imply.instanceofObject';
     case 'isAClassExists':
       return 'facts.imply.isAClassExists';
+    case 'emptyArrayCount':
+      return 'facts.imply.emptyArrayCount';
     case 'equalityType':
       return 'facts.imply.equalityType';
     case 'andConjunct':
@@ -148,6 +150,7 @@ export function implyProofToChildren(
     case 'exclusive':
     case 'instanceofObject':
     case 'isAClassExists':
+    case 'emptyArrayCount':
       return exprStep(implyRule(proof.kind), from, to, []);
     case 'equalityType':
       return exprStep(implyRule(proof.kind), from, to, [

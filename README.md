@@ -271,7 +271,8 @@ return TRUE;
 | `list<T>`                    | `is_array($value) && array_is_list($value)`, then `foreach` values                                                             |
 | `non-empty-*`                | Same as above, plus `$value !== []`                                                                                            |
 | `array<mixed>` / bare `list` | Container test only                                                                                                            |
-| `array<never>` / `array{}`   | `$value === []`                                                                                                                |
+| `array<never>` / sealed `array{}` | `$value === []`                                                                                                           |
+| `array{...}`                 | `is_array($value)` (unsealed empty shape)                                                                                      |
 | Nested arrays                | Nested `foreach`                                                                                                               |
 | Parameterized `iterable<…>`  | Not generated (foreach would not be side-effect-free)                                                                          |
 
@@ -279,30 +280,25 @@ return TRUE;
 
 Shapes represent non-homogenous containers.
 These are typically represented by existence check, followed by a type check on each property.
+Array and list shapes are sealed by default (extra keys are rejected); trailing `...` makes them unsealed, matching [PHPStan 2.2](https://phpstan.org/blog/phpstan-2-2-unsealed-array-shapes-safer-array-keys).
+Object shapes stay unsealed (no extra-property rejection; `...` is not supported on objects).
 Collection field loops (`foreach`) are emitted after all key and non-loop field guards so Optimize can group them.
-For example for `array{name: string, age: int}`:
+For example for `array{name: string, age: int}` (all keys required), the sealed check is `count($value) === 2` after the field checks:
 
 ```php
-if (!is_array($value)) {
-    return FALSE;
-}
-if (!array_key_exists('name', $value)) {
-    return FALSE;
-}
-if (!is_string($value['name'])) {
-    return FALSE;
-}
-if (!array_key_exists('age', $value)) {
-    return FALSE;
-}
-if (!is_int($value['age'])) {
-    return FALSE;
-}
-return TRUE;
+return (
+    is_array($value) &&
+    array_key_exists('name', $value) &&
+    array_key_exists('age', $value) &&
+    is_string($value['name']) &&
+    is_int($value['age']) &&
+    count($value) === 2
+);
 ```
 
-This example checks for required keys.
-For optional keys, the value type check runs only when the key exists.
+Empty sealed `array{}` emits `is_array` plus `count === 0`, which Optimize rewrites to `$value === []` under the known `is_array` fact.
+When any field is optional, count alone is not sound; a sealed extra-key `foreach` is used instead.
+For optional keys, the value type check runs only when the key exists; optional key names still count as allowed keys when rejecting extras.
 For example for `array{age?: int}`:
 
 ```php
@@ -314,18 +310,35 @@ if (array_key_exists('age', $value)) {
         return FALSE;
     }
 }
+foreach ($value as $key => $item) {
+    if ($key !== 'age') {
+        return FALSE;
+    }
+}
 return TRUE;
 ```
 
+Unsealed rest forms:
+
+| Rest              | Meaning |
+|-------------------|---------|
+| `...`             | Any extra keys (shorthand for `...<array-key, mixed>`) |
+| `...<V>`          | Extra values must be `V` (array key implied `array-key`; lists: value only) |
+| `...<K, V>`       | Extra entries must be `K` ⇒ `V` (arrays only; a parse error on lists) |
 
 In more general terms, the following shapes are supported:
 
-| Type                            | Check                                         |
-|---------------------------------|-----------------------------------------------|
-| `array{foo: int, bar?: string}` | `is_array`; `array_key_exists`                |
-| `array{int, string}`            | Expanded to indexes `0`, `1`, …               |
-| `list{int, string}`             | Same as array tuple, plus `array_is_list`     |
-| `object{foo: int}`              | `is_object`; `property_exists`; `$value->foo` |
+| Type                                 | Check                                                                 |
+|--------------------------------------|-----------------------------------------------------------------------|
+| `array{foo: int, bar: string}`       | Field checks; `count($value) === 2` (sealed, all required)            |
+| `array{foo: int, bar?: string}`      | Field checks; sealed extra-key `foreach` (has optional)               |
+| `array{foo: int, ...}`               | Same field checks; no extra-key rejection                             |
+| `array{foo: int, ...<string>}`       | Field checks; extra values checked as `string`                        |
+| `array{int, string}`                 | Indexes `0`, `1`, …; `count === 2`                                    |
+| `list{int, string}`                  | Same as array tuple, plus `array_is_list`; `count === 2`              |
+| `list{int, string, ...<bool>}`       | List tuple plus extra values as `bool`                                |
+| `non-empty-array{foo: int}`          | Same as array shape with non-empty container                          |
+| `object{foo: int}`                   | `is_object`; `property_exists`; `$value->foo` (not sealed)            |
 
 #### Uncheckable
 
@@ -376,7 +389,7 @@ For later top-level steps, Before / After / Diff show the full checker as PHP (w
 | Unnest                | Collapse nested single-body `if`s into one condition                                         | `if (a) { if (b) { … } }`                                                  | `if (a && b) { … }`                                                               |
 | Combine               | Merge consecutive `if`s that share the same body                                             | Separate fail-fast `if`s for `!is_array` and `!array_is_list`              | One `if` with `\|\|`                                                              |
 | Flatten               | Turn a trailing `if`/`return` pair into one `return` expression                              | `if (is_int($value)) return TRUE; return FALSE;`                           | `return is_int($value);` (via `($cond && $b) \|\| (!$cond && $c)`, then Simplify) |
-| Known facts           | Replace proven/entailed tests with a full proof trace (env seeds + derivations + equals/entails); array `foreach` keys are int or non-decimal-int-string; primary type tags are mutually exclusive | After `if (is_array($value)) return TRUE;`, later `if (!is_array($value))`   | Later / tautological or impossible key guard is dead; Trace lists env extend + prove children |
+| Known facts           | Replace proven/entailed tests with a full proof trace (env seeds + derivations + equals/entails); array `foreach` keys are int or non-decimal-int-string; primary type tags are mutually exclusive; under known `is_array($x)`, `count($x) === 0` → `$x === []` | After `if (is_array($value)) return TRUE;`, later `if (!is_array($value))`   | Later / tautological or impossible key guard is dead; Trace lists env extend + prove children |
 | Simplify              | Fold boolean algebra, contradictions, factoring, and related rewrites (see below)            |                                                                            |                                                                                   |
 | Dead-code elimination | Remove unreachable or empty statements; drop unused foreach `$key`; `foreach { return E }` → `if (!== [])` when `E` ignores binders | `if (FALSE) { … }`, constant-return `foreach`                              | Removed / spliced / non-empty `if`                                                |
 | Prune helpers         | Delete helpers that nothing calls anymore                                                    | Helper with no remaining callers                                           | Helper deleted                                                                    |
@@ -396,6 +409,7 @@ The simplify phase simplifies boolean expressions.
 | `is_a(…) && class_exists(…)`                       | `is_a(…)` (AND keeps the stronger fact; same idea for `instanceof` vs `is_object`) |
 | `is_int($x) \|\| $x === 0`                         | `is_int($x)` (typed literals imply their `is_*` tag; OR keeps the weaker fact)     |
 | `is_array($x) && $x === []`                        | `$x === []` (AND keeps the stronger fact)                                          |
+| `is_array($x) && count($x) === 0`                  | `$x === []` (facts rewrite count under known `is_array`, then absorb)              |
 | `!($x !== [])`                                     | `$x === []`                                                                        |
 | `!($x > 0)`                                        | `$x <= 0`                                                                          |
 

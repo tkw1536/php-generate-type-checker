@@ -127,8 +127,13 @@ int[][]
 
 # --- Array shapes ---
 array{}
+array{...}
 array{count: positive-int}
+array{foo: int, bar: string}
 array{foo: int, bar?: string}
+array{foo: int, ...}
+array{foo: int, ...<string>}
+array{foo: int, ...<string, int>}
 array{0: int, 1?: string}
 array{'field-one': int}
 array{'field-one'?: int}
@@ -136,12 +141,23 @@ array{timeout?: positive-int}
 array{outer: array{inner: string}}
 array{int}
 array{int, int}
+array{...<string>}
+non-empty-array{foo: int}
+non-empty-array{foo: int, ...}
+non-empty-array{}
 
 # --- List Shapes ---
 list<int>
 non-empty-list<string>
+list{}
+list{...}
 list{int}
 list{int, string}
+list{0: int, 1?: string}
+list{int, string, ...}
+list{int, string, ...<bool>}
+non-empty-list{int, string}
+non-empty-list{int, string, ...<bool>}
 
 # --- Object and List shapes --
 object{}

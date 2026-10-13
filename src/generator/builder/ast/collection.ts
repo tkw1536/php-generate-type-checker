@@ -16,14 +16,22 @@ export function isBareEmptyCollectionKeyword(
   );
 }
 
-/** Parser emits bare collection keywords; codegen treats them as `keyword<>`. */
+/**
+ * Parser emits bare collection keywords; codegen treats them as unsealed empty shapes
+ * (`list{...}` / `non-empty-array{...}`) so they keep “any list / any non-empty array” meaning.
+ */
 export function bareEmptyCollectionKeywordAsShape(
   node: {
     readonly kind: 'keyword';
     readonly keyword: BareEmptyCollectionKeyword;
   },
 ): Extract<TypeNode, { kind: 'shape' }> {
-  return { kind: 'shape', fields: [], keyword: node.keyword };
+  return {
+    kind: 'shape',
+    fields: [],
+    keyword: node.keyword,
+    rest: { kind: 'any' },
+  };
 }
 
 type CollectionKeyword = Extract<

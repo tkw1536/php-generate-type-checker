@@ -131,14 +131,20 @@ class Parser extends TokenCursor {
     const name = this.previousAfterAdvance();
     const keyword = canonicalKeyword(name);
 
-    if (keyword === 'array' && this.check('lbrace')) {
-      return parseArrayShape(this);
+    if (
+      (keyword === 'array' || keyword === 'non-empty-array') &&
+      this.check('lbrace')
+    ) {
+      return parseArrayShape(this, keyword);
     }
     if (keyword === 'object' && this.check('lbrace')) {
       return parseObjectShape(this);
     }
-    if (keyword === 'list' && this.check('lbrace')) {
-      return parseListShape(this);
+    if (
+      (keyword === 'list' || keyword === 'non-empty-list') &&
+      this.check('lbrace')
+    ) {
+      return parseListShape(this, keyword);
     }
     if (keyword === 'callable' && this.check('lparen')) {
       return parseCallable(this);

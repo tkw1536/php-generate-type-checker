@@ -22,7 +22,6 @@ import {
   compactListElementTest,
   isArrayCollectionKeyword,
   listElementType,
-  shapeListElementType,
 } from './helpers.ts';
 
 export function compactCollectionTest(
@@ -101,6 +100,17 @@ function compactEmptyShape(type: TypeNode, subject: ValueRef): Expr | null {
   if (type.kind !== 'shape' || shapeIsObject(type) || type.fields.length > 0) {
     return null;
   }
+  const rest = type.rest;
+  if (rest === undefined) {
+    // Sealed empty: only `[]` (non-empty sealed empty is never).
+    return isNonEmptyKeyword(type.keyword)
+      ? boolLit(false)
+      : binExpr('===', refArg(subject), literalArg('[]'));
+  }
+  if (rest.kind !== 'any') {
+    // Typed rest needs a foreach — not a compact expression.
+    return null;
+  }
   if (isArrayCollectionKeyword(type.keyword)) {
     const arrOk = callExpr('is_array', [refArg(subject)]);
     return isNonEmptyKeyword(type.keyword)
@@ -126,19 +136,28 @@ function compactEmptyShape(type: TypeNode, subject: ValueRef): Expr | null {
 }
 
 function compactListLike(type: TypeNode, subject: ValueRef): Expr | null {
-  if (
-    !(
-      (type.kind === 'collection' && isListKeyword(type.keyword)) ||
-      (type.kind === 'shape' &&
-        !shapeIsObject(type) &&
-        isListKeyword(type.keyword))
-    )
-  ) {
-    return null;
+  if (type.kind === 'collection' && isListKeyword(type.keyword)) {
+    return compactListElementTest(
+      type.keyword,
+      listElementType(type),
+      subject,
+    );
   }
-  const el =
-    type.kind === 'collection'
-      ? listElementType(type)
-      : shapeListElementType(type);
-  return compactListElementTest(type.keyword, el, subject);
+  // List shapes: only unsealed-any with a single mixed slot can collapse to a
+  // bare list guard; sealed / typed-rest shapes need field + extra-key IR.
+  if (
+    type.kind === 'shape' &&
+    !shapeIsObject(type) &&
+    isListKeyword(type.keyword) &&
+    type.rest?.kind === 'any' &&
+    type.fields.length === 1 &&
+    isMixed(type.fields[0].value)
+  ) {
+    return compactListElementTest(
+      type.keyword,
+      type.fields[0].value,
+      subject,
+    );
+  }
+  return null;
 }

@@ -80,6 +80,18 @@ describe('implies', () => {
   });
 });
 
+describe('implies empty array count', () => {
+  it('=== [] implies count === 0', () => {
+    const eqArr = binExpr('===', refArg($v), literalArg('[]'));
+    const countZero = binExpr(
+      '===',
+      callArg('count', [refArg($v)]),
+      literalArg('0'),
+    );
+    expect(implies(eqArr, countZero)).toBe(true);
+  });
+});
+
 describe('entails', () => {
   it('is_int ∨ is_string entails not is_resource', () => {
     const isResource = callExpr('is_resource', [refArg($v)]);

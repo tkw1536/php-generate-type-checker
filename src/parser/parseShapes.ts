@@ -1,4 +1,4 @@
-import type { ShapeField, TypeNode } from './ast.ts';
+import type { ShapeField, ShapeRest, TypeNode } from './ast.ts';
 import { ParseError } from './parseError.ts';
 import type { TokenReader } from './tokenReader.ts';
 
@@ -7,19 +7,19 @@ export type ShapeParseHost = TokenReader & {
   readonly parseUnion: () => TypeNode;
 };
 
-export function parseArrayShape(host: ShapeParseHost): TypeNode {
-  host.expect('lbrace');
-  const node = parseArrayShapeBody(host);
-  host.expect('rbrace');
-  return node;
-}
+type ArrayShapeKeyword = 'array' | 'non-empty-array';
+type ListShapeKeyword = 'list' | 'non-empty-list';
 
-function parseArrayShapeBody(host: ShapeParseHost): TypeNode {
-  if (host.check('rbrace')) {
-    return { kind: 'shape', fields: [], keyword: 'array' };
-  }
-  const fields = parseMixedShapeFields(host);
-  return { kind: 'shape', fields, keyword: 'array' };
+export function parseArrayShape(
+  host: ShapeParseHost,
+  keyword: ArrayShapeKeyword = 'array',
+): TypeNode {
+  host.expect('lbrace');
+  const body = host.check('rbrace')
+    ? { fields: [] as ShapeField[], rest: undefined }
+    : parseMixedShapeBody(host, { allowEntriesRest: true });
+  host.expect('rbrace');
+  return shapeNode(keyword, body.fields, body.rest);
 }
 
 export function parseObjectShape(host: ShapeParseHost): TypeNode {
@@ -29,11 +29,27 @@ export function parseObjectShape(host: ShapeParseHost): TypeNode {
   return { kind: 'shape', fields, keyword: 'object' };
 }
 
-export function parseListShape(host: ShapeParseHost): TypeNode {
+export function parseListShape(
+  host: ShapeParseHost,
+  keyword: ListShapeKeyword = 'list',
+): TypeNode {
   host.expect('lbrace');
-  const fields = host.check('rbrace') ? [] : parseMixedShapeFields(host);
+  const body = host.check('rbrace')
+    ? { fields: [] as ShapeField[], rest: undefined }
+    : parseMixedShapeBody(host, { allowEntriesRest: false });
   host.expect('rbrace');
-  return { kind: 'shape', fields, keyword: 'list' };
+  return shapeNode(keyword, body.fields, body.rest);
+}
+
+function shapeNode(
+  keyword: ArrayShapeKeyword | ListShapeKeyword,
+  fields: readonly ShapeField[],
+  rest: ShapeRest | undefined,
+): TypeNode {
+  if (rest === undefined) {
+    return { kind: 'shape', fields, keyword };
+  }
+  return { kind: 'shape', fields, keyword, rest };
 }
 
 function isKeyedShapeFieldStart(host: ShapeParseHost): boolean {
@@ -57,6 +73,12 @@ function parseShapeFields(host: ShapeParseHost): ShapeField[] {
   }
 
   do {
+    if (host.check('ellipsis')) {
+      throw new ParseError(
+        'Unsealed rest (...) is not supported on object shapes',
+        host.peek().pos,
+      );
+    }
     const field = parseShapeField(host);
     fields.push(field);
   } while (host.match('comma') && !host.check('rbrace'));
@@ -64,10 +86,38 @@ function parseShapeFields(host: ShapeParseHost): ShapeField[] {
   return fields;
 }
 
-/** Positional (`key: null`) and keyed (`key: string|number`) fields in one `array{…}` / `list{…}` body. */
-function parseMixedShapeFields(host: ShapeParseHost): ShapeField[] {
+type MixedShapeBody = {
+  readonly fields: ShapeField[];
+  readonly rest: ShapeRest | undefined;
+};
+
+/**
+ * Positional (`key: null`) and keyed fields, plus optional trailing unsealed rest.
+ */
+function parseMixedShapeBody(
+  host: ShapeParseHost,
+  opts: { readonly allowEntriesRest: boolean },
+): MixedShapeBody {
   const fields: ShapeField[] = [];
+  let rest: ShapeRest | undefined;
+
   do {
+    if (host.check('ellipsis')) {
+      if (rest !== undefined) {
+        throw new ParseError(
+          'Shape rest (...) may only appear once',
+          host.peek().pos,
+        );
+      }
+      rest = parseShapeRest(host, opts.allowEntriesRest);
+      if (host.match('comma') && !host.check('rbrace')) {
+        throw new ParseError(
+          'Shape rest (...) must be the last element',
+          host.peek().pos,
+        );
+      }
+      break;
+    }
     if (isKeyedShapeFieldStart(host)) {
       fields.push(parseShapeField(host));
     } else {
@@ -78,7 +128,32 @@ function parseMixedShapeFields(host: ShapeParseHost): ShapeField[] {
       });
     }
   } while (host.match('comma') && !host.check('rbrace'));
-  return fields;
+
+  return { fields, rest };
+}
+
+function parseShapeRest(
+  host: ShapeParseHost,
+  allowEntriesRest: boolean,
+): ShapeRest {
+  host.expect('ellipsis');
+  if (!host.match('lt')) {
+    return { kind: 'any' };
+  }
+  const first = host.parseUnion();
+  if (host.match('comma')) {
+    if (!allowEntriesRest) {
+      throw new ParseError(
+        'List shapes only allow a single value type after ... (not ...<K, V>)',
+        host.peek().pos,
+      );
+    }
+    const value = host.parseUnion();
+    host.expect('gt');
+    return { kind: 'entries', key: first, value };
+  }
+  host.expect('gt');
+  return { kind: 'values', value: first };
 }
 
 function parseShapeField(host: ShapeParseHost): ShapeField {

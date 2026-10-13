@@ -1176,6 +1176,150 @@
     }
   },
   {
+    "source": "array{foo: int, ...}",
+    "ast": {
+      "kind": "shape",
+      "fields": [
+        {
+          "key": "foo",
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
+        }
+      ],
+      "keyword": "array",
+      "rest": {
+        "kind": "any"
+      }
+    }
+  },
+  {
+    "source": "array{foo: int, ...<string>}",
+    "ast": {
+      "kind": "shape",
+      "fields": [
+        {
+          "key": "foo",
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
+        }
+      ],
+      "keyword": "array",
+      "rest": {
+        "kind": "values",
+        "value": {
+          "kind": "keyword",
+          "keyword": "string"
+        }
+      }
+    }
+  },
+  {
+    "source": "array{foo: int, ...<string, int>}",
+    "ast": {
+      "kind": "shape",
+      "fields": [
+        {
+          "key": "foo",
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
+        }
+      ],
+      "keyword": "array",
+      "rest": {
+        "kind": "entries",
+        "key": {
+          "kind": "keyword",
+          "keyword": "string"
+        },
+        "value": {
+          "kind": "keyword",
+          "keyword": "int"
+        }
+      }
+    }
+  },
+  {
+    "source": "array{...}",
+    "ast": {
+      "kind": "shape",
+      "fields": [],
+      "keyword": "array",
+      "rest": {
+        "kind": "any"
+      }
+    }
+  },
+  {
+    "source": "non-empty-array{foo: int}",
+    "ast": {
+      "kind": "shape",
+      "fields": [
+        {
+          "key": "foo",
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
+        }
+      ],
+      "keyword": "non-empty-array"
+    }
+  },
+  {
+    "source": "non-empty-array{foo: int, ...}",
+    "ast": {
+      "kind": "shape",
+      "fields": [
+        {
+          "key": "foo",
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
+        }
+      ],
+      "keyword": "non-empty-array",
+      "rest": {
+        "kind": "any"
+      }
+    }
+  },
+  {
+    "source": "non-empty-array{foo: int, ...<string>}",
+    "ast": {
+      "kind": "shape",
+      "fields": [
+        {
+          "key": "foo",
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
+        }
+      ],
+      "keyword": "non-empty-array",
+      "rest": {
+        "kind": "values",
+        "value": {
+          "kind": "keyword",
+          "keyword": "string"
+        }
+      }
+    }
+  },
+  {
     "source": "list<int>",
     "ast": {
       "kind": "collection",
@@ -1262,6 +1406,123 @@
         }
       ],
       "keyword": "list"
+    }
+  },
+  {
+    "source": "list{int, string, ...}",
+    "ast": {
+      "kind": "shape",
+      "fields": [
+        {
+          "key": null,
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
+        },
+        {
+          "key": null,
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "string"
+          }
+        }
+      ],
+      "keyword": "list",
+      "rest": {
+        "kind": "any"
+      }
+    }
+  },
+  {
+    "source": "list{int, string, ...<bool>}",
+    "ast": {
+      "kind": "shape",
+      "fields": [
+        {
+          "key": null,
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
+        },
+        {
+          "key": null,
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "string"
+          }
+        }
+      ],
+      "keyword": "list",
+      "rest": {
+        "kind": "values",
+        "value": {
+          "kind": "keyword",
+          "keyword": "bool"
+        }
+      }
+    }
+  },
+  {
+    "source": "non-empty-list{int, string}",
+    "ast": {
+      "kind": "shape",
+      "fields": [
+        {
+          "key": null,
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
+        },
+        {
+          "key": null,
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "string"
+          }
+        }
+      ],
+      "keyword": "non-empty-list"
+    }
+  },
+  {
+    "source": "non-empty-list{int, string, ...<bool>}",
+    "ast": {
+      "kind": "shape",
+      "fields": [
+        {
+          "key": null,
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "int"
+          }
+        },
+        {
+          "key": null,
+          "optional": false,
+          "value": {
+            "kind": "keyword",
+            "keyword": "string"
+          }
+        }
+      ],
+      "keyword": "non-empty-list",
+      "rest": {
+        "kind": "values",
+        "value": {
+          "kind": "keyword",
+          "keyword": "bool"
+        }
+      }
     }
   },
   {

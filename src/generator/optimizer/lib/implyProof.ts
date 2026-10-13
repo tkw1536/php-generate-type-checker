@@ -1,5 +1,5 @@
 import type { Arg, Expr } from '../../ir/types.ts';
-import { callExpr } from '../../ir/index.ts';
+import { binExpr, callArg, callExpr, literalArg } from '../../ir/index.ts';
 import { equals } from '../../ir/equals.ts';
 import type {
   AbsorbDropProof,
@@ -14,6 +14,30 @@ import {
 function isTrueLiteralArg(arg: Arg): boolean {
   return (
     arg.kind === 'literal' && (arg.value === 'true' || arg.value === 'TRUE')
+  );
+}
+
+function isEmptyArrayLiteral(arg: Arg): boolean {
+  return arg.kind === 'literal' && arg.value === '[]';
+}
+
+/** `$x === []` ⇒ `count($x) === 0`. */
+function emptyArrayImpliesCountZero(a: Expr, b: Expr): boolean {
+  if (a.kind !== 'bin' || a.op !== '===') {
+    return false;
+  }
+  let subject: Arg | null = null;
+  if (isEmptyArrayLiteral(a.right)) {
+    subject = a.left;
+  } else if (isEmptyArrayLiteral(a.left)) {
+    subject = a.right;
+  }
+  if (subject === null) {
+    return false;
+  }
+  return (
+    equals(b, binExpr('===', callArg('count', [subject]), literalArg('0'))) ||
+    equals(b, binExpr('===', literalArg('0'), callArg('count', [subject])))
   );
 }
 
@@ -47,6 +71,9 @@ export function implyProof(a: Expr, b: Expr): ImplyProof | null {
     equals(callExpr('is_object', [a.subject]), b)
   ) {
     return { kind: 'instanceofObject' };
+  }
+  if (emptyArrayImpliesCountZero(a, b)) {
+    return { kind: 'emptyArrayCount' };
   }
   if (exclusiveTypeImplies(a, b)) {
     return { kind: 'exclusive' };

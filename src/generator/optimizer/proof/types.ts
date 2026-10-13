@@ -7,6 +7,7 @@ export type ImplyProof =
   | { readonly kind: 'exclusive' }
   | { readonly kind: 'instanceofObject' }
   | { readonly kind: 'isAClassExists' }
+  | { readonly kind: 'emptyArrayCount' }
   | { readonly kind: 'equalityType'; readonly via: ImplyProof }
   | {
       readonly kind: 'andConjunct';

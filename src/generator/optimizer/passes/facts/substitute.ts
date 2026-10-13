@@ -20,6 +20,7 @@ import {
   absorbOperandsModuloFacts,
   HostCursor,
 } from './substitute.absorb.ts';
+import { normalizeCountEmpty } from './substitute.countEmpty.ts';
 import { proveFalseProof, proveTrueProof } from './substitute.prove.ts';
 
 function flushEnv(
@@ -102,6 +103,10 @@ function substituteFactsInner(
       expr: after,
       pos: commitProve(ctx, pos, host, 'facts.proveTrue', expr, after, trueProof),
     };
+  }
+  const countEmpty = normalizeCountEmpty(expr, env, ctx, pos, host);
+  if (countEmpty !== null) {
+    return countEmpty;
   }
   return substituteFactsShallow(expr, env, ctx, pos, host, sink);
 }

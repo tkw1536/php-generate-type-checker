@@ -6,7 +6,8 @@ import { blockHasCallChecker } from '../../../../test-utils/inlineTestHelpers.ts
 
 describe('optimize integration', () => {
   it('inlines nested array union in foreach and prunes helpers', () => {
-    const ast = parseType('array<array{x: string}|array{y: string}>');
+    // Unsealed shapes stay expression-sized so helpers inline; sealed shapes keep a foreach.
+    const ast = parseType('array<array{x: string, ...}|array{y: string, ...}>');
     const { ir: built } = buildMany([ast]);
     const optimized = optimize(built).ir;
     const entry = optimized.programs[optimized.order[0]];

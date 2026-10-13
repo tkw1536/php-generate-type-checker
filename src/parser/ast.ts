@@ -20,7 +20,8 @@ export type TypeNode =
   | { readonly kind: 'collection'; readonly key: TypeNode; readonly value: TypeNode; readonly keyword: 'array' | 'non-empty-array' | 'iterable' | 'non-empty-iterable' }
 
   // iterable{…} + variants — positional slots use {@link ShapeField} with `key: null`; named slots use string | number keys
-  | { readonly kind: 'shape'; readonly fields: readonly ShapeField[]; readonly keyword: 'list' | 'non-empty-list' | 'array' | 'non-empty-array' | 'iterable' | 'non-empty-iterable' | 'object' }
+  // Absent `rest` = sealed (array/list); object shapes never carry `rest`
+  | { readonly kind: 'shape'; readonly fields: readonly ShapeField[]; readonly keyword: 'list' | 'non-empty-list' | 'array' | 'non-empty-array' | 'iterable' | 'non-empty-iterable' | 'object'; readonly rest?: ShapeRest }
 
   // value[]
   | { readonly kind: 'array'; readonly value: TypeNode }
@@ -46,6 +47,12 @@ export interface ShapeField {
   readonly optional: boolean;
   readonly value: TypeNode;
 }
+
+/** Trailing unsealed rest on array/list shapes (`...`, `...<V>`, `...<K,V>`). */
+export type ShapeRest =
+  | { readonly kind: 'any' }
+  | { readonly kind: 'values'; readonly value: TypeNode }
+  | { readonly kind: 'entries'; readonly key: TypeNode; readonly value: TypeNode };
 
 export interface CallableParam {
   readonly name?: string;

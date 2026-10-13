@@ -110,9 +110,17 @@ const RULES: Record<OptimizeTraceRuleId, OptimizeTraceRuleInfo> = {
     title: 'Implication is_a',
     help: 'is_a(..., TRUE) ⇒ class_exists on the subject.',
   },
+  'facts.imply.emptyArrayCount': {
+    title: 'Implication empty array count',
+    help: '$x === [] ⇒ count($x) === 0. Always sound: the empty array has count zero.',
+  },
   'facts.imply.equalityType': {
     title: 'Implication equality type',
     help: 'Typed literal equality implies an is_* check (then further implications).',
+  },
+  'facts.normalize.countEmpty': {
+    title: 'Normalize empty count',
+    help: 'Under a known-true is_array($x), rewrites count($x) === 0 to $x === [] (and !== to !== []). Not sound for arbitrary Countable; nested children prove the is_array premise.',
   },
   'facts.imply.andConjunct': {
     title: 'Implication AND conjunct',

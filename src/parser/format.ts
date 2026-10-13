@@ -1,4 +1,4 @@
-import type { CallableParam, Keyword, ShapeField, TypeNode } from './ast';
+import type { CallableParam, Keyword, ShapeField, ShapeRest, TypeNode } from './ast';
 
 /**
  * Formats a TypeNode into a string.
@@ -104,8 +104,24 @@ function formatPostfixOperand(type: TypeNode): string {
 }
 
 function formatShape(type: Extract<TypeNode, { kind: 'shape' }>): string {
-  const fields = type.fields.map(formatShapeField).join(', ');
-  return `${type.keyword}{${fields}}`;
+  const parts = type.fields.map(formatShapeField);
+  if (type.rest !== undefined) {
+    parts.push(formatShapeRest(type.rest));
+  }
+  return `${type.keyword}{${parts.join(', ')}}`;
+}
+
+function formatShapeRest(rest: ShapeRest): string {
+  switch (rest.kind) {
+    case 'any':
+      return '...';
+    case 'values':
+      return `...<${formatTypeInner(rest.value, 'union')}>`;
+    case 'entries':
+      return `...<${formatTypeInner(rest.key, 'union')}, ${formatTypeInner(rest.value, 'union')}>`;
+    default:
+      throw new Error('never reached');
+  }
 }
 
 function formatShapeField(field: ShapeField): string {

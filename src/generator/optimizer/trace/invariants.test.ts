@@ -199,6 +199,10 @@ function assertFactsStepHasProof(name: string, reason: TraceStepReason): void {
       `${name}: simplify.normalize.absorb must nest imply proof`,
     ).toBe(true);
   }
+  if (rule === 'facts.normalize.countEmpty') {
+    expect(childRules(reason).length).toBeGreaterThan(0);
+    expect(bottomsOutAtAssumed(reason)).toBe(true);
+  }
 }
 
 function assertPruneTraceHonesty(

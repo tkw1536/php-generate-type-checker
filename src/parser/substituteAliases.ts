@@ -1,4 +1,4 @@
-import type { ShapeField, TypeNode } from './ast.ts';
+import type { ShapeField, ShapeRest, TypeNode } from './ast.ts';
 import {
   TypeAliasResolveError,
   collectNamedAliasReferences,
@@ -77,14 +77,20 @@ function substituteComposite(
       return { kind: 'intersection', types: node.types.map(sub) };
     case 'collection':
       return substituteCollection(node, sub);
-    case 'shape':
+    case 'shape': {
+      const fields = node.fields.map((field) =>
+        substituteShapeField(field, aliases, resolvedByName, resolving),
+      );
+      if (node.rest === undefined) {
+        return { kind: 'shape', keyword: node.keyword, fields };
+      }
       return {
         kind: 'shape',
         keyword: node.keyword,
-        fields: node.fields.map((field) =>
-          substituteShapeField(field, aliases, resolvedByName, resolving),
-        ),
+        fields,
+        rest: substituteShapeRest(node.rest, aliases, resolvedByName, resolving),
       };
+    }
     case 'generic':
       return {
         kind: 'generic',
@@ -125,6 +131,31 @@ function substituteShapeField(
     ...field,
     value: substituteAliases(field.value, aliases, resolvedByName, resolving),
   };
+}
+
+function substituteShapeRest(
+  rest: ShapeRest,
+  aliases: Map<string, TypeNode>,
+  resolvedByName: Map<string, TypeNode>,
+  resolving: Set<string>,
+): ShapeRest {
+  switch (rest.kind) {
+    case 'any':
+      return rest;
+    case 'values':
+      return {
+        kind: 'values',
+        value: substituteAliases(rest.value, aliases, resolvedByName, resolving),
+      };
+    case 'entries':
+      return {
+        kind: 'entries',
+        key: substituteAliases(rest.key, aliases, resolvedByName, resolving),
+        value: substituteAliases(rest.value, aliases, resolvedByName, resolving),
+      };
+    default:
+      throw new Error('never reached');
+  }
 }
 
 /** Returns alias names referenced as bare `named` nodes in an AST. */

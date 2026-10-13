@@ -117,11 +117,35 @@ function walkNamedAliasReferences(
       for (const field of node.fields) {
         walkNamedAliasReferences(field.value, aliasNames, out);
       }
+      walkShapeRestAliasReferences(node, aliasNames, out);
       return;
     case 'generic':
       for (const arg of node.typeArgs) {
         walkNamedAliasReferences(arg, aliasNames, out);
       }
+      return;
+    default:
+      throw new Error('never reached');
+  }
+}
+
+function walkShapeRestAliasReferences(
+  node: Extract<TypeNode, { kind: 'shape' }>,
+  aliasNames: Set<string>,
+  out: Set<string>,
+): void {
+  if (node.rest === undefined) {
+    return;
+  }
+  switch (node.rest.kind) {
+    case 'any':
+      return;
+    case 'values':
+      walkNamedAliasReferences(node.rest.value, aliasNames, out);
+      return;
+    case 'entries':
+      walkNamedAliasReferences(node.rest.key, aliasNames, out);
+      walkNamedAliasReferences(node.rest.value, aliasNames, out);
       return;
     default:
       throw new Error('never reached');

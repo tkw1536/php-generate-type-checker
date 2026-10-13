@@ -42,5 +42,13 @@
   {
     "input": "non-empty-scalar",
     "messageContains": "Invalid PHP class name"
+  },
+  {
+    "input": "list{int, ...<string, int>}",
+    "messageContains": "List shapes only allow a single value type"
+  },
+  {
+    "input": "object{foo: int, ...}",
+    "messageContains": "not supported on object shapes"
   }
 ]

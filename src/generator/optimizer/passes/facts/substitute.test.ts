@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   andExpr,
+  binExpr,
   boolLit,
+  callArg,
   callExpr,
   failIfStmt,
   instanceofExpr,
@@ -128,6 +130,31 @@ function isAImpliesClassExistsInAnd(): void {
   );
 }
 
+const countZero = binExpr(
+  '===',
+  callArg('count', [refArg($v)]),
+  literalArg('0'),
+);
+const eqEmpty = binExpr('===', refArg($v), literalArg('[]'));
+
+function countZeroBecomesEmptyUnderIsArrayFact(): void {
+  const env = {
+    ...emptyFactEnv(),
+    trueFacts: [factEntry(isArray, 'ifTrue')],
+  };
+  expect(substituteFacts(countZero, env).expr).toEqual(eqEmpty);
+}
+
+function countZeroUnchangedWithoutIsArray(): void {
+  expect(substituteFacts(countZero, emptyFactEnv()).expr).toEqual(countZero);
+}
+
+function isArrayAndCountZeroAbsorbsToEmpty(): void {
+  expect(
+    substituteFacts(andExpr([isArray, countZero]), emptyFactEnv()).expr,
+  ).toEqual(eqEmpty);
+}
+
 const EXIT_CASES = [
   ['return only', [returnStmt(boolLit(true))], true],
   [
@@ -197,6 +224,18 @@ describe('substituteFacts', () => {
   it(
     'replaces class_exists with true after is_a in and',
     isAImpliesClassExistsInAnd,
+  );
+  it(
+    'rewrites count===0 to ===[] under is_array fact',
+    countZeroBecomesEmptyUnderIsArrayFact,
+  );
+  it(
+    'leaves count===0 unchanged without is_array',
+    countZeroUnchangedWithoutIsArray,
+  );
+  it(
+    'absorbs is_array && count===0 to ===[]',
+    isArrayAndCountZeroAbsorbsToEmpty,
   );
 });
 
