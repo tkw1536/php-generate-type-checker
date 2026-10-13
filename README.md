@@ -281,7 +281,7 @@ return TRUE;
 Shapes represent non-homogenous containers.
 These are typically represented by existence check, followed by a type check on each property.
 Array and list shapes are sealed by default (extra keys are rejected); trailing `...` makes them unsealed, matching [PHPStan 2.2](https://phpstan.org/blog/phpstan-2-2-unsealed-array-shapes-safer-array-keys).
-The UI option **Unseal array shapes** (URL fragment `unseal=1`) treats shapes without `...` as unsealed instead, matching older PHPStan behavior.
+The UI option **Unseal array shapes** (URL fragment `unseal=1`) treats shapes without `...` as unsealed for runtime checks only (matching older PHPStan behavior); `@phpstan-assert-if-true` still uses the input type as written.
 Object shapes stay unsealed (no extra-property rejection; `...` is not supported on objects).
 Collection field loops (`foreach`) are emitted after all key and non-loop field guards so Optimize can group them.
 For example for `array{name: string, age: int}` (all keys required), the sealed check is `count($value) === 2` after the field checks:

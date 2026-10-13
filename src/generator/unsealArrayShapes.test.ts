@@ -45,6 +45,10 @@ describe('generateChecker unsealArrayShapes', () => {
     });
     expect(sealed).toContain('count($value) === 1');
     expect(unsealed).not.toContain('count(');
-    expect(unsealed).toContain("array{foo: int, ...}");
+    // Assert docs keep the input type; only codegen is unsealed.
+    expect(unsealed).toContain(
+      '@phpstan-assert-if-true array{foo: int} $value',
+    );
+    expect(unsealed).not.toContain('array{foo: int, ...}');
   });
 });
