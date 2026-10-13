@@ -17,10 +17,6 @@ export type EmitCtx = {
     type: TypeNode,
     subject: ValueRef,
   ) => readonly Expr[];
-  readonly compactCollectionTest: (
-    type: TypeNode,
-    subject: ValueRef,
-  ) => Expr | null;
   readonly checkShapeField: (type: TypeNode, fieldRef: ValueRef) => Block;
   readonly checkInValueLoop: (type: TypeNode, valueRef: ValueRef) => Block;
   readonly listGuards: (subject: ValueRef, nonEmpty: boolean) => Stmt[];

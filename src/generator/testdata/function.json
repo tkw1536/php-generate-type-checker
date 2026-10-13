@@ -485,11 +485,19 @@
   },
   {
     "input": "non-empty-array{foo: int}",
-    "expected": "/** @phpstan-assert-if-true non-empty-array{foo: int} $value */\nfunction isNonEmptyArrayFooInt(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_key_exists('foo', $value) &&\n        is_int($value['foo']) &&\n        count($value) === 1\n    );\n}\n"
+    "expected": "/** @phpstan-assert-if-true non-empty-array{foo: int} $value */\nfunction isNonEmptyArrayFooInt(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_key_exists('foo', $value) &&\n        $value !== [] &&\n        is_int($value['foo']) &&\n        count($value) === 1\n    );\n}\n"
   },
   {
     "input": "non-empty-array{foo: int, ...}",
-    "expected": "/** @phpstan-assert-if-true non-empty-array{foo: int, ...} $value */\nfunction isNonEmptyArrayFooInt(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_key_exists('foo', $value) &&\n        is_int($value['foo'])\n    );\n}\n"
+    "expected": "/** @phpstan-assert-if-true non-empty-array{foo: int, ...} $value */\nfunction isNonEmptyArrayFooInt(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_key_exists('foo', $value) &&\n        $value !== [] &&\n        is_int($value['foo'])\n    );\n}\n"
+  },
+  {
+    "input": "non-empty-array{foo?: int}",
+    "expected": "/** @phpstan-assert-if-true non-empty-array{foo?: int} $value */\nfunction isNonEmptyArrayFooInt(mixed $value): bool\n{\n    if (\n        !is_array($value) ||\n        $value === [] ||\n        (\n            array_key_exists('foo', $value) &&\n            !is_int($value['foo'])\n        )\n    ) {\n        return FALSE;\n    }\n    foreach ($value as $key => $item) {\n        if ($key !== 'foo') {\n            return FALSE;\n        }\n    }\n    return TRUE;\n}\n"
+  },
+  {
+    "input": "non-empty-array{foo?: int, ...}",
+    "expected": "/** @phpstan-assert-if-true non-empty-array{foo?: int, ...} $value */\nfunction isNonEmptyArrayFooInt(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        $value !== [] &&\n        (\n            !array_key_exists('foo', $value) ||\n            is_int($value['foo'])\n        )\n    );\n}\n"
   },
   {
     "input": "non-empty-array{}",
@@ -745,7 +753,7 @@
   },
   {
     "input": "array{left: array{}, right: never[]}|array{}",
-    "expected": "/** @phpstan-assert-if-true array{left: array{}, right: never[]}|array{} $value */\nfunction isArrayLeftArrayRightNeverArray(mixed $value): bool\n{\n    return (\n        $value === [] ||\n        (\n            is_array($value) &&\n            array_key_exists('left', $value) &&\n            array_key_exists('right', $value) &&\n            $value !== [] &&\n            $value['left'] === [] &&\n            $value['right'] === [] &&\n            count($value) === 2\n        )\n    );\n}\n"
+    "expected": "/** @phpstan-assert-if-true array{left: array{}, right: never[]}|array{} $value */\nfunction isArrayLeftArrayRightNeverArray(mixed $value): bool\n{\n    return (\n        (\n            is_array($value) &&\n            array_key_exists('left', $value) &&\n            array_key_exists('right', $value) &&\n            $value['left'] === [] &&\n            $value['right'] === [] &&\n            count($value) === 2\n        ) ||\n        $value === []\n    );\n}\n"
   },
   {
     "input": "array{x: non-empty-array<string, string>}",

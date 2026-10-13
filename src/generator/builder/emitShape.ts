@@ -85,7 +85,15 @@ function emitShapeContainerGuards(
   if (isListKeyword(node.keyword)) {
     return [...ctx.listGuards(base, isNonEmptyKeyword(node.keyword))];
   }
-  return [failIfStmt(callExpr('is_array', [refArg(base)]))];
+  // Always emit the non-empty guard when requested; Optimize can drop
+  // `$value !== []` when a required key already entails non-emptiness.
+  return [
+    ...ctx.arrayGuards(
+      base,
+      isNonEmptyKeyword(node.keyword),
+      isIterableKeyword(node.keyword),
+    ),
+  ];
 }
 
 function emitShapeFields(

@@ -18,7 +18,6 @@ import { cannotBuild } from './errors.ts';
 import type { EmitCtx } from './emitCtx.ts';
 import {
   type EmitOptions,
-  exprAtoms,
   listElementType,
   stripTrailingTrueReturn,
 } from './helpers.ts';
@@ -35,7 +34,7 @@ export function emitCollection(
     return emitList(ctx, node, subject);
   }
   if (isIterableKeyword(node.keyword) && !('key' in node)) {
-    return emitBareIterable(ctx, node, subject);
+    return emitBareIterable(node, subject);
   }
   if ('key' in node) {
     return emitKeyedEntries(ctx, node, subject);
@@ -113,7 +112,6 @@ function emitList(
 }
 
 function emitBareIterable(
-  ctx: EmitCtx,
   node: Extract<TypeNode, { kind: 'collection' }>,
   subject: ValueRef,
 ): Block {
@@ -125,14 +123,6 @@ function emitBareIterable(
     out.push(
       failIfStmt(binExpr('!==', refArg(subject), literalArg('[]'))),
     );
-  }
-  if ('value' in node && !isMixed(node)) {
-    const compact = ctx.compactCollectionTest(node, subject);
-    if (compact !== null) {
-      for (const atom of exprAtoms(compact)) {
-        out.push(failIfStmt(atom));
-      }
-    }
   }
   return out;
 }
@@ -172,31 +162,12 @@ function emitHomogeneousArray(
     return [failIfStmt(emptyCheck)];
   }
 
-  const out: Stmt[] = [];
-
   if (isMixed(node.value)) {
-    const compact = ctx.compactCollectionTest(node, subject);
-    if (compact !== null) {
-      for (const atom of exprAtoms(compact)) {
-        out.push(failIfStmt(atom));
-      }
-      return out;
-    }
-    out.push(...ctx.arrayGuards(subject, nonEmpty, false));
-    return out;
+    return [...ctx.arrayGuards(subject, nonEmpty, false)];
   }
 
-  const compact = ctx.compactCollectionTest(node, subject);
-  if (compact !== null) {
-    for (const atom of exprAtoms(compact)) {
-      out.push(failIfStmt(atom));
-    }
-    return out;
-  }
-
-  out.push(...ctx.arrayGuards(subject, nonEmpty, false));
   return [
-    ...out,
+    ...ctx.arrayGuards(subject, nonEmpty, false),
     ...emitForeachKeyed(ctx, subject, null, node.value, nonEmpty, true),
   ];
 }

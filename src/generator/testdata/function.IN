@@ -144,6 +144,8 @@ array{int, int}
 array{...<string>}
 non-empty-array{foo: int}
 non-empty-array{foo: int, ...}
+non-empty-array{foo?: int}
+non-empty-array{foo?: int, ...}
 non-empty-array{}
 
 # --- List Shapes ---

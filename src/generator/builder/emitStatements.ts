@@ -150,10 +150,6 @@ function unionArmExpr(
   member: TypeNode,
   subject: ValueRef,
 ): Expr {
-  const compact = ctx.compactCollectionTest(member, subject);
-  if (compact !== null) {
-    return compact;
-  }
   try {
     return ctx.booleanForType(member, subject);
   } catch (error) {

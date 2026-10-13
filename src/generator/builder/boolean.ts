@@ -34,18 +34,6 @@ export function booleanForType(
   type: TypeNode,
   subject: ValueRef,
 ): Expr {
-  const compact = ctx.compactCollectionTest(type, subject);
-  if (compact !== null) {
-    return compact;
-  }
-  return booleanForTypeKind(ctx, type, subject);
-}
-
-function booleanForTypeKind(
-  ctx: EmitCtx,
-  type: TypeNode,
-  subject: ValueRef,
-): Expr {
   switch (type.kind) {
     case 'keyword':
       return booleanForKeyword(type.keyword, subject);

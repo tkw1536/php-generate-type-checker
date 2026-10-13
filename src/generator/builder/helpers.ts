@@ -1,15 +1,5 @@
 import type { TypeNode } from '../../parser/ast.ts';
-import type { Block, Expr, ValueRef } from '../ir/types.ts';
-import {
-  andExpr,
-  binExpr,
-  boolLit,
-  callExpr,
-  literalArg,
-  refArg,
-} from '../ir/index.ts';
-import { isNonEmptyKeyword } from './ast/collection.ts';
-import { isMixed, isNever } from './ast/classify.ts';
+import type { Block, Expr } from '../ir/types.ts';
 
 export type EmitOptions = {
   readonly insideShapeField: boolean;
@@ -37,46 +27,6 @@ export function listElementType(
     return node.value;
   }
   return { kind: 'keyword', keyword: 'mixed' };
-}
-
-export function shapeListElementType(
-  node: Extract<TypeNode, { kind: 'shape' }>,
-): TypeNode {
-  if (node.fields.length === 1) {
-    return node.fields[0].value;
-  }
-  return { kind: 'keyword', keyword: 'mixed' };
-}
-
-export function compactListElementTest(
-  keyword:
-    | Extract<TypeNode, { kind: 'collection' }>['keyword']
-    | Extract<TypeNode, { kind: 'shape' }>['keyword'],
-  el: TypeNode,
-  subject: ValueRef,
-): Expr | null {
-  if (isNever(el)) {
-    return isNonEmptyKeyword(keyword)
-      ? boolLit(false)
-      : binExpr('===', refArg(subject), literalArg('[]'));
-  }
-  if (isMixed(el)) {
-    const listOk = andExpr([
-      callExpr('is_array', [refArg(subject)]),
-      callExpr('array_is_list', [refArg(subject)]),
-    ]);
-    return isNonEmptyKeyword(keyword)
-      ? andExpr([
-          listOk,
-          binExpr('!==', refArg(subject), literalArg('[]')),
-        ])
-      : listOk;
-  }
-  return null;
-}
-
-export function isArrayCollectionKeyword(keyword: string): boolean {
-  return keyword === 'array' || keyword === 'non-empty-array';
 }
 
 export function phpKeyLiteral(key: string | number): string {

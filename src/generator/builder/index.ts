@@ -15,7 +15,6 @@ import {
   booleanAtoms,
   booleanForType,
 } from './boolean.ts';
-import { compactCollectionTest } from './compactCollection.ts';
 import type { EmitCtx } from './emitCtx.ts';
 import { arrayGuards, listGuards } from './emitGuards.ts';
 import { emitStatements } from './emitStatements.ts';
@@ -84,8 +83,6 @@ export class Builder {
         emitStatements(ctx, type, subject, opts),
       booleanForType: (type, subject) => booleanForType(ctx, type, subject),
       booleanAtoms: (type, subject) => booleanAtoms(ctx, type, subject),
-      compactCollectionTest: (type, subject) =>
-        compactCollectionTest(ctx, type, subject),
       checkShapeField: (type, fieldRef) => this.checkShapeField(type, fieldRef),
       checkInValueLoop: (type, valueRef) =>
         this.checkInValueLoop(type, valueRef),
