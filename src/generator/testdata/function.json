@@ -485,7 +485,7 @@
   },
   {
     "input": "object{'a-minus': int, 'b-minus'?: string}",
-    "expected": "/** @phpstan-assert-if-true object{'a-minus': int, 'b-minus'?: string} $value */\nfunction isObjectAMinusIntBMinusString(mixed $value): bool\n{\n    return (\n        is_object($value) &&\n        property_exists($value, 'a-minus') &&\n        is_int($value->a-minus) &&\n        (\n            !property_exists($value, 'b-minus') ||\n            is_string($value->b-minus)\n        )\n    );\n}\n"
+    "expected": "/** @phpstan-assert-if-true object{'a-minus': int, 'b-minus'?: string} $value */\nfunction isObjectAMinusIntBMinusString(mixed $value): bool\n{\n    return (\n        is_object($value) &&\n        property_exists($value, 'a-minus') &&\n        is_int($value->{'a-minus'}) &&\n        (\n            !property_exists($value, 'b-minus') ||\n            is_string($value->{'b-minus'})\n        )\n    );\n}\n"
   },
   {
     "input": "object{outer: object{inner: string}}",

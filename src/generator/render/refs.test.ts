@@ -21,6 +21,15 @@ function chainsPropertyAccessWithoutParens(): void {
   ).toBe('$value->outer->inner');
 }
 
+function bracesNonIdentifierPropertyNames(): void {
+  expect(renderValueRef(propertyAccessRef($v, 'a-minus'))).toBe(
+    "$value->{'a-minus'}",
+  );
+  expect(renderValueRef(propertyAccessRef($v, 'class'))).toBe(
+    "$value->{'class'}",
+  );
+}
+
 function chainsMixedAccessWithoutParens(): void {
   expect(
     renderValueRef(propertyAccessRef(arrayAccessRef($v, 'outer'), 'inner')),
@@ -81,6 +90,10 @@ describe('renderValueRef', () => {
   it(
     'chains property access without parentheses',
     chainsPropertyAccessWithoutParens,
+  );
+  it(
+    'braces non-identifier and reserved property names',
+    bracesNonIdentifierPropertyNames,
   );
   it('chains mixed [] / -> without parentheses', chainsMixedAccessWithoutParens);
 });

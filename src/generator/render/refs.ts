@@ -40,8 +40,18 @@ const PHP_RESERVED_OBJECT_PROPERTIES = new Set([
   'enum',
 ]);
 
+/** Names that may appear bare after `->` (PHP identifier; keywords still braced). */
+const PHP_BARE_PROPERTY_NAME = /^[a-zA-Z_][a-zA-Z0-9_]*$/u;
+
 function phpQuotedString(value: string): string {
   return `'${value.replaceAll('\\', '\\\\').replaceAll('\'', "\\'")}'`;
+}
+
+function needsBracedPropertyAccess(name: string): boolean {
+  return (
+    PHP_RESERVED_OBJECT_PROPERTIES.has(name) ||
+    !PHP_BARE_PROPERTY_NAME.test(name)
+  );
 }
 
 function arrayIndexExpr(key: string | number): string {
@@ -139,7 +149,7 @@ export function renderValueRef(
       return `${renderValueRef(ref.object, tempNames)}[${arrayIndexExpr(ref.key)}]`;
     case 'property_access': {
       const object = renderValueRef(ref.object, tempNames);
-      if (PHP_RESERVED_OBJECT_PROPERTIES.has(ref.name)) {
+      if (needsBracedPropertyAccess(ref.name)) {
         return `${object}->{${phpQuotedString(ref.name)}}`;
       }
       return `${object}->${ref.name}`;
