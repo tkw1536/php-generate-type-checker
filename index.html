@@ -112,6 +112,31 @@
             </div>
             <div class="panel-footer-options">
               <div class="panel-footer-option-row">
+                <label class="panel-footer-option" for="generate-allow-unsafe-string-keys">
+                  <input
+                    type="checkbox"
+                    id="generate-allow-unsafe-string-keys"
+                  >
+                  <span>Allow unsafe string keys</span>
+                </label>
+                <button
+                  type="button"
+                  id="allow-unsafe-string-keys-unsound-badge"
+                  class="option-unsound-badge"
+                  aria-label="Unsound"
+                  aria-describedby="help-unsound-badge"
+                  data-tooltip="Unsound means the generated checker is not guaranteed to match the type: it may accept values that do not match, or reject values that do, producing incorrect results at runtime."
+                >UNSOUND</button>
+                <button
+                  type="button"
+                  class="option-help"
+                  aria-label="Help: Allow unsafe string keys"
+                  aria-describedby="help-allow-unsafe-string-keys"
+                  data-tooltip="When on, array and non-empty-array keys written as string are checked like int|non-decimal-int-string (PHPStan reportUnsafeArrayStringKeyCasting: detect), matching real PHP key casting. When off (default), keys stay string checks — same runtime accept set as PHPStan default/prevent. @phpstan-assert-if-true still uses the input type."
+                >?</button>
+                <span id="help-allow-unsafe-string-keys" class="visually-hidden">When on, array and non-empty-array keys written as string are checked like int|non-decimal-int-string (PHPStan reportUnsafeArrayStringKeyCasting: detect), matching real PHP key casting. When off (default), keys stay string checks — same runtime accept set as PHPStan default/prevent. @phpstan-assert-if-true still uses the input type.</span>
+              </div>
+              <div class="panel-footer-option-row">
                 <label class="panel-footer-option" for="generate-unseal-array-shapes">
                   <input
                     type="checkbox"

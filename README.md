@@ -276,6 +276,11 @@ return TRUE;
 | Nested arrays                | Nested `foreach`                                                                                                               |
 | Parameterized `iterable<…>`  | Not generated (foreach would not be side-effect-free)                                                                          |
 
+The UI option **Allow unsafe string keys** (URL fragment `unsafekeys=1`) rewrites `array` / `non-empty-array` keys that are exactly `string` to `int|non-decimal-int-string` for runtime checks only, matching PHPStan [`reportUnsafeArrayStringKeyCasting: detect`](https://phpstan.org/blog/why-array-string-keys-are-not-type-safe).
+Off (default) keeps `string` key checks — the same runtime accept set as PHPStan default / `prevent` for real PHP arrays (decimal-int-string keys are already cast to `int` before `foreach`).
+`@phpstan-assert-if-true` still uses the input type as written.
+Lists, value-only `array<T>`, shape rests, and other key types are unchanged.
+
 #### Shapes
 
 Shapes represent non-homogenous containers.

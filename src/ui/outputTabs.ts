@@ -1,4 +1,4 @@
-import { getUnsealArrayShapes } from './generateControls.ts';
+import { hasUnsoundGenerateOptions } from './generateControls.ts';
 import {
   getActiveOutputTab,
   isOutputTabId,
@@ -52,8 +52,9 @@ function syncOutputFooter(tabId: OutputTabId): void {
     pane.hidden = !active;
   });
   if (footer !== null) {
-    const phpUnsound = tabId === 'php' && getUnsealArrayShapes();
-    const phpCaution = tabId === 'php' && !getUnsealArrayShapes();
+    const unsound = hasUnsoundGenerateOptions();
+    const phpUnsound = tabId === 'php' && unsound;
+    const phpCaution = tabId === 'php' && !unsound;
     footer.classList.toggle('panel-footer--warning', phpUnsound);
     footer.classList.toggle('panel-footer--caution', phpCaution);
     footer.classList.toggle('panel-footer--info', tabId !== 'php');

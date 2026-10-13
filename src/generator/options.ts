@@ -29,6 +29,14 @@ export interface GenerateCheckerOptions {
    * When `false` (default), sealed shapes reject unknown keys.
    */
   readonly unsealArrayShapes?: boolean;
+  /**
+   * When `true`, rewrite `array` / `non-empty-array` keys that are exactly
+   * `string` to `int|non-decimal-int-string` for runtime codegen only
+   * (PHPStan `reportUnsafeArrayStringKeyCasting: detect`). Assert docs still
+   * use the input type. When `false` (default), keep `string` key checks
+   * (same runtime accept set as PHPStan default / `prevent` for real arrays).
+   */
+  readonly allowUnsafeArrayStringKeys?: boolean;
 }
 
 export const DEFAULT_CHECKER_OUTPUT: CheckerOutputMode = 'function';

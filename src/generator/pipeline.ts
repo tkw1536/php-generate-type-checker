@@ -18,6 +18,7 @@ import {
 } from './options.ts';
 import { render } from './render/index.ts';
 import { formatTypeForPhpstanDoc } from './render/phpdoc.ts';
+import { allowUnsafeArrayStringKeysInType } from './allowUnsafeArrayStringKeys.ts';
 import { unsealArrayShapesInType } from './unsealArrayShapes.ts';
 
 export type BuildOptions = GenerateCheckerOptions & {
@@ -98,11 +99,23 @@ function prepareEntriesForBuild(
     aliasName: entry.aliasName,
     typeString: entry.typeString,
     docType: entry.docType,
-    effectiveAst:
-      options?.unsealArrayShapes === true
-        ? unsealArrayShapesInType(entry.ast)
-        : entry.ast,
+    effectiveAst: effectiveAstForOptions(entry.ast, options),
   }));
+}
+
+/** Apply generate-option AST rewrites (input type for asserts is unchanged). */
+function effectiveAstForOptions(
+  ast: TypeNode,
+  options?: BuildOptions,
+): TypeNode {
+  let result = ast;
+  if (options?.allowUnsafeArrayStringKeys === true) {
+    result = allowUnsafeArrayStringKeysInType(result);
+  }
+  if (options?.unsealArrayShapes === true) {
+    result = unsealArrayShapesInType(result);
+  }
+  return result;
 }
 
 function registerAliasCheckers(
@@ -184,10 +197,7 @@ export function buildMany(
   const docStringsByName: Record<string, string> = {};
   for (const [i, tp] of types.entries()) {
     try {
-      const effectiveAst =
-        options?.unsealArrayShapes === true
-          ? unsealArrayShapesInType(tp)
-          : tp;
+      const effectiveAst = effectiveAstForOptions(tp, options);
       const name = builder.add(effectiveAst);
       // Assert docs always describe the input type, not option rewrites.
       docStringsByName[name] = formatTypeForPhpstanDoc(tp);

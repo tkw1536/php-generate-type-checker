@@ -9,7 +9,7 @@ import {
   onGenerateInputChanged,
   runGenerate,
 } from './ui/generate.ts';
-import { syncUnsealArrayShapesUi } from './ui/generateControls.ts';
+import { syncUnsoundOptionsUi } from './ui/generateControls.ts';
 import {
   refreshAllHighlights,
   setupCopyButton,
@@ -37,6 +37,9 @@ const emitAliasesCheckbox =
 const resolveAliasesCheckbox = document.querySelector<HTMLInputElement>(
   '#generate-resolve-aliases',
 )!;
+const allowUnsafeStringKeysCheckbox = document.querySelector<HTMLInputElement>(
+  '#generate-allow-unsafe-string-keys',
+)!;
 const unsealArrayShapesCheckbox = document.querySelector<HTMLInputElement>(
   '#generate-unseal-array-shapes',
 )!;
@@ -47,8 +50,12 @@ prioritizeReadabilityCheckbox.addEventListener('change', generateNow);
 verbosePhpdocCheckbox.addEventListener('change', generateNow);
 emitAliasesCheckbox.addEventListener('change', generateNow);
 resolveAliasesCheckbox.addEventListener('change', generateNow);
+allowUnsafeStringKeysCheckbox.addEventListener('change', () => {
+  syncUnsoundOptionsUi();
+  generateNow();
+});
 unsealArrayShapesCheckbox.addEventListener('change', () => {
-  syncUnsealArrayShapesUi();
+  syncUnsoundOptionsUi();
   generateNow();
 });
 

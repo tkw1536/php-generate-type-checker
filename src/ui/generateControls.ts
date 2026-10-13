@@ -54,6 +54,17 @@ export function getUnsealArrayShapes(): boolean {
   return el?.checked === true;
 }
 
+export function getAllowUnsafeArrayStringKeys(): boolean {
+  const el = document.querySelector<HTMLInputElement>(
+    '#generate-allow-unsafe-string-keys',
+  );
+  return el?.checked === true;
+}
+
+export function hasUnsoundGenerateOptions(): boolean {
+  return getAllowUnsafeArrayStringKeys() || getUnsealArrayShapes();
+}
+
 function getPrioritizeReadabilityOverCompactness(): boolean {
   return !getOptimize();
 }
@@ -66,6 +77,7 @@ export function readUiFragmentState(): AppFragmentState {
   return {
     optimize: getOptimize(),
     verbosePhpdoc: getVerbosePhpdoc(),
+    allowUnsafeArrayStringKeys: getAllowUnsafeArrayStringKeys(),
     unsealArrayShapes: getUnsealArrayShapes(),
     emit: getGenerateOutputMode(),
     emitAliases: getEmitPhpstanTypeAliases(),
@@ -86,6 +98,11 @@ export function applyFragmentState(
     document.querySelector<HTMLInputElement>(
       '#generate-verbose-phpdoc',
     )!.checked = fragment.verbosePhpdoc;
+  }
+  if (fragment.allowUnsafeArrayStringKeys !== undefined) {
+    document.querySelector<HTMLInputElement>(
+      '#generate-allow-unsafe-string-keys',
+    )!.checked = fragment.allowUnsafeArrayStringKeys;
   }
   if (fragment.unsealArrayShapes !== undefined) {
     document.querySelector<HTMLInputElement>(
@@ -109,7 +126,7 @@ export function applyFragmentState(
     document.querySelector<HTMLTextAreaElement>('#type-input')!.value =
       fragment.input;
   }
-  syncUnsealArrayShapesUi();
+  syncUnsoundOptionsUi();
 }
 
 export function syncFragmentToLocation(): void {
@@ -120,6 +137,7 @@ export function getGenerateOptions(): {
   readonly output: CheckerOutputMode;
   readonly prioritizeReadabilityOverCompactness: boolean;
   readonly verbosePhpdoc: boolean;
+  readonly allowUnsafeArrayStringKeys: boolean;
   readonly unsealArrayShapes: boolean;
 } {
   return {
@@ -127,6 +145,7 @@ export function getGenerateOptions(): {
     prioritizeReadabilityOverCompactness:
       getPrioritizeReadabilityOverCompactness(),
     verbosePhpdoc: getVerbosePhpdoc(),
+    allowUnsafeArrayStringKeys: getAllowUnsafeArrayStringKeys(),
     unsealArrayShapes: getUnsealArrayShapes(),
   };
 }
@@ -145,19 +164,24 @@ const PHP_WARNING_DEFAULT =
 const PHP_WARNING_UNSOUND =
   'Generated code is unsound because of selected options and can produce incorrect results at runtime. Always review it before using it in production.';
 
-/** Sync UNSOUND badge and PHP output footer severity with the unseal option. */
-export function syncUnsealArrayShapesUi(): void {
-  const enabled = getUnsealArrayShapes();
-  const badge = document.querySelector<HTMLElement>(
-    '#unseal-array-shapes-unsound-badge',
-  );
-  badge?.classList.toggle('option-unsound-badge--active', enabled);
+/** Sync UNSOUND badges and PHP output footer severity with unsound options. */
+export function syncUnsoundOptionsUi(): void {
+  const unsafeKeys = getAllowUnsafeArrayStringKeys();
+  const unseal = getUnsealArrayShapes();
+  const anyUnsound = hasUnsoundGenerateOptions();
+
+  document
+    .querySelector<HTMLElement>('#allow-unsafe-string-keys-unsound-badge')
+    ?.classList.toggle('option-unsound-badge--active', unsafeKeys);
+  document
+    .querySelector<HTMLElement>('#unseal-array-shapes-unsound-badge')
+    ?.classList.toggle('option-unsound-badge--active', unseal);
 
   const warningText = document.querySelector<HTMLElement>(
     '#php-output-warning-text',
   );
   if (warningText !== null) {
-    warningText.textContent = enabled
+    warningText.textContent = anyUnsound
       ? PHP_WARNING_UNSOUND
       : PHP_WARNING_DEFAULT;
   }
@@ -173,6 +197,6 @@ export function syncUnsealArrayShapesUi(): void {
   if (!phpPaneActive) {
     return;
   }
-  footer.classList.toggle('panel-footer--warning', enabled);
-  footer.classList.toggle('panel-footer--caution', !enabled);
+  footer.classList.toggle('panel-footer--warning', anyUnsound);
+  footer.classList.toggle('panel-footer--caution', !anyUnsound);
 }

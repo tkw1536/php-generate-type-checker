@@ -3,6 +3,7 @@ import type { CheckerOutputMode } from '../generator/options.ts';
 export interface AppFragmentState {
   readonly optimize: boolean;
   readonly verbosePhpdoc: boolean;
+  readonly allowUnsafeArrayStringKeys: boolean;
   readonly unsealArrayShapes: boolean;
   readonly emit: CheckerOutputMode;
   readonly emitAliases: boolean;
@@ -46,6 +47,7 @@ export function encodeFragmentState(state: AppFragmentState): string {
   const params = new URLSearchParams();
   params.set('optimize', state.optimize ? '1' : '0');
   params.set('verbose', state.verbosePhpdoc ? '1' : '0');
+  params.set('unsafekeys', state.allowUnsafeArrayStringKeys ? '1' : '0');
   params.set('unseal', state.unsealArrayShapes ? '1' : '0');
   params.set('emit', state.emit);
   params.set('aliases', state.emitAliases ? '1' : '0');
@@ -66,6 +68,7 @@ export function decodeFragmentState(
   const parsed = {
     optimize: parseBoolParam(params.get('optimize')),
     verbosePhpdoc: parseBoolParam(params.get('verbose')),
+    allowUnsafeArrayStringKeys: parseBoolParam(params.get('unsafekeys')),
     unsealArrayShapes: parseBoolParam(params.get('unseal')),
     emit: parseEmitParam(params.get('emit')),
     emitAliases: parseBoolParam(params.get('aliases')),
@@ -76,6 +79,7 @@ export function decodeFragmentState(
   if (
     parsed.optimize === undefined &&
     parsed.verbosePhpdoc === undefined &&
+    parsed.allowUnsafeArrayStringKeys === undefined &&
     parsed.unsealArrayShapes === undefined &&
     parsed.emit === undefined &&
     parsed.emitAliases === undefined &&
@@ -91,6 +95,7 @@ export function decodeFragmentState(
 function buildPartialFragmentState(parsed: {
   readonly optimize: boolean | undefined;
   readonly verbosePhpdoc: boolean | undefined;
+  readonly allowUnsafeArrayStringKeys: boolean | undefined;
   readonly unsealArrayShapes: boolean | undefined;
   readonly emit: CheckerOutputMode | undefined;
   readonly emitAliases: boolean | undefined;
@@ -100,6 +105,7 @@ function buildPartialFragmentState(parsed: {
   const state: {
     optimize?: boolean;
     verbosePhpdoc?: boolean;
+    allowUnsafeArrayStringKeys?: boolean;
     unsealArrayShapes?: boolean;
     emit?: CheckerOutputMode;
     emitAliases?: boolean;
@@ -111,6 +117,9 @@ function buildPartialFragmentState(parsed: {
   }
   if (parsed.verbosePhpdoc !== undefined) {
     state.verbosePhpdoc = parsed.verbosePhpdoc;
+  }
+  if (parsed.allowUnsafeArrayStringKeys !== undefined) {
+    state.allowUnsafeArrayStringKeys = parsed.allowUnsafeArrayStringKeys;
   }
   if (parsed.unsealArrayShapes !== undefined) {
     state.unsealArrayShapes = parsed.unsealArrayShapes;
