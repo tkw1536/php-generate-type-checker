@@ -64,6 +64,9 @@ function implyUsesExclusive(p: ImplyProof): boolean {
     case 'instanceofObject':
     case 'isAClassExists':
     case 'emptyArrayCount':
+    case 'arrayKeyExistsNonEmpty':
+    case 'arrayKeyExistsCountNonZero':
+    case 'countPositiveNonEmpty':
       return false;
     default:
       throw new Error('never reached');

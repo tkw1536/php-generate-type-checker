@@ -411,6 +411,9 @@ The simplify phase simplifies boolean expressions.
 | `is_int($x) \|\| $x === 0`                         | `is_int($x)` (typed literals imply their `is_*` tag; OR keeps the weaker fact)     |
 | `is_array($x) && $x === []`                        | `$x === []` (AND keeps the stronger fact)                                          |
 | `is_array($x) && count($x) === 0`                  | `$x === []` (facts rewrite count under known `is_array`, then absorb)              |
+| `array_key_exists($k, $x) && $x !== []`            | `array_key_exists($k, $x)` (key presence ⇒ non-empty)                              |
+| `array_key_exists($k, $x) && count($x) !== 0`      | `array_key_exists($k, $x)`                                                         |
+| `count($x) === N && $x !== []` (N≥1)               | `count($x) === N`                                                                  |
 | `!($x !== [])`                                     | `$x === []`                                                                        |
 | `!($x > 0)`                                        | `$x <= 0`                                                                          |
 

@@ -114,6 +114,18 @@ const RULES: Record<OptimizeTraceRuleId, OptimizeTraceRuleInfo> = {
     title: 'Implication empty array count',
     help: '$x === [] ⇒ count($x) === 0. Always sound: the empty array has count zero.',
   },
+  'facts.imply.arrayKeyExistsNonEmpty': {
+    title: 'Implication array_key_exists non-empty',
+    help: 'array_key_exists($k, $x) ⇒ $x !== []. Sound because a key cannot exist on the empty array.',
+  },
+  'facts.imply.arrayKeyExistsCountNonZero': {
+    title: 'Implication array_key_exists count',
+    help: 'array_key_exists($k, $x) ⇒ count($x) !== 0. Sound because a present key means at least one element.',
+  },
+  'facts.imply.countPositiveNonEmpty': {
+    title: 'Implication positive count non-empty',
+    help: 'count($x) === N (N≥1) ⇒ $x !== []. Sound because the empty array has count zero.',
+  },
   'facts.imply.equalityType': {
     title: 'Implication equality type',
     help: 'Typed literal equality implies an is_* check (then further implications).',

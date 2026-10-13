@@ -92,6 +92,54 @@ describe('implies empty array count', () => {
   });
 });
 
+describe('implies array_key_exists / positive count', () => {
+  const keyExists = callExpr('array_key_exists', [
+    literalArg("'foo'"),
+    refArg($v),
+  ]);
+  const nonEmpty = binExpr('!==', refArg($v), literalArg('[]'));
+  const countNonZero = binExpr(
+    '!==',
+    callArg('count', [refArg($v)]),
+    literalArg('0'),
+  );
+  const countTwo = binExpr(
+    '===',
+    callArg('count', [refArg($v)]),
+    literalArg('2'),
+  );
+
+  it('array_key_exists implies !== []', () => {
+    expect(implies(keyExists, nonEmpty)).toBe(true);
+    expect(implies(nonEmpty, keyExists)).toBe(false);
+  });
+
+  it('array_key_exists implies count !== 0', () => {
+    expect(implies(keyExists, countNonZero)).toBe(true);
+    expect(implies(countNonZero, keyExists)).toBe(false);
+  });
+
+  it('count === N (N≥1) implies !== []', () => {
+    expect(implies(countTwo, nonEmpty)).toBe(true);
+    expect(implies(nonEmpty, countTwo)).toBe(false);
+  });
+
+  it('count === 0 does not imply !== []', () => {
+    const countZero = binExpr(
+      '===',
+      callArg('count', [refArg($v)]),
+      literalArg('0'),
+    );
+    expect(implies(countZero, nonEmpty)).toBe(false);
+  });
+
+  it('AND absorb drops !== [] under array_key_exists', () => {
+    expect(absorbImpliedOperands([keyExists, nonEmpty], 'and')).toEqual([
+      keyExists,
+    ]);
+  });
+});
+
 describe('entails', () => {
   it('is_int ∨ is_string entails not is_resource', () => {
     const isResource = callExpr('is_resource', [refArg($v)]);

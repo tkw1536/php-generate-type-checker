@@ -8,6 +8,12 @@ export type ImplyProof =
   | { readonly kind: 'instanceofObject' }
   | { readonly kind: 'isAClassExists' }
   | { readonly kind: 'emptyArrayCount' }
+  /** `array_key_exists($k, $x)` ⇒ `$x !== []`. */
+  | { readonly kind: 'arrayKeyExistsNonEmpty' }
+  /** `array_key_exists($k, $x)` ⇒ `count($x) !== 0`. */
+  | { readonly kind: 'arrayKeyExistsCountNonZero' }
+  /** `count($x) === N` (N≥1) ⇒ `$x !== []`. */
+  | { readonly kind: 'countPositiveNonEmpty' }
   | { readonly kind: 'equalityType'; readonly via: ImplyProof }
   | {
       readonly kind: 'andConjunct';

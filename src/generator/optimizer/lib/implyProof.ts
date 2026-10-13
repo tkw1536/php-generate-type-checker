@@ -1,5 +1,5 @@
 import type { Arg, Expr } from '../../ir/types.ts';
-import { binExpr, callArg, callExpr, literalArg } from '../../ir/index.ts';
+import { callExpr } from '../../ir/index.ts';
 import { equals } from '../../ir/equals.ts';
 import type {
   AbsorbDropProof,
@@ -10,34 +10,11 @@ import {
   exclusiveTypeImplies,
   typeCallImpliedByEquality,
 } from './exclusiveTypes.ts';
+import { arrayEmptyImplyProof } from './implyArrayEmpty.ts';
 
 function isTrueLiteralArg(arg: Arg): boolean {
   return (
     arg.kind === 'literal' && (arg.value === 'true' || arg.value === 'TRUE')
-  );
-}
-
-function isEmptyArrayLiteral(arg: Arg): boolean {
-  return arg.kind === 'literal' && arg.value === '[]';
-}
-
-/** `$x === []` ⇒ `count($x) === 0`. */
-function emptyArrayImpliesCountZero(a: Expr, b: Expr): boolean {
-  if (a.kind !== 'bin' || a.op !== '===') {
-    return false;
-  }
-  let subject: Arg | null = null;
-  if (isEmptyArrayLiteral(a.right)) {
-    subject = a.left;
-  } else if (isEmptyArrayLiteral(a.left)) {
-    subject = a.right;
-  }
-  if (subject === null) {
-    return false;
-  }
-  return (
-    equals(b, binExpr('===', callArg('count', [subject]), literalArg('0'))) ||
-    equals(b, binExpr('===', literalArg('0'), callArg('count', [subject])))
   );
 }
 
@@ -54,8 +31,8 @@ function isAAllowStringSubject(expr: Expr): Arg | null {
   return expr.args[0];
 }
 
-/** Reconstructible A ⇒ B, or null. */
-export function implyProof(a: Expr, b: Expr): ImplyProof | null {
+/** Direct A ⇒ B rules (no AND/OR decomposition). */
+function leafImplyProof(a: Expr, b: Expr): ImplyProof | null {
   if (equals(a, b)) {
     return { kind: 'refl' };
   }
@@ -72,11 +49,21 @@ export function implyProof(a: Expr, b: Expr): ImplyProof | null {
   ) {
     return { kind: 'instanceofObject' };
   }
-  if (emptyArrayImpliesCountZero(a, b)) {
-    return { kind: 'emptyArrayCount' };
+  const arrayEmpty = arrayEmptyImplyProof(a, b);
+  if (arrayEmpty !== null) {
+    return arrayEmpty;
   }
   if (exclusiveTypeImplies(a, b)) {
     return { kind: 'exclusive' };
+  }
+  return null;
+}
+
+/** Reconstructible A ⇒ B, or null. */
+export function implyProof(a: Expr, b: Expr): ImplyProof | null {
+  const leaf = leafImplyProof(a, b);
+  if (leaf !== null) {
+    return leaf;
   }
   const litType = typeCallImpliedByEquality(a);
   if (litType !== null) {
