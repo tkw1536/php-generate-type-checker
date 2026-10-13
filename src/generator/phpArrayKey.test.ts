@@ -34,7 +34,9 @@ describe('phpArrayKeyLiteral', () => {
 
 describe('generateChecker decimal-int string shape keys', () => {
   it('uses int literals for access and key compares', () => {
-    const php = generateChecker("array{'123': int, '08'?: string}");
+    const php = generateChecker("array{'123': int, '08'?: string}", {
+      sealArrayShapes: true,
+    });
     expect(php).toContain('array_key_exists(123, $value)');
     expect(php).toContain('is_int($value[123])');
     expect(php).toContain("array_key_exists('08', $value)");

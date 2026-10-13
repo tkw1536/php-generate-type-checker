@@ -47,9 +47,9 @@ export function getResolveAliases(): boolean {
   return el?.checked === true;
 }
 
-export function getUnsealArrayShapes(): boolean {
+export function getSealArrayShapes(): boolean {
   const el = document.querySelector<HTMLInputElement>(
-    '#generate-unseal-array-shapes',
+    '#generate-seal-array-shapes',
   );
   return el?.checked === true;
 }
@@ -62,7 +62,7 @@ export function getUnsafeStringArrayKeys(): boolean {
 }
 
 export function hasUnsoundGenerateOptions(): boolean {
-  return getUnsafeStringArrayKeys() || getUnsealArrayShapes();
+  return getUnsafeStringArrayKeys();
 }
 
 function getPrioritizeReadabilityOverCompactness(): boolean {
@@ -78,7 +78,7 @@ export function readUiFragmentState(): AppFragmentState {
     optimize: getOptimize(),
     verbosePhpdoc: getVerbosePhpdoc(),
     unsafeStringArrayKeys: getUnsafeStringArrayKeys(),
-    unsealArrayShapes: getUnsealArrayShapes(),
+    sealArrayShapes: getSealArrayShapes(),
     emit: getGenerateOutputMode(),
     emitAliases: getEmitPhpstanTypeAliases(),
     resolveAliases: getResolveAliases(),
@@ -104,10 +104,10 @@ export function applyFragmentState(
       '#generate-unsafe-string-array-keys',
     )!.checked = fragment.unsafeStringArrayKeys;
   }
-  if (fragment.unsealArrayShapes !== undefined) {
+  if (fragment.sealArrayShapes !== undefined) {
     document.querySelector<HTMLInputElement>(
-      '#generate-unseal-array-shapes',
-    )!.checked = fragment.unsealArrayShapes;
+      '#generate-seal-array-shapes',
+    )!.checked = fragment.sealArrayShapes;
   }
   if (fragment.emit !== undefined) {
     document.querySelector<HTMLSelectElement>('#generate-output-mode')!.value =
@@ -138,7 +138,7 @@ export function getGenerateOptions(): {
   readonly prioritizeReadabilityOverCompactness: boolean;
   readonly verbosePhpdoc: boolean;
   readonly unsafeStringArrayKeys: boolean;
-  readonly unsealArrayShapes: boolean;
+  readonly sealArrayShapes: boolean;
 } {
   return {
     output: getGenerateOutputMode(),
@@ -146,7 +146,7 @@ export function getGenerateOptions(): {
       getPrioritizeReadabilityOverCompactness(),
     verbosePhpdoc: getVerbosePhpdoc(),
     unsafeStringArrayKeys: getUnsafeStringArrayKeys(),
-    unsealArrayShapes: getUnsealArrayShapes(),
+    sealArrayShapes: getSealArrayShapes(),
   };
 }
 
@@ -167,15 +167,11 @@ const PHP_WARNING_UNSOUND =
 /** Sync UNSOUND badges and PHP output footer severity with unsound options. */
 export function syncUnsoundOptionsUi(): void {
   const unsafeKeys = getUnsafeStringArrayKeys();
-  const unseal = getUnsealArrayShapes();
   const anyUnsound = hasUnsoundGenerateOptions();
 
   document
     .querySelector<HTMLElement>('#unsafe-string-array-keys-unsound-badge')
     ?.classList.toggle('option-unsound-badge--active', unsafeKeys);
-  document
-    .querySelector<HTMLElement>('#unseal-array-shapes-unsound-badge')
-    ?.classList.toggle('option-unsound-badge--active', unseal);
 
   const warningText = document.querySelector<HTMLElement>(
     '#php-output-warning-text',

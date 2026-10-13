@@ -143,19 +143,19 @@ function expectDefaultPhpFooter(panes: FooterPanes): void {
   expect(panes.php.textContent).toMatch(/Always review generated PHP/u);
 }
 
-function expectUnsealWarningFooter(panes: FooterPanes): void {
+function expectUnsafeKeysWarningFooter(panes: FooterPanes): void {
   document.querySelector<HTMLInputElement>(
-    '#generate-unseal-array-shapes',
+    '#generate-unsafe-string-array-keys',
   )!.checked = true;
   document
-    .querySelector<HTMLInputElement>('#generate-unseal-array-shapes')!
+    .querySelector<HTMLInputElement>('#generate-unsafe-string-array-keys')!
     .dispatchEvent(new Event('change'));
   expect(panes.footer.classList.contains('panel-footer--warning')).toBe(true);
   expect(panes.footer.classList.contains('panel-footer--caution')).toBe(false);
   expect(panes.php.textContent).toMatch(/unsound/iu);
   expect(
     document
-      .querySelector('#unseal-array-shapes-unsound-badge')!
+      .querySelector('#unsafe-string-array-keys-unsound-badge')!
       .classList.contains('option-unsound-badge--active'),
   ).toBe(true);
 }
@@ -187,7 +187,7 @@ async function swapsFooterHelpByTab(): Promise<void> {
   await bootApp();
   const panes = footerPanes();
   expectDefaultPhpFooter(panes);
-  expectUnsealWarningFooter(panes);
+  expectUnsafeKeysWarningFooter(panes);
   expectFooterAfterTabClicks(panes);
   expect(panes.footer.hidden).toBe(false);
 }
@@ -197,7 +197,7 @@ function listUnionTraceHash(): string {
     optimize: true,
     verbosePhpdoc: false,
     unsafeStringArrayKeys: false,
-    unsealArrayShapes: false,
+    sealArrayShapes: false,
     emit: 'function',
     emitAliases: false,
     resolveAliases: true,

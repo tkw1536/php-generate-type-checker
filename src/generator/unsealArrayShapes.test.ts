@@ -14,7 +14,7 @@ describe('unsealArrayShapesInType', () => {
     ).toBe('list{int, string, ...}');
   });
 
-  it('leaves already-unsealed and object shapes alone', () => {
+  it('leaves already-unsealed, empty, and object shapes alone', () => {
     expect(
       formatType(unsealArrayShapesInType(parseType('array{foo: int, ...}'))),
     ).toBe('array{foo: int, ...}');
@@ -23,6 +23,12 @@ describe('unsealArrayShapesInType', () => {
         unsealArrayShapesInType(parseType('array{foo: int, ...<string>}')),
       ),
     ).toBe('array{foo: int, ...<string>}');
+    expect(formatType(unsealArrayShapesInType(parseType('array{}')))).toBe(
+      'array{}',
+    );
+    expect(formatType(unsealArrayShapesInType(parseType('list{}')))).toBe(
+      'list{}',
+    );
     expect(
       formatType(unsealArrayShapesInType(parseType('object{foo: int}'))),
     ).toBe('object{foo: int}');
@@ -37,15 +43,15 @@ describe('unsealArrayShapesInType', () => {
   });
 });
 
-describe('generateChecker unsealArrayShapes', () => {
-  it('omits sealed count check when unseal is on', () => {
-    const sealed = generateChecker('array{foo: int}');
-    const unsealed = generateChecker('array{foo: int}', {
-      unsealArrayShapes: true,
+describe('generateChecker sealArrayShapes', () => {
+  it('omits sealed count check by default and keeps it when seal is on', () => {
+    const unsealed = generateChecker('array{foo: int}');
+    const sealed = generateChecker('array{foo: int}', {
+      sealArrayShapes: true,
     });
-    expect(sealed).toContain('count($value) === 1');
     expect(unsealed).not.toContain('count(');
-    // Assert docs keep the input type; only codegen is unsealed.
+    expect(sealed).toContain('count($value) === 1');
+    // Assert docs keep the input type; only codegen is unsealed by default.
     expect(unsealed).toContain(
       '@phpstan-assert-if-true array{foo: int} $value',
     );

@@ -127,6 +127,7 @@
                   aria-describedby="help-unsound-badge"
                   data-tooltip="Unsound means the generated checker is not guaranteed to match the type: it may accept values that do not match, or reject values that do, producing incorrect results at runtime."
                 >UNSOUND</button>
+                <span id="help-unsound-badge" class="visually-hidden">Unsound means the generated checker is not guaranteed to match the type: it may accept values that do not match, or reject values that do, producing incorrect results at runtime.</span>
                 <button
                   type="button"
                   class="option-help"
@@ -137,30 +138,21 @@
                 <span id="help-unsafe-string-array-keys" class="visually-hidden">When on, array and non-empty-array keys written as string are checked like int|non-decimal-int-string (PHPStan reportUnsafeArrayStringKeyCasting: detect), matching real PHP key casting. When off (default), keys stay string checks — same runtime accept set as PHPStan default/prevent. @phpstan-assert-if-true still uses the input type.</span>
               </div>
               <div class="panel-footer-option-row">
-                <label class="panel-footer-option" for="generate-unseal-array-shapes">
+                <label class="panel-footer-option" for="generate-seal-array-shapes">
                   <input
                     type="checkbox"
-                    id="generate-unseal-array-shapes"
+                    id="generate-seal-array-shapes"
                   >
-                  <span>Unseal array shapes</span>
+                  <span>Sealed array shapes</span>
                 </label>
                 <button
                   type="button"
-                  id="unseal-array-shapes-unsound-badge"
-                  class="option-unsound-badge"
-                  aria-label="Unsound"
-                  aria-describedby="help-unsound-badge"
-                  data-tooltip="Unsound means the generated checker is not guaranteed to match the type: it may accept values that do not match, or reject values that do, producing incorrect results at runtime."
-                >UNSOUND</button>
-                <span id="help-unsound-badge" class="visually-hidden">Unsound means the generated checker is not guaranteed to match the type: it may accept values that do not match, or reject values that do, producing incorrect results at runtime.</span>
-                <button
-                  type="button"
                   class="option-help"
-                  aria-label="Help: Unseal array shapes"
-                  aria-describedby="help-unseal-array-shapes"
-                  data-tooltip="When on, array and list shapes without a trailing … are treated as unsealed (extra keys allowed), matching older PHPStan behavior. When off (default), those shapes are sealed and reject unknown keys."
+                  aria-label="Help: Sealed array shapes"
+                  aria-describedby="help-seal-array-shapes"
+                  data-tooltip="When on, array and list shapes without a trailing … reject unknown keys (PHPStan 2.2 bleeding-edge sealed shapes). When off (default), those shapes allow extra keys, matching PHPStan’s default today. @phpstan-assert-if-true still uses the input type."
                 >?</button>
-                <span id="help-unseal-array-shapes" class="visually-hidden">When on, array and list shapes without a trailing … are treated as unsealed (extra keys allowed), matching older PHPStan behavior. When off (default), those shapes are sealed and reject unknown keys.</span>
+                <span id="help-seal-array-shapes" class="visually-hidden">When on, array and list shapes without a trailing … reject unknown keys (PHPStan 2.2 bleeding-edge sealed shapes). When off (default), those shapes allow extra keys, matching PHPStan’s default today. @phpstan-assert-if-true still uses the input type.</span>
               </div>
             </div>
             <div class="panel-footer-option-row panel-footer-emit-row">

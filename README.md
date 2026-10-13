@@ -286,14 +286,17 @@ Shape field keys that are decimal-int-strings (e.g. `'123'`) are always emitted 
 
 Shapes represent non-homogenous containers.
 These are typically represented by existence check, followed by a type check on each property.
-Array and list shapes are sealed by default (extra keys are rejected); trailing `...` makes them unsealed, matching [PHPStan 2.2](https://phpstan.org/blog/phpstan-2-2-unsealed-array-shapes-safer-array-keys).
+Trailing `...` makes array and list shapes unsealed, matching [PHPStan 2.2](https://phpstan.org/blog/phpstan-2-2-unsealed-array-shapes-safer-array-keys).
+Shapes without `...` are treated as unsealed for runtime checks by default (extra keys allowed) — the same as PHPStan’s default today.
+Empty `array{}` / `list{}` stay empty even then: PHPStan already rejects extras on empty shapes without bleeding edge.
+Truly sealed non-empty shapes (`array{a: int}` rejecting extras) are opt-in in PHPStan 2.2 via bleeding edge and are planned to become the only behaviour in a future major version.
 
-The UI option **Unseal array shapes** treats shapes without `...` as unsealed for runtime checks only (matching older PHPStan behavior).
-`@phpstan-assert-if-true` still uses the input type as written - producing potentially unsound code.
+The UI option **Sealed array shapes** turns on sealed runtime checks for non-empty shapes without `...` (reject unknown keys).
+`@phpstan-assert-if-true` still uses the input type as written.
 
 Object shapes stay unsealed (no extra-property rejection; `...` is not supported on objects).
 Collection field loops (`foreach`) are emitted after all key and non-loop field guards so Optimize can group them.
-For example for `array{name: string, age: int}` (all keys required), the sealed check is `count($value) === 2` after the field checks:
+For example for `array{name: string, age: int}` (all keys required) with **Sealed array shapes** on, the sealed check is `count($value) === 2` after the field checks:
 
 ```php
 return (
@@ -340,12 +343,12 @@ In more general terms, the following shapes are supported:
 
 | Type                                 | Check                                                                 |
 |--------------------------------------|-----------------------------------------------------------------------|
-| `array{foo: int, bar: string}`       | Field checks; `count($value) === 2` (sealed, all required)            |
-| `array{foo: int, bar?: string}`      | Field checks; sealed extra-key `foreach` (has optional)               |
+| `array{foo: int, bar: string}`       | Field checks; with **Sealed array shapes**, `count($value) === 2`     |
+| `array{foo: int, bar?: string}`      | Field checks; with **Sealed array shapes**, extra-key `foreach`       |
 | `array{foo: int, ...}`               | Same field checks; no extra-key rejection                             |
 | `array{foo: int, ...<string>}`       | Field checks; extra values checked as `string`                        |
-| `array{int, string}`                 | Indexes `0`, `1`, …; `count === 2`                                    |
-| `list{int, string}`                  | Same as array tuple, plus `array_is_list`; `count === 2`              |
+| `array{int, string}`                 | Indexes `0`, `1`, …; with **Sealed array shapes**, `count === 2`      |
+| `list{int, string}`                  | Same as array tuple, plus `array_is_list`; sealed adds `count === 2`  |
 | `list{int, string, ...<bool>}`       | List tuple plus extra values as `bool`                                |
 | `non-empty-array{foo: int}`          | Same as array shape with non-empty container                          |
 | `object{foo: int}`                   | `is_object`; `property_exists`; `$value->foo` (not sealed)            |

@@ -41,7 +41,7 @@ async function restoresControlsFromUrlFragment(): Promise<void> {
     optimize: true,
     verbosePhpdoc: true,
     unsafeStringArrayKeys: true,
-    unsealArrayShapes: true,
+    sealArrayShapes: true,
     emit: 'public_static',
     emitAliases: false,
     resolveAliases: false,
@@ -66,7 +66,7 @@ async function restoresControlsFromUrlFragment(): Promise<void> {
     )!.checked,
   ).toBe(true);
   expect(
-    document.querySelector<HTMLInputElement>('#generate-unseal-array-shapes')!
+    document.querySelector<HTMLInputElement>('#generate-seal-array-shapes')!
       .checked,
   ).toBe(true);
   expect(

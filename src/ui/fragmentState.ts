@@ -4,7 +4,7 @@ export interface AppFragmentState {
   readonly optimize: boolean;
   readonly verbosePhpdoc: boolean;
   readonly unsafeStringArrayKeys: boolean;
-  readonly unsealArrayShapes: boolean;
+  readonly sealArrayShapes: boolean;
   readonly emit: CheckerOutputMode;
   readonly emitAliases: boolean;
   readonly resolveAliases: boolean;
@@ -42,13 +42,31 @@ function parseEmitParam(value: string | null): CheckerOutputMode | undefined {
   return value;
 }
 
+/**
+ * Prefer `seal`; fall back to legacy `unseal` (inverted) for old URLs.
+ */
+function parseSealArrayShapes(
+  seal: string | null,
+  unseal: string | null,
+): boolean | undefined {
+  const sealParam = parseBoolParam(seal);
+  if (sealParam !== undefined) {
+    return sealParam;
+  }
+  const unsealParam = parseBoolParam(unseal);
+  if (unsealParam !== undefined) {
+    return !unsealParam;
+  }
+  return undefined;
+}
+
 /** Query-string-style payload for the URL fragment (no leading `#`). */
 export function encodeFragmentState(state: AppFragmentState): string {
   const params = new URLSearchParams();
   params.set('optimize', state.optimize ? '1' : '0');
   params.set('verbose', state.verbosePhpdoc ? '1' : '0');
   params.set('unsafekeys', state.unsafeStringArrayKeys ? '1' : '0');
-  params.set('unseal', state.unsealArrayShapes ? '1' : '0');
+  params.set('seal', state.sealArrayShapes ? '1' : '0');
   params.set('emit', state.emit);
   params.set('aliases', state.emitAliases ? '1' : '0');
   params.set('resolve', state.resolveAliases ? '1' : '0');
@@ -69,7 +87,10 @@ export function decodeFragmentState(
     optimize: parseBoolParam(params.get('optimize')),
     verbosePhpdoc: parseBoolParam(params.get('verbose')),
     unsafeStringArrayKeys: parseBoolParam(params.get('unsafekeys')),
-    unsealArrayShapes: parseBoolParam(params.get('unseal')),
+    sealArrayShapes: parseSealArrayShapes(
+      params.get('seal'),
+      params.get('unseal'),
+    ),
     emit: parseEmitParam(params.get('emit')),
     emitAliases: parseBoolParam(params.get('aliases')),
     resolveAliases: parseBoolParam(params.get('resolve')),
@@ -80,7 +101,7 @@ export function decodeFragmentState(
     parsed.optimize === undefined &&
     parsed.verbosePhpdoc === undefined &&
     parsed.unsafeStringArrayKeys === undefined &&
-    parsed.unsealArrayShapes === undefined &&
+    parsed.sealArrayShapes === undefined &&
     parsed.emit === undefined &&
     parsed.emitAliases === undefined &&
     parsed.resolveAliases === undefined &&
@@ -96,7 +117,7 @@ function buildPartialFragmentState(parsed: {
   readonly optimize: boolean | undefined;
   readonly verbosePhpdoc: boolean | undefined;
   readonly unsafeStringArrayKeys: boolean | undefined;
-  readonly unsealArrayShapes: boolean | undefined;
+  readonly sealArrayShapes: boolean | undefined;
   readonly emit: CheckerOutputMode | undefined;
   readonly emitAliases: boolean | undefined;
   readonly resolveAliases: boolean | undefined;
@@ -106,7 +127,7 @@ function buildPartialFragmentState(parsed: {
     optimize?: boolean;
     verbosePhpdoc?: boolean;
     unsafeStringArrayKeys?: boolean;
-    unsealArrayShapes?: boolean;
+    sealArrayShapes?: boolean;
     emit?: CheckerOutputMode;
     emitAliases?: boolean;
     resolveAliases?: boolean;
@@ -121,8 +142,8 @@ function buildPartialFragmentState(parsed: {
   if (parsed.unsafeStringArrayKeys !== undefined) {
     state.unsafeStringArrayKeys = parsed.unsafeStringArrayKeys;
   }
-  if (parsed.unsealArrayShapes !== undefined) {
-    state.unsealArrayShapes = parsed.unsealArrayShapes;
+  if (parsed.sealArrayShapes !== undefined) {
+    state.sealArrayShapes = parsed.sealArrayShapes;
   }
   if (parsed.emit !== undefined) {
     state.emit = parsed.emit;

@@ -112,7 +112,7 @@ function effectiveAstForOptions(
   if (options?.unsafeStringArrayKeys === true) {
     result = unsafeStringArrayKeysInType(result);
   }
-  if (options?.unsealArrayShapes === true) {
+  if (options?.sealArrayShapes !== true) {
     result = unsealArrayShapesInType(result);
   }
   return result;

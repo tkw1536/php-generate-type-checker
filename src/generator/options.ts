@@ -23,12 +23,13 @@ export interface GenerateCheckerOptions {
    */
   readonly verbosePhpdoc?: boolean;
   /**
-   * When `true`, treat sealed array/list shapes (no `...`) as unsealed for
-   * runtime codegen only (matching older PHPStan behavior that allowed extra
-   * keys). `@phpstan-assert-if-true` still uses the input type as written.
-   * When `false` (default), sealed shapes reject unknown keys.
+   * When `true`, keep array/list shapes without `...` sealed for runtime
+   * codegen (reject unknown keys), matching PHPStan 2.2 bleeding-edge sealed
+   * shapes. When `false` / omitted (default), those shapes are treated as
+   * unsealed (extra keys allowed), matching PHPStan’s default today.
+   * `@phpstan-assert-if-true` still uses the input type as written.
    */
-  readonly unsealArrayShapes?: boolean;
+  readonly sealArrayShapes?: boolean;
   /**
    * When `true`, rewrite `array` / `non-empty-array` keys that are exactly
    * `string` to `int|non-decimal-int-string` for runtime codegen only

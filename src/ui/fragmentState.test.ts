@@ -9,7 +9,7 @@ const sample: AppFragmentState = {
   optimize: false,
   verbosePhpdoc: true,
   unsafeStringArrayKeys: true,
-  unsealArrayShapes: true,
+  sealArrayShapes: true,
   emit: 'public_static',
   emitAliases: true,
   resolveAliases: false,
@@ -22,7 +22,8 @@ describe('fragmentState', () => {
     expect(encoded).toContain('optimize=0');
     expect(encoded).toContain('verbose=1');
     expect(encoded).toContain('unsafekeys=1');
-    expect(encoded).toContain('unseal=1');
+    expect(encoded).toContain('seal=1');
+    expect(encoded).not.toContain('unseal=');
     expect(encoded).toContain('emit=public_static');
     expect(encoded).toContain('aliases=1');
     expect(encoded).toContain('resolve=0');
@@ -30,6 +31,24 @@ describe('fragmentState', () => {
     expect(encoded).not.toContain('name=');
 
     expect(decodeFragmentState(`#${encoded}`)).toEqual(sample);
+  });
+
+  it('maps legacy unseal fragment param to sealArrayShapes', () => {
+    expect(decodeFragmentState('#unseal=1&input=int')).toEqual({
+      sealArrayShapes: false,
+      input: 'int',
+    });
+    expect(decodeFragmentState('#unseal=0&input=int')).toEqual({
+      sealArrayShapes: true,
+      input: 'int',
+    });
+  });
+
+  it('prefers seal over legacy unseal when both are present', () => {
+    expect(decodeFragmentState('#seal=1&unseal=1&input=int')).toEqual({
+      sealArrayShapes: true,
+      input: 'int',
+    });
   });
 
   it('escapes special characters in input', () => {

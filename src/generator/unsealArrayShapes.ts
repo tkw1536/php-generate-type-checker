@@ -2,8 +2,14 @@ import type { ShapeField, ShapeRest, TypeNode } from '../parser/ast.ts';
 import { shapeIsObject } from './builder/ast/collection.ts';
 
 /**
- * Treat sealed array/list shapes as unsealed (`...`), matching pre–PHPStan 2.2
- * behavior. Object shapes and shapes that already have a rest are unchanged.
+ * Treat sealed array/list shapes as unsealed (`...`), matching PHPStan’s
+ * default (non–bleeding-edge) modeling that allows extra keys.
+ *
+ * Empty `array{}` / `list{}` stay sealed: even without bleeding edge, PHPStan
+ * treats them as empty arrays (no extra keys). Object shapes and shapes that
+ * already have a rest are unchanged.
+ *
+ * @see https://github.com/phpstan/phpstan-src/pull/5501
  */
 export function unsealArrayShapesInType(node: TypeNode): TypeNode {
   switch (node.kind) {
@@ -73,6 +79,10 @@ function unsealShape(
       fields,
       rest: unsealShapeRest(node.rest),
     };
+  }
+  // Empty sealed shapes stay sealed (PHPStan: array{} is empty, even today).
+  if (fields.length === 0) {
+    return { kind: 'shape', keyword: node.keyword, fields };
   }
   return {
     kind: 'shape',

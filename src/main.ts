@@ -42,8 +42,8 @@ const resolveAliasesCheckbox = document.querySelector<HTMLInputElement>(
 const unsafeStringArrayKeysCheckbox = document.querySelector<HTMLInputElement>(
   '#generate-unsafe-string-array-keys',
 )!;
-const unsealArrayShapesCheckbox = document.querySelector<HTMLInputElement>(
-  '#generate-unseal-array-shapes',
+const sealArrayShapesCheckbox = document.querySelector<HTMLInputElement>(
+  '#generate-seal-array-shapes',
 )!;
 
 typeInput.addEventListener('input', onGenerateInputChanged);
@@ -56,8 +56,7 @@ unsafeStringArrayKeysCheckbox.addEventListener('change', () => {
   syncUnsoundOptionsUi();
   generateNow();
 });
-unsealArrayShapesCheckbox.addEventListener('change', () => {
-  syncUnsoundOptionsUi();
+sealArrayShapesCheckbox.addEventListener('change', () => {
   generateNow();
 });
 
