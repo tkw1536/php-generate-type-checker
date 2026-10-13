@@ -51,6 +51,8 @@
     "linejoin",
     "lparen",
     "lvalue",
+    "noopener",
+    "noreferrer",
     "noreturn",
     "Noreturn",
     "nums",

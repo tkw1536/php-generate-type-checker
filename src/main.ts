@@ -16,8 +16,10 @@ import {
   setupOutputPanels,
 } from './ui/outputPanel.ts';
 import { setupOutputTabs } from './ui/outputTabs.ts';
+import { setupSiteFooter } from './ui/siteFooter.ts';
 
 initTheme();
+setupSiteFooter();
 
 const outputPanelSet = setupOutputPanels();
 bindGeneratePanels(outputPanelSet);
