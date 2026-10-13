@@ -3,13 +3,15 @@
  * element so tooltip text is available to assistive technology.
  */
 export function setupHelpTooltips(): void {
-  const helpButtons = document.querySelectorAll<HTMLButtonElement>('.option-help');
+  const helpButtons = document.querySelectorAll<HTMLButtonElement>(
+    '.option-help, .option-unsound-badge',
+  );
 
   for (const button of helpButtons) {
     const describedBy = button.getAttribute('aria-describedby');
     if (describedBy === null || describedBy === '') {
       console.warn(
-        'Accessibility: .option-help button is missing aria-describedby',
+        'Accessibility: help control is missing aria-describedby',
         button,
       );
       continue;

@@ -110,6 +110,34 @@
                 <span id="help-resolve-aliases" class="visually-hidden">When on, @phpstan-type cross-references are inlined into each alias body. When off (default), they stay as named references and call the matching entry checker.</span>
               </div>
             </div>
+            <div class="panel-footer-options">
+              <div class="panel-footer-option-row">
+                <label class="panel-footer-option" for="generate-unseal-array-shapes">
+                  <input
+                    type="checkbox"
+                    id="generate-unseal-array-shapes"
+                  >
+                  <span>Unseal array shapes</span>
+                </label>
+                <button
+                  type="button"
+                  id="unseal-array-shapes-unsound-badge"
+                  class="option-unsound-badge"
+                  aria-label="Unsound"
+                  aria-describedby="help-unsound-badge"
+                  data-tooltip="Unsound means the generated checker is not guaranteed to match the type: it may accept values that do not match, or reject values that do, producing incorrect results at runtime."
+                >UNSOUND</button>
+                <span id="help-unsound-badge" class="visually-hidden">Unsound means the generated checker is not guaranteed to match the type: it may accept values that do not match, or reject values that do, producing incorrect results at runtime.</span>
+                <button
+                  type="button"
+                  class="option-help"
+                  aria-label="Help: Unseal array shapes"
+                  aria-describedby="help-unseal-array-shapes"
+                  data-tooltip="When on, array and list shapes without a trailing … are treated as unsealed (extra keys allowed), matching older PHPStan behavior. When off (default), those shapes are sealed and reject unknown keys."
+                >?</button>
+                <span id="help-unseal-array-shapes" class="visually-hidden">When on, array and list shapes without a trailing … are treated as unsealed (extra keys allowed), matching older PHPStan behavior. When off (default), those shapes are sealed and reject unknown keys.</span>
+              </div>
+            </div>
             <div class="panel-footer-option-row panel-footer-emit-row">
               <label class="panel-footer-emit" for="generate-output-mode">
                 <span id="emit-as-label" class="panel-footer-emit-label">Emit as</span>
@@ -248,7 +276,7 @@
           </div>
           <div
             id="output-footer"
-            class="panel-footer panel-footer--output panel-footer--warning"
+            class="panel-footer panel-footer--output panel-footer--caution"
             role="note"
           >
             <div
@@ -309,8 +337,9 @@
               class="output-footer-pane output-footer-pane--warning active"
               data-output-footer="php"
             >
-              <p class="output-footer-help">
-                <strong>Warning:</strong> Always review generated PHP before using it in production.
+              <p class="output-footer-help" id="php-output-warning">
+                <strong id="php-output-warning-label">Warning:</strong>
+                <span id="php-output-warning-text">Always review generated PHP before using it in production.</span>
               </p>
             </div>
           </div>

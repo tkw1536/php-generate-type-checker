@@ -40,6 +40,7 @@ async function restoresControlsFromUrlFragment(): Promise<void> {
   const fragment = encodeFragmentState({
     optimize: true,
     verbosePhpdoc: true,
+    unsealArrayShapes: true,
     emit: 'public_static',
     emitAliases: false,
     resolveAliases: false,
@@ -56,6 +57,10 @@ async function restoresControlsFromUrlFragment(): Promise<void> {
   ).toBe(true);
   expect(
     document.querySelector<HTMLInputElement>('#generate-verbose-phpdoc')!
+      .checked,
+  ).toBe(true);
+  expect(
+    document.querySelector<HTMLInputElement>('#generate-unseal-array-shapes')!
       .checked,
   ).toBe(true);
   expect(

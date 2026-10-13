@@ -22,6 +22,12 @@ export interface GenerateCheckerOptions {
    * When `false` (default), emit a one-line assert comment.
    */
   readonly verbosePhpdoc?: boolean;
+  /**
+   * When `true`, treat sealed array/list shapes (no `...`) as unsealed (`...`),
+   * matching older PHPStan behavior that allowed extra keys.
+   * When `false` (default), sealed shapes reject unknown keys.
+   */
+  readonly unsealArrayShapes?: boolean;
 }
 
 export const DEFAULT_CHECKER_OUTPUT: CheckerOutputMode = 'function';

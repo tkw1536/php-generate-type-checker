@@ -8,6 +8,7 @@ import {
 const sample: AppFragmentState = {
   optimize: false,
   verbosePhpdoc: true,
+  unsealArrayShapes: true,
   emit: 'public_static',
   emitAliases: true,
   resolveAliases: false,
@@ -19,6 +20,7 @@ describe('fragmentState', () => {
     const encoded = encodeFragmentState(sample);
     expect(encoded).toContain('optimize=0');
     expect(encoded).toContain('verbose=1');
+    expect(encoded).toContain('unseal=1');
     expect(encoded).toContain('emit=public_static');
     expect(encoded).toContain('aliases=1');
     expect(encoded).toContain('resolve=0');

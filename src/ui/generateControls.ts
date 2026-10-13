@@ -47,6 +47,13 @@ export function getResolveAliases(): boolean {
   return el?.checked === true;
 }
 
+export function getUnsealArrayShapes(): boolean {
+  const el = document.querySelector<HTMLInputElement>(
+    '#generate-unseal-array-shapes',
+  );
+  return el?.checked === true;
+}
+
 function getPrioritizeReadabilityOverCompactness(): boolean {
   return !getOptimize();
 }
@@ -59,6 +66,7 @@ export function readUiFragmentState(): AppFragmentState {
   return {
     optimize: getOptimize(),
     verbosePhpdoc: getVerbosePhpdoc(),
+    unsealArrayShapes: getUnsealArrayShapes(),
     emit: getGenerateOutputMode(),
     emitAliases: getEmitPhpstanTypeAliases(),
     resolveAliases: getResolveAliases(),
@@ -79,6 +87,11 @@ export function applyFragmentState(
       '#generate-verbose-phpdoc',
     )!.checked = fragment.verbosePhpdoc;
   }
+  if (fragment.unsealArrayShapes !== undefined) {
+    document.querySelector<HTMLInputElement>(
+      '#generate-unseal-array-shapes',
+    )!.checked = fragment.unsealArrayShapes;
+  }
   if (fragment.emit !== undefined) {
     document.querySelector<HTMLSelectElement>('#generate-output-mode')!.value =
       fragment.emit;
@@ -96,6 +109,7 @@ export function applyFragmentState(
     document.querySelector<HTMLTextAreaElement>('#type-input')!.value =
       fragment.input;
   }
+  syncUnsealArrayShapesUi();
 }
 
 export function syncFragmentToLocation(): void {
@@ -106,12 +120,14 @@ export function getGenerateOptions(): {
   readonly output: CheckerOutputMode;
   readonly prioritizeReadabilityOverCompactness: boolean;
   readonly verbosePhpdoc: boolean;
+  readonly unsealArrayShapes: boolean;
 } {
   return {
     output: getGenerateOutputMode(),
     prioritizeReadabilityOverCompactness:
       getPrioritizeReadabilityOverCompactness(),
     verbosePhpdoc: getVerbosePhpdoc(),
+    unsealArrayShapes: getUnsealArrayShapes(),
   };
 }
 
@@ -122,4 +138,41 @@ export function syncDocblockOptions(hasAliases: boolean): void {
   )) {
     el.hidden = !hasAliases;
   }
+}
+
+const PHP_WARNING_DEFAULT =
+  'Always review generated PHP before using it in production.';
+const PHP_WARNING_UNSOUND =
+  'Generated code is unsound because of selected options and can produce incorrect results at runtime. Always review it before using it in production.';
+
+/** Sync UNSOUND badge and PHP output footer severity with the unseal option. */
+export function syncUnsealArrayShapesUi(): void {
+  const enabled = getUnsealArrayShapes();
+  const badge = document.querySelector<HTMLElement>(
+    '#unseal-array-shapes-unsound-badge',
+  );
+  badge?.classList.toggle('option-unsound-badge--active', enabled);
+
+  const warningText = document.querySelector<HTMLElement>(
+    '#php-output-warning-text',
+  );
+  if (warningText !== null) {
+    warningText.textContent = enabled
+      ? PHP_WARNING_UNSOUND
+      : PHP_WARNING_DEFAULT;
+  }
+
+  const footer = document.querySelector<HTMLElement>('#output-footer');
+  if (footer === null) {
+    return;
+  }
+  const phpPaneActive =
+    document.querySelector<HTMLElement>(
+      '.output-footer-pane[data-output-footer="php"]',
+    )?.classList.contains('active') === true;
+  if (!phpPaneActive) {
+    return;
+  }
+  footer.classList.toggle('panel-footer--warning', enabled);
+  footer.classList.toggle('panel-footer--caution', !enabled);
 }

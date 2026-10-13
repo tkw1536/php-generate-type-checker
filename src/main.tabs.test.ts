@@ -124,13 +124,31 @@ async function swapsFooterHelpByTab(): Promise<void> {
     '[data-output-footer="optimize-trace"]',
   )!;
 
-  expect(footer.classList.contains('panel-footer--warning')).toBe(true);
+  expect(footer.classList.contains('panel-footer--caution')).toBe(true);
+  expect(footer.classList.contains('panel-footer--warning')).toBe(false);
   expect(phpPane.hidden).toBe(false);
   expect(pipelinePane.hidden).toBe(true);
+  expect(phpPane.textContent).toMatch(/Always review generated PHP/u);
+
+  document.querySelector<HTMLInputElement>(
+    '#generate-unseal-array-shapes',
+  )!.checked = true;
+  document
+    .querySelector<HTMLInputElement>('#generate-unseal-array-shapes')!
+    .dispatchEvent(new Event('change'));
+  expect(footer.classList.contains('panel-footer--warning')).toBe(true);
+  expect(footer.classList.contains('panel-footer--caution')).toBe(false);
+  expect(phpPane.textContent).toMatch(/unsound/iu);
+  expect(
+    document
+      .querySelector('#unseal-array-shapes-unsound-badge')!
+      .classList.contains('option-unsound-badge--active'),
+  ).toBe(true);
 
   document.querySelector<HTMLButtonElement>('#output-tab-pipeline')!.click();
   expect(footer.classList.contains('panel-footer--info')).toBe(true);
   expect(footer.classList.contains('panel-footer--warning')).toBe(false);
+  expect(footer.classList.contains('panel-footer--caution')).toBe(false);
   expect(pipelinePane.hidden).toBe(false);
   expect(phpPane.hidden).toBe(true);
   expect(pipelinePane.textContent).toMatch(/checker IR/u);
@@ -153,6 +171,7 @@ function listUnionTraceHash(): string {
   return `#${encodeFragmentState({
     optimize: true,
     verbosePhpdoc: false,
+    unsealArrayShapes: false,
     emit: 'function',
     emitAliases: false,
     resolveAliases: true,

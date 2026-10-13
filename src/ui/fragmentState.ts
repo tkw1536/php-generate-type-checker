@@ -3,6 +3,7 @@ import type { CheckerOutputMode } from '../generator/options.ts';
 export interface AppFragmentState {
   readonly optimize: boolean;
   readonly verbosePhpdoc: boolean;
+  readonly unsealArrayShapes: boolean;
   readonly emit: CheckerOutputMode;
   readonly emitAliases: boolean;
   readonly resolveAliases: boolean;
@@ -45,6 +46,7 @@ export function encodeFragmentState(state: AppFragmentState): string {
   const params = new URLSearchParams();
   params.set('optimize', state.optimize ? '1' : '0');
   params.set('verbose', state.verbosePhpdoc ? '1' : '0');
+  params.set('unseal', state.unsealArrayShapes ? '1' : '0');
   params.set('emit', state.emit);
   params.set('aliases', state.emitAliases ? '1' : '0');
   params.set('resolve', state.resolveAliases ? '1' : '0');
@@ -64,6 +66,7 @@ export function decodeFragmentState(
   const parsed = {
     optimize: parseBoolParam(params.get('optimize')),
     verbosePhpdoc: parseBoolParam(params.get('verbose')),
+    unsealArrayShapes: parseBoolParam(params.get('unseal')),
     emit: parseEmitParam(params.get('emit')),
     emitAliases: parseBoolParam(params.get('aliases')),
     resolveAliases: parseBoolParam(params.get('resolve')),
@@ -73,6 +76,7 @@ export function decodeFragmentState(
   if (
     parsed.optimize === undefined &&
     parsed.verbosePhpdoc === undefined &&
+    parsed.unsealArrayShapes === undefined &&
     parsed.emit === undefined &&
     parsed.emitAliases === undefined &&
     parsed.resolveAliases === undefined &&
@@ -87,6 +91,7 @@ export function decodeFragmentState(
 function buildPartialFragmentState(parsed: {
   readonly optimize: boolean | undefined;
   readonly verbosePhpdoc: boolean | undefined;
+  readonly unsealArrayShapes: boolean | undefined;
   readonly emit: CheckerOutputMode | undefined;
   readonly emitAliases: boolean | undefined;
   readonly resolveAliases: boolean | undefined;
@@ -95,6 +100,7 @@ function buildPartialFragmentState(parsed: {
   const state: {
     optimize?: boolean;
     verbosePhpdoc?: boolean;
+    unsealArrayShapes?: boolean;
     emit?: CheckerOutputMode;
     emitAliases?: boolean;
     resolveAliases?: boolean;
@@ -105,6 +111,9 @@ function buildPartialFragmentState(parsed: {
   }
   if (parsed.verbosePhpdoc !== undefined) {
     state.verbosePhpdoc = parsed.verbosePhpdoc;
+  }
+  if (parsed.unsealArrayShapes !== undefined) {
+    state.unsealArrayShapes = parsed.unsealArrayShapes;
   }
   if (parsed.emit !== undefined) {
     state.emit = parsed.emit;

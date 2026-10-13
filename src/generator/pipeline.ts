@@ -1,4 +1,5 @@
 import type { TypeNode } from '../parser/ast.ts';
+import { formatType } from '../parser/format.ts';
 import type { ParsedCheckerEntry } from '../parser/parseInput.ts';
 import {
   formatPhpstanTypeAliasesBlock,
@@ -18,6 +19,7 @@ import {
 } from './options.ts';
 import { render } from './render/index.ts';
 import { formatTypeForPhpstanDoc } from './render/phpdoc.ts';
+import { unsealArrayShapesInType } from './unsealArrayShapes.ts';
 
 export type BuildOptions = GenerateCheckerOptions & {
   readonly parameter?: string;
@@ -54,18 +56,38 @@ export function buildEntries(
   if (entries.length === 0) {
     throw new GenerationError('No types to build');
   }
+  const prepared = prepareEntriesForBuild(entries, options);
   const registry = createFunctionNameRegistry({
     reservedNames: options?.reservedNames ?? [],
   });
-  const aliasCheckerByName = registerAliasCheckers(entries, registry);
+  const aliasCheckerByName = registerAliasCheckers(prepared, registry);
   const builder = new Builder(registry, { aliasCheckerByName });
-  const docStringsByName = addParsedEntries(builder, entries, options);
+  const docStringsByName = addParsedEntries(builder, prepared, options);
   return {
     ir: builder.build(),
     typesByName: builder.getTypesByName(),
     docStringsByName,
     phpstanTypeAliases: phpstanAliasesFromEntries(entries),
   };
+}
+
+/** Apply generate options that rewrite entry ASTs before codegen. */
+function prepareEntriesForBuild(
+  entries: readonly ParsedCheckerEntry[],
+  options?: BuildOptions,
+): readonly ParsedCheckerEntry[] {
+  if (options?.unsealArrayShapes === true) {
+    return entries.map((entry) => {
+      const ast = unsealArrayShapesInType(entry.ast);
+      return {
+        ...entry,
+        ast,
+        docType:
+          entry.aliasName === null ? formatType(ast) : entry.docType,
+      };
+    });
+  }
+  return entries;
 }
 
 function registerAliasCheckers(
@@ -146,7 +168,11 @@ export function buildMany(
   const builder = new Builder(registry);
   for (const [i, tp] of types.entries()) {
     try {
-      builder.add(tp);
+      const type =
+        options?.unsealArrayShapes === true
+          ? unsealArrayShapesInType(tp)
+          : tp;
+      builder.add(type);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const typeDescription =
