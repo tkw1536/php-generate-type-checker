@@ -79,6 +79,7 @@ function collectInputs() {
     'docblock_emit_aliases',
     'multi_comment',
     'verbose_phpdoc',
+    'sealed_shapes',
   ]) {
     const inPath = path.join(testdataDir, `${name}.IN`);
     if (!existsSync(inPath)) {

@@ -65,6 +65,7 @@ function readSources(inPath) {
  *   readonly output: string;
  *   readonly emitPhpstanTypeAliases: boolean;
  *   readonly verbosePhpdoc: boolean;
+ *   readonly sealArrayShapes: boolean;
  * }} MultilineCase
  */
 
@@ -89,6 +90,7 @@ function parseMultilineCase(block) {
   let output = 'function';
   let emitPhpstanTypeAliases = false;
   let verbosePhpdoc = false;
+  let sealArrayShapes = false;
   let start = 0;
 
   while (start < lines.length && lines[start].startsWith('#')) {
@@ -105,11 +107,21 @@ function parseMultilineCase(block) {
     if (verboseMatch) {
       verbosePhpdoc = true;
     }
+    const sealMatch = /^#\s*sealArrayShapes:\s*1/u.exec(line);
+    if (sealMatch) {
+      sealArrayShapes = true;
+    }
     start++;
   }
 
   const input = lines.slice(start).join('\n').trim();
-  return { input, output, emitPhpstanTypeAliases, verbosePhpdoc };
+  return {
+    input,
+    output,
+    emitPhpstanTypeAliases,
+    verbosePhpdoc,
+    sealArrayShapes,
+  };
 }
 
 /**
@@ -147,6 +159,7 @@ const DOCBlock_FIXTURES = [
   { name: 'docblock_emit_aliases', emitPhpstanTypeAliases: true },
   { name: 'multi_comment', emitPhpstanTypeAliases: false },
   { name: 'verbose_phpdoc', emitPhpstanTypeAliases: false },
+  { name: 'sealed_shapes', emitPhpstanTypeAliases: false },
 ];
 
 for (const { name, emitPhpstanTypeAliases: defaultEmit } of DOCBlock_FIXTURES) {
@@ -155,13 +168,14 @@ for (const { name, emitPhpstanTypeAliases: defaultEmit } of DOCBlock_FIXTURES) {
     continue;
   }
   const cases = readMultilineCases(inPath);
-  /** @type {{ input: string; output: string; expected: string; emitPhpstanTypeAliases?: boolean; verbosePhpdoc?: boolean }[]} */
+  /** @type {{ input: string; output: string; expected: string; emitPhpstanTypeAliases?: boolean; verbosePhpdoc?: boolean; sealArrayShapes?: boolean }[]} */
   const out = [];
   for (const {
     input,
     output,
     emitPhpstanTypeAliases,
     verbosePhpdoc,
+    sealArrayShapes,
   } of cases) {
     const emit = emitPhpstanTypeAliases || defaultEmit;
     try {
@@ -169,14 +183,18 @@ for (const { name, emitPhpstanTypeAliases: defaultEmit } of DOCBlock_FIXTURES) {
         output,
         emitPhpstanTypeAliases: emit,
         verbosePhpdoc,
+        sealArrayShapes,
       });
-      /** @type {{ input: string; output: string; expected: string; emitPhpstanTypeAliases?: boolean; verbosePhpdoc?: boolean }} */
+      /** @type {{ input: string; output: string; expected: string; emitPhpstanTypeAliases?: boolean; verbosePhpdoc?: boolean; sealArrayShapes?: boolean }} */
       const entry = { input, output, expected };
       if (emit) {
         entry.emitPhpstanTypeAliases = true;
       }
       if (verbosePhpdoc) {
         entry.verbosePhpdoc = true;
+      }
+      if (sealArrayShapes) {
+        entry.sealArrayShapes = true;
       }
       out.push(entry);
     } catch (err) {

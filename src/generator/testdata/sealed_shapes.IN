@@ -1,0 +1,77 @@
+# Sealed array shapes golden cases. Headers: output, sealArrayShapes.
+# All cases use sealArrayShapes so non-empty shapes without ... reject extras.
+# --- All-required → count === N ---
+# sealArrayShapes: 1
+array{foo: int}
+---
+# sealArrayShapes: 1
+array{foo: int, bar: string}
+---
+# sealArrayShapes: 1
+array{int, string}
+---
+# sealArrayShapes: 1
+list{int, string}
+---
+# sealArrayShapes: 1
+non-empty-array{foo: int}
+---
+# sealArrayShapes: 1
+non-empty-list{int, string}
+---
+# --- Any optional → sealed extra-key foreach ---
+# sealArrayShapes: 1
+array{age?: int}
+---
+# sealArrayShapes: 1
+array{foo: int, bar?: string}
+---
+# sealArrayShapes: 1
+list{0: int, 1?: string}
+---
+# --- Explicit unsealed rest (seal option must not add rejection) ---
+# sealArrayShapes: 1
+array{foo: int, ...}
+---
+# sealArrayShapes: 1
+array{foo: int, ...<string>}
+---
+# sealArrayShapes: 1
+array{foo: int, ...<string, int>}
+---
+# sealArrayShapes: 1
+list{int, string, ...}
+---
+# sealArrayShapes: 1
+list{int, string, ...<bool>}
+---
+# sealArrayShapes: 1
+array{...}
+---
+# sealArrayShapes: 1
+list{...}
+---
+# sealArrayShapes: 1
+array{...<string>}
+---
+# --- Empty shapes (always empty) ---
+# sealArrayShapes: 1
+array{}
+---
+# sealArrayShapes: 1
+list{}
+---
+# sealArrayShapes: 1
+non-empty-array{}
+---
+# --- Nested sealing ---
+# sealArrayShapes: 1
+array{outer: array{inner: string}}
+---
+# --- Key casting / odd keys ---
+# sealArrayShapes: 1
+array{'123': int, '08': string}
+---
+# --- Object control (seal must not apply) ---
+# sealArrayShapes: 1
+object{foo: int}

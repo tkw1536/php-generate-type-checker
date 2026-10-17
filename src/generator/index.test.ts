@@ -10,6 +10,7 @@ import privateStaticCases from './testdata/private_static.json';
 import protectedStaticCases from './testdata/protected_static.json';
 import publicStaticCases from './testdata/public_static.json';
 import verbosePhpdocCases from './testdata/verbose_phpdoc.json';
+import sealedShapesCases from './testdata/sealed_shapes.json';
 import type { CheckerOutputMode } from "./options.ts";
 
 interface GeneratorFixture {
@@ -20,6 +21,7 @@ interface GeneratorFixture {
   readonly expectsError: boolean;
   readonly emitPhpstanTypeAliases?: boolean;
   readonly verbosePhpdoc?: boolean;
+  readonly sealArrayShapes?: boolean;
 }
 
 type SuccessCase = { readonly input: string; readonly expected: string };
@@ -29,6 +31,7 @@ type DocblockCase = {
   readonly expected: string;
   readonly emitPhpstanTypeAliases?: boolean;
   readonly verbosePhpdoc?: boolean;
+  readonly sealArrayShapes?: boolean;
 };
 type ErrorCase = { readonly input: string };
 
@@ -50,10 +53,21 @@ function docblockToFixtures(
   labelPrefix: string,
 ): GeneratorFixture[] {
   return cases.map(
-    ({ input, output, expected, emitPhpstanTypeAliases, verbosePhpdoc }, index) => {
+    (
+      {
+        input,
+        output,
+        expected,
+        emitPhpstanTypeAliases,
+        verbosePhpdoc,
+        sealArrayShapes,
+      },
+      index,
+    ) => {
       const extras = [
         emitPhpstanTypeAliases === true ? ' + aliases' : '',
         verbosePhpdoc === true ? ' + verbose' : '',
+        sealArrayShapes === true ? ' + seal' : '',
       ].join('');
       const label =
         cases.length === 1
@@ -67,6 +81,7 @@ function docblockToFixtures(
         expectsError: false,
         emitPhpstanTypeAliases,
         verbosePhpdoc,
+        sealArrayShapes,
       };
     },
   );
@@ -156,6 +171,10 @@ export function loadFixtures(): GeneratorFixture[] {
       readDocblockCases(verbosePhpdocCases),
       'verbose_phpdoc',
     ),
+    ...docblockToFixtures(
+      readDocblockCases(sealedShapesCases),
+      'sealed_shapes',
+    ),
     ...errorsToFixtures(readErrorCases(errorsCases)),
   ].toSorted((a, b) => a.name.localeCompare(b.name));
 }
@@ -177,6 +196,7 @@ describe('generateChecker fixtures', () => {
         output: fixture.output,
         emitPhpstanTypeAliases: fixture.emitPhpstanTypeAliases,
         verbosePhpdoc: fixture.verbosePhpdoc,
+        sealArrayShapes: fixture.sealArrayShapes,
       }),
     ).toBe(fixture.expected);
   });
