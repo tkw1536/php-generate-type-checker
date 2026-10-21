@@ -289,7 +289,7 @@ These are typically represented by existence check, followed by a type check on 
 Trailing `...` makes array and list shapes unsealed, matching [PHPStan 2.2](https://phpstan.org/blog/phpstan-2-2-unsealed-array-shapes-safer-array-keys).
 Shapes without `...` are treated as unsealed for runtime checks by default (extra keys allowed) — the same as PHPStan’s default today.
 Empty `array{}` / `list{}` stay empty even then: PHPStan already rejects extras on empty shapes without bleeding edge.
-Truly sealed non-empty shapes (`array{a: int}` rejecting extras) are opt-in in PHPStan 2.2 via bleeding edge and are planned to become the only behaviour in a future major version.
+Truly sealed non-empty shapes (`array{a: int}` rejecting extras) are opt-in in PHPStan 2.2 via bleeding edge and are planned to become the only behavior in a future major version.
 
 The UI option **Sealed array shapes** turns on sealed runtime checks for non-empty shapes without `...` (reject unknown keys).
 `@phpstan-assert-if-true` still uses the input type as written.
