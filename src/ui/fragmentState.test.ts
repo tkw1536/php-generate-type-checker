@@ -16,7 +16,7 @@ const sample: AppFragmentState = {
   input: 'array{x: list<string>}',
 };
 
-describe('fragmentState', () => {
+describe('fragmentState encode and decode', () => {
   it('round-trips via URLSearchParams encoding', () => {
     const encoded = encodeFragmentState(sample);
     expect(encoded).toContain('optimize=0');
@@ -31,24 +31,6 @@ describe('fragmentState', () => {
     expect(encoded).not.toContain('name=');
 
     expect(decodeFragmentState(`#${encoded}`)).toEqual(sample);
-  });
-
-  it('maps legacy unseal fragment param to sealArrayShapes', () => {
-    expect(decodeFragmentState('#unseal=1&input=int')).toEqual({
-      sealArrayShapes: false,
-      input: 'int',
-    });
-    expect(decodeFragmentState('#unseal=0&input=int')).toEqual({
-      sealArrayShapes: true,
-      input: 'int',
-    });
-  });
-
-  it('prefers seal over legacy unseal when both are present', () => {
-    expect(decodeFragmentState('#seal=1&unseal=1&input=int')).toEqual({
-      sealArrayShapes: true,
-      input: 'int',
-    });
   });
 
   it('escapes special characters in input', () => {
@@ -71,15 +53,35 @@ describe('fragmentState', () => {
     });
   });
 
-  it('ignores legacy name fragment param', () => {
-    expect(decodeFragmentState('#input=int&name=0')).toEqual({
+  it('keeps short PHPDoc when verbose is absent from the hash', () => {
+    expect(decodeFragmentState('#input=int&optimize=1')).toEqual({
+      optimize: true,
+      input: 'int',
+    });
+  });
+});
+
+describe('fragmentState legacy fragment params', () => {
+  it('maps legacy unseal fragment param to sealArrayShapes', () => {
+    expect(decodeFragmentState('#unseal=1&input=int')).toEqual({
+      sealArrayShapes: false,
+      input: 'int',
+    });
+    expect(decodeFragmentState('#unseal=0&input=int')).toEqual({
+      sealArrayShapes: true,
       input: 'int',
     });
   });
 
-  it('keeps short PHPDoc when verbose is absent from the hash', () => {
-    expect(decodeFragmentState('#input=int&optimize=1')).toEqual({
-      optimize: true,
+  it('prefers seal over legacy unseal when both are present', () => {
+    expect(decodeFragmentState('#seal=1&unseal=1&input=int')).toEqual({
+      sealArrayShapes: true,
+      input: 'int',
+    });
+  });
+
+  it('ignores legacy name fragment param', () => {
+    expect(decodeFragmentState('#input=int&name=0')).toEqual({
       input: 'int',
     });
   });
