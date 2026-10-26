@@ -73,14 +73,14 @@ function isPostListResponse(mixed $value): bool
         !array_key_exists('meta', $value) ||
         !isPaginationMeta($value['meta'])
     ) {
-        return FALSE;
+        return false;
     }
     foreach ($value['posts'] as $item) {
         if (!isPostSummary($item)) {
-            return FALSE;
+            return false;
         }
     }
-    return TRUE;
+    return true;
 }
 ```
 
@@ -131,7 +131,7 @@ Generation runs in four phases, which can be seen in the diagram below:
   Each expression can be an access to a variable, a comparison, a function call, or boolean combinations thereof.
 
   The abstract generated checkers are fail-fast functions.
-  They typically correspond to a bunch of `if (!cond) return FALSE` plus a trailing `return TRUE`, or `foreach` for collections.
+  They typically correspond to a bunch of `if (!cond) return false` plus a trailing `return true`, or `foreach` for collections.
   Simple predicates are usually boolean expressions; shapes and collections add key/property checks and loops; types that cannot be a single expression become extra helpers.
   Which exact code is generated for which type is described in more detail in the `Generate` section below.
 
@@ -157,9 +157,9 @@ For example, for `int` the abstract checker looks like:
 
 ```php
 if (!is_int($value)) {
-    return FALSE;
+    return false;
 }
-return TRUE;
+return true;
 ```
 
 The actual implementation represents this checker using a more abstract representation, however for purposes of this document we are showing the equivalent PHP syntax.
@@ -184,11 +184,11 @@ They can be seen in the following sections.
 | `scalar`                  | `is_scalar($value)`                                            |
 | `number` / `numeric`      | `is_int($value) \|\| is_float($value)`                         |
 | `array-key`               | `is_string($value) \|\| is_int($value)`                        |
-| `null` / `true` / `false` | `$value === NULL` / `TRUE` / `FALSE`                           |
-| `mixed`                   | `TRUE`                                                         |
-| `never` / `noreturn`      | `FALSE`                                                        |
-| `empty`                   | `$value === FALSE \|\| $value === 0 \|\| …` (PHP empty values) |
-| `non-empty-mixed`         | `$value !== FALSE && $value !== 0 && …` (same empties)         |
+| `null` / `true` / `false` | `$value === null` / `true` / `false`                           |
+| `mixed`                   | `true`                                                         |
+| `never` / `noreturn`      | `false`                                                        |
+| `empty`                   | `$value === false \|\| $value === 0 \|\| …` (PHP empty values) |
+| `non-empty-mixed`         | `$value !== false && $value !== 0 && …` (same empties)         |
 
 #### Int refinements and ranges
 
@@ -217,16 +217,16 @@ They can be seen in the following sections.
 | `decimal-int-string`                                 | `is_string($value) && preg_match('/^-?(?:0\|[1-9]\\d*)$/', $value) === 1`    |
 | `non-decimal-int-string`                             | same pattern with `!== 1`                                                    |
 | `class-string` / `interface-string` / `trait-string` | `is_string($value) && class_exists($value)` (runtime cannot tell them apart) |
-| `enum-string`                                        | `is_string($value) && is_a($value, \UnitEnum::class, TRUE)`                  |
+| `enum-string`                                        | `is_string($value) && is_a($value, \UnitEnum::class, true)`                  |
 
 #### class-string generics
 
 | Type                    | Check                                                                         |
 |-------------------------|-------------------------------------------------------------------------------|
-| `class-string<MyClass>` | `is_string($value) && is_a($value, MyClass::class, TRUE)`                     |
-| `class-string<A\|B>`    | `is_string($value) && (is_a(…, A::class, TRUE) \|\| is_a(…, B::class, TRUE))` |
-| `class-string<A&B>`     | `is_string($value) && is_a(…, A::class, TRUE) && is_a(…, B::class, TRUE)`     |
-| `enum-string<MyEnum>`   | `enum-string` check plus `is_a($value, MyEnum::class, TRUE)`                  |
+| `class-string<MyClass>` | `is_string($value) && is_a($value, MyClass::class, true)`                     |
+| `class-string<A\|B>`    | `is_string($value) && (is_a(…, A::class, true) \|\| is_a(…, B::class, true))` |
+| `class-string<A&B>`     | `is_string($value) && is_a(…, A::class, true) && is_a(…, B::class, true)`     |
+| `enum-string<MyEnum>`   | `enum-string` check plus `is_a($value, MyEnum::class, true)`                  |
 
 #### Named types and literals
 
@@ -242,7 +242,7 @@ They can be seen in the following sections.
 | Type                                | Check                                                                                         |
 |-------------------------------------|-----------------------------------------------------------------------------------------------|
 | `int\|string`                       | `is_int($value) \|\| is_string($value)`                                                       |
-| Loop-heavy union arm                | Helper call, or early `if (simpleArm) return TRUE` then the complex arm                       |
+| Loop-heavy union arm                | Helper call, or early `if (simpleArm) return true` then the complex arm                       |
 | `Foo&Bar`                           | Consecutive checks (`&&` after Optimize); redundant `is_array` / `is_object` dropped by Optimize |
 | `@phpstan-type` alias `PostSummary` | `isPostSummary($value)` (not inlined)                                                         |
 | Nested non-boolean type             | Extra shared `is…` helper                                                                     |
@@ -254,14 +254,14 @@ For example for `list<int>`:
 
 ```php
 if (!is_array($value) || !array_is_list($value)) {
-    return FALSE;
+    return false;
 }
 foreach ($value as $item) {
     if (!is_int($item)) {
-        return FALSE;
+        return false;
     }
 }
-return TRUE;
+return true;
 ```
 
 | Type                         | Check                                                                                                                          |
@@ -316,19 +316,19 @@ For example for `array{age?: int}`:
 
 ```php
 if (!is_array($value)) {
-    return FALSE;
+    return false;
 }
 if (array_key_exists('age', $value)) {
     if (!is_int($value['age'])) {
-        return FALSE;
+        return false;
     }
 }
 foreach ($value as $key => $item) {
     if ($key !== 'age') {
-        return FALSE;
+        return false;
     }
 }
-return TRUE;
+return true;
 ```
 
 Unsealed rest forms:
@@ -398,13 +398,13 @@ For later top-level steps, Before / After / Diff show the full checker as PHP (w
 | Pass                  | Goal                                                                                         | Before                                                                     | After                                                                             |
 |-----------------------|----------------------------------------------------------------------------------------------|----------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
 | Inline helpers        | Substitute non-entry helpers at the call site (entry `@phpstan-type` checkers stay as calls) | `return isInt($elem);`                                                     | `return is_int($elem);`                                                           |
-| Dedupe                | Drop identical repeated `if` / `foreach`                                                     | Two copies of `if (!is_array($value)) return FALSE;`                       | One copy                                                                          |
+| Dedupe                | Drop identical repeated `if` / `foreach`                                                     | Two copies of `if (!is_array($value)) return false;`                       | One copy                                                                          |
 | Unnest                | Collapse nested single-body `if`s into one condition                                         | `if (a) { if (b) { … } }`                                                  | `if (a && b) { … }`                                                               |
 | Combine               | Merge consecutive `if`s that share the same body                                             | Separate fail-fast `if`s for `!is_array` and `!array_is_list`              | One `if` with `\|\|`                                                              |
-| Flatten               | Turn a trailing `if`/`return` pair into one `return` expression                              | `if (is_int($value)) return TRUE; return FALSE;`                           | `return is_int($value);` (via `($cond && $b) \|\| (!$cond && $c)`, then Simplify) |
-| Known facts           | Replace proven/entailed tests with a full proof trace (env seeds + derivations + equals/entails); array `foreach` keys are int or non-decimal-int-string; primary type tags are mutually exclusive; under known `is_array($x)`, `count($x) === 0` → `$x === []` | After `if (is_array($value)) return TRUE;`, later `if (!is_array($value))`   | Later / tautological or impossible key guard is dead; Trace lists env extend + prove children |
+| Flatten               | Turn a trailing `if`/`return` pair into one `return` expression                              | `if (is_int($value)) return true; return false;`                           | `return is_int($value);` (via `($cond && $b) \|\| (!$cond && $c)`, then Simplify) |
+| Known facts           | Replace proven/entailed tests with a full proof trace (env seeds + derivations + equals/entails); array `foreach` keys are int or non-decimal-int-string; primary type tags are mutually exclusive; under known `is_array($x)`, `count($x) === 0` → `$x === []` | After `if (is_array($value)) return true;`, later `if (!is_array($value))`   | Later / tautological or impossible key guard is dead; Trace lists env extend + prove children |
 | Simplify              | Fold boolean algebra, contradictions, factoring, and related rewrites (see below)            |                                                                            |                                                                                   |
-| Dead-code elimination | Remove unreachable or empty statements; drop unused foreach `$key`; `foreach { return E }` → `if (!== [])` when `E` ignores binders | `if (FALSE) { … }`, constant-return `foreach`                              | Removed / spliced / non-empty `if`                                                |
+| Dead-code elimination | Remove unreachable or empty statements; drop unused foreach `$key`; `foreach { return E }` → `if (!== [])` when `E` ignores binders | `if (false) { … }`, constant-return `foreach`                              | Removed / spliced / non-empty `if`                                                |
 | Prune helpers         | Delete helpers that nothing calls anymore                                                    | Helper with no remaining callers                                           | Helper deleted                                                                    |
 
 #### Simplify expressions
@@ -413,12 +413,12 @@ The simplify phase simplifies boolean expressions.
 
 | Before                                             | After                                                                              |
 |----------------------------------------------------|------------------------------------------------------------------------------------|
-| `TRUE` / `FALSE` in `&&` / `\|\|`; `!!$x`          | Folded / `$x`; De Morgan for `!(a && b)` / `!(a \|\| b)`                           |
-| `$x && !$x`                                        | `FALSE`                                                                            |
-| `$x \|\| !$x`                                      | `TRUE`                                                                             |
+| `true` / `false` in `&&` / `\|\|`; `!!$x`          | Folded / `$x`; De Morgan for `!(a && b)` / `!(a \|\| b)`                           |
+| `$x && !$x`                                        | `false`                                                                            |
+| `$x \|\| !$x`                                      | `true`                                                                             |
 | Duplicate operands                                 | One copy                                                                           |
 | `(is_int && is_string) \|\| (is_int && is_bool)`   | `is_int && (is_string \|\| is_bool)`                                               |
-| `is_a($x, Foo::class, TRUE) \|\| class_exists($x)` | `class_exists($x)` (OR keeps the weaker fact)                                      |
+| `is_a($x, Foo::class, true) \|\| class_exists($x)` | `class_exists($x)` (OR keeps the weaker fact)                                      |
 | `is_a(…) && class_exists(…)`                       | `is_a(…)` (AND keeps the stronger fact; same idea for `instanceof` vs `is_object`) |
 | `is_int($x) \|\| $x === 0`                         | `is_int($x)` (typed literals imply their `is_*` tag; OR keeps the weaker fact)     |
 | `is_array($x) && $x === []`                        | `$x === []` (AND keeps the stronger fact)                                          |

@@ -66,14 +66,7 @@ function renderReturnStmt(
   opts: RenderPhpOptions,
 ): PhpLine[] {
   if (!preferMultiline(expr)) {
-    const text = renderExpr(expr, opts);
-    if (
-      (expr.kind === 'and' || expr.kind === 'or') &&
-      expr.exprs.length > 1
-    ) {
-      return [line(depth, `return (${text});`)];
-    }
-    return [line(depth, `return ${text};`)];
+    return [line(depth, `return ${renderExpr(expr, opts)};`)];
   }
   if (expr.kind === 'not' && preferMultiline(expr.expr)) {
     return [

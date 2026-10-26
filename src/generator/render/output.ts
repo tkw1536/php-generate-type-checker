@@ -205,8 +205,7 @@ function formatCheckerOutput(
 function ${mainFunctionName}(mixed $value): bool
 {
 ${body}
-}
-`;
+}`;
   }
 
   return formatClassCheckerOutput(

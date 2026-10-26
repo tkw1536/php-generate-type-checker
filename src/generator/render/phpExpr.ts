@@ -16,11 +16,11 @@ export type RenderPhpOptions = {
 export function renderPhpScalarLiteral(value: string): string {
   switch (value) {
     case 'true':
-      return 'TRUE';
+      return 'true';
     case 'false':
-      return 'FALSE';
+      return 'false';
     case 'null':
-      return 'NULL';
+      return 'null';
     default:
       return value;
   }
@@ -108,7 +108,7 @@ function renderArg(arg: Arg, opts: RenderPhpOptions): string {
 export function renderExpr(expr: Expr, opts: RenderPhpOptions = {}): string {
   switch (expr.kind) {
     case 'bool':
-      return expr.value ? 'TRUE' : 'FALSE';
+      return expr.value ? 'true' : 'false';
     case 'not': {
       const child = expr.expr;
       if (
@@ -149,7 +149,7 @@ export function renderExpr(expr: Expr, opts: RenderPhpOptions = {}): string {
       return `${name}(${path})`;
     }
     default:
-      return 'FALSE';
+      return 'false';
   }
 }
 

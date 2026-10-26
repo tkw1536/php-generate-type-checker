@@ -1,4 +1,5 @@
 import type { TypeNode } from '../parser/ast.ts';
+import { parseType } from '../parser/index.ts';
 import type { ParsedCheckerEntry } from '../parser/parseInput.ts';
 import {
   formatPhpstanTypeAliasesBlock,
@@ -178,7 +179,8 @@ function phpstanAliasesFromEntries(
     )
     .map((entry) => ({
       name: entry.aliasName,
-      typeString: entry.typeString,
+      // Re-parse typeString so resolveAliases cannot substitute the emitted body.
+      typeString: formatTypeForPhpstanDoc(parseType(entry.typeString)),
     }));
 }
 

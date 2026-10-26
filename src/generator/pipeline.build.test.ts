@@ -55,7 +55,7 @@ function callableArrayEmitsPerGuardFailIf(): void {
   });
   expect(php).toContain('if (!is_array($value))');
   expect(php).toContain('if (!is_callable($value))');
-  expect(php).toContain('return TRUE;');
+  expect(php).toContain('return true;');
   expect(php).not.toMatch(/return !\(/u);
 }
 
@@ -70,8 +70,8 @@ function unionIntStringEmitsFailIfOr(): void {
     output: 'function',
   });
   expect(php).toContain('if (!(is_int($value) || is_string($value)))');
-  expect(php).toContain('return FALSE;');
-  expect(php).toContain('return TRUE;');
+  expect(php).toContain('return false;');
+  expect(php).toContain('return true;');
 }
 
 function arrayNeverRequiresEmptyArray(): void {

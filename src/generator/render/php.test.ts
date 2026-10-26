@@ -62,8 +62,8 @@ function wrapsNotOverBinAndOr(): void {
 }
 
 function rendersBoolAndNullLiterals(): void {
-  expect(renderExpr({ kind: 'bool', value: true })).toBe('TRUE');
-  expect(renderExpr({ kind: 'bool', value: false })).toBe('FALSE');
+  expect(renderExpr({ kind: 'bool', value: true })).toBe('true');
+  expect(renderExpr({ kind: 'bool', value: false })).toBe('false');
   expect(
     renderExpr({
       kind: 'bin',
@@ -71,7 +71,7 @@ function rendersBoolAndNullLiterals(): void {
       left: refArg($v),
       right: { kind: 'literal', value: 'null' },
     }),
-  ).toBe('$value === NULL');
+  ).toBe('$value === null');
 }
 
 function rendersCallCheckerWithAndWithoutSelf(): void {
@@ -88,12 +88,12 @@ function rendersConsecutiveFailIfGuards(): void {
   ]);
   expect(renderProgramBody(body)).toBe(
     `    if (!is_array($value)) {
-        return FALSE;
+        return false;
     }
     if (!is_callable($value)) {
-        return FALSE;
+        return false;
     }
-    return TRUE;`,
+    return true;`,
   );
 }
 
@@ -125,7 +125,7 @@ function rendersMergedFailIfOrChain(): void {
             !is_string($key) ||
             !is_string($item)
         ) {
-            return FALSE;
+            return false;
         }
     }`,
   );
@@ -143,7 +143,7 @@ function wrapsTopLevelReturnAndOr(): void {
         ),
       ]),
     ),
-  ).toBe('    return (is_array($value) && is_callable($value));');
+  ).toBe('    return is_array($value) && is_callable($value);');
 
   expect(
     renderProgramBody(
@@ -156,7 +156,7 @@ function wrapsTopLevelReturnAndOr(): void {
         ),
       ]),
     ),
-  ).toBe('    return (is_int($value) || is_string($value));');
+  ).toBe('    return is_int($value) || is_string($value);');
 }
 
 function wrapsLongLeafAndChains(): void {
@@ -230,7 +230,7 @@ function rendersForeachWithKeyedBinding(): void {
   ]);
   expect(renderProgramBody(body)).toBe(
     `    foreach ($value as $key => $item) {
-        return TRUE;
+        return true;
     }`,
   );
 }
@@ -260,9 +260,9 @@ function numbersNestedForeachItems(): void {
     `    foreach ($value as $item1) {
         foreach ($item1 as $item2) {
             if (!is_string($item2)) {
-                return FALSE;
+                return false;
             }
-            return TRUE;
+            return true;
         }
     }`,
   );
@@ -271,7 +271,7 @@ function numbersNestedForeachItems(): void {
 describe('renderExpr', () => {
   it('renders calls and refs', rendersCallsAndRefs);
   it('wraps not over bin, and, and or', wrapsNotOverBinAndOr);
-  it('renders bool and null literals uppercase', rendersBoolAndNullLiterals);
+  it('renders bool and null literals lowercase', rendersBoolAndNullLiterals);
   it(
     'renders call_checker with and without self::',
     rendersCallCheckerWithAndWithoutSelf,
@@ -284,7 +284,7 @@ describe('renderProgramBody', () => {
     rendersConsecutiveFailIfGuards,
   );
   it('renders merged fail-if or-chain', rendersMergedFailIfOrChain);
-  it('wraps top-level return and/or in parentheses', wrapsTopLevelReturnAndOr);
+  it('does not wrap one-line return and/or in parentheses', wrapsTopLevelReturnAndOr);
   it('wraps return && chains with 3+ leaf operands', wrapsLongLeafAndChains);
   it(
     'wraps nested compound &&/|| operands once',
