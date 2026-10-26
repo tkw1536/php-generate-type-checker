@@ -1,19 +1,23 @@
 import type { Arg, Expr, ValueRef } from '../../../ir/types.ts';
 
-/** Lower runs earlier in && / || (type proofs before member checks). */
+/**
+ * Lower runs earlier in && / ||:
+ * type proofs → non-member count compares → key/exists → member checks.
+ */
 function operandPriority(expr: Expr): number {
   switch (expr.kind) {
     case 'instanceof':
-      return argTouchesMember(expr.subject) ? 3 : 0;
+      return argTouchesMember(expr.subject) ? 4 : 0;
     case 'call':
       return callOperandPriority(expr);
-    case 'bool':
     case 'bin':
+      return binOperandPriority(expr);
+    case 'bool':
     case 'call_checker':
     case 'not':
     case 'and':
     case 'or':
-      return 3;
+      return 4;
     default:
       throw new Error('never reached');
   }
@@ -23,7 +27,7 @@ function callOperandPriority(
   expr: Extract<Expr, { kind: 'call' }>,
 ): number {
   if (expr.args.some(argTouchesMember)) {
-    return 3;
+    return 4;
   }
   const { name } = expr;
   if (name === 'array_is_list') {
@@ -34,12 +38,32 @@ function callOperandPriority(
     name === 'array_key_exists' ||
     name === 'is_callable'
   ) {
-    return 2;
+    return 3;
   }
   if (name.startsWith('is_')) {
     return 1;
   }
-  return 3;
+  return 4;
+}
+
+/** `count($x) === N` / `!==` (either operand order) when `$x` is non-member. */
+function binOperandPriority(expr: Extract<Expr, { kind: 'bin' }>): number {
+  if (expr.op !== '===' && expr.op !== '!==') {
+    return 4;
+  }
+  const countArg =
+    countCallSoleArg(expr.left) ?? countCallSoleArg(expr.right);
+  if (countArg === null) {
+    return 4;
+  }
+  return argTouchesMember(countArg) ? 4 : 2;
+}
+
+function countCallSoleArg(arg: Arg): Arg | null {
+  if (arg.kind !== 'call' || arg.name !== 'count' || arg.args.length !== 1) {
+    return null;
+  }
+  return arg.args[0] ?? null;
 }
 
 function argTouchesMember(arg: Arg): boolean {

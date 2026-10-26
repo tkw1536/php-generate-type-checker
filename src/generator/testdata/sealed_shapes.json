@@ -2,37 +2,37 @@
   {
     "input": "array{foo: int}",
     "output": "function",
-    "expected": "/** @phpstan-assert-if-true array{foo: int} $value */\nfunction isArrayFooInt(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_key_exists('foo', $value) &&\n        is_int($value['foo']) &&\n        count($value) === 1\n    );\n}\n",
+    "expected": "/** @phpstan-assert-if-true array{foo: int} $value */\nfunction isArrayFooInt(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        count($value) === 1 &&\n        array_key_exists('foo', $value) &&\n        is_int($value['foo'])\n    );\n}\n",
     "sealArrayShapes": true
   },
   {
     "input": "array{foo: int, bar: string}",
     "output": "function",
-    "expected": "/** @phpstan-assert-if-true array{foo: int, bar: string} $value */\nfunction isArrayFooIntBarString(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_key_exists('foo', $value) &&\n        array_key_exists('bar', $value) &&\n        is_int($value['foo']) &&\n        is_string($value['bar']) &&\n        count($value) === 2\n    );\n}\n",
+    "expected": "/** @phpstan-assert-if-true array{foo: int, bar: string} $value */\nfunction isArrayFooIntBarString(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        count($value) === 2 &&\n        array_key_exists('foo', $value) &&\n        array_key_exists('bar', $value) &&\n        is_int($value['foo']) &&\n        is_string($value['bar'])\n    );\n}\n",
     "sealArrayShapes": true
   },
   {
     "input": "array{int, string}",
     "output": "function",
-    "expected": "/** @phpstan-assert-if-true array{int, string} $value */\nfunction isArrayIntString(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_key_exists(0, $value) &&\n        array_key_exists(1, $value) &&\n        is_int($value[0]) &&\n        is_string($value[1]) &&\n        count($value) === 2\n    );\n}\n",
+    "expected": "/** @phpstan-assert-if-true array{int, string} $value */\nfunction isArrayIntString(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        count($value) === 2 &&\n        array_key_exists(0, $value) &&\n        array_key_exists(1, $value) &&\n        is_int($value[0]) &&\n        is_string($value[1])\n    );\n}\n",
     "sealArrayShapes": true
   },
   {
     "input": "list{int, string}",
     "output": "function",
-    "expected": "/** @phpstan-assert-if-true list{int, string} $value */\nfunction isListIntString(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_is_list($value) &&\n        array_key_exists(0, $value) &&\n        array_key_exists(1, $value) &&\n        is_int($value[0]) &&\n        is_string($value[1]) &&\n        count($value) === 2\n    );\n}\n",
+    "expected": "/** @phpstan-assert-if-true list{int, string} $value */\nfunction isListIntString(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_is_list($value) &&\n        count($value) === 2 &&\n        array_key_exists(0, $value) &&\n        array_key_exists(1, $value) &&\n        is_int($value[0]) &&\n        is_string($value[1])\n    );\n}\n",
     "sealArrayShapes": true
   },
   {
     "input": "non-empty-array{foo: int}",
     "output": "function",
-    "expected": "/** @phpstan-assert-if-true non-empty-array{foo: int} $value */\nfunction isNonEmptyArrayFooInt(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_key_exists('foo', $value) &&\n        is_int($value['foo']) &&\n        count($value) === 1\n    );\n}\n",
+    "expected": "/** @phpstan-assert-if-true non-empty-array{foo: int} $value */\nfunction isNonEmptyArrayFooInt(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        count($value) === 1 &&\n        array_key_exists('foo', $value) &&\n        is_int($value['foo'])\n    );\n}\n",
     "sealArrayShapes": true
   },
   {
     "input": "non-empty-list{int, string}",
     "output": "function",
-    "expected": "/** @phpstan-assert-if-true non-empty-list{int, string} $value */\nfunction isNonEmptyListIntString(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_is_list($value) &&\n        array_key_exists(0, $value) &&\n        array_key_exists(1, $value) &&\n        is_int($value[0]) &&\n        is_string($value[1]) &&\n        count($value) === 2\n    );\n}\n",
+    "expected": "/** @phpstan-assert-if-true non-empty-list{int, string} $value */\nfunction isNonEmptyListIntString(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_is_list($value) &&\n        count($value) === 2 &&\n        array_key_exists(0, $value) &&\n        array_key_exists(1, $value) &&\n        is_int($value[0]) &&\n        is_string($value[1])\n    );\n}\n",
     "sealArrayShapes": true
   },
   {
@@ -122,13 +122,13 @@
   {
     "input": "array{outer: array{inner: string}}",
     "output": "function",
-    "expected": "/** @phpstan-assert-if-true array{outer: array{inner: string}} $value */\nfunction isArrayOuterArrayInnerString(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_key_exists('outer', $value) &&\n        is_array($value['outer']) &&\n        array_key_exists('inner', $value['outer']) &&\n        is_string($value['outer']['inner']) &&\n        count($value['outer']) === 1 &&\n        count($value) === 1\n    );\n}\n",
+    "expected": "/** @phpstan-assert-if-true array{outer: array{inner: string}} $value */\nfunction isArrayOuterArrayInnerString(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        count($value) === 1 &&\n        array_key_exists('outer', $value) &&\n        is_array($value['outer']) &&\n        array_key_exists('inner', $value['outer']) &&\n        is_string($value['outer']['inner']) &&\n        count($value['outer']) === 1\n    );\n}\n",
     "sealArrayShapes": true
   },
   {
     "input": "array{'123': int, '08': string}",
     "output": "function",
-    "expected": "/** @phpstan-assert-if-true array{'123': int, '08': string} $value */\nfunction isArray123Int08String(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_key_exists(123, $value) &&\n        array_key_exists('08', $value) &&\n        is_int($value[123]) &&\n        is_string($value['08']) &&\n        count($value) === 2\n    );\n}\n",
+    "expected": "/** @phpstan-assert-if-true array{'123': int, '08': string} $value */\nfunction isArray123Int08String(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        count($value) === 2 &&\n        array_key_exists(123, $value) &&\n        array_key_exists('08', $value) &&\n        is_int($value[123]) &&\n        is_string($value['08'])\n    );\n}\n",
     "sealArrayShapes": true
   },
   {

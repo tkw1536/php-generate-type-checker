@@ -296,16 +296,16 @@ The UI option **Sealed array shapes** turns on sealed runtime checks for non-emp
 
 Object shapes stay unsealed (no extra-property rejection; `...` is not supported on objects).
 Collection field loops (`foreach`) are emitted after all key and non-loop field guards so Optimize can group them.
-For example for `array{name: string, age: int}` (all keys required) with **Sealed array shapes** on, the sealed check is `count($value) === 2` after the field checks:
+For example for `array{name: string, age: int}` (all keys required) with **Sealed array shapes** on, Optimize places `count($value) === 2` right after `is_array` (before key and field checks) for early reject:
 
 ```php
 return (
     is_array($value) &&
+    count($value) === 2 &&
     array_key_exists('name', $value) &&
     array_key_exists('age', $value) &&
     is_string($value['name']) &&
-    is_int($value['age']) &&
-    count($value) === 2
+    is_int($value['age'])
 );
 ```
 

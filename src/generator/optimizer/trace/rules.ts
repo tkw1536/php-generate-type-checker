@@ -196,7 +196,7 @@ const RULES: Record<OptimizeTraceRuleId, OptimizeTraceRuleInfo> = {
   },
   'simplify.normalize.reorder': {
     title: 'Reorder operands',
-    help: 'Sorts AND/OR operands into a canonical order (type proofs before member checks). Sound because ∧/∨ are commutative and associative for boolean values.',
+    help: 'Sorts AND/OR operands into a canonical order (type proofs, then non-member count compares, then key/exists checks, then member checks). Sound because ∧/∨ are commutative and associative for boolean values.',
   },
   'dce.dropFalse': {
     title: 'Drop if (false)',
