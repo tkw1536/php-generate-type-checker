@@ -20,7 +20,7 @@
   {
     "input": "list{int, string}",
     "output": "function",
-    "expected": "/** @phpstan-assert-if-true list{int, string} $value */\nfunction isListIntString(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_is_list($value) &&\n        count($value) === 2 &&\n        array_key_exists(0, $value) &&\n        array_key_exists(1, $value) &&\n        is_int($value[0]) &&\n        is_string($value[1])\n    );\n}\n",
+    "expected": "/** @phpstan-assert-if-true list{int, string} $value */\nfunction isListIntString(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_is_list($value) &&\n        count($value) === 2 &&\n        is_int($value[0]) &&\n        is_string($value[1])\n    );\n}\n",
     "sealArrayShapes": true
   },
   {
@@ -32,7 +32,7 @@
   {
     "input": "non-empty-list{int, string}",
     "output": "function",
-    "expected": "/** @phpstan-assert-if-true non-empty-list{int, string} $value */\nfunction isNonEmptyListIntString(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_is_list($value) &&\n        count($value) === 2 &&\n        array_key_exists(0, $value) &&\n        array_key_exists(1, $value) &&\n        is_int($value[0]) &&\n        is_string($value[1])\n    );\n}\n",
+    "expected": "/** @phpstan-assert-if-true non-empty-list{int, string} $value */\nfunction isNonEmptyListIntString(mixed $value): bool\n{\n    return (\n        is_array($value) &&\n        array_is_list($value) &&\n        count($value) === 2 &&\n        is_int($value[0]) &&\n        is_string($value[1])\n    );\n}\n",
     "sealArrayShapes": true
   },
   {

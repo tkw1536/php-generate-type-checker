@@ -72,7 +72,7 @@ function arrayKeyExistsImpliesCountNonZero(a: Expr, b: Expr): boolean {
  * Integer literal value when `arg` is a plain decimal int string, else null.
  * Rejects signs/whitespace so only generator-style `0`, `1`, `2`, … match.
  */
-function nonNegIntLiteral(arg: Arg): number | null {
+export function nonNegIntLiteral(arg: Arg): number | null {
   if (arg.kind !== 'literal') {
     return null;
   }
@@ -82,11 +82,11 @@ function nonNegIntLiteral(arg: Arg): number | null {
   return Number(arg.value);
 }
 
-/** Subject of `count($x) === N` (N≥1) from one operand order, or null. */
-function countEqualsPositiveSubjectSide(
+/** Subject + N of `count($x) === N` (N≥1) from one operand order, or null. */
+function countEqualsPositiveSide(
   countSide: Arg,
   litSide: Arg,
-): Arg | null {
+): { readonly subject: Arg; readonly n: number } | null {
   if (
     countSide.kind !== 'call' ||
     countSide.name !== 'count' ||
@@ -98,27 +98,33 @@ function countEqualsPositiveSubjectSide(
   if (n === null || n < 1) {
     return null;
   }
-  return countSide.args[0];
+  const subject = countSide.args[0];
+  if (subject === undefined) {
+    return null;
+  }
+  return { subject, n };
 }
 
 /**
- * Subject of `count($x) === N` when N≥1, or null.
- * Accepts either operand order.
+ * Match `count($x) === N` when N≥1 (either operand order).
+ * Used by imply leaves and list-count key_exists normalize.
  */
-function countEqualsPositiveSubject(expr: Expr): Arg | null {
+export function matchCountEqualsPositive(
+  expr: Expr,
+): { readonly subject: Arg; readonly n: number } | null {
   if (expr.kind !== 'bin' || expr.op !== '===') {
     return null;
   }
   return (
-    countEqualsPositiveSubjectSide(expr.left, expr.right) ??
-    countEqualsPositiveSubjectSide(expr.right, expr.left)
+    countEqualsPositiveSide(expr.left, expr.right) ??
+    countEqualsPositiveSide(expr.right, expr.left)
   );
 }
 
 /** `count($x) === N` (N≥1) ⇒ `$x !== []`. */
 function countPositiveImpliesNonEmpty(a: Expr, b: Expr): boolean {
-  const subject = countEqualsPositiveSubject(a);
-  return subject !== null && isNonEmptyArrayCmp(b, subject);
+  const matched = matchCountEqualsPositive(a);
+  return matched !== null && isNonEmptyArrayCmp(b, matched.subject);
 }
 
 /** Empty-array / key-exists / positive-count implication leaves. */

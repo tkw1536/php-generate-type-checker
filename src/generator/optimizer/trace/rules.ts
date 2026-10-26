@@ -134,6 +134,10 @@ const RULES: Record<OptimizeTraceRuleId, OptimizeTraceRuleInfo> = {
     title: 'Normalize empty count',
     help: 'Under a known-true is_array($x), rewrites count($x) === 0 to $x === [] (and !== to !== []). Not sound for arbitrary Countable; nested children prove the is_array premise.',
   },
+  'facts.normalize.listCountKeyExists': {
+    title: 'Normalize list count key exists',
+    help: 'Under known-true array_is_list($x) and count($x) === N, rewrites array_key_exists(k, $x) to TRUE when 0 ≤ k < N. Sound because a list of length N has exactly the keys 0..N-1; nested children prove the list and count premises.',
+  },
   'facts.imply.andConjunct': {
     title: 'Implication AND conjunct',
     help: 'A ∧ B ⇒ C because a conjunct implies C.',

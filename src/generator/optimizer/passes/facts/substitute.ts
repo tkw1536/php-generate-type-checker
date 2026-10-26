@@ -21,6 +21,7 @@ import {
   HostCursor,
 } from './substitute.absorb.ts';
 import { normalizeCountEmpty } from './substitute.countEmpty.ts';
+import { normalizeListCountKeyExists } from './substitute.listCountKey.ts';
 import { proveFalseProof, proveTrueProof } from './substitute.prove.ts';
 
 function flushEnv(
@@ -107,6 +108,10 @@ function substituteFactsInner(
   const countEmpty = normalizeCountEmpty(expr, env, ctx, pos, host);
   if (countEmpty !== null) {
     return countEmpty;
+  }
+  const listCountKey = normalizeListCountKeyExists(expr, env, ctx, pos, host);
+  if (listCountKey !== null) {
+    return listCountKey;
   }
   return substituteFactsShallow(expr, env, ctx, pos, host, sink);
 }

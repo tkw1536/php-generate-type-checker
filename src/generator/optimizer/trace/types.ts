@@ -52,6 +52,7 @@ export type OptimizeTraceRuleId =
   | 'facts.absorb'
   | 'facts.absorb.implies'
   | 'facts.normalize.countEmpty'
+  | 'facts.normalize.listCountKeyExists'
   | 'simplify.expand'
   | 'simplify.absorb'
   | 'simplify.normalize.boolFold'

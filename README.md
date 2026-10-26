@@ -426,6 +426,7 @@ The simplify phase simplifies boolean expressions.
 | `array_key_exists($k, $x) && $x !== []`            | `array_key_exists($k, $x)` (key presence ⇒ non-empty)                              |
 | `array_key_exists($k, $x) && count($x) !== 0`      | `array_key_exists($k, $x)`                                                         |
 | `count($x) === N && $x !== []` (N≥1)               | `count($x) === N`                                                                  |
+| `array_is_list($x) && count===N && key_exists(k)`  | drop `key_exists` when `0 ≤ k < N` (list of length N has keys `0..N-1`)         |
 | `!($x !== [])`                                     | `$x === []`                                                                        |
 | `!($x > 0)`                                        | `$x <= 0`                                                                          |
 
