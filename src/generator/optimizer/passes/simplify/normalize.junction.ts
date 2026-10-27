@@ -1,7 +1,7 @@
 import type { Expr } from '../../../ir/types.ts';
 import { equals } from '../../../ir/equals.ts';
 import { andExpr, boolLit, orExpr } from '../../../ir/index.ts';
-import { absorbImpliedOperandsProof } from '../../lib/implyProof.ts';
+import { absorbImpliedOperandsProof } from '../../theory/absorb.ts';
 import { implyProofToChildren } from '../../proof/toTrace.ts';
 import {
   type QuietStepSink,

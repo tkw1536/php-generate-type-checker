@@ -1,25 +1,46 @@
+/**
+ * Expand known-true facts: structural env bookkeeping (AND/OR/NOT/commute)
+ * plus PHP semantic consequences from the theory prover.
+ */
 import type { Expr } from '../../../ir/types.ts';
-import {
-  andExpr,
-  binExpr,
-  callExpr,
-  notExpr,
-} from '../../../ir/index.ts';
-import {
-  exclusiveTag,
-  otherExclusiveNegations,
-  typeCallImpliedByEquality,
-} from '../../lib/exclusiveTypes.ts';
-import { isAAllowStringSubject } from '../../lib/implies.ts';
+import { andExpr, binExpr, notExpr } from '../../../ir/index.ts';
+import { consequencesFromTrue } from '../../theory/consequences.ts';
+import type { TheoryRuleId } from '../../theory/types.ts';
 import type { FactMutators, Flags } from './env.mutators.ts';
 import type {
   EnvTraceSink,
   FactEntry,
   FactEnv,
   FactOriginId,
+  FactReasonId,
 } from './env.types.ts';
 
-function deriveExclusiveNegations(
+/** Theory rules that have a corresponding FactReasonId for env Trace. */
+function theoryReason(ruleId: TheoryRuleId): FactReasonId | null {
+  switch (ruleId) {
+    case 'exclusive':
+    case 'equalityType':
+    case 'instanceofObject':
+    case 'isAClassExists':
+      return ruleId;
+    case 'emptyArrayCount':
+    case 'arrayKeyExistsNonEmpty':
+    case 'arrayKeyExistsCountNonZero':
+    case 'countPositiveNonEmpty':
+    case 'notKey0NotListOrEmpty':
+    case 'listHigherKeyExists':
+      // Array/list implications stay on-demand via imply; not seeded into env.
+      return null;
+    default:
+      throw new Error('never reached');
+  }
+}
+
+/**
+ * Seed env with theory consequences that are part of the env reason catalog.
+ * Recursive withTrue will continue structural expansion on each add.
+ */
+function deriveTheoryConsequences(
   env: FactEnv,
   expr: Expr,
   origin: FactOriginId,
@@ -27,17 +48,17 @@ function deriveExclusiveNegations(
   sink: EnvTraceSink | undefined,
   m: FactMutators,
 ): FactEnv {
-  const tag = exclusiveTag(expr);
-  if (tag === null) {
-    return env;
-  }
   let next = env;
-  for (const neg of otherExclusiveNegations(tag)) {
+  for (const c of consequencesFromTrue(expr)) {
+    const reason = theoryReason(c.ruleId);
+    if (reason === null) {
+      continue;
+    }
     next = m.withTrue(
       next,
-      neg,
+      c.expr,
       origin,
-      'exclusive',
+      reason,
       undefined,
       sink,
       from,
@@ -45,65 +66,6 @@ function deriveExclusiveNegations(
     );
   }
   return next;
-}
-
-function deriveTrueCallFacts(
-  env: FactEnv,
-  expr: Extract<Expr, { kind: 'call' }>,
-  origin: FactOriginId,
-  from: FactEntry,
-  sink: EnvTraceSink | undefined,
-  m: FactMutators,
-): FactEnv {
-  let next = env;
-  const subject = isAAllowStringSubject(expr);
-  if (subject !== null) {
-    next = m.withTrue(
-      next,
-      callExpr('class_exists', [subject]),
-      origin,
-      'isAClassExists',
-      undefined,
-      sink,
-      from,
-      'true',
-    );
-  }
-  return deriveExclusiveNegations(next, expr, origin, from, sink, m);
-}
-
-function deriveTrueBinFacts(
-  env: FactEnv,
-  expr: Extract<Expr, { kind: 'bin' }>,
-  origin: FactOriginId,
-  from: FactEntry,
-  sink: EnvTraceSink | undefined,
-  m: FactMutators,
-): FactEnv {
-  let next = deriveExclusiveNegations(env, expr, origin, from, sink, m);
-  const litType = typeCallImpliedByEquality(expr);
-  if (litType !== null) {
-    next = m.withTrue(
-      next,
-      litType,
-      origin,
-      'equalityType',
-      undefined,
-      sink,
-      from,
-      'true',
-    );
-  }
-  return m.withTrue(
-    next,
-    binExpr(expr.op, expr.right, expr.left),
-    origin,
-    'commute',
-    undefined,
-    sink,
-    from,
-    'true',
-  );
 }
 
 function deriveTrueAnd(
@@ -154,6 +116,34 @@ function deriveTrueOr(
   );
 }
 
+function deriveTrueBin(
+  env: FactEnv,
+  expr: Extract<Expr, { kind: 'bin' }>,
+  origin: FactOriginId,
+  from: FactEntry,
+  sink: EnvTraceSink | undefined,
+  m: FactMutators,
+): FactEnv {
+  const withTheory = deriveTheoryConsequences(
+    env,
+    expr,
+    origin,
+    from,
+    sink,
+    m,
+  );
+  return m.withTrue(
+    withTheory,
+    binExpr(expr.op, expr.right, expr.left),
+    origin,
+    'commute',
+    undefined,
+    sink,
+    from,
+    'true',
+  );
+}
+
 export function deriveTrueFacts(
   env: FactEnv,
   expr: Expr,
@@ -167,7 +157,7 @@ export function deriveTrueFacts(
     case 'and':
       return deriveTrueAnd(env, expr, origin, from, sink, m);
     case 'bin':
-      return deriveTrueBinFacts(env, expr, origin, from, sink, m);
+      return deriveTrueBin(env, expr, origin, from, sink, m);
     case 'not':
       return m.withFalse(
         env,
@@ -182,18 +172,8 @@ export function deriveTrueFacts(
     case 'or':
       return deriveTrueOr(env, expr, origin, from, flags, sink, m);
     case 'instanceof':
-      return m.withTrue(
-        env,
-        callExpr('is_object', [expr.subject]),
-        origin,
-        'instanceofObject',
-        undefined,
-        sink,
-        from,
-        'true',
-      );
     case 'call':
-      return deriveTrueCallFacts(env, expr, origin, from, sink, m);
+      return deriveTheoryConsequences(env, expr, origin, from, sink, m);
     case 'bool':
     case 'call_checker':
       return env;

@@ -1,7 +1,7 @@
 import type { Expr } from '../../../ir/types.ts';
 import { notExpr, orExpr } from '../../../ir/index.ts';
 import { equals } from '../../../ir/equals.ts';
-import { entailProof, implyProof } from '../../lib/implyProof.ts';
+import { entailProof, implyProof } from '../../theory/prove.ts';
 import type { ProveProof } from '../../proof/types.ts';
 import { canonicalizeFactExpr } from './canon.ts';
 import {

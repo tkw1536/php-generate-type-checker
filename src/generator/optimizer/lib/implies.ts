@@ -1,10 +1,7 @@
 import type { Arg, Expr } from '../../ir/types.ts';
 import type { EntailProof, ImplyProof } from '../proof/types.ts';
-import {
-  absorbImpliedOperandsProof,
-  entailProof,
-  implyProof,
-} from './implyProof.ts';
+import { absorbImpliedOperandsProof } from '../theory/absorb.ts';
+import { entailProof, implyProof } from '../theory/prove.ts';
 
 function isTrueLiteralArg(arg: Arg): boolean {
   return arg.kind === 'literal' && (arg.value === 'true' || arg.value === 'TRUE');

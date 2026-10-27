@@ -1,7 +1,7 @@
 import type { Expr } from '../../../ir/types.ts';
 import { andExpr, boolLit, notExpr, orExpr } from '../../../ir/index.ts';
 import { equals } from '../../../ir/equals.ts';
-import { implyProof } from '../../lib/implyProof.ts';
+import { implyProof } from '../../theory/prove.ts';
 
 export function dedupeOperands(exprs: readonly Expr[]): Expr[] {
   const out: Expr[] = [];

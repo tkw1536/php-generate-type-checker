@@ -2,7 +2,7 @@ import type { Expr } from '../../../ir/types.ts';
 import { andExpr, orExpr } from '../../../ir/index.ts';
 import { equals } from '../../../ir/equals.ts';
 import type { OptimizeContext } from '../../context.ts';
-import { implyProof } from '../../lib/implyProof.ts';
+import { implyProof } from '../../theory/prove.ts';
 import type { AbsorbDropProof } from '../../proof/types.ts';
 import { absorbDropToChildren } from '../../proof/toTrace.ts';
 import { commitReason } from '../../trace/commit.ts';

@@ -20,11 +20,7 @@ import {
   absorbOperandsModuloFacts,
   HostCursor,
 } from './substitute.absorb.ts';
-import { normalizeCountEmpty } from './substitute.countEmpty.ts';
-import {
-  normalizeListCountKeyExists,
-  normalizeListNonEmptyKey0,
-} from './substitute.listCountKey.ts';
+import { applyFactRewrites } from '../../theory/rewrite.ts';
 import { proveFalseProof, proveTrueProof } from './substitute.prove.ts';
 
 function flushEnv(
@@ -80,11 +76,7 @@ function tryNormalizeFacts(
   pos: TracePos,
   host: HostCursor,
 ): { readonly expr: Expr; readonly pos: TracePos } | null {
-  return (
-    normalizeCountEmpty(expr, env, ctx, pos, host) ??
-    normalizeListCountKeyExists(expr, env, ctx, pos, host) ??
-    normalizeListNonEmptyKey0(expr, env, ctx, pos, host)
-  );
+  return applyFactRewrites(expr, env, ctx, pos, host);
 }
 
 function substituteFactsInner(

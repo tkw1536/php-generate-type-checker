@@ -76,7 +76,8 @@ export function typeCallImpliedByEquality(expr: Expr): Expr | null {
   return callExpr(name, [subject]);
 }
 
-function exclusiveCallNameForLiteral(value: string): ExclusiveCallName | null {
+/** Classify a PHP literal string into an exclusive is_* tag, or null for null literals / unknowns. */
+export function exclusiveCallNameForLiteral(value: string): ExclusiveCallName | null {
   if (value === 'null' || value === 'NULL') {
     return null;
   }
