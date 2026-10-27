@@ -17,17 +17,8 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { generateChecker } from '../src/generator/index.ts';
-import docblockCases from '../src/generator/testdata/docblock.json' with { type: 'json' };
-import docblockEmitAliasesCases from '../src/generator/testdata/docblock_emit_aliases.json' with { type: 'json' };
-import functionCases from '../src/generator/testdata/function.json' with { type: 'json' };
-import multiCommentCases from '../src/generator/testdata/multi_comment.json' with { type: 'json' };
-import privateStaticCases from '../src/generator/testdata/private_static.json' with { type: 'json' };
-import protectedStaticCases from '../src/generator/testdata/protected_static.json' with { type: 'json' };
-import publicStaticCases from '../src/generator/testdata/public_static.json' with { type: 'json' };
-import sealedShapesCases from '../src/generator/testdata/sealed_shapes.json' with { type: 'json' };
-import verbosePhpdocCases from '../src/generator/testdata/verbose_phpdoc.json' with { type: 'json' };
+import { loadSuccessFixtures } from './check-phpstan.fixtures.mjs';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..');
 // Config + default phar live beside this script so phpstan/ is self-contained.
@@ -35,144 +26,8 @@ const NEON_PATH = path.join(import.meta.dirname, 'generated-check.neon');
 const DEFAULT_PHPSTAN_PHAR = path.join(import.meta.dirname, 'phpstan.phar');
 const DEFAULT_PHPSTAN_PHAR_REL = path.relative(REPO_ROOT, DEFAULT_PHPSTAN_PHAR);
 
-const OUTPUT_MODES = new Set([
-  'function',
-  'public_static',
-  'protected_static',
-  'private_static',
-]);
-
 /**
- * @typedef {{
- *   readonly name: string;
- *   readonly input: string;
- *   readonly output: string;
- *   readonly emitPhpstanTypeAliases?: boolean;
- *   readonly verbosePhpdoc?: boolean;
- *   readonly sealArrayShapes?: boolean;
- * }} SuccessFixture
- */
-
-/**
- * @param {unknown} value
- * @returns {value is { readonly input: string; readonly expected: string }}
- */
-function isSuccessCase(value) {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'input' in value &&
-    'expected' in value &&
-    typeof value.input === 'string' &&
-    typeof value.expected === 'string'
-  );
-}
-
-/**
- * @param {unknown} value
- * @returns {value is {
- *   readonly input: string;
- *   readonly output: string;
- *   readonly expected: string;
- *   readonly emitPhpstanTypeAliases?: boolean;
- *   readonly verbosePhpdoc?: boolean;
- *   readonly sealArrayShapes?: boolean;
- * }}
- */
-function isDocblockCase(value) {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'input' in value &&
-    'output' in value &&
-    'expected' in value &&
-    typeof value.input === 'string' &&
-    typeof value.output === 'string' &&
-    typeof value.expected === 'string'
-  );
-}
-
-/**
- * @param {unknown} data
- * @param {string} output
- * @returns {SuccessFixture[]}
- */
-function successToFixtures(data, output) {
-  if (!Array.isArray(data) || !data.every((item) => isSuccessCase(item))) {
-    throw new Error(`invalid success fixture JSON for output ${output}`);
-  }
-  return data.map(({ input }) => ({
-    name: output === 'function' ? input : `${output}: ${input}`,
-    input,
-    output,
-  }));
-}
-
-/**
- * @param {unknown} data
- * @param {string} labelPrefix
- * @returns {SuccessFixture[]}
- */
-function docblockToFixtures(data, labelPrefix) {
-  if (!Array.isArray(data) || !data.every((item) => isDocblockCase(item))) {
-    throw new Error(`invalid docblock fixture JSON for ${labelPrefix}`);
-  }
-  return data.map((item, index) => {
-    const {
-      input,
-      output,
-      emitPhpstanTypeAliases,
-      verbosePhpdoc,
-      sealArrayShapes,
-    } = item;
-    if (!OUTPUT_MODES.has(output)) {
-      throw new Error(`invalid output mode in ${labelPrefix}: ${output}`);
-    }
-    const extras = [
-      emitPhpstanTypeAliases === true ? ' + aliases' : '',
-      verbosePhpdoc === true ? ' + verbose' : '',
-      sealArrayShapes === true ? ' + seal' : '',
-    ].join('');
-    const label =
-      data.length === 1
-        ? `${labelPrefix}: ${output}${extras}`
-        : `${labelPrefix}[${index}]: ${output}${extras}`;
-    /** @type {SuccessFixture} */
-    const fixture = { name: label, input, output };
-    if (emitPhpstanTypeAliases === true) {
-      fixture.emitPhpstanTypeAliases = true;
-    }
-    if (verbosePhpdoc === true) {
-      fixture.verbosePhpdoc = true;
-    }
-    if (sealArrayShapes === true) {
-      fixture.sealArrayShapes = true;
-    }
-    return fixture;
-  });
-}
-
-/**
- * Success goldens only — error fixtures throw and have no PHP to analyse.
- *
- * @returns {SuccessFixture[]}
- */
-function loadSuccessFixtures() {
-  return [
-    ...successToFixtures(functionCases, 'function'),
-    ...successToFixtures(publicStaticCases, 'public_static'),
-    ...successToFixtures(protectedStaticCases, 'protected_static'),
-    ...successToFixtures(privateStaticCases, 'private_static'),
-    ...docblockToFixtures(docblockCases, 'docblock'),
-    ...docblockToFixtures(docblockEmitAliasesCases, 'docblock_emit_aliases'),
-    ...docblockToFixtures(multiCommentCases, 'multi_comment'),
-    ...docblockToFixtures(verbosePhpdocCases, 'verbose_phpdoc'),
-    ...docblockToFixtures(sealedShapesCases, 'sealed_shapes'),
-  ].toSorted((a, b) => a.name.localeCompare(b.name));
-}
-
-/**
- * @param {string[]} argv
+ * @param {readonly string[]} argv
  * @returns {string}
  */
 function parsePhpstanPhar(argv) {
@@ -204,7 +59,7 @@ function parsePhpstanPhar(argv) {
 }
 
 function printUsage() {
-  const script = path.relative(REPO_ROOT, fileURLToPath(import.meta.url));
+  const script = path.relative(REPO_ROOT, import.meta.filename);
   console.error(`Usage:
   yarn check:phpstan
   yarn check:phpstan -- --phpstan <phar>
@@ -228,14 +83,12 @@ Example:
  * Re-generate rather than trusting golden JSON `expected`, so analysis always
  * reflects the current pipeline.
  *
- * @param {SuccessFixture} fixture
+ * @param {import('./check-phpstan.fixtures.mjs').SuccessFixture} fixture
  * @returns {string}
  */
 function generateFixture(fixture) {
   return generateChecker(fixture.input, {
-    output: /** @type {import('../src/generator/options.ts').CheckerOutputMode} */ (
-      fixture.output
-    ),
+    output: fixture.output,
     emitPhpstanTypeAliases: fixture.emitPhpstanTypeAliases,
     verbosePhpdoc: fixture.verbosePhpdoc,
     sealArrayShapes: fixture.sealArrayShapes,
@@ -310,6 +163,35 @@ function goldenNameForLine(ranges, lineNo) {
 }
 
 /**
+ * @param {string} pathPrefix
+ * @param {readonly GoldenLineRange[]} ranges
+ * @param {string} stdout
+ */
+function printPhpstanStdout(pathPrefix, ranges, stdout) {
+  for (const rawLine of stdout.split('\n')) {
+    if (rawLine.length === 0) {
+      continue;
+    }
+    const line = rawLine.startsWith(pathPrefix)
+      ? rawLine.slice(pathPrefix.length)
+      : rawLine;
+    const match = /^goldens\.php:(\d+):(.*)$/u.exec(line);
+    if (match === null) {
+      console.log(line);
+      continue;
+    }
+    const lineNo = Number(match[1]);
+    const rest = match[2] ?? '';
+    const golden = goldenNameForLine(ranges, lineNo);
+    if (golden === null) {
+      console.log(line);
+      continue;
+    }
+    console.log(`goldens.php:${lineNo}:${rest} [golden=${golden}]`);
+  }
+}
+
+/**
  * PHPStan cannot analyse `/dev/fd` / process-substitution paths (Finder treats
  * them as missing directories), so the packed file must be a real temp path.
  * Stderr (Turbo ads, agent preambles) is ignored; stdout is re-printed with the
@@ -329,13 +211,13 @@ function runPhpstan(phpSource, ranges, pharAbs) {
 
   try {
     // Invoke `php` by name only — never resolve or search for a binary.
+    // Raw only appends [identifier=…] when verbose (or under an AI agent).
     const result = spawnSync(
       'php',
       [
         pharAbs,
         'analyse',
         '--no-progress',
-        // Raw only appends [identifier=…] when verbose (or under an AI agent).
         '-v',
         '--error-format=raw',
         '-c',
@@ -350,28 +232,7 @@ function runPhpstan(phpSource, ranges, pharAbs) {
     if (result.error !== undefined) {
       throw result.error;
     }
-    const stdout = result.stdout ?? '';
-    for (const rawLine of stdout.split('\n')) {
-      if (rawLine.length === 0) {
-        continue;
-      }
-      const line = rawLine.startsWith(pathPrefix)
-        ? rawLine.slice(pathPrefix.length)
-        : rawLine;
-      const match = /^goldens\.php:(\d+):(.*)$/u.exec(line);
-      if (match === null) {
-        console.log(line);
-        continue;
-      }
-      const lineNo = Number(match[1]);
-      const rest = match[2] ?? '';
-      const golden = goldenNameForLine(ranges, lineNo);
-      if (golden === null) {
-        console.log(line);
-        continue;
-      }
-      console.log(`goldens.php:${lineNo}:${rest} [golden=${golden}]`);
-    }
+    printPhpstanStdout(pathPrefix, ranges, result.stdout ?? '');
     return result.status ?? 1;
   } finally {
     try {
@@ -401,7 +262,7 @@ function main() {
   if (!existsSync(pharPath)) {
     console.error(
       `PHPStan phar not found at ${path.relative(REPO_ROOT, pharPath) || pharPath}.\n` +
-        `Download phpstan.phar into ${DEFAULT_PHPSTAN_PHAR_REL}, or pass --phpstan <path>.`,
+        `Download phpstan.phar into ${DEFAULT_PHPSTAN_PHAR_REL}, or pass --phpstan.\n`,
     );
     process.exit(1);
   }

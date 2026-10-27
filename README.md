@@ -420,6 +420,8 @@ The simplify phase simplifies boolean expressions.
 | `(is_int && is_string) \|\| (is_int && is_bool)`   | `is_int && (is_string \|\| is_bool)`                                               |
 | `is_a($x, Foo::class, true) \|\| class_exists($x)` | `class_exists($x)` (OR keeps the weaker fact)                                      |
 | `is_a(…) && class_exists(…)`                       | `is_a(…)` (AND keeps the stronger fact; same idea for `instanceof` vs `is_object`) |
+| `instanceof T && is_array($x)`                     | `false` (`instanceof` ⇒ `is_object` ⇒ exclusive ¬`is_array`)                       |
+| `is_int($x) && is_string($x)`                      | `false` (primary tags are exclusive)                                               |
 | `is_int($x) \|\| $x === 0`                         | `is_int($x)` (typed literals imply their `is_*` tag; OR keeps the weaker fact)     |
 | `is_array($x) && $x === []`                        | `$x === []` (AND keeps the stronger fact)                                          |
 | `is_array($x) && count($x) === 0`                  | `$x === []` (facts rewrite count under known `is_array`, then absorb)              |
@@ -427,6 +429,7 @@ The simplify phase simplifies boolean expressions.
 | `array_key_exists($k, $x) && count($x) !== 0`      | `array_key_exists($k, $x)`                                                         |
 | `count($x) === N && $x !== []` (N≥1)               | `count($x) === N`                                                                  |
 | `array_is_list($x) && count===N && key_exists(k)`  | drop `key_exists` when `0 ≤ k < N` (list of length N has keys `0..N-1`)         |
+| `array_is_list($x) && $x !== [] && key_exists(0)`  | drop `key_exists(0)` (a non-empty list always has key `0`; same for `!key_exists(0)` in OR failure guards with `!list` / `=== []`) |
 | `!($x !== [])`                                     | `$x === []`                                                                        |
 | `!($x > 0)`                                        | `$x <= 0`                                                                          |
 

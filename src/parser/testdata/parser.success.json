@@ -1712,7 +1712,7 @@
     }
   },
   {
-    "source": "A&B|C",
+    "source": "(A&B)|C",
     "ast": {
       "kind": "union",
       "types": [

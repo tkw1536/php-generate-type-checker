@@ -1,5 +1,5 @@
 import type { Arg, Expr } from '../../ir/types.ts';
-import { binExpr, callArg, literalArg } from '../../ir/index.ts';
+import { binExpr, callArg, callExpr, literalArg, notExpr } from '../../ir/index.ts';
 import { equals } from '../../ir/equals.ts';
 import type { ImplyProof } from '../proof/types.ts';
 
@@ -127,6 +127,43 @@ function countPositiveImpliesNonEmpty(a: Expr, b: Expr): boolean {
   return matched !== null && isNonEmptyArrayCmp(b, matched.subject);
 }
 
+function isEmptyArrayCmp(expr: Expr, subject: Arg): boolean {
+  return (
+    equals(expr, binExpr('===', subject, literalArg('[]'))) ||
+    equals(expr, binExpr('===', literalArg('[]'), subject))
+  );
+}
+
+/**
+ * `!array_key_exists(0, $x)` ⇒ OR that includes `!array_is_list($x)` and
+ * `$x === []` (contrapositive of non-empty list ⇒ key 0).
+ */
+function notKey0ImpliesNotListOrEmpty(a: Expr, b: Expr): boolean {
+  if (a.kind !== 'not') {
+    return false;
+  }
+  const keyCall = a.expr;
+  if (
+    keyCall.kind !== 'call' ||
+    keyCall.name !== 'array_key_exists' ||
+    keyCall.args.length !== 2
+  ) {
+    return false;
+  }
+  if (nonNegIntLiteral(keyCall.args[0]) !== 0) {
+    return false;
+  }
+  const subject = keyCall.args[1];
+  if (subject === undefined) {
+    return false;
+  }
+  const disjuncts = b.kind === 'or' ? b.exprs : [b];
+  const notList = notExpr(callExpr('array_is_list', [subject]));
+  const hasNotList = disjuncts.some((d) => equals(d, notList));
+  const hasEmpty = disjuncts.some((d) => isEmptyArrayCmp(d, subject));
+  return hasNotList && hasEmpty;
+}
+
 /** Empty-array / key-exists / positive-count implication leaves. */
 export function arrayEmptyImplyProof(
   a: Expr,
@@ -143,6 +180,9 @@ export function arrayEmptyImplyProof(
   }
   if (countPositiveImpliesNonEmpty(a, b)) {
     return { kind: 'countPositiveNonEmpty' };
+  }
+  if (notKey0ImpliesNotListOrEmpty(a, b)) {
+    return { kind: 'notKey0NotListOrEmpty' };
   }
   return null;
 }

@@ -126,6 +126,10 @@ const RULES: Record<OptimizeTraceRuleId, OptimizeTraceRuleInfo> = {
     title: 'Implication positive count non-empty',
     help: 'count($x) === N (N≥1) ⇒ $x !== []. Sound because the empty array has count zero.',
   },
+  'facts.imply.notKey0NotListOrEmpty': {
+    title: 'Implication not key0 covers not-list or empty',
+    help: '!array_key_exists(0, $x) ⇒ !array_is_list($x) ∨ $x === []. Contrapositive of: a non-empty list always has key 0. Used to absorb redundant !key_exists(0) in OR failure guards.',
+  },
   'facts.imply.equalityType': {
     title: 'Implication equality type',
     help: 'Typed literal equality implies an is_* check (then further implications).',
@@ -138,6 +142,11 @@ const RULES: Record<OptimizeTraceRuleId, OptimizeTraceRuleInfo> = {
     title: 'Normalize list count key exists',
     help: 'Under known-true array_is_list($x) and count($x) === N, rewrites array_key_exists(k, $x) to TRUE when 0 ≤ k < N. Sound because a list of length N has exactly the keys 0..N-1; nested children prove the list and count premises.',
   },
+  'facts.normalize.listNonEmptyKey0': {
+    title: 'Normalize non-empty list key 0 exists',
+    help: 'Under known-true array_is_list($x) and $x !== [], rewrites array_key_exists(0, $x) to TRUE. Sound because a non-empty PHP list always has key 0; nested children prove the list and non-empty premises.',
+  },
+
   'facts.imply.andConjunct': {
     title: 'Implication AND conjunct',
     help: 'A ∧ B ⇒ C because a conjunct implies C.',

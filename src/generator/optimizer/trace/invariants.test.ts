@@ -160,17 +160,22 @@ function assertReasonProofs(name: string, reason: TraceReasoning): void {
   }
 }
 
+function assertAssumedNormalize(
+  name: string,
+  reason: TraceStepReason,
+  rule: string,
+): void {
+  expect(childRules(reason).length, `${name}: ${rule}`).toBeGreaterThan(0);
+  expect(bottomsOutAtAssumed(reason), `${name}: ${rule}`).toBe(true);
+}
+
 function assertFactsStepHasProof(name: string, reason: TraceStepReason): void {
   const rule = reason.rule;
   if (rule === 'facts.env.extend') {
-    expect(
-      reason.children.length,
-      `${name}: facts.env.extend must have children`,
-    ).toBeGreaterThan(0);
-    expect(
-      childRules(reason).some((r) => r.startsWith('facts.env.')),
-      `${name}: facts.env.extend children`,
-    ).toBe(true);
+    expect(reason.children.length).toBeGreaterThan(0);
+    expect(childRules(reason).some((r) => r.startsWith('facts.env.'))).toBe(
+      true,
+    );
     return;
   }
   if (rule === 'facts.absorb') {
@@ -178,30 +183,26 @@ function assertFactsStepHasProof(name: string, reason: TraceStepReason): void {
       childRules(reason).some(
         (r) => r === 'facts.absorb.implies' || r.startsWith('facts.imply.'),
       ),
-      `${name}: facts.absorb must nest implication proof`,
     ).toBe(true);
     return;
   }
   if (rule === 'facts.proveTrue' || rule === 'facts.proveFalse') {
-    expect(
-      childRules(reason).length,
-      `${name}: ${rule} must nest proof children`,
-    ).toBeGreaterThan(0);
-    expect(
-      bottomsOutAtAssumed(reason),
-      `${name}: ${rule} proof must bottom out at facts.env.assumed`,
-    ).toBe(true);
+    assertAssumedNormalize(name, reason, rule);
     return;
   }
   if (rule === 'simplify.normalize.absorb') {
-    expect(
-      childRules(reason).some((r) => r.startsWith('facts.imply.')),
-      `${name}: simplify.normalize.absorb must nest imply proof`,
-    ).toBe(true);
+    expect(childRules(reason).some((r) => r.startsWith('facts.imply.'))).toBe(
+      true,
+    );
   }
   if (rule === 'facts.normalize.countEmpty') {
-    expect(childRules(reason).length).toBeGreaterThan(0);
-    expect(bottomsOutAtAssumed(reason)).toBe(true);
+    assertAssumedNormalize(name, reason, rule);
+  }
+  if (
+    rule === 'facts.normalize.listCountKeyExists' ||
+    rule === 'facts.normalize.listNonEmptyKey0'
+  ) {
+    assertAssumedNormalize(name, reason, rule);
   }
 }
 

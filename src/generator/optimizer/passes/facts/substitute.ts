@@ -21,7 +21,10 @@ import {
   HostCursor,
 } from './substitute.absorb.ts';
 import { normalizeCountEmpty } from './substitute.countEmpty.ts';
-import { normalizeListCountKeyExists } from './substitute.listCountKey.ts';
+import {
+  normalizeListCountKeyExists,
+  normalizeListNonEmptyKey0,
+} from './substitute.listCountKey.ts';
 import { proveFalseProof, proveTrueProof } from './substitute.prove.ts';
 
 function flushEnv(
@@ -70,6 +73,20 @@ export function substituteFacts(
   return substituteFactsInner(expr, env, ctx, startPos, host, sink);
 }
 
+function tryNormalizeFacts(
+  expr: Expr,
+  env: FactEnv,
+  ctx: Readonly<OptimizeContext> | undefined,
+  pos: TracePos,
+  host: HostCursor,
+): { readonly expr: Expr; readonly pos: TracePos } | null {
+  return (
+    normalizeCountEmpty(expr, env, ctx, pos, host) ??
+    normalizeListCountKeyExists(expr, env, ctx, pos, host) ??
+    normalizeListNonEmptyKey0(expr, env, ctx, pos, host)
+  );
+}
+
 function substituteFactsInner(
   expr: Expr,
   env: FactEnv,
@@ -105,13 +122,9 @@ function substituteFactsInner(
       pos: commitProve(ctx, pos, host, 'facts.proveTrue', expr, after, trueProof),
     };
   }
-  const countEmpty = normalizeCountEmpty(expr, env, ctx, pos, host);
-  if (countEmpty !== null) {
-    return countEmpty;
-  }
-  const listCountKey = normalizeListCountKeyExists(expr, env, ctx, pos, host);
-  if (listCountKey !== null) {
-    return listCountKey;
+  const normalized = tryNormalizeFacts(expr, env, ctx, pos, host);
+  if (normalized !== null) {
+    return normalized;
   }
   return substituteFactsShallow(expr, env, ctx, pos, host, sink);
 }

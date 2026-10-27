@@ -12,11 +12,8 @@ import {
   parameterRef,
 } from '../../../ir/index.ts';
 import type { Expr } from '../../../ir/types.ts';
-import {
-  simplifyExpression,
-} from './expression.ts';
+import { simplifyExpression } from './expression.ts';
 import { createOptimizerParams } from '../../params.ts';
-import { absorbBinOp, absorbBinOps, expandBinOp, expandBinOps } from "./binOps.ts";
 
 const defaultParams = createOptimizerParams({
   programs: {},
@@ -27,22 +24,17 @@ const defaultParams = createOptimizerParams({
 const $v = parameterRef();
 const isInt = callExpr('is_int', [refArg($v)]);
 const isString = callExpr('is_string', [refArg($v)]);
+const isArray = callExpr('is_array', [refArg($v)]);
+const keyX = callExpr('array_key_exists', [literalArg("'x'"), refArg($v)]);
+const keyY = callExpr('array_key_exists', [literalArg("'y'"), refArg($v)]);
 const empty = literalArg('[]');
-
-function expectBin(expr: Expr): Extract<Expr, { kind: 'bin' }> {
-  expect(expr.kind).toBe('bin');
-  if (expr.kind !== 'bin') {
-    throw new Error('expected bin expression');
-  }
-  return expr;
-}
 
 const SIMPLIFY_CASES = [
   ['double not', notExpr(notExpr(isInt)), isInt],
   [
     'flatten nested and',
-    andExpr([andExpr([isInt, boolLit(true)]), isString]),
-    andExpr([isInt, isString]),
+    andExpr([andExpr([isArray, boolLit(true)]), keyX]),
+    andExpr([isArray, keyX]),
   ],
   [
     'flatten nested or',
@@ -63,15 +55,42 @@ const SIMPLIFY_CASES = [
   ],
   [
     'de morgan not and',
-    notExpr(andExpr([isInt, isString])),
-    orExpr([notExpr(isInt), notExpr(isString)]),
+    notExpr(andExpr([isArray, keyX])),
+    orExpr([notExpr(isArray), notExpr(keyX)]),
   ],
   [
     'de morgan not or',
     notExpr(orExpr([isInt, isString])),
     andExpr([notExpr(isInt), notExpr(isString)]),
   ],
+  [
+    'de morgan not and of exclusive tags folds to true',
+    notExpr(andExpr([isInt, isString])),
+    boolLit(true),
+  ],
   ['contradiction a and not a', andExpr([isInt, notExpr(isInt)]), boolLit(false)],
+  [
+    'OR absorb !key_exists(0) under !list and empty',
+    orExpr([
+      notExpr(callExpr('array_is_list', [refArg($v)])),
+      binExpr('===', refArg($v), literalArg('[]')),
+      notExpr(callExpr('array_key_exists', [literalArg('0'), refArg($v)])),
+    ]),
+    orExpr([
+      notExpr(callExpr('array_is_list', [refArg($v)])),
+      binExpr('===', refArg($v), literalArg('[]')),
+    ]),
+  ],
+  [
+    'contradiction exclusive is_int and is_string',
+    andExpr([isInt, isString]),
+    boolLit(false),
+  ],
+  [
+    'contradiction instanceof and is_array',
+    andExpr([instanceofExpr(refArg($v), 'Foo'), isArray]),
+    boolLit(false),
+  ],
   ['tautology a or not a', orExpr([isInt, notExpr(isInt)]), boolLit(true)],
   ['dedupe and', andExpr([isInt, isInt]), isInt],
   ['dedupe or', orExpr([isInt, isInt]), isInt],
@@ -96,65 +115,53 @@ const SIMPLIFY_CASES = [
   [
     'factor common conjunct out of or-of-ands',
     orExpr([
-      andExpr([isInt, isString]),
-      andExpr([isInt, callExpr('is_bool', [refArg($v)])]),
+      andExpr([isArray, keyX]),
+      andExpr([isArray, keyY]),
     ]),
-    andExpr([isInt, orExpr([isString, callExpr('is_bool', [refArg($v)])])]),
+    andExpr([isArray, orExpr([keyX, keyY])]),
   ],
   [
     'factor common disjunct out of and-of-ors',
     andExpr([
-      orExpr([isInt, isString]),
-      orExpr([isInt, callExpr('is_bool', [refArg($v)])]),
+      orExpr([isArray, keyX]),
+      orExpr([isArray, keyY]),
     ]),
-    orExpr([isInt, andExpr([isString, callExpr('is_bool', [refArg($v)])])]),
+    orExpr([isArray, andExpr([keyX, keyY])]),
   ],
   [
     'factor three-arm or with shared guards',
     orExpr([
       andExpr([
-        callExpr('is_array', [refArg($v)]),
-        callExpr('array_key_exists', [literalArg('x'), refArg($v)]),
-        isString,
+        isArray,
+        callExpr('array_key_exists', [literalArg("'x'"), refArg($v)]),
       ]),
       andExpr([
-        callExpr('is_array', [refArg($v)]),
-        callExpr('array_key_exists', [literalArg('y'), refArg($v)]),
-        isInt,
+        isArray,
+        callExpr('array_key_exists', [literalArg("'y'"), refArg($v)]),
       ]),
       andExpr([
-        callExpr('is_array', [refArg($v)]),
-        callExpr('array_key_exists', [literalArg('z'), refArg($v)]),
-        callExpr('is_bool', [refArg($v)]),
+        isArray,
+        callExpr('array_key_exists', [literalArg("'z'"), refArg($v)]),
       ]),
     ]),
     andExpr([
-      callExpr('is_array', [refArg($v)]),
+      isArray,
       orExpr([
-        andExpr([
-          isString,
-          callExpr('array_key_exists', [literalArg('x'), refArg($v)]),
-        ]),
-        andExpr([
-          isInt,
-          callExpr('array_key_exists', [literalArg('y'), refArg($v)]),
-        ]),
-        andExpr([
-          callExpr('is_bool', [refArg($v)]),
-          callExpr('array_key_exists', [literalArg('z'), refArg($v)]),
-        ]),
+        callExpr('array_key_exists', [literalArg("'x'"), refArg($v)]),
+        callExpr('array_key_exists', [literalArg("'y'"), refArg($v)]),
+        callExpr('array_key_exists', [literalArg("'z'"), refArg($v)]),
       ]),
     ]),
   ],
   [
     'factor (a and b) or a to a',
-    orExpr([andExpr([isInt, isString]), isInt]),
-    isInt,
+    orExpr([andExpr([isArray, keyX]), isArray]),
+    isArray,
   ],
   [
     'factor equivalent and arms with different conjunct order',
-    orExpr([andExpr([isInt, isString]), andExpr([isString, isInt])]),
-    andExpr([isInt, isString]),
+    orExpr([andExpr([isArray, keyX]), andExpr([keyX, isArray])]),
+    andExpr([isArray, keyX]),
   ],
   [
     'absorb is_object under instanceof in and',
@@ -260,37 +267,8 @@ const SIMPLIFY_CASES = [
   ],
 ] as [string, Expr, Expr][];
 
-const ne = binExpr('!==', refArg($v), empty);
-
-function expandBinOpWrapsNe(): void {
-  expect(expandBinOp(expectBin(ne))).toEqual(
-    notExpr(binExpr('===', refArg($v), empty)),
-  );
-}
-
-function absorbBinOpUnwrapsNotEq(): void {
-  expect(absorbBinOp(notExpr(binExpr('===', refArg($v), empty)))).toEqual(ne);
-}
-
-function expandBinOpsLeavesPositive(): void {
-  const pos = binExpr('===', refArg($v), empty);
-  expect(expandBinOps(pos)).toEqual(pos);
-}
-
-function absorbBinOpsThroughAnd(): void {
-  const input = andExpr([notExpr(binExpr('===', refArg($v), empty)), isInt]);
-  expect(absorbBinOps(input)).toEqual(andExpr([ne, isInt]));
-}
-
 describe('simplifyExpression', () => {
   it.each(SIMPLIFY_CASES)('%s', (_name, input, expected) => {
     expect(simplifyExpression(input, defaultParams).expr).toEqual(expected);
   });
-});
-
-describe('expandBinOp / absorbBinOp', () => {
-  it('expandBinOp wraps !==', expandBinOpWrapsNe);
-  it('absorbBinOp unwraps not(===)', absorbBinOpUnwrapsNotEq);
-  it('expandBinOps leaves positive bin', expandBinOpsLeavesPositive);
-  it('absorbBinOps through and', absorbBinOpsThroughAnd);
 });

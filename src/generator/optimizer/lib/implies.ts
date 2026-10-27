@@ -60,13 +60,15 @@ function implyUsesExclusive(p: ImplyProof): boolean {
     case 'orDisjunct':
     case 'canon':
       return implyUsesExclusive(p.via);
-    case 'refl':
     case 'instanceofObject':
+      return p.via === undefined ? false : implyUsesExclusive(p.via);
+    case 'refl':
     case 'isAClassExists':
     case 'emptyArrayCount':
     case 'arrayKeyExistsNonEmpty':
     case 'arrayKeyExistsCountNonZero':
     case 'countPositiveNonEmpty':
+    case 'notKey0NotListOrEmpty':
       return false;
     default:
       throw new Error('never reached');

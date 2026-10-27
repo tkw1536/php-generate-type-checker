@@ -25,3 +25,7 @@ parameters:
 		# an impossible type against `mixed` even though the checker is correct.
 		-
 			identifier: assert.impossibleType
+		# `@phpstan-assert-if-true mixed` on a `mixed` parameter cannot narrow; the mixed
+		# golden is intentional and the assert is kept for documentation.
+		-
+			identifier: assert.alreadyNarrowedType

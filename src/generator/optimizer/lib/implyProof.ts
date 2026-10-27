@@ -1,5 +1,5 @@
 import type { Arg, Expr } from '../../ir/types.ts';
-import { callExpr } from '../../ir/index.ts';
+import { callExpr, orExpr } from '../../ir/index.ts';
 import { equals } from '../../ir/equals.ts';
 import type {
   AbsorbDropProof,
@@ -65,6 +65,14 @@ export function implyProof(a: Expr, b: Expr): ImplyProof | null {
   if (leaf !== null) {
     return leaf;
   }
+  // `$x instanceof T` ⇒ whatever follows from `is_object($x)` (exclusive ¬is_array, …).
+  if (a.kind === 'instanceof') {
+    const isObject = callExpr('is_object', [a.subject]);
+    const via = implyProof(isObject, b);
+    if (via !== null) {
+      return { kind: 'instanceofObject', via };
+    }
+  }
   const litType = typeCallImpliedByEquality(a);
   if (litType !== null) {
     const via = implyProof(litType, b);
@@ -86,6 +94,11 @@ export function implyProof(a: Expr, b: Expr): ImplyProof | null {
       if (via !== null) {
         return { kind: 'orDisjunct', disjunct: d, via };
       }
+    }
+    // e.g. ¬key_exists(0) ⇒ ¬list ∨ empty when both appear among disjuncts.
+    const cover = arrayEmptyImplyProof(a, b);
+    if (cover !== null) {
+      return cover;
     }
   }
   return null;
@@ -125,6 +138,46 @@ export function entailProof(
   return null;
 }
 
+function pairwiseAbsorbDrop(
+  candidate: Expr,
+  other: Expr,
+  mode: 'and' | 'or',
+): AbsorbDropProof | null {
+  if (equals(candidate, other)) {
+    return null;
+  }
+  if (mode === 'or') {
+    const imply = implyProof(candidate, other);
+    if (imply === null) {
+      return null;
+    }
+    return { from: candidate, to: other, how: { kind: 'structural', imply } };
+  }
+  const imply = implyProof(other, candidate);
+  if (imply === null) {
+    return null;
+  }
+  return { from: other, to: candidate, how: { kind: 'structural', imply } };
+}
+
+/** OR: drop A when A ⇒ (∨ others), e.g. ¬key_exists(0) under ¬list ∨ empty. */
+function orCoverAbsorbDrop(
+  candidate: Expr,
+  exprs: readonly Expr[],
+  index: number,
+): AbsorbDropProof | null {
+  if (exprs.length < 3) {
+    return null;
+  }
+  const others = exprs.filter((_, j) => j !== index);
+  const cover = orExpr(others);
+  const imply = implyProof(candidate, cover);
+  if (imply === null) {
+    return null;
+  }
+  return { from: candidate, to: cover, how: { kind: 'structural', imply } };
+}
+
 /**
  * Drop operands made redundant by implication, with proofs for each drop.
  * - OR: drop stronger A when weaker B is present (A ⇒ B)
@@ -146,31 +199,13 @@ export function absorbImpliedOperandsProof(
       if (i === j) {
         continue;
       }
-      const other = exprs[j];
-      if (equals(candidate, other)) {
-        continue;
+      drop = pairwiseAbsorbDrop(candidate, exprs[j], mode);
+      if (drop !== null) {
+        break;
       }
-      if (mode === 'or') {
-        const imply = implyProof(candidate, other);
-        if (imply !== null) {
-          drop = {
-            from: candidate,
-            to: other,
-            how: { kind: 'structural', imply },
-          };
-          break;
-        }
-      } else {
-        const imply = implyProof(other, candidate);
-        if (imply !== null) {
-          drop = {
-            from: other,
-            to: candidate,
-            how: { kind: 'structural', imply },
-          };
-          break;
-        }
-      }
+    }
+    if (drop === null && mode === 'or') {
+      drop = orCoverAbsorbDrop(candidate, exprs, i);
     }
     if (drop === null) {
       kept.push(candidate);

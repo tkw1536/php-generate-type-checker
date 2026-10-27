@@ -171,7 +171,7 @@ TRUE|FALSE
 # --- Intersections ---
 Foo&Bar
 A&B&C
-A&B|C
+(A&B)|C
 (array<string, int|NULL>|NULL)&Foo
 (int|string)&Foo
 

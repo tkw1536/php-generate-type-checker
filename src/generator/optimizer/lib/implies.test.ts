@@ -32,51 +32,39 @@ const isObject = callExpr('is_object', [refArg($v)]);
 const isInt = callExpr('is_int', [refArg($v)]);
 const isString = callExpr('is_string', [refArg($v)]);
 
-describe('implies', () => {
-  it('is_a implies class_exists for same subject', () => {
+describe('implies tags', () => {
+  it('is_a / instanceof / exclusivity', () => {
     expect(implies(isA, classExists)).toBe(true);
-  });
-
-  it('instanceof implies is_object for same subject', () => {
     expect(implies(isInstance, isObject)).toBe(true);
-  });
-
-  it('does not imply reverse', () => {
+    expect(
+      implies(isInstance, notExpr(callExpr('is_array', [refArg($v)]))),
+    ).toBe(true);
     expect(implies(classExists, isA)).toBe(false);
     expect(implies(isObject, isInstance)).toBe(false);
-  });
-
-  it('is_int implies not is_string', () => {
     expect(implies(isInt, notExpr(isString))).toBe(true);
     expect(implies(isString, notExpr(isInt))).toBe(true);
+    expect(
+      implies(isInt, notExpr(callExpr('is_resource', [refArg($v)]))),
+    ).toBe(true);
   });
 
-  it('is_int implies not is_resource', () => {
-    const isResource = callExpr('is_resource', [refArg($v)]);
-    expect(implies(isInt, notExpr(isResource))).toBe(true);
-  });
-
-  it('=== null implies not is_array', () => {
-    const isNull = binExpr('===', refArg($v), literalArg('null'));
+  it('typed literals imply is_* tags', () => {
     const isArray = callExpr('is_array', [refArg($v)]);
-    expect(implies(isNull, notExpr(isArray))).toBe(true);
-  });
-
-  it('=== 0 implies is_int', () => {
-    const eq0 = binExpr('===', refArg($v), literalArg('0'));
-    expect(implies(eq0, isInt)).toBe(true);
-    expect(implies(isInt, eq0)).toBe(false);
-  });
-
-  it('=== "" implies is_string', () => {
-    const eqEmpty = binExpr('===', refArg($v), literalArg("''"));
-    expect(implies(eqEmpty, isString)).toBe(true);
-  });
-
-  it('=== [] implies is_array', () => {
-    const eqArr = binExpr('===', refArg($v), literalArg('[]'));
-    const isArray = callExpr('is_array', [refArg($v)]);
-    expect(implies(eqArr, isArray)).toBe(true);
+    expect(
+      implies(binExpr('===', refArg($v), literalArg('null')), notExpr(isArray)),
+    ).toBe(true);
+    expect(implies(binExpr('===', refArg($v), literalArg('0')), isInt)).toBe(
+      true,
+    );
+    expect(implies(isInt, binExpr('===', refArg($v), literalArg('0')))).toBe(
+      false,
+    );
+    expect(
+      implies(binExpr('===', refArg($v), literalArg("''")), isString),
+    ).toBe(true);
+    expect(implies(binExpr('===', refArg($v), literalArg('[]')), isArray)).toBe(
+      true,
+    );
   });
 });
 

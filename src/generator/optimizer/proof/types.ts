@@ -5,7 +5,8 @@ import type { EnvFact } from '../passes/facts/env.types.ts';
 export type ImplyProof =
   | { readonly kind: 'refl' }
   | { readonly kind: 'exclusive' }
-  | { readonly kind: 'instanceofObject' }
+  /** `$x instanceof T` ⇒ `is_object($x)`, optionally then `via` (e.g. exclusive ¬is_array). */
+  | { readonly kind: 'instanceofObject'; readonly via?: ImplyProof }
   | { readonly kind: 'isAClassExists' }
   | { readonly kind: 'emptyArrayCount' }
   /** `array_key_exists($k, $x)` ⇒ `$x !== []`. */
@@ -14,6 +15,12 @@ export type ImplyProof =
   | { readonly kind: 'arrayKeyExistsCountNonZero' }
   /** `count($x) === N` (N≥1) ⇒ `$x !== []`. */
   | { readonly kind: 'countPositiveNonEmpty' }
+  /**
+   * `!array_key_exists(0, $x)` ⇒ `!array_is_list($x) ∨ $x === []`
+   * (contrapositive of list ∧ ≠[] ⇒ key 0 exists); `b` may be a larger OR
+   * that includes both disjuncts.
+   */
+  | { readonly kind: 'notKey0NotListOrEmpty' }
   | { readonly kind: 'equalityType'; readonly via: ImplyProof }
   | {
       readonly kind: 'andConjunct';

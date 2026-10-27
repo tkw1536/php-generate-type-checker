@@ -7,7 +7,9 @@ import type { CallableParam, Keyword, ShapeField, ShapeRest, TypeNode } from './
  * but not necessarily the opposite direction because of possible normalizations during the parsing process.
  */
 export function formatType(type: TypeNode): string {
-  return formatTypeInner(type, 'union');
+  // 'primary' = root / delimiter context (not inside | or &).
+  // Using 'union' here would parenthesize every top-level intersection.
+  return formatTypeInner(type, 'primary');
 }
 
 type Precedence = 'union' | 'intersection' | 'primary';
@@ -49,7 +51,7 @@ function formatTypeInner(type: TypeNode, parent: Precedence): string {
     case 'callable':
       return formatCallable(type);
     case 'generic':
-      return `${type.name}<${type.typeArgs.map((arg) => formatTypeInner(arg, 'union')).join(', ')}>`;
+      return `${type.name}<${type.typeArgs.map((arg) => formatTypeInner(arg, 'primary')).join(', ')}>`;
     case 'unsupported':
       return type.raw;
     default:
@@ -81,11 +83,11 @@ function formatRange(type: Extract<TypeNode, { kind: 'range' }>): string {
 
 function formatCollection(type: Extract<TypeNode, { kind: 'collection' }>): string {
   if ('key' in type) {
-    const inner = `${formatTypeInner(type.key, 'union')}, ${formatTypeInner(type.value, 'union')}`;
+    const inner = `${formatTypeInner(type.key, 'primary')}, ${formatTypeInner(type.value, 'primary')}`;
     return `${type.keyword}<${inner}>`;
   }
 
-  return `${type.keyword}<${formatTypeInner(type.value, 'union')}>`;
+  return `${type.keyword}<${formatTypeInner(type.value, 'primary')}>`;
 }
 
 function formatPostfixArray(type: Extract<TypeNode, { kind: 'array' }>): string {
@@ -116,9 +118,9 @@ function formatShapeRest(rest: ShapeRest): string {
     case 'any':
       return '...';
     case 'values':
-      return `...<${formatTypeInner(rest.value, 'union')}>`;
+      return `...<${formatTypeInner(rest.value, 'primary')}>`;
     case 'entries':
-      return `...<${formatTypeInner(rest.key, 'union')}, ${formatTypeInner(rest.value, 'union')}>`;
+      return `...<${formatTypeInner(rest.key, 'primary')}, ${formatTypeInner(rest.value, 'primary')}>`;
     default:
       throw new Error('never reached');
   }
@@ -126,11 +128,11 @@ function formatShapeRest(rest: ShapeRest): string {
 
 function formatShapeField(field: ShapeField): string {
   if (field.key === null) {
-    return formatTypeInner(field.value, 'union');
+    return formatTypeInner(field.value, 'primary');
   }
   const key = formatShapeKey(field.key);
   const optional = field.optional ? '?' : '';
-  return `${key}${optional}: ${formatTypeInner(field.value, 'union')}`;
+  return `${key}${optional}: ${formatTypeInner(field.value, 'primary')}`;
 }
 
 function formatShapeKey(key: string | number): string {
@@ -158,20 +160,25 @@ function formatUnion(
 
 function formatIntersection(
   type: Extract<TypeNode, { kind: 'intersection' }>,
-  _parent: Precedence,
+  parent: Precedence,
 ): string {
-  return type.types
+  const formatted = type.types
     .map((member) => formatTypeInner(member, 'intersection'))
     .join('&');
+  // Union binds looser than &; PHPDoc assert tags need `(A&B)|C`, not `A&B|C`.
+  if (parent === 'union') {
+    return `(${formatted})`;
+  }
+  return formatted;
 }
 
 function formatCallable(type: Extract<TypeNode, { kind: 'callable' }>): string {
   const params = type.signature.params.map(formatCallableParam).join(', ');
-  return `callable(${params}): ${formatTypeInner(type.signature.returnType, 'union')}`;
+  return `callable(${params}): ${formatTypeInner(type.signature.returnType, 'primary')}`;
 }
 
 function formatCallableParam(param: CallableParam): string {
-  let s = formatTypeInner(param.type, 'union');
+  let s = formatTypeInner(param.type, 'primary');
 
   if (param.variadic) {
     s = param.name === undefined ? `${s}...` : `${s} ...${param.name}`;

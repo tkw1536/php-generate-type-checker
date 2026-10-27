@@ -1,6 +1,7 @@
 import type { Expr } from '../../../ir/types.ts';
-import { andExpr, boolLit, orExpr } from '../../../ir/index.ts';
+import { andExpr, boolLit, notExpr, orExpr } from '../../../ir/index.ts';
 import { equals } from '../../../ir/equals.ts';
+import { implyProof } from '../../lib/implyProof.ts';
 
 export function dedupeOperands(exprs: readonly Expr[]): Expr[] {
   const out: Expr[] = [];
@@ -16,7 +17,13 @@ export function negatedInner(expr: Expr): Expr | null {
   return expr.kind === 'not' ? expr.expr : null;
 }
 
-export function hasContradiction(exprs: readonly Expr[]): boolean {
+/** Logical ¬ without stacking `!!x` (cancels one outer `not`). */
+function logicalNot(expr: Expr): Expr {
+  return expr.kind === 'not' ? expr.expr : notExpr(expr);
+}
+
+/** Literal `x` paired with `!x` (used for AND contradiction and OR tautology). */
+function hasComplementPair(exprs: readonly Expr[]): boolean {
   for (let i = 0; i < exprs.length; i++) {
     for (let j = i + 1; j < exprs.length; j++) {
       const a = exprs[i];
@@ -34,8 +41,51 @@ export function hasContradiction(exprs: readonly Expr[]): boolean {
   return false;
 }
 
+/**
+ * AND unsatisfiable: `x && !x`, or exclusive tags / instanceof vs is_* where
+ * A ⇒ ¬B (must not be reused for OR — `is_int || is_string` is not a tautology).
+ */
+export function hasContradiction(exprs: readonly Expr[]): boolean {
+  if (hasComplementPair(exprs)) {
+    return true;
+  }
+  for (let i = 0; i < exprs.length; i++) {
+    for (let j = i + 1; j < exprs.length; j++) {
+      const a = exprs[i];
+      const b = exprs[j];
+      if (
+        implyProof(a, logicalNot(b)) !== null ||
+        implyProof(b, logicalNot(a)) !== null
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * OR always true: `x || !x`, or when ¬A ⇒ B (equivalently A∨B covers all cases),
+ * e.g. `!instanceof || !is_array` because instanceof ⇒ ¬is_array.
+ * Must not treat exclusive positives (`is_int || is_string`) as tautologies.
+ */
 export function hasTautology(exprs: readonly Expr[]): boolean {
-  return hasContradiction(exprs);
+  if (hasComplementPair(exprs)) {
+    return true;
+  }
+  for (let i = 0; i < exprs.length; i++) {
+    for (let j = i + 1; j < exprs.length; j++) {
+      const a = exprs[i];
+      const b = exprs[j];
+      if (
+        implyProof(logicalNot(a), b) !== null ||
+        implyProof(logicalNot(b), a) !== null
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 export function flattenAnd(exprs: readonly Expr[]): Expr[] {

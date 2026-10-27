@@ -1,5 +1,5 @@
 import type { Arg, Expr } from '../../../ir/types.ts';
-import { boolLit, callExpr } from '../../../ir/index.ts';
+import { binExpr, boolLit, callExpr, literalArg } from '../../../ir/index.ts';
 import { equals } from '../../../ir/equals.ts';
 import {
   matchCountEqualsPositive,
@@ -93,6 +93,79 @@ export function normalizeListCountKeyExists(
   ];
   const rewrite = exprRewrite(
     'facts.normalize.listCountKeyExists',
+    expr,
+    after,
+    children,
+  );
+  const nextPos = commitReason(ctx, pos, rewrite.reason, host.current);
+  host.apply(expr, after);
+  return { expr: after, pos: nextPos };
+}
+
+function isNonEmptyCmpForSubject(expr: Expr, subject: Arg): boolean {
+  // Surface form `$x !== []` / `[] !== $x`, or env-canonical `!($x === [])`.
+  return (
+    equals(expr, binExpr('!==', subject, literalArg('[]'))) ||
+    equals(expr, binExpr('!==', literalArg('[]'), subject)) ||
+    (expr.kind === 'not' &&
+      (equals(expr.expr, binExpr('===', subject, literalArg('[]'))) ||
+        equals(expr.expr, binExpr('===', literalArg('[]'), subject))))
+  );
+}
+
+/**
+ * Find a known-true `$x !== []` (or flipped) for subject `$x` in the env.
+ */
+function findNonEmptyArrayFact(
+  env: FactEnv,
+  subject: Arg,
+): Expr | null {
+  for (const fact of env.trueFacts) {
+    if (isNonEmptyCmpForSubject(fact.expr, subject)) {
+      return fact.expr;
+    }
+  }
+  return null;
+}
+
+/**
+ * Under known-true `array_is_list($x)` and `$x !== []`, rewrite
+ * `array_key_exists(0, $x)` → TRUE (a non-empty list always has key 0).
+ */
+export function normalizeListNonEmptyKey0(
+  expr: Expr,
+  env: FactEnv,
+  ctx: Readonly<OptimizeContext> | undefined,
+  pos: TracePos,
+  host: HostCursor,
+): { readonly expr: Expr; readonly pos: TracePos } | null {
+  const matched = matchArrayKeyExistsInt(expr);
+  if (matched === null || matched.key !== 0) {
+    return null;
+  }
+  const listExpr = callExpr('array_is_list', [matched.subject]);
+  const listProof = proveTrueProof(listExpr, env);
+  if (listProof === null) {
+    return null;
+  }
+  const nonEmptyExpr = findNonEmptyArrayFact(env, matched.subject);
+  if (nonEmptyExpr === null) {
+    return null;
+  }
+  const nonEmptyProof = proveTrueProof(nonEmptyExpr, env);
+  if (nonEmptyProof === null) {
+    return null;
+  }
+  const after = boolLit(true);
+  if (ctx === undefined) {
+    return { expr: after, pos };
+  }
+  const children = [
+    ...proveProofToChildren(listExpr, boolLit(true), listProof),
+    ...proveProofToChildren(nonEmptyExpr, boolLit(true), nonEmptyProof),
+  ];
+  const rewrite = exprRewrite(
+    'facts.normalize.listNonEmptyKey0',
     expr,
     after,
     children,

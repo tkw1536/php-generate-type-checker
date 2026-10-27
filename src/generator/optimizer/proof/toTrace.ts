@@ -66,6 +66,8 @@ function implyRule(kind: ImplyProof['kind']): OptimizeTraceRuleId {
       return 'facts.imply.arrayKeyExistsCountNonZero';
     case 'countPositiveNonEmpty':
       return 'facts.imply.countPositiveNonEmpty';
+    case 'notKey0NotListOrEmpty':
+      return 'facts.imply.notKey0NotListOrEmpty';
     case 'equalityType':
       return 'facts.imply.equalityType';
     case 'andConjunct':
@@ -154,13 +156,20 @@ export function implyProofToChildren(
   switch (proof.kind) {
     case 'refl':
     case 'exclusive':
-    case 'instanceofObject':
     case 'isAClassExists':
     case 'emptyArrayCount':
     case 'arrayKeyExistsNonEmpty':
     case 'arrayKeyExistsCountNonZero':
     case 'countPositiveNonEmpty':
+    case 'notKey0NotListOrEmpty':
       return exprStep(implyRule(proof.kind), from, to, []);
+    case 'instanceofObject':
+      if (proof.via === undefined) {
+        return exprStep(implyRule(proof.kind), from, to, []);
+      }
+      return exprStep(implyRule(proof.kind), from, to, [
+        implyProofToChildren(from, to, proof.via),
+      ]);
     case 'equalityType':
       return exprStep(implyRule(proof.kind), from, to, [
         implyProofToChildren(from, to, proof.via),

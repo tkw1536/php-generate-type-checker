@@ -56,3 +56,26 @@ describe('normalizeListCountKeyExists', () => {
     ).toEqual(andExpr([isList, countTwo, keyFoo]));
   });
 });
+
+const nonEmpty = binExpr('!==', refArg($v), literalArg('[]'));
+
+describe('normalizeListNonEmptyKey0', () => {
+  it('rewrites key_exists(0) to TRUE under list + non-empty', () => {
+    expect(
+      substituteFacts(andExpr([isList, nonEmpty, key0]), emptyFactEnv()).expr,
+    ).toEqual(andExpr([isList, nonEmpty, boolLit(true)]));
+  });
+
+  it('leaves key_exists(1) unchanged under list + non-empty', () => {
+    // key_exists(1) ⇒ !== []; absorb drops the redundant non-empty conjunct.
+    expect(
+      substituteFacts(andExpr([isList, nonEmpty, key1]), emptyFactEnv()).expr,
+    ).toEqual(andExpr([isList, key1]));
+  });
+
+  it('leaves key_exists(0) unchanged without non-empty', () => {
+    expect(
+      substituteFacts(andExpr([isList, key0]), emptyFactEnv()).expr,
+    ).toEqual(andExpr([isList, key0]));
+  });
+});
