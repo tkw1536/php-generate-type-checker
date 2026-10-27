@@ -1,5 +1,8 @@
 /**
- * Generate every success golden and run PHPStan once on the packed result.
+ * Analyse committed generator success `*.golden.php` with PHPStan.
+ *
+ * Does not write any files to disk. Source-map remapping is built in memory
+ * from the parseable golden markers.
  *
  * Run from repo root:
  *   yarn check:phpstan
@@ -8,17 +11,12 @@
  * `php` must already be on PATH — this script never searches for a binary.
  */
 import { spawnSync } from 'node:child_process';
-import {
-  existsSync,
-  mkdtempSync,
-  rmdirSync,
-  unlinkSync,
-  writeFileSync,
-} from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { generateChecker } from '../src/generator/index.ts';
-import { loadSuccessFixtures } from './check-phpstan.fixtures.mjs';
+import {
+  listSuccessGoldenPaths,
+  loadGoldenLineRanges,
+} from './check-phpstan.fixtures.mjs';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..');
 // Config + default phar live beside this script so phpstan/ is self-contained.
@@ -64,8 +62,8 @@ function printUsage() {
   yarn check:phpstan
   yarn check:phpstan -- --phpstan <phar>
 
-Generate every success golden and analyse the packed PHP with PHPStan
-(see phpstan/generated-check.neon).
+Analyse committed generator success *.golden.php with PHPStan
+(see phpstan/generated-check.neon). Writes nothing to disk.
 
 Place a PHPStan phar at ${DEFAULT_PHPSTAN_PHAR_REL} (default), or pass --phpstan.
 
@@ -80,82 +78,22 @@ Example:
 }
 
 /**
- * Re-generate rather than trusting golden JSON `expected`, so analysis always
- * reflects the current pipeline.
- *
- * @param {import('./check-phpstan.fixtures.mjs').SuccessFixture} fixture
- * @returns {string}
+ * @typedef {import('./check-phpstan.fixtures.mjs').GoldenLineRange} GoldenLineRange
  */
-function generateFixture(fixture) {
-  return generateChecker(fixture.input, {
-    output: fixture.output,
-    emitPhpstanTypeAliases: fixture.emitPhpstanTypeAliases,
-    verbosePhpdoc: fixture.verbosePhpdoc,
-    sealArrayShapes: fixture.sealArrayShapes,
-  });
-}
-
-/**
- * @typedef {{
- *   readonly name: string;
- *   readonly startLine: number;
- *   readonly endLine: number;
- * }} GoldenLineRange
- */
-
-/**
- * Pack all goldens into one file for a single analyse pass: PHPStan needs a
- * real filesystem path (no stdin/fd), and one write + one startup beats
- * per-case IO. Each case gets its own namespace so repeated `isInt` /
- * `TypeChecker` names do not collide. No class stubs yet — missing-symbol
- * noise is deferred. Ranges are 1-based inclusive line spans in the packed
- * file so PHPStan hits can be attributed to a fixture.
- *
- * @param {readonly { readonly name: string; readonly php: string }[]} cases
- * @returns {{ readonly php: string; readonly ranges: readonly GoldenLineRange[] }}
- */
-function packGoldensPhp(cases) {
-  const width = String(cases.length).length;
-  /** @type {GoldenLineRange[]} */
-  const ranges = [];
-  let out = '<?php\n';
-  // Next 1-based line number that newly appended text will occupy.
-  let line = 2;
-
-  for (let i = 0; i < cases.length; i++) {
-    const item = cases[i];
-    if (item === undefined) {
-      throw new Error('never reached');
-    }
-    if (i > 0) {
-      out += '\n';
-      line += 1;
-    }
-    const ns = `Golden\\C${String(i).padStart(width, '0')}`;
-    const body = item.php.endsWith('\n') ? item.php : `${item.php}\n`;
-    // Marker comment is for humans reading a kept dump; ranges drive CLI attribution.
-    const block = `// golden: ${item.name}\nnamespace ${ns} {\n${body}}\n`;
-    const startLine = line;
-    const lineCount = block.endsWith('\n')
-      ? block.split('\n').length - 1
-      : block.split('\n').length;
-    const endLine = startLine + lineCount - 1;
-    ranges.push({ name: item.name, startLine, endLine });
-    out += block;
-    line = endLine + 1;
-  }
-
-  return { php: out, ranges };
-}
 
 /**
  * @param {readonly GoldenLineRange[]} ranges
+ * @param {string} basename
  * @param {number} lineNo
  * @returns {string | null}
  */
-function goldenNameForLine(ranges, lineNo) {
+function goldenNameForLine(ranges, basename, lineNo) {
   for (const range of ranges) {
-    if (lineNo >= range.startLine && lineNo <= range.endLine) {
+    if (
+      range.basename === basename &&
+      lineNo >= range.startLine &&
+      lineNo <= range.endLine
+    ) {
       return range.name;
     }
   }
@@ -163,89 +101,97 @@ function goldenNameForLine(ranges, lineNo) {
 }
 
 /**
- * @param {string} pathPrefix
+ * Raw PHPStan lines look like `/abs/path/stem.golden.php:12:message`.
+ * Strip the testdata directory prefix when present; always remap by basename.
+ *
+ * @param {string} testdataPrefix
  * @param {readonly GoldenLineRange[]} ranges
  * @param {string} stdout
+ * @returns {number} number of analysis error lines printed
  */
-function printPhpstanStdout(pathPrefix, ranges, stdout) {
+function printPhpstanStdout(testdataPrefix, ranges, stdout) {
+  let errorCount = 0;
   for (const rawLine of stdout.split('\n')) {
     if (rawLine.length === 0) {
       continue;
     }
-    const line = rawLine.startsWith(pathPrefix)
-      ? rawLine.slice(pathPrefix.length)
+    const line = rawLine.startsWith(testdataPrefix)
+      ? rawLine.slice(testdataPrefix.length)
       : rawLine;
-    const match = /^goldens\.php:(\d+):(.*)$/u.exec(line);
+    const match = /^(.+\.golden\.php):(\d+):(.*)$/u.exec(line);
     if (match === null) {
       console.log(line);
       continue;
     }
-    const lineNo = Number(match[1]);
-    const rest = match[2] ?? '';
-    const golden = goldenNameForLine(ranges, lineNo);
+    errorCount += 1;
+    const filePart = match[1] ?? '';
+    const lineNo = Number(match[2]);
+    const rest = match[3] ?? '';
+    const basename = path.basename(filePart);
+    const display = filePart.startsWith('/')
+      ? basename
+      : filePart.includes(path.sep)
+        ? filePart
+        : basename;
+    const golden = goldenNameForLine(ranges, basename, lineNo);
     if (golden === null) {
-      console.log(line);
+      console.log(`${display}:${lineNo}:${rest}`);
       continue;
     }
-    console.log(`goldens.php:${lineNo}:${rest} [golden=${golden}]`);
+    console.log(`${display}:${lineNo}:${rest} [golden=${golden}]`);
   }
+  return errorCount;
 }
 
 /**
- * PHPStan cannot analyse `/dev/fd` / process-substitution paths (Finder treats
- * them as missing directories), so the packed file must be a real temp path.
- * Stderr (Turbo ads, agent preambles) is ignored; stdout is re-printed with the
- * temp directory stripped so lines stay readable (`goldens.php:line:…`).
- *
- * @param {string} phpSource
+ * @param {readonly string[]} phpPaths
  * @param {readonly GoldenLineRange[]} ranges
  * @param {string} pharAbs
- * @returns {number}
+ * @returns {number} 0 iff no analysis errors
  */
-function runPhpstan(phpSource, ranges, pharAbs) {
-  const dir = mkdtempSync(path.join(tmpdir(), 'php-generate-type-checker-'));
-  const phpPath = path.join(dir, 'goldens.php');
-  writeFileSync(phpPath, phpSource, 'utf8');
-  // Prefix PHPStan puts on raw lines; strip it so output is just the basename.
-  const pathPrefix = `${dir}${path.sep}`;
+function runPhpstan(phpPaths, ranges, pharAbs) {
+  const testdataDir = path.resolve(
+    import.meta.dirname,
+    '../src/generator/testdata',
+  );
+  const testdataPrefix = `${testdataDir}${path.sep}`;
 
-  try {
-    // Invoke `php` by name only — never resolve or search for a binary.
-    // Raw only appends [identifier=…] when verbose (or under an AI agent).
-    const result = spawnSync(
-      'php',
-      [
-        pharAbs,
-        'analyse',
-        '--no-progress',
-        '-v',
-        '--error-format=raw',
-        '-c',
-        NEON_PATH,
-        phpPath,
-      ],
-      {
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'ignore'],
-      },
-    );
-    if (result.error !== undefined) {
-      throw result.error;
-    }
-    printPhpstanStdout(pathPrefix, ranges, result.stdout ?? '');
-    return result.status ?? 1;
-  } finally {
-    try {
-      unlinkSync(phpPath);
-    } catch {
-      // best-effort cleanup
-    }
-    try {
-      rmdirSync(dir);
-    } catch {
-      // best-effort cleanup
-    }
+  // Invoke `php` by name only — never resolve or search for a binary.
+  // Raw only appends [identifier=…] when verbose (or under an AI agent).
+  const result = spawnSync(
+    'php',
+    [
+      pharAbs,
+      'analyse',
+      '--no-progress',
+      '-v',
+      '--error-format=raw',
+      '-c',
+      NEON_PATH,
+      ...phpPaths,
+    ],
+    {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    },
+  );
+  if (result.error !== undefined) {
+    throw result.error;
   }
+  if (result.status === null) {
+    console.error('PHPStan was killed by a signal');
+    return 1;
+  }
+  const errorCount = printPhpstanStdout(
+    testdataPrefix,
+    ranges,
+    result.stdout ?? '',
+  );
+  // Non-zero iff analysis errors; also fail on PHPStan crash/config with no lines.
+  if (errorCount > 0) {
+    return 1;
+  }
+  return result.status === 0 ? 0 : 1;
 }
 
 function main() {
@@ -267,28 +213,13 @@ function main() {
     process.exit(1);
   }
 
-  const fixtures = loadSuccessFixtures();
-  /** @type {{ readonly name: string; readonly php: string }[]} */
-  const generated = [];
-  for (const fixture of fixtures) {
-    try {
-      generated.push({
-        name: fixture.name,
-        php: generateFixture(fixture),
-      });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(`generate failed for ${fixture.name}: ${message}`);
-      process.exit(1);
-    }
-  }
-
-  const { php: phpSource, ranges } = packGoldensPhp(generated);
+  const phpPaths = listSuccessGoldenPaths();
+  const ranges = loadGoldenLineRanges();
   console.error(
-    `packed ${generated.length} goldens (${phpSource.length} bytes)`,
+    `analysing ${phpPaths.length} golden files (${ranges.length} cases)`,
   );
 
-  const status = runPhpstan(phpSource, ranges, path.resolve(pharPath));
+  const status = runPhpstan(phpPaths, ranges, path.resolve(pharPath));
   process.exit(status);
 }
 

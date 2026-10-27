@@ -1,10 +1,14 @@
 /**
- * Regenerates generator fixture JSON from .IN source lists.
+ * Regenerates generator success `*.golden.php` (and `errors.json`) from `.IN` lists.
  * Run from repo root: yarn update_fixtures:generator
+ *
+ * Do not hand-edit `*.golden.php`; edit the matching `.IN` and regenerate.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { generateChecker } from '../index.ts';
+import { namespaceIdForCase } from './goldenCase.ts';
+import { formatGoldenPhp } from './goldenPhp.ts';
 
 const testdataDir = import.meta.dirname;
 
@@ -132,26 +136,81 @@ function toErrorCase(input) {
   return { input };
 }
 
+/**
+ * @param {import('./goldenCase.ts').GoldenCaseMeta} meta
+ * @returns {import('./goldenCase.ts').GoldenCaseMeta}
+ */
+function sparseMeta(meta) {
+  return {
+    input: meta.input,
+    output: meta.output,
+    ...(meta.emitPhpstanTypeAliases === true
+      ? { emitPhpstanTypeAliases: true }
+      : {}),
+    ...(meta.verbosePhpdoc === true ? { verbosePhpdoc: true } : {}),
+    ...(meta.sealArrayShapes === true ? { sealArrayShapes: true } : {}),
+  };
+}
+
+/** @type {Map<string, string>} */
+const globalNamespaces = new Map();
+
+/**
+ * @param {import('./goldenCase.ts').GoldenCaseMeta} meta
+ * @param {string} label
+ */
+function registerNamespace(meta, label) {
+  const id = namespaceIdForCase(meta);
+  const prev = globalNamespaces.get(id);
+  if (prev !== undefined && prev !== label) {
+    throw new Error(
+      `namespace collision Golden\\${id} across suites: ${prev} vs ${label}`,
+    );
+  }
+  if (prev === undefined) {
+    globalNamespaces.set(id, label);
+  }
+}
+
+/**
+ * @param {string} stem
+ * @param {readonly { readonly meta: import('./goldenCase.ts').GoldenCaseMeta; readonly expected: string }[]} cases
+ */
+function writeGoldenPhp(stem, cases) {
+  for (const item of cases) {
+    registerNamespace(
+      item.meta,
+      `${stem}: ${JSON.stringify(item.meta.input)}`,
+    );
+  }
+  const fixturePath = path.resolve(testdataDir, `${stem}.golden.php`);
+  const source = formatGoldenPhp(stem, cases);
+  writeFileSync(fixturePath, source);
+  const written = (source.match(/^\/\/ @gtc-golden-begin /gmu) ?? []).length;
+  console.log(`Wrote ${written} cases to ${fixturePath}`);
+}
+
 for (const output of OUTPUT_MODES) {
   const inPath = path.join(testdataDir, `${output}.IN`);
   if (!existsSync(inPath)) {
     continue;
   }
   const sources = readSources(inPath);
-  /** @type {{ input: string; expected: string }[]} */
+  /** @type {{ meta: import('./goldenCase.ts').GoldenCaseMeta; expected: string }[]} */
   const out = [];
   for (const input of sources) {
     try {
       const expected = generateChecker(input, { output });
-      out.push({ input, expected });
+      out.push({
+        meta: sparseMeta({ input, output }),
+        expected,
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.warn('skip', output, JSON.stringify(input), message);
     }
   }
-  const fixturePath = path.resolve(testdataDir, `${output}.json`);
-  writeFileSync(fixturePath, `${JSON.stringify(out, null, 2)}\n`);
-  console.log(`Wrote ${out.length} cases to ${fixturePath}`);
+  writeGoldenPhp(output, out);
 }
 
 const DOCBlock_FIXTURES = [
@@ -168,7 +227,7 @@ for (const { name, emitPhpstanTypeAliases: defaultEmit } of DOCBlock_FIXTURES) {
     continue;
   }
   const cases = readMultilineCases(inPath);
-  /** @type {{ input: string; output: string; expected: string; emitPhpstanTypeAliases?: boolean; verbosePhpdoc?: boolean; sealArrayShapes?: boolean }[]} */
+  /** @type {{ meta: import('./goldenCase.ts').GoldenCaseMeta; expected: string }[]} */
   const out = [];
   for (const {
     input,
@@ -185,26 +244,22 @@ for (const { name, emitPhpstanTypeAliases: defaultEmit } of DOCBlock_FIXTURES) {
         verbosePhpdoc,
         sealArrayShapes,
       });
-      /** @type {{ input: string; output: string; expected: string; emitPhpstanTypeAliases?: boolean; verbosePhpdoc?: boolean; sealArrayShapes?: boolean }} */
-      const entry = { input, output, expected };
-      if (emit) {
-        entry.emitPhpstanTypeAliases = true;
-      }
-      if (verbosePhpdoc) {
-        entry.verbosePhpdoc = true;
-      }
-      if (sealArrayShapes) {
-        entry.sealArrayShapes = true;
-      }
-      out.push(entry);
+      out.push({
+        meta: sparseMeta({
+          input,
+          output,
+          ...(emit ? { emitPhpstanTypeAliases: true } : {}),
+          ...(verbosePhpdoc ? { verbosePhpdoc: true } : {}),
+          ...(sealArrayShapes ? { sealArrayShapes: true } : {}),
+        }),
+        expected,
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.warn('skip', name, message);
     }
   }
-  const fixturePath = path.resolve(testdataDir, `${name}.json`);
-  writeFileSync(fixturePath, `${JSON.stringify(out, null, 2)}\n`);
-  console.log(`Wrote ${out.length} cases to ${fixturePath}`);
+  writeGoldenPhp(name, out);
 }
 
 const errorsIn = path.join(testdataDir, 'errors.IN');

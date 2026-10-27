@@ -1,17 +1,16 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { generateChecker } from './index.ts';
 import { GenerationError } from './errors.ts';
-import docblockCases from './testdata/docblock.json';
-import docblockEmitAliasesCases from './testdata/docblock_emit_aliases.json';
 import errorsCases from './testdata/errors.json';
-import functionCases from './testdata/function.json';
-import multiCommentCases from './testdata/multi_comment.json';
-import privateStaticCases from './testdata/private_static.json';
-import protectedStaticCases from './testdata/protected_static.json';
-import publicStaticCases from './testdata/public_static.json';
-import verbosePhpdocCases from './testdata/verbose_phpdoc.json';
-import sealedShapesCases from './testdata/sealed_shapes.json';
-import type { CheckerOutputMode } from "./options.ts";
+import {
+  SUCCESS_GOLDEN_STEMS,
+  type GoldenCase,
+  type GoldenCaseMeta,
+} from './testdata/goldenCase.ts';
+import { parseGoldenPhp } from './testdata/goldenPhp.ts';
+import type { CheckerOutputMode } from './options.ts';
 
 interface GeneratorFixture {
   readonly name: string;
@@ -24,66 +23,80 @@ interface GeneratorFixture {
   readonly sealArrayShapes?: boolean;
 }
 
-type SuccessCase = { readonly input: string; readonly expected: string };
-type DocblockCase = {
-  readonly input: string;
-  readonly output: CheckerOutputMode;
-  readonly expected: string;
-  readonly emitPhpstanTypeAliases?: boolean;
-  readonly verbosePhpdoc?: boolean;
-  readonly sealArrayShapes?: boolean;
-};
 type ErrorCase = { readonly input: string };
 
-function successToFixtures(
-  cases: readonly SuccessCase[],
-  output: CheckerOutputMode,
-): GeneratorFixture[] {
-  return cases.map(({ input, expected }) => ({
-    name: output === 'function' ? input : `${output}: ${input}`,
-    input,
-    output,
-    expected,
-    expectsError: false,
-  }));
+const TESTDATA_DIR = path.join(import.meta.dirname, 'testdata');
+
+const MODE_STEMS = new Set([
+  'function',
+  'public_static',
+  'protected_static',
+  'private_static',
+]);
+
+function isErrorCase(value: unknown): value is ErrorCase {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'input' in value &&
+    typeof value.input === 'string'
+  );
 }
 
-function docblockToFixtures(
-  cases: readonly DocblockCase[],
-  labelPrefix: string,
-): GeneratorFixture[] {
-  return cases.map(
-    (
-      {
-        input,
-        output,
-        expected,
-        emitPhpstanTypeAliases,
-        verbosePhpdoc,
-        sealArrayShapes,
-      },
-      index,
-    ) => {
-      const extras = [
-        emitPhpstanTypeAliases === true ? ' + aliases' : '',
-        verbosePhpdoc === true ? ' + verbose' : '',
-        sealArrayShapes === true ? ' + seal' : '',
-      ].join('');
-      const label =
-        cases.length === 1
-          ? `${labelPrefix}: ${output}${extras}`
-          : `${labelPrefix}[${index}]: ${output}${extras}`;
-      return {
-        name: label,
-        input,
-        output,
-        expected,
-        expectsError: false,
-        emitPhpstanTypeAliases,
-        verbosePhpdoc,
-        sealArrayShapes,
-      };
-    },
+function readErrorCases(data: unknown): ErrorCase[] {
+  if (!Array.isArray(data) || !data.every((item) => isErrorCase(item))) {
+    throw new Error('invalid error fixture JSON');
+  }
+  return data;
+}
+
+function fixtureName(
+  stem: string,
+  meta: GoldenCaseMeta,
+  index: number,
+  suiteSize: number,
+): string {
+  if (MODE_STEMS.has(stem)) {
+    return meta.output === 'function'
+      ? meta.input
+      : `${meta.output}: ${meta.input}`;
+  }
+  const extras = [
+    meta.emitPhpstanTypeAliases === true ? ' + aliases' : '',
+    meta.verbosePhpdoc === true ? ' + verbose' : '',
+    meta.sealArrayShapes === true ? ' + seal' : '',
+  ].join('');
+  return suiteSize === 1
+    ? `${stem}: ${meta.output}${extras}`
+    : `${stem}[${index}]: ${meta.output}${extras}`;
+}
+
+function caseToFixture(
+  stem: string,
+  item: GoldenCase,
+  index: number,
+  suiteSize: number,
+): GeneratorFixture {
+  const { meta, expected } = item;
+  return {
+    name: fixtureName(stem, meta, index, suiteSize),
+    input: meta.input,
+    output: meta.output,
+    expected,
+    expectsError: false,
+    ...(meta.emitPhpstanTypeAliases === true
+      ? { emitPhpstanTypeAliases: true }
+      : {}),
+    ...(meta.verbosePhpdoc === true ? { verbosePhpdoc: true } : {}),
+    ...(meta.sealArrayShapes === true ? { sealArrayShapes: true } : {}),
+  };
+}
+
+function loadGoldenSuite(stem: string): GeneratorFixture[] {
+  const filePath = path.join(TESTDATA_DIR, `${stem}.golden.php`);
+  const cases = parseGoldenPhp(readFileSync(filePath, 'utf8'));
+  return cases.map((item, index) =>
+    caseToFixture(stem, item, index, cases.length),
   );
 }
 
@@ -97,84 +110,10 @@ function errorsToFixtures(cases: readonly ErrorCase[]): GeneratorFixture[] {
   }));
 }
 
-function isSuccessCase(value: unknown): value is SuccessCase {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'input' in value &&
-    'expected' in value &&
-    typeof value.input === 'string' &&
-    typeof value.expected === 'string'
-  );
-}
-
-function isDocblockCase(value: unknown): value is DocblockCase {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'input' in value &&
-    'output' in value &&
-    'expected' in value &&
-    typeof value.input === 'string' &&
-    typeof value.output === 'string' &&
-    typeof value.expected === 'string'
-  );
-}
-
-function isErrorCase(value: unknown): value is ErrorCase {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'input' in value &&
-    typeof value.input === 'string'
-  );
-}
-
-function readSuccessCases(data: unknown): SuccessCase[] {
-  if (!Array.isArray(data) || !data.every((item) => isSuccessCase(item))) {
-    throw new Error('invalid success fixture JSON');
-  }
-  return data;
-}
-
-function readDocblockCases(data: unknown): DocblockCase[] {
-  if (!Array.isArray(data) || !data.every((item) => isDocblockCase(item))) {
-    throw new Error('invalid docblock fixture JSON');
-  }
-  return data;
-}
-
-function readErrorCases(data: unknown): ErrorCase[] {
-  if (!Array.isArray(data) || !data.every((item) => isErrorCase(item))) {
-    throw new Error('invalid error fixture JSON');
-  }
-  return data;
-}
-
-/** All generator golden fixtures from `generator/testdata/*.json`. */
+/** All generator golden fixtures from `testdata/*.golden.php` (+ `errors.json`). */
 export function loadFixtures(): GeneratorFixture[] {
   return [
-    ...successToFixtures(readSuccessCases(functionCases), 'function'),
-    ...successToFixtures(readSuccessCases(publicStaticCases), 'public_static'),
-    ...successToFixtures(
-      readSuccessCases(protectedStaticCases),
-      'protected_static',
-    ),
-    ...successToFixtures(readSuccessCases(privateStaticCases), 'private_static'),
-    ...docblockToFixtures(readDocblockCases(docblockCases), 'docblock'),
-    ...docblockToFixtures(
-      readDocblockCases(docblockEmitAliasesCases),
-      'docblock_emit_aliases',
-    ),
-    ...docblockToFixtures(readDocblockCases(multiCommentCases), 'multi_comment'),
-    ...docblockToFixtures(
-      readDocblockCases(verbosePhpdocCases),
-      'verbose_phpdoc',
-    ),
-    ...docblockToFixtures(
-      readDocblockCases(sealedShapesCases),
-      'sealed_shapes',
-    ),
+    ...SUCCESS_GOLDEN_STEMS.flatMap((stem) => loadGoldenSuite(stem)),
     ...errorsToFixtures(readErrorCases(errorsCases)),
   ].toSorted((a, b) => a.name.localeCompare(b.name));
 }

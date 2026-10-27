@@ -1,6 +1,8 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { stdin, stdout } from 'node:process';
+import { SUCCESS_GOLDEN_STEMS } from './goldenCase.ts';
+import { parseGoldenPhp } from './goldenPhp.ts';
 
 /**
  * @typedef {{
@@ -20,12 +22,18 @@ import { stdin, stdout } from 'node:process';
  */
 
 /**
- * @typedef {{ readonly input: string; readonly expected: string }} SuccessFixtureJson
  * @typedef {{ readonly input: string }} ErrorFixtureJson
  */
 
 const dir = import.meta.dirname;
 const statePath = path.join(dir, 'review-state.json');
+
+const MODE_STEMS = new Set([
+  'function',
+  'public_static',
+  'protected_static',
+  'private_static',
+]);
 
 /**
  * @param {string} text
@@ -33,21 +41,6 @@ const statePath = path.join(dir, 'review-state.json');
  */
 function parseJson(text) {
   return structuredClone(JSON.parse(text));
-}
-
-/**
- * @param {unknown} value
- * @returns {value is SuccessFixtureJson}
- */
-function isSuccessFixtureJson(value) {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'input' in value &&
-    'expected' in value &&
-    typeof value.input === 'string' &&
-    typeof value.expected === 'string'
-  );
 }
 
 /**
@@ -82,18 +75,6 @@ function isReviewState(value) {
 
 /**
  * @param {string} file
- * @returns {SuccessFixtureJson[]}
- */
-function readSuccessFixtures(file) {
-  const data = parseJson(readFileSync(file, 'utf8'));
-  if (!Array.isArray(data) || !data.every((item) => isSuccessFixtureJson(item))) {
-    throw new Error(`invalid success fixtures: ${file}`);
-  }
-  return data;
-}
-
-/**
- * @param {string} file
  * @returns {ErrorFixtureJson[]}
  */
 function readErrorFixtures(file) {
@@ -124,26 +105,35 @@ function sortedByName(items) {
   return result;
 }
 
+/**
+ * @param {string} stem
+ * @param {import('./goldenCase.ts').GoldenCaseMeta} meta
+ * @returns {string}
+ */
+function modeFixtureName(stem, meta) {
+  return meta.output === 'function'
+    ? meta.input
+    : `${meta.output}: ${meta.input}`;
+}
+
 /** @returns {Fixture[]} */
 function loadFixtures() {
   /** @type {Fixture[]} */
   const fixtures = [];
-  for (const mode of [
-    'function',
-    'public_static',
-    'protected_static',
-    'private_static',
-  ]) {
-    const file = path.join(dir, `${mode}.json`);
+  for (const stem of SUCCESS_GOLDEN_STEMS) {
+    if (!MODE_STEMS.has(stem)) {
+      continue;
+    }
+    const file = path.join(dir, `${stem}.golden.php`);
     if (!existsSync(file)) {
       continue;
     }
-    for (const { input, expected } of readSuccessFixtures(file)) {
+    for (const item of parseGoldenPhp(readFileSync(file, 'utf8'))) {
       fixtures.push({
-        name: mode === 'function' ? input : `${mode}: ${input}`,
-        input,
-        output: mode,
-        expected,
+        name: modeFixtureName(stem, item.meta),
+        input: item.meta.input,
+        output: item.meta.output,
+        expected: item.expected,
         expectsError: false,
       });
     }

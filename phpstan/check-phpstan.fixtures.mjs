@@ -1,164 +1,102 @@
 /**
- * Load success golden fixtures for `check-phpstan.mjs`.
+ * Resolve success `*.golden.php` suites for `check-phpstan.mjs`.
  */
-import docblockCases from '../src/generator/testdata/docblock.json' with { type: 'json' };
-import docblockEmitAliasesCases from '../src/generator/testdata/docblock_emit_aliases.json' with { type: 'json' };
-import functionCases from '../src/generator/testdata/function.json' with { type: 'json' };
-import multiCommentCases from '../src/generator/testdata/multi_comment.json' with { type: 'json' };
-import privateStaticCases from '../src/generator/testdata/private_static.json' with { type: 'json' };
-import protectedStaticCases from '../src/generator/testdata/protected_static.json' with { type: 'json' };
-import publicStaticCases from '../src/generator/testdata/public_static.json' with { type: 'json' };
-import sealedShapesCases from '../src/generator/testdata/sealed_shapes.json' with { type: 'json' };
-import verbosePhpdocCases from '../src/generator/testdata/verbose_phpdoc.json' with { type: 'json' };
+import { existsSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+import { SUCCESS_GOLDEN_STEMS } from '../src/generator/testdata/goldenCase.ts';
+import { parseGoldenPhp } from '../src/generator/testdata/goldenPhp.ts';
 
-/** @typedef {import('../src/generator/options.ts').CheckerOutputMode} CheckerOutputMode */
+const TESTDATA_DIR = path.resolve(
+  import.meta.dirname,
+  '../src/generator/testdata',
+);
+
+const MODE_STEMS = new Set([
+  'function',
+  'public_static',
+  'protected_static',
+  'private_static',
+]);
 
 /**
  * @typedef {{
+ *   readonly file: string;
+ *   readonly basename: string;
  *   readonly name: string;
- *   readonly input: string;
- *   readonly output: CheckerOutputMode;
- *   readonly emitPhpstanTypeAliases?: boolean;
- *   readonly verbosePhpdoc?: boolean;
- *   readonly sealArrayShapes?: boolean;
- * }} SuccessFixture
+ *   readonly startLine: number;
+ *   readonly endLine: number;
+ * }} GoldenLineRange
  */
 
 /**
- * @param {string} output
- * @returns {output is CheckerOutputMode}
+ * @param {string} stem
+ * @param {import('../src/generator/testdata/goldenCase.ts').GoldenCaseMeta} meta
+ * @param {number} index
+ * @param {number} suiteSize
+ * @returns {string}
  */
-function isOutputMode(output) {
-  switch (output) {
-    case 'function':
-    case 'public_static':
-    case 'protected_static':
-    case 'private_static':
-      return true;
-    default:
-      return false;
+function fixtureName(stem, meta, index, suiteSize) {
+  if (MODE_STEMS.has(stem)) {
+    return meta.output === 'function'
+      ? meta.input
+      : `${meta.output}: ${meta.input}`;
   }
+  const extras = [
+    meta.emitPhpstanTypeAliases === true ? ' + aliases' : '',
+    meta.verbosePhpdoc === true ? ' + verbose' : '',
+    meta.sealArrayShapes === true ? ' + seal' : '',
+  ].join('');
+  return suiteSize === 1
+    ? `${stem}: ${meta.output}${extras}`
+    : `${stem}[${index}]: ${meta.output}${extras}`;
 }
 
 /**
- * @param {unknown} value
- * @returns {value is { readonly input: string; readonly expected: string }}
- */
-function isSuccessCase(value) {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'input' in value &&
-    'expected' in value &&
-    typeof value.input === 'string' &&
-    typeof value.expected === 'string'
-  );
-}
-
-/**
- * @param {unknown} value
- * @returns {value is {
- *   readonly input: string;
- *   readonly output: string;
- *   readonly expected: string;
- *   readonly emitPhpstanTypeAliases?: boolean;
- *   readonly verbosePhpdoc?: boolean;
- *   readonly sealArrayShapes?: boolean;
- * }}
- */
-function isDocblockCase(value) {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'input' in value &&
-    'output' in value &&
-    'expected' in value &&
-    typeof value.input === 'string' &&
-    typeof value.output === 'string' &&
-    typeof value.expected === 'string'
-  );
-}
-
-/**
- * @param {unknown} data
- * @param {CheckerOutputMode} output
- * @returns {SuccessFixture[]}
- */
-function successToFixtures(data, output) {
-  if (!Array.isArray(data) || !data.every((item) => isSuccessCase(item))) {
-    throw new Error(`invalid success fixture JSON for output ${output}`);
-  }
-  return data.map(({ input }) => ({
-    name: output === 'function' ? input : `${output}: ${input}`,
-    input,
-    output,
-  }));
-}
-
-/**
- * @param {unknown} data
- * @param {string} labelPrefix
- * @returns {SuccessFixture[]}
- */
-function docblockToFixtures(data, labelPrefix) {
-  if (!Array.isArray(data) || !data.every((item) => isDocblockCase(item))) {
-    throw new Error(`invalid docblock fixture JSON for ${labelPrefix}`);
-  }
-  /** @type {SuccessFixture[]} */
-  const fixtures = [];
-  for (let index = 0; index < data.length; index++) {
-    const item = data[index];
-    const {
-      input,
-      output,
-      emitPhpstanTypeAliases,
-      verbosePhpdoc,
-      sealArrayShapes,
-    } = item;
-    if (!isOutputMode(output)) {
-      throw new Error(`invalid output mode in ${labelPrefix}: ${output}`);
-    }
-    const extras = [
-      emitPhpstanTypeAliases === true ? ' + aliases' : '',
-      verbosePhpdoc === true ? ' + verbose' : '',
-      sealArrayShapes === true ? ' + seal' : '',
-    ].join('');
-    const label =
-      data.length === 1
-        ? `${labelPrefix}: ${output}${extras}`
-        : `${labelPrefix}[${index}]: ${output}${extras}`;
-    fixtures.push({
-      name: label,
-      input,
-      output,
-      ...(emitPhpstanTypeAliases === true
-        ? { emitPhpstanTypeAliases: true }
-        : {}),
-      ...(verbosePhpdoc === true ? { verbosePhpdoc: true } : {}),
-      ...(sealArrayShapes === true ? { sealArrayShapes: true } : {}),
-    });
-  }
-  return fixtures;
-}
-
-/**
- * Success goldens only — error fixtures throw and have no PHP to analyse.
+ * Absolute paths to every success suite golden PHP file (including empty ones).
  *
- * @returns {SuccessFixture[]}
+ * @returns {readonly string[]}
  */
-export function loadSuccessFixtures() {
-  /** @type {SuccessFixture[]} */
-  const fixtures = [
-    ...successToFixtures(functionCases, 'function'),
-    ...successToFixtures(publicStaticCases, 'public_static'),
-    ...successToFixtures(protectedStaticCases, 'protected_static'),
-    ...successToFixtures(privateStaticCases, 'private_static'),
-    ...docblockToFixtures(docblockCases, 'docblock'),
-    ...docblockToFixtures(docblockEmitAliasesCases, 'docblock_emit_aliases'),
-    ...docblockToFixtures(multiCommentCases, 'multi_comment'),
-    ...docblockToFixtures(verbosePhpdocCases, 'verbose_phpdoc'),
-    ...docblockToFixtures(sealedShapesCases, 'sealed_shapes'),
-  ];
-  fixtures.sort((a, b) => a.name.localeCompare(b.name));
-  return fixtures;
+export function listSuccessGoldenPaths() {
+  /** @type {string[]} */
+  const paths = [];
+  for (const stem of SUCCESS_GOLDEN_STEMS) {
+    const filePath = path.join(TESTDATA_DIR, `${stem}.golden.php`);
+    if (!existsSync(filePath)) {
+      throw new Error(`missing success golden: ${filePath}`);
+    }
+    paths.push(filePath);
+  }
+  return paths;
+}
+
+/**
+ * In-memory source map: per-file 1-based inclusive ranges → fixture display name.
+ *
+ * @returns {readonly GoldenLineRange[]}
+ */
+export function loadGoldenLineRanges() {
+  /** @type {GoldenLineRange[]} */
+  const ranges = [];
+  for (const stem of SUCCESS_GOLDEN_STEMS) {
+    const filePath = path.join(TESTDATA_DIR, `${stem}.golden.php`);
+    if (!existsSync(filePath)) {
+      throw new Error(`missing success golden: ${filePath}`);
+    }
+    const basename = path.basename(filePath);
+    const cases = parseGoldenPhp(readFileSync(filePath, 'utf8'));
+    for (let index = 0; index < cases.length; index++) {
+      const item = cases[index];
+      if (item === undefined) {
+        throw new Error('never reached');
+      }
+      ranges.push({
+        file: filePath,
+        basename,
+        name: fixtureName(stem, item.meta, index, cases.length),
+        startLine: item.startLine,
+        endLine: item.endLine,
+      });
+    }
+  }
+  return ranges;
 }

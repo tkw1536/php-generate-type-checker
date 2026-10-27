@@ -1,9 +1,14 @@
 {
   "version": "0.2",
   "useGitignore": true,
-  "ignorePaths": ["src/**/testdata/*.json"],
+  "ignorePaths": [
+    "src/**/testdata/*.json",
+    "src/**/testdata/*.golden.php"
+  ],
   "words": [
     "alnum",
+    "analyse",
+    "analysing",
     "APOS",
     "bluesky",
     "builtins",
@@ -42,6 +47,7 @@
     "gimuy",
     "goldens",
     "graphviz",
+    "gtc",
     "hljs",
     "inlines",
     "instanceof",
@@ -59,6 +65,7 @@
     "oxlint",
     "Oxlint",
     "oxlintrc",
+    "phar",
     "phpdoc",
     "Phpdoc",
     "phpstan",

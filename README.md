@@ -436,6 +436,22 @@ The simplify phase simplifies boolean expressions.
 In practice, a lot of these combine.
 For example, `list<mixed>|list<string>` becomes `is_array($value) && array_is_list($value)` because the second arm is redundant.
 
+## Goldens
+
+Generator success fixtures are the expected PHP checkers for each input type (or docblock).
+
+- **Sources:** edit `src/generator/testdata/<stem>.IN`
+- **Goldens:** regenerated as `<stem>.golden.php` next to that file (`yarn update_fixtures:generator`)
+- **Errors:** cases that must fail generation live in `errors.json` (no PHP output)
+
+Each `.golden.php` file is real PHP with one namespaced checker per case.
+Namespaces are hashed from the case input and options so they stay unique and stable when the generated body changes.
+
+How they are used:
+
+- **Vitest** regenerates from the same inputs and asserts the output matches the golden body
+- **`yarn check:phpstan`** runs PHPStan on the committed `.golden.php` files as-is (expects `phpstan/phpstan.phar`)
+
 ## Develop locally
 
 ```bash
@@ -444,7 +460,7 @@ yarn install
 yarn dev          # http://localhost:5173
 yarn test
 yarn report:optimizer-stats   # aggregate simplify metrics over generator fixtures
-yarn check:phpstan   # generate all success goldens and analyse once (expects phpstan/phpstan.phar)
+yarn check:phpstan   # analyse committed *.golden.php in place (expects phpstan/phpstan.phar)
 yarn build
 yarn lint         # Oxlint
 yarn lint:fix
