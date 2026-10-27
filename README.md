@@ -2,7 +2,7 @@
 
 Parse [PHPDoc types as supported by PHPStan](https://phpstan.org/writing-php-code/phpdoc-types) and generate readable PHP 8+ runtime checkers with `@phpstan-assert-if-true` — code that is meant to pass PHPStan at its strictest settings.
 
-> **Disclaimer:** This project is vibe-coded — built quickly with minimal review. Use it at your own risk; always check any outputted code for correctness yourself.
+> **Disclaimer:** This project makes use of LLMs during development. Use it at your own risk; always check any outputted code for correctness yourself.
 
 ## Try it
 
@@ -134,7 +134,6 @@ Generation runs in four phases, which can be seen in the diagram below:
   They typically correspond to a bunch of `if (!cond) return false` plus a trailing `return true`, or `foreach` for collections.
   Simple predicates are usually boolean expressions; shapes and collections add key/property checks and loops; types that cannot be a single expression become extra helpers.
   Which exact code is generated for which type is described in more detail in the `Generate` section below.
-
 - **Optimize**:
   Rewrites the abstract checker functions in place (helpers first, then callers) until nothing changes: inlines leftovers, boolean algebra, drop dead code, delete unused helpers.
   More details below.
@@ -145,7 +144,8 @@ Generate and Optimize work on abstract checkers (guards, loops, returns) that ar
 Examples below show that abstract form as PHP so it is readable.
 The UI Pipeline tab exposes the same stages as JSON (`Parse`, `Generate`, `Optimize`; `Optimize` is `null` when skipped).
 
-Generated checkers are meant to pass PHPStan at level 10; anything else is considered a bug.
+Generated checkers are meant to pass PHPStan at level 10 on bleeding edge; anything else is considered a bug.
+This is checked for the test case output by CI (see Goldens Section below).
 Some PHPStan types cannot be checked at runtime (see Uncheckable below).
 
 ### Generate
@@ -450,7 +450,8 @@ Namespaces are hashed from the case input and options so they stay unique and st
 How they are used:
 
 - **Vitest** regenerates from the same inputs and asserts the output matches the golden body
-- **`yarn check:phpstan`** runs PHPStan on the committed `.golden.php` files as-is (expects `phpstan/phpstan.phar`)
+- **`yarn check:phpstan`** runs PHPStan on the committed `.golden.php` files as-is (expects a `phpstan/phpstan.phar`).
+  This is run by CI after every commit.
 
 | Stem                     | Focus                                                              |
 | ------------------------ | ------------------------------------------------------------------ |
@@ -467,14 +468,14 @@ How they are used:
 ## Develop locally
 
 ```bash
-corepack enable   # once per machine, if Yarn is not available
+corepack enable             # once per machine, if Yarn is not available
 yarn install
-yarn dev          # http://localhost:5173
+yarn dev                    # http://localhost:5173
 yarn test
-yarn report:optimizer-stats   # aggregate simplify metrics over generator fixtures
-yarn check:phpstan   # analyse committed *.golden.php (CI: phpstan-goldens.yml; needs phpstan/phpstan.phar locally)
+yarn report:optimizer-stats # aggregate simplify metrics over generator fixtures
+yarn check:phpstan          # analyse committed *.golden.php (CI: phpstan-goldens.yml; needs phpstan/phpstan.phar locally)
 yarn build
-yarn lint         # Oxlint
+yarn lint                   # Oxlint
 yarn lint:fix
 yarn spellcheck
 ```
