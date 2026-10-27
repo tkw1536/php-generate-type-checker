@@ -472,7 +472,7 @@ yarn install
 yarn dev          # http://localhost:5173
 yarn test
 yarn report:optimizer-stats   # aggregate simplify metrics over generator fixtures
-yarn check:phpstan   # analyse committed *.golden.php in place (expects phpstan/phpstan.phar)
+yarn check:phpstan   # analyse committed *.golden.php (CI: phpstan-goldens.yml; needs phpstan/phpstan.phar locally)
 yarn build
 yarn lint         # Oxlint
 yarn lint:fix

@@ -1,0 +1,43 @@
+name: PHPStan goldens
+
+on:
+  push:
+  pull_request:
+
+# Bump these to change tool versions for this check.
+env:
+  PHP_VERSION: '8.4'
+  PHPSTAN_VERSION: '2.3.2'
+
+jobs:
+  check-phpstan:
+    name: check:phpstan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+
+      - name: Use latest Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: latest
+
+      - name: Install dependencies
+        run: |
+          corepack enable
+          yarn install --immutable
+
+      - name: Download phpstan.phar
+        run: |
+          curl -fsSL -o phpstan/phpstan.phar \
+            "https://github.com/phpstan/phpstan/releases/download/${PHPSTAN_VERSION}/phpstan.phar"
+          php phpstan/phpstan.phar --version
+
+      - name: Analyse golden PHP
+        run: yarn check:phpstan
