@@ -441,6 +441,7 @@ yarn install
 yarn dev          # http://localhost:5173
 yarn test
 yarn report:optimizer-stats   # aggregate simplify metrics over generator fixtures
+yarn check:phpstan   # generate all success goldens and analyse once (expects phpstan/phpstan.phar)
 yarn build
 yarn lint         # Oxlint
 yarn lint:fix

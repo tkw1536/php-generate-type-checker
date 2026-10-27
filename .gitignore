@@ -11,6 +11,9 @@ node_modules
 # Fixture review (local)
 src/generator/testdata/review-state.json
 
+# Local PHPStan phar for yarn check:phpstan (not committed)
+phpstan/phpstan.phar
+
 # Vite
 dist
 dist-ssr

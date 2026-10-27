@@ -1,0 +1,27 @@
+# Strictest stock PHPStan settings for validating generated checkers.
+# Bleeding-edge is loaded from the phar stream alias (set when that phar runs).
+includes:
+	- phar://phpstan.phar/conf/bleedingEdge.neon
+
+parameters:
+	level: max
+	# Matches the project claim that generated code should survive “strictest” analysis,
+	# including unsafe string-key casting detection (independent of generator CLI flags).
+	reportUnsafeArrayStringKeyCasting: detect
+	ignoreErrors:
+		# Goldens intentionally mention placeholder types (Foo, \Foo\Bar, …) that do not
+		# exist in this isolated analyse run; missing-symbol noise is not a generator bug.
+		-
+			identifier: class.notFound
+		# Same isolation: asserts name those placeholders / aliases, so PHPStan cannot
+		# resolve the asserted type until real stubs or aliases are provided later.
+		-
+			identifier: assert.unresolvableType
+		# Bare `array` / `list` (no value type) are real inputs we generate for; the assert
+		# PHPDoc mirrors that, so missing iterable value types are expected.
+		-
+			identifier: missingType.iterableValue
+		# Asserts like `never` / `noreturn` are intentional goldens; PHPStan flags asserting
+		# an impossible type against `mixed` even though the checker is correct.
+		-
+			identifier: assert.impossibleType
