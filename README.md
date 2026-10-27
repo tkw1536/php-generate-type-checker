@@ -452,6 +452,18 @@ How they are used:
 - **Vitest** regenerates from the same inputs and asserts the output matches the golden body
 - **`yarn check:phpstan`** runs PHPStan on the committed `.golden.php` files as-is (expects `phpstan/phpstan.phar`)
 
+| Stem                     | Focus                                                              |
+| ------------------------ | ------------------------------------------------------------------ |
+| `function`               | Broad type coverage as standalone functions                        |
+| `public_static`          | Same idea as a `public static` method on a class                   |
+| `protected_static`       | `protected static` visibility                                      |
+| `docblock`               | `@phpstan-type` docblocks → helper checkers                        |
+| `docblock_emit_aliases`  | Docblocks with PHPStan type-alias emission enabled                |
+| `multi_comment`          | Multiple PHPDoc comments in one input                              |
+| `verbose_phpdoc`         | Multi-line Drupal-style PHPDoc on checkers                         |
+| `sealed_shapes`          | Sealed array/list shapes (`sealArrayShapes`)                       |
+| `errors`                 | Inputs that must throw at generation time (`errors.json` only)     |
+
 ## Develop locally
 
 ```bash

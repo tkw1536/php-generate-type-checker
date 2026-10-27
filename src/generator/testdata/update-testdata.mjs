@@ -17,7 +17,6 @@ const OUTPUT_MODES = [
   'function',
   'public_static',
   'protected_static',
-  'private_static',
 ];
 
 /**

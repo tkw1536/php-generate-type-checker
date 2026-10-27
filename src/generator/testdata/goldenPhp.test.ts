@@ -82,10 +82,10 @@ describe('formatGoldenPhp header', () => {
   });
 
   it('round-trips an empty suite (header only)', () => {
-    const source = formatGoldenPhp('private_static', []);
+    const source = formatGoldenPhp('empty_suite', []);
     expect(parseGoldenPhp(source)).toEqual([]);
     expect(source).toContain(
-      '// Generator success fixtures for private_static.IN.',
+      '// Generator success fixtures for empty_suite.IN.',
     );
   });
 });

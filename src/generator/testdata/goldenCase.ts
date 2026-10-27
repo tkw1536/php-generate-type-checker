@@ -63,7 +63,6 @@ export const SUCCESS_GOLDEN_STEMS: readonly string[] = [
   'function',
   'public_static',
   'protected_static',
-  'private_static',
   'docblock',
   'docblock_emit_aliases',
   'multi_comment',

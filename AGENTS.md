@@ -75,8 +75,6 @@ declare(strict_types = 1);
 The first comment matches Go’s `^// Code generated .* DO NOT EDIT\.$` so humans and tools treat the file as generated.
 The second line briefly names the suite.
 `declare(strict_types = 1);` is once per file.
-Empty suites (e.g. `private_static.golden.php`) are header-only.
-
 **Case blocks** (parseable subset — tests and PHPStan remapping extract these without running PHP):
 
 ```php

@@ -4,3 +4,16 @@
 // Generator success fixtures for protected_static.IN.
 
 declare(strict_types = 1);
+
+// @gtc-golden-begin {"input":"int","output":"protected_static"}
+namespace Golden\hf4e3838eefd4 {
+class TypeChecker
+{
+    /** @phpstan-assert-if-true int $value */
+    protected static function isInt(mixed $value): bool
+    {
+        return is_int($value);
+    }
+}
+}
+// @gtc-golden-end
