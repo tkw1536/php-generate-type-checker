@@ -1691,10 +1691,26 @@ function isListIntString(mixed $value): bool
     return (
         is_array($value) &&
         array_is_list($value) &&
-        array_key_exists(0, $value) &&
         array_key_exists(1, $value) &&
         is_int($value[0]) &&
         is_string($value[1])
+    );
+}
+}
+// @gtc-golden-end
+
+// @gtc-golden-begin {"input":"list{string, string, string}","output":"function"}
+namespace Golden\h08b175f4a0cf {
+/** @phpstan-assert-if-true list{string, string, string} $value */
+function isListStringStringString(mixed $value): bool
+{
+    return (
+        is_array($value) &&
+        array_is_list($value) &&
+        array_key_exists(2, $value) &&
+        is_string($value[0]) &&
+        is_string($value[1]) &&
+        is_string($value[2])
     );
 }
 }
@@ -1727,7 +1743,6 @@ function isListIntString(mixed $value): bool
     return (
         is_array($value) &&
         array_is_list($value) &&
-        array_key_exists(0, $value) &&
         array_key_exists(1, $value) &&
         is_int($value[0]) &&
         is_string($value[1])
@@ -1776,6 +1791,23 @@ function isNonEmptyListIntString(mixed $value): bool
         array_key_exists(1, $value) &&
         is_int($value[0]) &&
         is_string($value[1])
+    );
+}
+}
+// @gtc-golden-end
+
+// @gtc-golden-begin {"input":"non-empty-list{string, string, string}","output":"function"}
+namespace Golden\h8b3f9542ea7a {
+/** @phpstan-assert-if-true non-empty-list{string, string, string} $value */
+function isNonEmptyListStringStringString(mixed $value): bool
+{
+    return (
+        is_array($value) &&
+        array_is_list($value) &&
+        array_key_exists(2, $value) &&
+        is_string($value[0]) &&
+        is_string($value[1]) &&
+        is_string($value[2])
     );
 }
 }

@@ -29,12 +29,14 @@ const keyFoo = callExpr('array_key_exists', [
 
 describe('normalizeListCountKeyExists', () => {
   it('rewrites in-range key_exists to TRUE under list + count', () => {
+    // Keys normalize to TRUE under list+count; AND cover then drops the
+    // redundant TRUE conjuncts (TRUE ∧ … ≡ …).
     expect(
       substituteFacts(
         andExpr([isList, countTwo, key0, key1]),
         emptyFactEnv(),
       ).expr,
-    ).toEqual(andExpr([isList, countTwo, boolLit(true), boolLit(true)]));
+    ).toEqual(andExpr([isList, countTwo]));
   });
 
   it('leaves out-of-range key_exists unchanged', () => {
@@ -77,5 +79,20 @@ describe('normalizeListNonEmptyKey0', () => {
     expect(
       substituteFacts(andExpr([isList, key0]), emptyFactEnv()).expr,
     ).toEqual(andExpr([isList, key0]));
+  });
+});
+
+describe('list higher key_exists absorb', () => {
+  it('drops lower key_exists under list + higher key', () => {
+    expect(
+      substituteFacts(andExpr([isList, key0, key1, key2]), emptyFactEnv())
+        .expr,
+    ).toEqual(andExpr([isList, key2]));
+  });
+
+  it('leaves keys unchanged without array_is_list', () => {
+    expect(
+      substituteFacts(andExpr([key0, key1, key2]), emptyFactEnv()).expr,
+    ).toEqual(andExpr([key0, key1, key2]));
   });
 });

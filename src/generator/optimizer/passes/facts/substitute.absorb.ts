@@ -2,6 +2,7 @@ import type { Expr } from '../../../ir/types.ts';
 import { andExpr, orExpr } from '../../../ir/index.ts';
 import { equals } from '../../../ir/equals.ts';
 import type { OptimizeContext } from '../../context.ts';
+import { implyProof } from '../../lib/implyProof.ts';
 import type { AbsorbDropProof } from '../../proof/types.ts';
 import { absorbDropToChildren } from '../../proof/toTrace.ts';
 import { commitReason } from '../../trace/commit.ts';
@@ -56,6 +57,24 @@ function shouldDropOperand(
   return { from: other, to: candidate, how };
 }
 
+/** AND: drop B when (∧ others) ⇒ B, e.g. key_exists(k) under list ∧ key_exists(N). */
+function andCoverAbsorbDrop(
+  candidate: Expr,
+  exprs: readonly Expr[],
+  index: number,
+): AbsorbDropProof | null {
+  if (exprs.length < 3) {
+    return null;
+  }
+  const others = exprs.filter((_, j) => j !== index);
+  const cover = andExpr(others);
+  const imply = implyProof(cover, candidate);
+  if (imply === null) {
+    return null;
+  }
+  return { from: cover, to: candidate, how: { kind: 'structural', imply } };
+}
+
 export function absorbOperandsModuloFacts(
   exprs: readonly Expr[],
   mode: 'and' | 'or',
@@ -77,6 +96,9 @@ export function absorbOperandsModuloFacts(
       if (drop !== null) {
         break;
       }
+    }
+    if (drop === null && mode === 'and') {
+      drop = andCoverAbsorbDrop(candidate, exprs, i);
     }
     if (drop === null) {
       kept.push(candidate);

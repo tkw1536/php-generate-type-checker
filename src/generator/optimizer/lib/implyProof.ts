@@ -1,5 +1,5 @@
 import type { Arg, Expr } from '../../ir/types.ts';
-import { callExpr, orExpr } from '../../ir/index.ts';
+import { andExpr, callExpr, orExpr } from '../../ir/index.ts';
 import { equals } from '../../ir/equals.ts';
 import type {
   AbsorbDropProof,
@@ -86,6 +86,11 @@ export function implyProof(a: Expr, b: Expr): ImplyProof | null {
       if (via !== null) {
         return { kind: 'andConjunct', conjunct: c, via };
       }
+    }
+    // e.g. list ∧ key_exists(N) ⇒ key_exists(k) for k < N.
+    const andCover = arrayEmptyImplyProof(a, b);
+    if (andCover !== null) {
+      return andCover;
     }
   }
   if (b.kind === 'or') {
@@ -178,6 +183,24 @@ function orCoverAbsorbDrop(
   return { from: candidate, to: cover, how: { kind: 'structural', imply } };
 }
 
+/** AND: drop B when (∧ others) ⇒ B, e.g. key_exists(k) under list ∧ key_exists(N). */
+function andCoverAbsorbDrop(
+  candidate: Expr,
+  exprs: readonly Expr[],
+  index: number,
+): AbsorbDropProof | null {
+  if (exprs.length < 3) {
+    return null;
+  }
+  const others = exprs.filter((_, j) => j !== index);
+  const cover = andExpr(others);
+  const imply = implyProof(cover, candidate);
+  if (imply === null) {
+    return null;
+  }
+  return { from: cover, to: candidate, how: { kind: 'structural', imply } };
+}
+
 /**
  * Drop operands made redundant by implication, with proofs for each drop.
  * - OR: drop stronger A when weaker B is present (A ⇒ B)
@@ -206,6 +229,9 @@ export function absorbImpliedOperandsProof(
     }
     if (drop === null && mode === 'or') {
       drop = orCoverAbsorbDrop(candidate, exprs, i);
+    }
+    if (drop === null && mode === 'and') {
+      drop = andCoverAbsorbDrop(candidate, exprs, i);
     }
     if (drop === null) {
       kept.push(candidate);

@@ -430,6 +430,7 @@ The simplify phase simplifies boolean expressions.
 | `count($x) === N && $x !== []` (N≥1)               | `count($x) === N`                                                                  |
 | `array_is_list($x) && count===N && key_exists(k)`  | drop `key_exists` when `0 ≤ k < N` (list of length N has keys `0..N-1`)         |
 | `array_is_list($x) && $x !== [] && key_exists(0)`  | drop `key_exists(0)` (a non-empty list always has key `0`; same for `!key_exists(0)` in OR failure guards with `!list` / `=== []`) |
+| `array_is_list($x) && key_exists(N) && key_exists(k)` | drop `key_exists(k)` when `0 ≤ k < N` (a list with key N has keys `0..N`)     |
 | `!($x !== [])`                                     | `$x === []`                                                                        |
 | `!($x > 0)`                                        | `$x <= 0`                                                                          |
 

@@ -259,7 +259,6 @@ function isListIntString(mixed $value): bool
     return (
         is_array($value) &&
         array_is_list($value) &&
-        array_key_exists(0, $value) &&
         array_key_exists(1, $value) &&
         is_int($value[0]) &&
         is_string($value[1])

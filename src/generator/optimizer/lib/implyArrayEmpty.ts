@@ -134,6 +134,66 @@ function isEmptyArrayCmp(expr: Expr, subject: Arg): boolean {
   );
 }
 
+/** Match `array_key_exists(K, $x)` with non-neg int literal key K. */
+function matchArrayKeyExistsInt(
+  expr: Expr,
+): { readonly key: number; readonly subject: Arg } | null {
+  if (
+    expr.kind !== 'call' ||
+    expr.name !== 'array_key_exists' ||
+    expr.args.length !== 2
+  ) {
+    return null;
+  }
+  const key = nonNegIntLiteral(expr.args[0]);
+  const subject = expr.args[1];
+  if (key === null || subject === undefined) {
+    return null;
+  }
+  return { key, subject };
+}
+
+function sameSubject(a: Arg, b: Arg): boolean {
+  return equals(callExpr('count', [a]), callExpr('count', [b]));
+}
+
+/**
+ * `array_is_list($x) ∧ array_key_exists(N, $x)` (among AND conjuncts) ⇒
+ * `array_key_exists(k, $x)` when `0 ≤ k < N`.
+ */
+function listHigherKeyImpliesLower(a: Expr, b: Expr): boolean {
+  if (a.kind !== 'and') {
+    return false;
+  }
+  const lower = matchArrayKeyExistsInt(b);
+  if (lower === null) {
+    return false;
+  }
+  let hasList = false;
+  let hasHigher = false;
+  for (const c of a.exprs) {
+    if (
+      c.kind === 'call' &&
+      c.name === 'array_is_list' &&
+      c.args.length === 1
+    ) {
+      const listSubject = c.args[0];
+      if (listSubject !== undefined && sameSubject(listSubject, lower.subject)) {
+        hasList = true;
+      }
+    }
+    const higher = matchArrayKeyExistsInt(c);
+    if (
+      higher !== null &&
+      sameSubject(higher.subject, lower.subject) &&
+      higher.key > lower.key
+    ) {
+      hasHigher = true;
+    }
+  }
+  return hasList && hasHigher;
+}
+
 /**
  * `!array_key_exists(0, $x)` ⇒ OR that includes `!array_is_list($x)` and
  * `$x === []` (contrapositive of non-empty list ⇒ key 0).
@@ -183,6 +243,9 @@ export function arrayEmptyImplyProof(
   }
   if (notKey0ImpliesNotListOrEmpty(a, b)) {
     return { kind: 'notKey0NotListOrEmpty' };
+  }
+  if (listHigherKeyImpliesLower(a, b)) {
+    return { kind: 'listHigherKeyExists' };
   }
   return null;
 }

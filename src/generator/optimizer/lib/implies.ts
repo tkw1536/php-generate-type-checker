@@ -69,6 +69,7 @@ function implyUsesExclusive(p: ImplyProof): boolean {
     case 'arrayKeyExistsCountNonZero':
     case 'countPositiveNonEmpty':
     case 'notKey0NotListOrEmpty':
+    case 'listHigherKeyExists':
       return false;
     default:
       throw new Error('never reached');

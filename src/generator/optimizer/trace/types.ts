@@ -46,6 +46,7 @@ export type OptimizeTraceRuleId =
   | 'facts.imply.arrayKeyExistsCountNonZero'
   | 'facts.imply.countPositiveNonEmpty'
   | 'facts.imply.notKey0NotListOrEmpty'
+  | 'facts.imply.listHigherKeyExists'
   | 'facts.imply.equalityType'
   | 'facts.imply.andConjunct'
   | 'facts.imply.orDisjunct'

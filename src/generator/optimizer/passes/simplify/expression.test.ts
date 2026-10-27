@@ -82,6 +82,19 @@ const SIMPLIFY_CASES = [
     ]),
   ],
   [
+    'AND absorb lower key_exists under list and higher key',
+    andExpr([
+      callExpr('array_is_list', [refArg($v)]),
+      callExpr('array_key_exists', [literalArg('0'), refArg($v)]),
+      callExpr('array_key_exists', [literalArg('1'), refArg($v)]),
+      callExpr('array_key_exists', [literalArg('2'), refArg($v)]),
+    ]),
+    andExpr([
+      callExpr('array_is_list', [refArg($v)]),
+      callExpr('array_key_exists', [literalArg('2'), refArg($v)]),
+    ]),
+  ],
+  [
     'contradiction exclusive is_int and is_string',
     andExpr([isInt, isString]),
     boolLit(false),

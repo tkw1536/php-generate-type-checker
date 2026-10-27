@@ -130,6 +130,10 @@ const RULES: Record<OptimizeTraceRuleId, OptimizeTraceRuleInfo> = {
     title: 'Implication not key0 covers not-list or empty',
     help: '!array_key_exists(0, $x) ⇒ !array_is_list($x) ∨ $x === []. Contrapositive of: a non-empty list always has key 0. Used to absorb redundant !key_exists(0) in OR failure guards.',
   },
+  'facts.imply.listHigherKeyExists': {
+    title: 'Implication list higher key exists',
+    help: 'array_is_list($x) ∧ array_key_exists(N, $x) ⇒ array_key_exists(k, $x) for 0 ≤ k < N. Sound because a PHP list with key N has contiguous keys 0..N. Used to absorb redundant lower key_exists checks in AND.',
+  },
   'facts.imply.equalityType': {
     title: 'Implication equality type',
     help: 'Typed literal equality implies an is_* check (then further implications).',

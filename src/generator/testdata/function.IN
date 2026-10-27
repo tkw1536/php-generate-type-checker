@@ -156,10 +156,12 @@ list{}
 list{...}
 list{int}
 list{int, string}
+list{string, string, string}
 list{0: int, 1?: string}
 list{int, string, ...}
 list{int, string, ...<bool>}
 non-empty-list{int, string}
+non-empty-list{string, string, string}
 non-empty-list{int, string, ...<bool>}
 
 # --- Object and List shapes --

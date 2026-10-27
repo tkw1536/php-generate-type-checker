@@ -21,6 +21,12 @@ export type ImplyProof =
    * that includes both disjuncts.
    */
   | { readonly kind: 'notKey0NotListOrEmpty' }
+  /**
+   * `array_is_list($x) ∧ array_key_exists(N, $x)` ⇒ `array_key_exists(k, $x)`
+   * for `0 ≤ k < N` (int literals). Premise `a` is an AND that includes both
+   * conjuncts (and possibly others).
+   */
+  | { readonly kind: 'listHigherKeyExists' }
   | { readonly kind: 'equalityType'; readonly via: ImplyProof }
   | {
       readonly kind: 'andConjunct';

@@ -128,6 +128,42 @@ describe('implies array_key_exists / positive count', () => {
   });
 });
 
+describe('implies list higher key_exists', () => {
+  const isList = callExpr('array_is_list', [refArg($v)]);
+  const key0 = callExpr('array_key_exists', [literalArg('0'), refArg($v)]);
+  const key1 = callExpr('array_key_exists', [literalArg('1'), refArg($v)]);
+  const key2 = callExpr('array_key_exists', [literalArg('2'), refArg($v)]);
+
+  it('list ∧ key_exists(N) implies key_exists(k) for k < N', () => {
+    expect(implies(andExpr([isList, key2]), key0)).toBe(true);
+    expect(implies(andExpr([isList, key2]), key1)).toBe(true);
+    expect(implies(andExpr([isList, key1]), key0)).toBe(true);
+    expect(implies(andExpr([isList, key1]), key2)).toBe(false);
+    // andConjunct + refl: key2 among premises implies key2.
+    expect(implies(andExpr([isList, key2]), key2)).toBe(true);
+  });
+
+  it('key_exists(N) alone does not imply lower key without list', () => {
+    expect(implies(key2, key1)).toBe(false);
+    expect(implies(andExpr([key2, key1]), key0)).toBe(false);
+  });
+
+  it('AND absorb keeps only max key under list', () => {
+    expect(absorbImpliedOperands([isList, key0, key1, key2], 'and')).toEqual([
+      isList,
+      key2,
+    ]);
+  });
+
+  it('AND absorb leaves keys unchanged without list', () => {
+    expect(absorbImpliedOperands([key0, key1, key2], 'and')).toEqual([
+      key0,
+      key1,
+      key2,
+    ]);
+  });
+});
+
 describe('entails', () => {
   it('is_int ∨ is_string entails not is_resource', () => {
     const isResource = callExpr('is_resource', [refArg($v)]);
