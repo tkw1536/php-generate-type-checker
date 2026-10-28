@@ -1,5 +1,4 @@
 import type { Expr } from '../../../ir/types.ts';
-import { canonicalizeFactExpr } from './canon.ts';
 
 export type FactOriginId = 'ifTrue' | 'ifFalse' | 'arrayKey';
 
@@ -84,31 +83,6 @@ export function toEnvFact(entry: FactEntry, known: 'true' | 'false'): EnvFact {
     origin: entry.origin,
     how: entry.how,
   };
-}
-
-/** Build a fact entry for tests / manual env seeding. */
-export function factEntry(
-  expr: Expr,
-  origin: FactOriginId,
-  reason: FactReasonId = 'assumed',
-): FactEntry {
-  const canon = canonicalizeFactExpr(expr);
-  const how: EnvHow =
-    reason === 'assumed'
-      ? { kind: 'assumed', origin }
-      : {
-          kind: 'derive',
-          rule: reason,
-          premises: [
-            {
-              expr: canon,
-              known: 'true',
-              origin,
-              how: { kind: 'assumed', origin },
-            },
-          ],
-        };
-  return { expr: canon, origin, reason, how };
 }
 
 /** Prefer an origin already present in the env; default to ifTrue. */

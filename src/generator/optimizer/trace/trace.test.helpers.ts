@@ -1,9 +1,5 @@
 import { renderTraceSnapshot } from './render.ts';
-import type {
-  TraceReasoning,
-  TraceStep,
-  TraceStepReason,
-} from './types.ts';
+import type { TraceReasoning, TraceStep } from './types.ts';
 
 function nestedRulesFromReason(
   reason: TraceReasoning,
@@ -25,19 +21,6 @@ function nestedRulesFromReason(
   return out;
 }
 
-export function nestedStepsFromSteps(
-  steps: readonly TraceStep[],
-): readonly { readonly rule: string }[] {
-  return steps.flatMap((step) => nestedRulesFromReason(step.reason));
-}
-
-export function nestedStepsUnderRule(
-  steps: readonly TraceStep[],
-  parentRulePrefix: string,
-): readonly { readonly rule: string }[] {
-  return steps.flatMap((step) => walkUnder(step.reason, parentRulePrefix));
-}
-
 function walkUnder(
   reason: TraceReasoning,
   parentRulePrefix: string,
@@ -55,6 +38,13 @@ function walkUnder(
     ...self,
     ...reason.children.flatMap((child) => walkUnder(child, parentRulePrefix)),
   ];
+}
+
+export function nestedStepsUnderRule(
+  steps: readonly TraceStep[],
+  parentRulePrefix: string,
+): readonly { readonly rule: string }[] {
+  return steps.flatMap((step) => walkUnder(step.reason, parentRulePrefix));
 }
 
 export function allNestedStepsAreNormalize(
@@ -167,7 +157,6 @@ export function hasInstanceofObjectImplication(
   return false;
 }
 
-/** Prove steps whose nested proof uses exclusivity implication. */
 export function exclusiveViaUses(
   steps: readonly TraceStep[],
 ): readonly {
@@ -195,50 +184,4 @@ export function allExclusiveViaUsesAreArrayKeyAssumed(
   uses: readonly { readonly origin: string; readonly reason: string }[],
 ): boolean {
   return uses.every((f) => f.origin === 'arrayKey' && f.reason === 'assumed');
-}
-
-export function stepRule(step: TraceStep): string {
-  return step.reason.rule;
-}
-
-export function asStepReason(step: TraceStep): TraceStepReason {
-  return step.reason;
-}
-
-/** Legacy helpers kept for older tests that scanned evidence.used. */
-export function factUsedCount(_evidence: unknown): number {
-  return 0;
-}
-
-export function factKnownLabels(_evidence: unknown): readonly string[] {
-  return [];
-}
-
-export function factUsesFromSteps(
-  steps: readonly TraceStep[],
-): readonly { readonly origin: string; readonly reason: string }[] {
-  const uses: { readonly origin: string; readonly reason: string }[] = [];
-  for (const step of steps) {
-    const rule = step.reason.rule;
-    if (
-      (rule === 'facts.proveTrue' ||
-        rule === 'facts.proveFalse' ||
-        rule === 'facts.env.extend') &&
-      bottomsOutAtAssumed(step.reason)
-    ) {
-      uses.push({ origin: 'path', reason: 'assumed' });
-    }
-  }
-  return uses;
-}
-
-export function allFactUsesHaveSources(
-  uses: readonly { readonly origin: string; readonly reason: string }[],
-): boolean {
-  for (const f of uses) {
-    if (f.origin.length === 0 || f.reason.length === 0) {
-      return false;
-    }
-  }
-  return true;
 }

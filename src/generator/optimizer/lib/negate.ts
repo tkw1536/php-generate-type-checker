@@ -17,11 +17,6 @@ export function negateBlockTraced(block: Block): NegateBlockResult {
   };
 }
 
-/** Value-only negate (tests / callers that ignore proof). */
-export function negateBlock(block: Block): Block {
-  return negateBlockTraced(block).block;
-}
-
 function negateStmtTraced(stmt: Stmt): {
   readonly stmt: Stmt;
   readonly children: readonly TraceStepReason[];

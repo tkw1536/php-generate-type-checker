@@ -158,11 +158,6 @@ export function saturate(
   );
 }
 
-export function saturationHas(sat: Saturation, expr: Expr): boolean {
-  const canon = canonicalizeFactExpr(expr);
-  return sat.facts.some((f) => equals(f.expr, canon));
-}
-
 export function saturationLookup(
   sat: Saturation,
   expr: Expr,

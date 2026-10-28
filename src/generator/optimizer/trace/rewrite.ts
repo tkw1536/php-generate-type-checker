@@ -1,7 +1,6 @@
 import type { Block, Expr } from '../../ir/types.ts';
 import { equals } from '../../ir/equals.ts';
 import type {
-  BlockRewrite,
   ExprRewrite,
   OptimizeTraceRuleId,
   OptimizeTraceSnapshot,
@@ -12,10 +11,6 @@ import type {
 
 export function unchangedExpr(expr: Expr): ExprRewrite {
   return { expr, reason: { kind: 'none' } };
-}
-
-export function unchangedBlock(block: Block): BlockRewrite {
-  return { block, reason: { kind: 'none' } };
 }
 
 export function exprFocus(
@@ -89,19 +84,6 @@ export function exprRewrite(
   return {
     expr: after,
     reason: exprStep(rule, before, after, children, evidence),
-  };
-}
-
-export function blockRewrite(
-  rule: OptimizeTraceRuleId,
-  before: Block,
-  after: Block,
-  children: readonly TraceReasoning[] = [],
-  evidence?: TraceEvidence,
-): BlockRewrite {
-  return {
-    block: after,
-    reason: blockStep(rule, before, after, children, evidence),
   };
 }
 

@@ -9,7 +9,7 @@ import {
 } from '../../ir/index.ts';
 import { parameterRef } from '../../ir/index.ts';
 import { equals } from '../../ir/equals.ts';
-import { saturate, saturationHas } from './saturate.ts';
+import { saturate, saturationLookup } from './saturate.ts';
 
 const $v = parameterRef();
 const x = refArg($v);
@@ -19,8 +19,10 @@ describe('theory saturate', () => {
     const sat = saturate([
       { kind: 'instanceof', subject: x, className: 'Foo' },
     ]);
-    expect(saturationHas(sat, callExpr('is_object', [x]))).toBe(true);
-    expect(saturationHas(sat, notExpr(callExpr('is_array', [x])))).toBe(true);
+    expect(saturationLookup(sat, callExpr('is_object', [x]))).toBeDefined();
+    expect(
+      saturationLookup(sat, notExpr(callExpr('is_array', [x]))),
+    ).toBeDefined();
   });
 
   it('derives lower keys from list ∧ key_exists(N)', () => {
@@ -31,11 +33,11 @@ describe('theory saturate', () => {
       ]),
     ]);
     expect(
-      saturationHas(sat, callExpr('array_key_exists', [literalArg('0'), x])),
-    ).toBe(true);
+      saturationLookup(sat, callExpr('array_key_exists', [literalArg('0'), x])),
+    ).toBeDefined();
     expect(
-      saturationHas(sat, callExpr('array_key_exists', [literalArg('1'), x])),
-    ).toBe(true);
+      saturationLookup(sat, callExpr('array_key_exists', [literalArg('1'), x])),
+    ).toBeDefined();
   });
 
   it('derives ¬list ∨ empty from ¬key_exists(0)', () => {

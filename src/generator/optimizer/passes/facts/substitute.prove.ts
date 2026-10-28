@@ -152,23 +152,6 @@ export function proveFalseProof(
   ]);
 }
 
-/** Legacy list shape for tests that still inspect uses — prefer prove*Proof. */
-export function factsProvingTrue(
-  expr: Expr,
-  env: FactEnv,
-): ProveProof[] {
-  const p = proveTrueProof(expr, env);
-  return p === null ? [] : [p];
-}
-
-export function factsProvingFalse(
-  expr: Expr,
-  env: FactEnv,
-): ProveProof[] {
-  const p = proveFalseProof(expr, env);
-  return p === null ? [] : [p];
-}
-
 /**
  * `a ⇒ b` structurally, or because `¬a ∨ b` is known true in `env`.
  * Returns a ProveProof when modulo facts, or uses implyProof for structural.
@@ -190,8 +173,4 @@ export function impliesModuloFactsProof(
     return { kind: 'moduloFacts', prove };
   }
   return null;
-}
-
-export function impliesModuloFacts(a: Expr, b: Expr, env: FactEnv): boolean {
-  return impliesModuloFactsProof(a, b, env) !== null;
 }

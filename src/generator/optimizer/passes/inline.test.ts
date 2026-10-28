@@ -24,7 +24,7 @@ import {
   ir,
   isNotGuardIf,
 } from '../../../../test-utils/inlineTestHelpers.ts';
-import { negateBlock } from '../lib/negate.ts';
+import { negateBlockTraced } from '../lib/negate.ts';
 import { prunePrograms } from './prune.ts';
 
 const $v = parameterRef();
@@ -219,7 +219,7 @@ function invertsFailIfAndTrailingReturn(): void {
     },
     returnStmt(boolLit(true)),
   ];
-  expect(negateBlock(block)).toEqual([
+  expect(negateBlockTraced(block).block).toEqual([
     {
       kind: 'if',
       cond: notExpr(callExpr('is_int', [refArg($v)])),
@@ -271,7 +271,7 @@ describe('inlineBlock', () => {
   it('peels or before inlining', peelsOrBeforeInlining);
 });
 
-describe('negateBlock', () => {
+describe('negateBlockTraced', () => {
   it('inverts fail-if and trailing return', invertsFailIfAndTrailingReturn);
 });
 

@@ -14,7 +14,7 @@ import {
   isProveFactsRule,
   nestedStepsUnderRule,
   stepExplainsFactsRule,
-} from './traceFactsHelpers.ts';
+} from './trace.test.helpers.ts';
 
 const FACT_RULES = new Set([
   'facts.proveTrue',

@@ -67,32 +67,19 @@ const REASON_INFO: Record<FactReasonId, FactSourceInfo> = {
 export function factSourceShort(
   origin: FactOriginId,
   reason: FactReasonId,
-  via?: readonly FactReasonId[],
 ): string {
-  const base =
-    reason === 'assumed'
-      ? ORIGIN_INFO[origin].short
-      : REASON_INFO[reason].short;
-  if (via === undefined || via.length === 0) {
-    return base;
-  }
-  return `${base} · ${via.map((r) => REASON_INFO[r].short).join(', ')}`;
+  return reason === 'assumed'
+    ? ORIGIN_INFO[origin].short
+    : REASON_INFO[reason].short;
 }
 
 /** Longer (?) help combining path origin and implication reason. */
 export function factSourceHelp(
   origin: FactOriginId,
   reason: FactReasonId,
-  via?: readonly FactReasonId[],
 ): string {
   const originHelp = ORIGIN_INFO[origin].help;
-  const base =
-    reason === 'assumed'
-      ? originHelp
-      : `${REASON_INFO[reason].help} (on the “${ORIGIN_INFO[origin].short}” path: ${originHelp})`;
-  if (via === undefined || via.length === 0) {
-    return base;
-  }
-  const viaHelp = via.map((r) => REASON_INFO[r].help).join(' ');
-  return `${base} Prove-time entailment also used: ${viaHelp}`;
+  return reason === 'assumed'
+    ? originHelp
+    : `${REASON_INFO[reason].help} (on the “${ORIGIN_INFO[origin].short}” path: ${originHelp})`;
 }

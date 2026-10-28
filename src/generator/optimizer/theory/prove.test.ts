@@ -12,13 +12,10 @@ import {
   parameterRef,
 } from '../../ir/index.ts';
 import { DECIMAL_INT_STRING_PATTERN } from '../../decimalIntString.ts';
-import {
-  absorbImpliedOperands,
-  entails,
-  entailsUsesExclusive,
-  implies,
-} from './implies.ts';
+import type { Expr } from '../../ir/types.ts';
 import { canonicalizeFactExpr } from '../passes/facts/canon.ts';
+import { absorbImpliedOperandsProof } from './absorb.ts';
+import { entailProof, implyProof } from './prove.ts';
 
 const $v = parameterRef();
 const isA = callExpr('is_a', [
@@ -31,6 +28,21 @@ const isInstance = instanceofExpr(refArg($v), 'Foo');
 const isObject = callExpr('is_object', [refArg($v)]);
 const isInt = callExpr('is_int', [refArg($v)]);
 const isString = callExpr('is_string', [refArg($v)]);
+
+function implies(a: Expr, b: Expr): boolean {
+  return implyProof(a, b) !== null;
+}
+
+function entails(premise: Expr, conclusion: Expr): boolean {
+  return entailProof(premise, conclusion) !== null;
+}
+
+function absorbImpliedOperands(
+  exprs: readonly Expr[],
+  mode: 'and' | 'or',
+): Expr[] {
+  return absorbImpliedOperandsProof(exprs, mode).exprs;
+}
 
 describe('implies tags', () => {
   it('is_a / instanceof / exclusivity', () => {
@@ -196,23 +208,6 @@ describe('entails', () => {
         canonicalizeFactExpr(notDecimal),
       ),
     ).toBe(true);
-  });
-});
-
-describe('entailsUsesExclusive', () => {
-  it('is_int ∨ is_string entails ¬is_array via exclusivity', () => {
-    const isArray = callExpr('is_array', [refArg($v)]);
-    expect(
-      entailsUsesExclusive(orExpr([isInt, isString]), notExpr(isArray)),
-    ).toBe(true);
-  });
-
-  it('is_int entails is_int without exclusivity', () => {
-    expect(entailsUsesExclusive(isInt, isInt)).toBe(false);
-  });
-
-  it('is_a entails class_exists without exclusivity', () => {
-    expect(entailsUsesExclusive(isA, classExists)).toBe(false);
   });
 });
 

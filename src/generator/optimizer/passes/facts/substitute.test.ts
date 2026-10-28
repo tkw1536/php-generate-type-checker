@@ -14,16 +14,28 @@ import {
   returnStmt,
   parameterRef,
 } from '../../../ir/index.ts';
-import type { Block, Stmt } from '../../../ir/types.ts';
+import type { Block, Expr, Stmt } from '../../../ir/types.ts';
 import {
   applyKnownFacts,
   blockAlwaysExitsWhenEntered,
 } from './apply.ts';
-import { emptyFactEnv, factEntry } from './env.types.ts';
+import type { FactEntry, FactOriginId } from './env.types.ts';
+import { emptyFactEnv } from './env.types.ts';
+import { canonicalizeFactExpr } from './canon.ts';
 import { substituteFacts } from './substitute.ts';
 
 const $v = parameterRef();
 const isArray = callExpr('is_array', [refArg($v)]);
+
+function assumedFact(expr: Expr, origin: FactOriginId): FactEntry {
+  const canon = canonicalizeFactExpr(expr);
+  return {
+    expr: canon,
+    origin,
+    reason: 'assumed',
+    how: { kind: 'assumed', origin },
+  };
+}
 
 function expectIf(stmt: Stmt | undefined): Extract<Stmt, { kind: 'if' }> {
   expect(stmt?.kind).toBe('if');
@@ -44,7 +56,7 @@ function expectReturn(stmt: Stmt | undefined): Extract<Stmt, { kind: 'return' }>
 function replacesExprKnownFalse(): void {
   const env = {
     ...emptyFactEnv(),
-    falseFacts: [factEntry(isArray, 'ifFalse')],
+    falseFacts: [assumedFact(isArray, 'ifFalse')],
   };
   expect(substituteFacts(isArray, env).expr).toEqual(boolLit(false));
 }
@@ -140,7 +152,7 @@ const eqEmpty = binExpr('===', refArg($v), literalArg('[]'));
 function countZeroBecomesEmptyUnderIsArrayFact(): void {
   const env = {
     ...emptyFactEnv(),
-    trueFacts: [factEntry(isArray, 'ifTrue')],
+    trueFacts: [assumedFact(isArray, 'ifTrue')],
   };
   expect(substituteFacts(countZero, env).expr).toEqual(eqEmpty);
 }

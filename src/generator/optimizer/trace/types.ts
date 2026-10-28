@@ -82,26 +82,10 @@ export type OptimizeTraceFactUse = {
   readonly origin: FactOriginId;
   /** How the fact entered the env (assumed, exclusive derivation, …). */
   readonly reason: FactReasonId;
-  /**
-   * Extra prove-time steps connecting this env fact to the folded expr
-   * (e.g. `exclusive` when an OR of tags entails `¬is_array` via exclusivity).
-   */
-  readonly via?: readonly FactReasonId[];
-};
-
-/** Operand implication that justifies dropping one arm of a junction. */
-export type OptimizeTraceImplication = {
-  readonly from: Expr;
-  readonly to: Expr;
 };
 
 export type TraceEvidence =
   | { readonly kind: 'facts'; readonly used: readonly OptimizeTraceFactUse[] }
-  | {
-      readonly kind: 'absorb';
-      readonly implications: readonly OptimizeTraceImplication[];
-      readonly used: readonly OptimizeTraceFactUse[];
-    }
   | { readonly kind: 'inline'; readonly callee: string }
   | { readonly kind: 'prune'; readonly removed: string };
 
@@ -158,11 +142,5 @@ export type TraceStep = {
 /** Expr rewrite: always value + reason (never a bare Expr from a rewriter). */
 export type ExprRewrite = {
   readonly expr: Expr;
-  readonly reason: TraceReasoning;
-};
-
-/** Block rewrite: always value + reason. */
-export type BlockRewrite = {
-  readonly block: Block;
   readonly reason: TraceReasoning;
 };

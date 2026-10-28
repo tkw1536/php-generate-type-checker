@@ -1,6 +1,5 @@
 import type { Block, CheckerIR, Expr } from '../../ir/types.ts';
 import { blockEquals } from '../../ir/equals.ts';
-import { returnStmt } from '../../ir/index.ts';
 import type { OptimizeContext } from '../context.ts';
 import {
   applyBlockRewrite,
@@ -197,10 +196,4 @@ export function syncScopeInChecker(
     checker: applyBlockRewrite(pos.checker, oldScope, newScope),
     scope: newScope,
   };
-}
-
-/** Synthetic pos for unit tests that rewrite a lone expression. */
-export function exprTestPos(expr: Expr): TracePos {
-  const block = [returnStmt(expr)];
-  return { checker: block, scope: block };
 }

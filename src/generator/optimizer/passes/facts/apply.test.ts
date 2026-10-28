@@ -11,12 +11,14 @@ import {
   returnStmt,
   parameterRef,
 } from '../../../ir/index.ts';
-import type { Block, Stmt } from '../../../ir/types.ts';
+import type { Block, Expr, Stmt } from '../../../ir/types.ts';
 import { simplifyExpression } from '../simplify/expression.ts';
 import { createOptimizerParams } from '../../params.ts';
 import { applyKnownFacts } from './apply.ts';
 import { equals } from '../../../ir/equals.ts';
-import { emptyFactEnv, factEntry } from './env.types.ts';
+import type { FactEntry, FactOriginId } from './env.types.ts';
+import { emptyFactEnv } from './env.types.ts';
+import { canonicalizeFactExpr } from './canon.ts';
 
 const defaultParams = createOptimizerParams({
   programs: {},
@@ -26,6 +28,16 @@ const defaultParams = createOptimizerParams({
 
 const $v = parameterRef();
 const isArray = callExpr('is_array', [refArg($v)]);
+
+function assumedFact(expr: Expr, origin: FactOriginId): FactEntry {
+  const canon = canonicalizeFactExpr(expr);
+  return {
+    expr: canon,
+    origin,
+    reason: 'assumed',
+    how: { kind: 'assumed', origin },
+  };
+}
 
 function expectIf(stmt: Stmt | undefined): Extract<Stmt, { kind: 'if' }> {
   expect(stmt?.kind).toBe('if');
@@ -93,7 +105,7 @@ function simplifiesListGuardFollowUp(): void {
 function stillAppliesOuterFactsInsideForeach(): void {
   const env = {
     ...emptyFactEnv(),
-    falseFacts: [factEntry(isArray, 'ifFalse')],
+    falseFacts: [assumedFact(isArray, 'ifFalse')],
   };
   const block: Block = [
     {
