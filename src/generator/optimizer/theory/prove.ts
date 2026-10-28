@@ -5,40 +5,11 @@ import type { Expr } from '../../ir/types.ts';
 import { equals } from '../../ir/equals.ts';
 import { canonicalizeFactExpr } from '../passes/facts/canon.ts';
 import type { EntailProof, ImplyProof } from '../proof/types.ts';
-import { typeCallImpliedByEquality } from '../lib/exclusiveTypes.ts';
 import {
   saturate,
   saturationLookup,
   type Saturation,
 } from './saturate.ts';
-import type { TheoryRuleId } from './types.ts';
-
-function leafRule(ruleId: TheoryRuleId): ImplyProof {
-  switch (ruleId) {
-    case 'exclusive':
-      return { kind: 'exclusive' };
-    case 'instanceofObject':
-      return { kind: 'instanceofObject' };
-    case 'isAClassExists':
-      return { kind: 'isAClassExists' };
-    case 'emptyArrayCount':
-      return { kind: 'emptyArrayCount' };
-    case 'arrayKeyExistsNonEmpty':
-      return { kind: 'arrayKeyExistsNonEmpty' };
-    case 'arrayKeyExistsCountNonZero':
-      return { kind: 'arrayKeyExistsCountNonZero' };
-    case 'countPositiveNonEmpty':
-      return { kind: 'countPositiveNonEmpty' };
-    case 'notKey0NotListOrEmpty':
-      return { kind: 'notKey0NotListOrEmpty' };
-    case 'listHigherKeyExists':
-      return { kind: 'listHigherKeyExists' };
-    case 'equalityType':
-      return { kind: 'equalityType', via: { kind: 'refl' } };
-    default:
-      throw new Error('never reached');
-  }
-}
 
 /**
  * Whether every disjunct of `inner` appears among `outer`'s disjuncts
@@ -79,36 +50,9 @@ function goalProven(sat: Saturation, goal: Expr): {
   return null;
 }
 
-function exclusiveFromSeed(seed: Expr): ImplyProof {
-  if (seed.kind === 'instanceof') {
-    return { kind: 'instanceofObject', via: { kind: 'exclusive' } };
-  }
-  if (typeCallImpliedByEquality(seed) !== null) {
-    return { kind: 'equalityType', via: { kind: 'exclusive' } };
-  }
-  if (seed.kind === 'and') {
-    for (const c of seed.exprs) {
-      if (c.kind === 'instanceof') {
-        return {
-          kind: 'andConjunct',
-          conjunct: c,
-          via: { kind: 'instanceofObject', via: { kind: 'exclusive' } },
-        };
-      }
-      if (typeCallImpliedByEquality(c) !== null) {
-        return {
-          kind: 'andConjunct',
-          conjunct: c,
-          via: { kind: 'equalityType', via: { kind: 'exclusive' } },
-        };
-      }
-    }
-  }
-  return { kind: 'exclusive' };
-}
-
 /**
  * Explain why saturating `seed` proves `goalFactExpr` (already in the store).
+ * Proofs follow saturation derivations — no parallel leaf-kind vocabulary.
  */
 function explainFact(
   seed: Expr,
@@ -126,10 +70,20 @@ function explainFact(
       via: { kind: 'refl' },
     };
   }
-  if (fact.how.ruleId === 'exclusive') {
-    return exclusiveFromSeed(seed);
+
+  const seedCanon = canonicalizeFactExpr(seed);
+  let via: ImplyProof | undefined;
+  for (const premise of fact.how.premises) {
+    if (equals(canonicalizeFactExpr(premise), seedCanon)) {
+      continue;
+    }
+    via = explainFact(seed, premise, sat);
+    break;
   }
-  return leafRule(fact.how.ruleId);
+
+  return via === undefined
+    ? { kind: 'rule', ruleId: fact.how.ruleId }
+    : { kind: 'rule', ruleId: fact.how.ruleId, via };
 }
 
 /** Reconstructible A ⇒ B via saturation, or null. */

@@ -1,33 +1,16 @@
 import type { Expr } from '../../ir/types.ts';
 import type { EnvFact } from '../passes/facts/env.types.ts';
+import type { TheoryRuleId } from '../theory/types.ts';
 
-/** Structural A ⇒ B (no env). */
+/** Structural A ⇒ B (no env), with leaf steps identified by theory rule id. */
 export type ImplyProof =
   | { readonly kind: 'refl' }
-  | { readonly kind: 'exclusive' }
-  /** `$x instanceof T` ⇒ `is_object($x)`, optionally then `via` (e.g. exclusive ¬is_array). */
-  | { readonly kind: 'instanceofObject'; readonly via?: ImplyProof }
-  | { readonly kind: 'isAClassExists' }
-  | { readonly kind: 'emptyArrayCount' }
-  /** `array_key_exists($k, $x)` ⇒ `$x !== []`. */
-  | { readonly kind: 'arrayKeyExistsNonEmpty' }
-  /** `array_key_exists($k, $x)` ⇒ `count($x) !== 0`. */
-  | { readonly kind: 'arrayKeyExistsCountNonZero' }
-  /** `count($x) === N` (N≥1) ⇒ `$x !== []`. */
-  | { readonly kind: 'countPositiveNonEmpty' }
-  /**
-   * `!array_key_exists(0, $x)` ⇒ `!array_is_list($x) ∨ $x === []`
-   * (contrapositive of list ∧ ≠[] ⇒ key 0 exists); `b` may be a larger OR
-   * that includes both disjuncts.
-   */
-  | { readonly kind: 'notKey0NotListOrEmpty' }
-  /**
-   * `array_is_list($x) ∧ array_key_exists(N, $x)` ⇒ `array_key_exists(k, $x)`
-   * for `0 ≤ k < N` (int literals). Premise `a` is an AND that includes both
-   * conjuncts (and possibly others).
-   */
-  | { readonly kind: 'listHigherKeyExists' }
-  | { readonly kind: 'equalityType'; readonly via: ImplyProof }
+  | {
+      readonly kind: 'rule';
+      readonly ruleId: TheoryRuleId;
+      /** Premise chain when the rule fired off a derived fact. */
+      readonly via?: ImplyProof;
+    }
   | {
       readonly kind: 'andConjunct';
       readonly conjunct: Expr;

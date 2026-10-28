@@ -14,6 +14,7 @@ import type {
   TraceReasoning,
   TraceStepReason,
 } from '../trace/types.ts';
+import type { TheoryRuleId } from '../theory/types.ts';
 import type {
   AbsorbDropProof,
   EntailProof,
@@ -48,30 +49,17 @@ function envRule(reason: FactReasonId): OptimizeTraceRuleId {
   }
 }
 
-function implyRule(kind: ImplyProof['kind']): OptimizeTraceRuleId {
+function theoryImplyRule(ruleId: TheoryRuleId): OptimizeTraceRuleId {
+  // TheoryRuleId suffixes are exactly the facts.imply.* leaf catalog entries.
+  return `facts.imply.${ruleId}` as OptimizeTraceRuleId;
+}
+
+function structuralImplyRule(
+  kind: 'refl' | 'andConjunct' | 'orDisjunct' | 'canon',
+): OptimizeTraceRuleId {
   switch (kind) {
     case 'refl':
       return 'facts.imply.refl';
-    case 'exclusive':
-      return 'facts.imply.exclusive';
-    case 'instanceofObject':
-      return 'facts.imply.instanceofObject';
-    case 'isAClassExists':
-      return 'facts.imply.isAClassExists';
-    case 'emptyArrayCount':
-      return 'facts.imply.emptyArrayCount';
-    case 'arrayKeyExistsNonEmpty':
-      return 'facts.imply.arrayKeyExistsNonEmpty';
-    case 'arrayKeyExistsCountNonZero':
-      return 'facts.imply.arrayKeyExistsCountNonZero';
-    case 'countPositiveNonEmpty':
-      return 'facts.imply.countPositiveNonEmpty';
-    case 'notKey0NotListOrEmpty':
-      return 'facts.imply.notKey0NotListOrEmpty';
-    case 'listHigherKeyExists':
-      return 'facts.imply.listHigherKeyExists';
-    case 'equalityType':
-      return 'facts.imply.equalityType';
     case 'andConjunct':
       return 'facts.imply.andConjunct';
     case 'orDisjunct':
@@ -157,36 +145,26 @@ export function implyProofToChildren(
 ): TraceStepReason {
   switch (proof.kind) {
     case 'refl':
-    case 'exclusive':
-    case 'isAClassExists':
-    case 'emptyArrayCount':
-    case 'arrayKeyExistsNonEmpty':
-    case 'arrayKeyExistsCountNonZero':
-    case 'countPositiveNonEmpty':
-    case 'notKey0NotListOrEmpty':
-    case 'listHigherKeyExists':
-      return exprStep(implyRule(proof.kind), from, to, []);
-    case 'instanceofObject':
+      return exprStep(structuralImplyRule('refl'), from, to, []);
+    case 'rule': {
+      const rule = theoryImplyRule(proof.ruleId);
       if (proof.via === undefined) {
-        return exprStep(implyRule(proof.kind), from, to, []);
+        return exprStep(rule, from, to, []);
       }
-      return exprStep(implyRule(proof.kind), from, to, [
+      return exprStep(rule, from, to, [
         implyProofToChildren(from, to, proof.via),
       ]);
-    case 'equalityType':
-      return exprStep(implyRule(proof.kind), from, to, [
-        implyProofToChildren(from, to, proof.via),
-      ]);
+    }
     case 'andConjunct':
-      return exprStep(implyRule(proof.kind), from, to, [
+      return exprStep(structuralImplyRule('andConjunct'), from, to, [
         implyProofToChildren(proof.conjunct, to, proof.via),
       ]);
     case 'orDisjunct':
-      return exprStep(implyRule(proof.kind), from, to, [
+      return exprStep(structuralImplyRule('orDisjunct'), from, to, [
         implyProofToChildren(from, proof.disjunct, proof.via),
       ]);
     case 'canon':
-      return exprStep(implyRule(proof.kind), proof.before, proof.after, [
+      return exprStep(structuralImplyRule('canon'), proof.before, proof.after, [
         implyProofToChildren(proof.after, to, proof.via),
       ]);
     default:

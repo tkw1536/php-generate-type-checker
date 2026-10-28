@@ -60,6 +60,19 @@ describe('implies tags', () => {
     ).toBe(true);
   });
 
+  it('reconstructs exclusive via instanceofObject from saturation', () => {
+    const proof = implyProof(
+      isInstance,
+      notExpr(callExpr('is_array', [refArg($v)])),
+    );
+    expect(proof).toEqual({
+      kind: 'rule',
+      ruleId: 'exclusive',
+      via: { kind: 'rule', ruleId: 'instanceofObject' },
+    });
+  });
+
+
   it('typed literals imply is_* tags', () => {
     const isArray = callExpr('is_array', [refArg($v)]);
     expect(
