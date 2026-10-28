@@ -32,7 +32,6 @@ function assumedFact(expr: Expr, origin: FactOriginId): FactEntry {
   return {
     expr: canon,
     origin,
-    reason: 'assumed',
     how: { kind: 'assumed', origin },
   };
 }

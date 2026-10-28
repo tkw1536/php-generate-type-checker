@@ -4,71 +4,30 @@ import type {
   EnvAddEvent,
   EnvFact,
   EnvHow,
+  EnvLeafId,
   FactEntry,
-  FactReasonId,
 } from '../passes/facts/env.types.ts';
+import { entryReason } from '../passes/facts/env.types.ts';
 import { exprStep } from '../trace/rewrite.ts';
 import type {
-  OptimizeTraceRuleId,
   TraceEvidence,
   TraceReasoning,
   TraceStepReason,
 } from '../trace/types.ts';
-import type { TheoryRuleId } from '../theory/types.ts';
 import type {
   AbsorbDropProof,
   EntailProof,
+  ImplyLeafId,
   ImplyProof,
   ProveProof,
 } from './types.ts';
 
-function envRule(reason: FactReasonId): OptimizeTraceRuleId {
-  switch (reason) {
-    case 'assumed':
-      return 'facts.env.assumed';
-    case 'andSplit':
-      return 'facts.env.andSplit';
-    case 'orSplit':
-      return 'facts.env.orSplit';
-    case 'notFlip':
-      return 'facts.env.notFlip';
-    case 'commute':
-      return 'facts.env.commute';
-    case 'deMorgan':
-      return 'facts.env.deMorgan';
-    case 'exclusive':
-      return 'facts.env.exclusive';
-    case 'equalityType':
-      return 'facts.env.equalityType';
-    case 'instanceofObject':
-      return 'facts.env.instanceofObject';
-    case 'isAClassExists':
-      return 'facts.env.isAClassExists';
-    default:
-      throw new Error('never reached');
-  }
+function envTrace(leaf: EnvLeafId): `facts.env.${EnvLeafId}` {
+  return `facts.env.${leaf}`;
 }
 
-function theoryImplyRule(ruleId: TheoryRuleId): OptimizeTraceRuleId {
-  // TheoryRuleId suffixes are exactly the facts.imply.* leaf catalog entries.
-  return `facts.imply.${ruleId}` as OptimizeTraceRuleId;
-}
-
-function structuralImplyRule(
-  kind: 'refl' | 'andConjunct' | 'orDisjunct' | 'canon',
-): OptimizeTraceRuleId {
-  switch (kind) {
-    case 'refl':
-      return 'facts.imply.refl';
-    case 'andConjunct':
-      return 'facts.imply.andConjunct';
-    case 'orDisjunct':
-      return 'facts.imply.orDisjunct';
-    case 'canon':
-      return 'facts.imply.canon';
-    default:
-      throw new Error('never reached');
-  }
+function implyTrace(leaf: ImplyLeafId): `facts.imply.${ImplyLeafId}` {
+  return `facts.imply.${leaf}`;
 }
 
 function howChildren(how: EnvHow): readonly TraceReasoning[] {
@@ -89,25 +48,22 @@ function envFactEvidence(
         expr: entry.expr,
         known,
         origin: entry.origin,
-        reason: entry.reason,
+        reason: entryReason(entry.how),
       },
     ],
   };
 }
 
 function envFactStep(fact: EnvFact): TraceStepReason {
-  const reason: FactReasonId =
-    fact.how.kind === 'assumed' ? 'assumed' : fact.how.rule;
   const after =
     fact.known === 'true' ? fact.expr : { kind: 'not' as const, expr: fact.expr };
   const entry: FactEntry = {
     expr: fact.expr,
     origin: fact.origin,
-    reason,
     how: fact.how,
   };
   return exprStep(
-    envRule(reason),
+    envTrace(entryReason(fact.how)),
     fact.expr,
     after,
     howChildren(fact.how),
@@ -129,7 +85,7 @@ export function envEventsToChildren(
         ? e.entry.expr
         : e.from.expr;
     return exprStep(
-      envRule(e.entry.reason),
+      envTrace(entryReason(e.entry.how)),
       premiseFocus,
       after,
       howChildren(e.entry.how),
@@ -145,9 +101,9 @@ export function implyProofToChildren(
 ): TraceStepReason {
   switch (proof.kind) {
     case 'refl':
-      return exprStep(structuralImplyRule('refl'), from, to, []);
+      return exprStep(implyTrace('refl'), from, to, []);
     case 'rule': {
-      const rule = theoryImplyRule(proof.ruleId);
+      const rule = implyTrace(proof.ruleId);
       if (proof.via === undefined) {
         return exprStep(rule, from, to, []);
       }
@@ -156,15 +112,15 @@ export function implyProofToChildren(
       ]);
     }
     case 'andConjunct':
-      return exprStep(structuralImplyRule('andConjunct'), from, to, [
+      return exprStep(implyTrace('andConjunct'), from, to, [
         implyProofToChildren(proof.conjunct, to, proof.via),
       ]);
     case 'orDisjunct':
-      return exprStep(structuralImplyRule('orDisjunct'), from, to, [
+      return exprStep(implyTrace('orDisjunct'), from, to, [
         implyProofToChildren(from, proof.disjunct, proof.via),
       ]);
     case 'canon':
-      return exprStep(structuralImplyRule('canon'), proof.before, proof.after, [
+      return exprStep(implyTrace('canon'), proof.before, proof.after, [
         implyProofToChildren(proof.after, to, proof.via),
       ]);
     default:
@@ -215,7 +171,7 @@ export function proveProofToChildren(
   if (proof.canon !== undefined) {
     kids.push(
       exprStep(
-        'facts.imply.canon',
+        implyTrace('canon'),
         proof.canon.from,
         proof.canon.to,
         [],

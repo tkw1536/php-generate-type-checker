@@ -2,6 +2,16 @@ import type { Expr } from '../../ir/types.ts';
 import type { EnvFact } from '../passes/facts/env.types.ts';
 import type { TheoryRuleId } from '../theory/types.ts';
 
+/** Structural imply combinators (not theory Horn rules). */
+export type ImplyStructuralId =
+  | 'refl'
+  | 'andConjunct'
+  | 'orDisjunct'
+  | 'canon';
+
+/** Leaf id for Trace `facts.imply.${…}` — theory rule or structural combinator. */
+export type ImplyLeafId = TheoryRuleId | ImplyStructuralId;
+
 /** Structural A ⇒ B (no env), with leaf steps identified by theory rule id. */
 export type ImplyProof =
   | { readonly kind: 'refl' }

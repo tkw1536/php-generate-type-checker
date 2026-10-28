@@ -6,12 +6,11 @@ import { deriveTrueFacts } from './env.deriveTrue.ts';
 import type { FactMutators, Flags } from './env.mutators.ts';
 import {
   type EnvHow,
+  type EnvLeafId,
   type EnvTraceSink,
   type FactEntry,
   type FactEnv,
   type FactOriginId,
-  type FactReasonId,
-  entryReason,
   toEnvFact,
 } from './env.types.ts';
 
@@ -40,7 +39,7 @@ function noteAdd(
 }
 
 function makeHow(
-  reason: FactReasonId,
+  reason: EnvLeafId,
   origin: FactOriginId,
   premise: FactEntry | null,
   fromKnown: 'true' | 'false',
@@ -64,7 +63,7 @@ export function withTrueFact(
   env: FactEnv,
   expr: Expr,
   origin: FactOriginId,
-  reason: FactReasonId = 'assumed',
+  reason: EnvLeafId = 'assumed',
   flags?: Flags,
   sink?: EnvTraceSink,
   from?: FactEntry | null,
@@ -82,7 +81,6 @@ export function withTrueFact(
   const entry: FactEntry = {
     expr: canon,
     origin,
-    reason: entryReason(how),
     how,
   };
   noteAdd(sink, entry, 'true', premise);
@@ -97,7 +95,7 @@ export function withFalseFact(
   env: FactEnv,
   expr: Expr,
   origin: FactOriginId,
-  reason: FactReasonId = 'assumed',
+  reason: EnvLeafId = 'assumed',
   flags?: Flags,
   sink?: EnvTraceSink,
   from?: FactEntry | null,
@@ -115,7 +113,6 @@ export function withFalseFact(
   const entry: FactEntry = {
     expr: canon,
     origin,
-    reason: entryReason(how),
     how,
   };
   noteAdd(sink, entry, 'false', premise);

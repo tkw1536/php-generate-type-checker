@@ -5,8 +5,8 @@ import type { Expr } from '../../ir/types.ts';
 import type { ExprPattern, Subst } from './pattern.types.ts';
 
 /**
- * Leaf implication rule ids — aligned with Trace `facts.imply.*` suffixes
- * so proofs stay reconstructible for the UI.
+ * Leaf implication rule ids — Trace uses `facts.imply.${TheoryRuleId}`
+ * (and env seeds use `facts.env.${EnvSeededTheoryRuleId}`).
  */
 export type TheoryRuleId =
   | 'exclusive'

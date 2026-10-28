@@ -1,8 +1,9 @@
 import type { Block, CheckerIR, Expr } from '../../ir/types.ts';
 import type {
+  EnvLeafId,
   FactOriginId,
-  FactReasonId,
 } from '../passes/facts/env.types.ts';
+import type { ImplyLeafId } from '../proof/types.ts';
 
 /** IR fragment for focus/scope/checker views — no render-time temp names. */
 export type OptimizeTraceSnapshot =
@@ -23,34 +24,12 @@ export type OptimizeTraceRuleId =
   | 'inline.substitute'
   | 'inline.negate'
   | 'facts.env.extend'
-  | 'facts.env.assumed'
-  | 'facts.env.andSplit'
-  | 'facts.env.orSplit'
-  | 'facts.env.notFlip'
-  | 'facts.env.commute'
-  | 'facts.env.deMorgan'
-  | 'facts.env.exclusive'
-  | 'facts.env.equalityType'
-  | 'facts.env.instanceofObject'
-  | 'facts.env.isAClassExists'
+  | `facts.env.${EnvLeafId}`
   | 'facts.proveTrue'
   | 'facts.proveFalse'
   | 'facts.prove.equals'
   | 'facts.prove.entails'
-  | 'facts.imply.refl'
-  | 'facts.imply.exclusive'
-  | 'facts.imply.instanceofObject'
-  | 'facts.imply.isAClassExists'
-  | 'facts.imply.emptyArrayCount'
-  | 'facts.imply.arrayKeyExistsNonEmpty'
-  | 'facts.imply.arrayKeyExistsCountNonZero'
-  | 'facts.imply.countPositiveNonEmpty'
-  | 'facts.imply.notKey0NotListOrEmpty'
-  | 'facts.imply.listHigherKeyExists'
-  | 'facts.imply.equalityType'
-  | 'facts.imply.andConjunct'
-  | 'facts.imply.orDisjunct'
-  | 'facts.imply.canon'
+  | `facts.imply.${ImplyLeafId}`
   | 'facts.absorb'
   | 'facts.absorb.implies'
   | 'facts.normalize.countEmpty'
@@ -82,7 +61,7 @@ export type OptimizeTraceFactUse = {
   readonly known: 'true' | 'false';
   readonly origin: FactOriginId;
   /** How the fact entered the env (assumed, exclusive derivation, …). */
-  readonly reason: FactReasonId;
+  readonly reason: EnvLeafId;
 };
 
 export type TraceEvidence =

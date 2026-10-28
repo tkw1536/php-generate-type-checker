@@ -23,7 +23,7 @@ function pickBest(matches: readonly FactMatch[]): ProveProof | null {
   const equalsMatches = matches.filter((m) => m.proof.kind === 'equals');
   let pool = equalsMatches.length > 0 ? equalsMatches : matches;
   const assumed = pool.filter(
-    (m) => m.entry.how.kind === 'assumed' || m.entry.reason === 'assumed',
+    (m) => m.entry.how.kind === 'assumed',
   );
   if (assumed.length > 0) {
     pool = assumed;

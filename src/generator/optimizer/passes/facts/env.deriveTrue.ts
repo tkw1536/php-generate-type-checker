@@ -5,36 +5,14 @@
 import type { Expr } from '../../../ir/types.ts';
 import { andExpr, binExpr, notExpr } from '../../../ir/index.ts';
 import { consequencesFromTrue } from '../../theory/consequences.ts';
-import type { TheoryRuleId } from '../../theory/types.ts';
 import type { FactMutators, Flags } from './env.mutators.ts';
 import type {
   EnvTraceSink,
   FactEntry,
   FactEnv,
   FactOriginId,
-  FactReasonId,
 } from './env.types.ts';
-
-/** Theory rules that have a corresponding FactReasonId for env Trace. */
-function theoryReason(ruleId: TheoryRuleId): FactReasonId | null {
-  switch (ruleId) {
-    case 'exclusive':
-    case 'equalityType':
-    case 'instanceofObject':
-    case 'isAClassExists':
-      return ruleId;
-    case 'emptyArrayCount':
-    case 'arrayKeyExistsNonEmpty':
-    case 'arrayKeyExistsCountNonZero':
-    case 'countPositiveNonEmpty':
-    case 'notKey0NotListOrEmpty':
-    case 'listHigherKeyExists':
-      // Array/list implications stay on-demand via imply; not seeded into env.
-      return null;
-    default:
-      throw new Error('never reached');
-  }
-}
+import { isEnvSeededTheoryRule } from './env.types.ts';
 
 /**
  * Seed env with theory consequences that are part of the env reason catalog.
@@ -50,15 +28,15 @@ function deriveTheoryConsequences(
 ): FactEnv {
   let next = env;
   for (const c of consequencesFromTrue(expr)) {
-    const reason = theoryReason(c.ruleId);
-    if (reason === null) {
+    if (!isEnvSeededTheoryRule(c.ruleId)) {
+      // Array/list implications stay on-demand via imply; not seeded into env.
       continue;
     }
     next = m.withTrue(
       next,
       c.expr,
       origin,
-      reason,
+      c.ruleId,
       undefined,
       sink,
       from,

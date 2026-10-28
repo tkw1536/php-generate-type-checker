@@ -1,4 +1,4 @@
-import type { FactOriginId, FactReasonId } from './env.types.ts';
+import type { EnvLeafId, FactOriginId } from './env.types.ts';
 
 export type FactSourceInfo = {
   readonly short: string;
@@ -20,7 +20,7 @@ const ORIGIN_INFO: Record<FactOriginId, FactSourceInfo> = {
   },
 };
 
-const REASON_INFO: Record<FactReasonId, FactSourceInfo> = {
+const REASON_INFO: Record<EnvLeafId, FactSourceInfo> = {
   assumed: {
     short: 'assumed',
     help: 'Directly assumed on that path.',
@@ -66,7 +66,7 @@ const REASON_INFO: Record<FactReasonId, FactSourceInfo> = {
 /** Short label for Trace UI: origin when assumed, otherwise the implication reason. */
 export function factSourceShort(
   origin: FactOriginId,
-  reason: FactReasonId,
+  reason: EnvLeafId,
 ): string {
   return reason === 'assumed'
     ? ORIGIN_INFO[origin].short
@@ -76,7 +76,7 @@ export function factSourceShort(
 /** Longer (?) help combining path origin and implication reason. */
 export function factSourceHelp(
   origin: FactOriginId,
-  reason: FactReasonId,
+  reason: EnvLeafId,
 ): string {
   const originHelp = ORIGIN_INFO[origin].help;
   return reason === 'assumed'
