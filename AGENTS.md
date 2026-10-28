@@ -45,7 +45,7 @@ yarn spellcheck
 - Trace-only fixes must not change optimizer/PHP output or edit generator golden `*.golden.php`
 - When changing trace recording, keep those invariants green — do not weaken or skip the invariant test
 - Fact proofs: every `withTrueFact` / `withFalseFact` add is traced (`facts.env.*` under `facts.env.extend`); `proveTrue` / `proveFalse` / `facts.absorb` / `simplify.normalize.absorb` nest reconstructible proof children (env how, equals/entails, imply bridge). Prefer assumed, then equals over entails. No bare boolean success on decision paths — use `implyProof` / `prove*Proof` / `EnvHow`
-- Composed simplify may nest normalize micro-steps under one checker-advancing parent (`reason.children`) — still one top-level head advance for that package
+- Composed simplify may nest normalize micro-steps under one checker-advancing parent `simplify.normalize` (`reason.children`) — still one top-level head advance for that package
 - Do not reintroduce `facts.commit`-style shadow repairs or bool-literal env facts; after a cond folds to `FALSE`, do not seed the env with that literal
 
 ## Generator golden PHP format

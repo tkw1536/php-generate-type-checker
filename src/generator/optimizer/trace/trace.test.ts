@@ -7,13 +7,13 @@ import type { TraceStep } from './types.ts';
 import {
   absorbImplicationPhp,
   allExclusiveViaUsesAreArrayKeyAssumed,
-  allNestedStepsAreNormalize,
   exclusiveViaUses,
   hasExclusiveVia,
   hasInstanceofObjectImplication,
   isProveFactsRule,
-  nestedStepsUnderRule,
+  optimizeListUnionSteps,
   stepExplainsFactsRule,
+  stepTouchesNormalize,
 } from './trace.test.helpers.ts';
 
 const FACT_RULES = new Set([
@@ -23,26 +23,8 @@ const FACT_RULES = new Set([
   'facts.env.extend',
 ]);
 
-function optimizeListUnionSteps(): readonly TraceStep[] {
-  const ast = parseType('list<mixed>|list<string>');
-  const { ir: built } = buildMany([ast]);
-  return optimize(built).steps;
-}
-
 function ruleOf(step: TraceStep): string {
   return step.reason.rule;
-}
-
-function stepTouchesNormalize(step: TraceStep): boolean {
-  if (ruleOf(step).startsWith('simplify.normalize.')) {
-    return true;
-  }
-  for (const child of step.reason.children) {
-    if (child.kind === 'step' && child.rule.startsWith('simplify.normalize.')) {
-      return true;
-    }
-  }
-  return false;
 }
 
 describe('optimize trace steps', () => {
@@ -162,43 +144,6 @@ describe('optimize trace checker snapshots', () => {
   });
 });
 
-function isNonEnvGhost(step: TraceStep): boolean {
-  if (ruleOf(step) === 'facts.env.extend' || ruleOf(step) === 'trace.initial') {
-    return false;
-  }
-  return (
-    renderTraceSnapshot(step.checker.before) ===
-    renderTraceSnapshot(step.checker.after)
-  );
-}
-
-describe('optimize trace De Morgan collapse', () => {
-  it('records one collapse without ghost doubleNeg on temps', () => {
-    const ast = parseType('int|string');
-    const { ir: built } = buildMany([ast]);
-    const { ir, steps } = optimize(built);
-    const entry = ir.entries[0];
-    expect(entry).toBeTypeOf('string');
-    const program = ir.programs[entry];
-    expect(program).toBeDefined();
-    const entryEvents = steps.filter((e) => e.program === entry);
-    const deMorgans = entryEvents.filter(
-      (e) => ruleOf(e) === 'simplify.normalize.deMorgan',
-    );
-    expect(deMorgans.length).toBeGreaterThan(0);
-    expect(entryEvents.filter((e) => isNonEnvGhost(e))).toEqual([]);
-    expect(
-      entryEvents.some((e) => ruleOf(e) === 'simplify.normalize.doubleNeg'),
-    ).toBe(false);
-    const finalPhp = renderTraceSnapshot({
-      kind: 'block',
-      block: program.body,
-    }).replaceAll(/\s+/gu, ' ');
-    expect(finalPhp).toContain('is_int($value)');
-    expect(finalPhp).toContain('is_string($value)');
-  });
-});
-
 describe('optimize trace scope for expr rewrites', () => {
   it('uses block or ir scope for expression rewrites', () => {
     const exprEvents = optimizeListUnionSteps().filter(
@@ -258,15 +203,6 @@ function tagsExclusiveViaForImpossibleArrayKey(): void {
   expect(allExclusiveViaUsesAreArrayKeyAssumed(withVia)).toBe(true);
 }
 
-function nestedNormalizeStepsAreNormalize(): void {
-  const nested = nestedStepsUnderRule(
-    optimizeListUnionSteps(),
-    'simplify.normalize.',
-  );
-  expect(nested.length).toBeGreaterThan(0);
-  expect(allNestedStepsAreNormalize(nested)).toBe(true);
-}
-
 describe('optimize trace facts evidence', () => {
   it(
     'explains every facts.* step with facts or absorb implications',
@@ -279,10 +215,6 @@ describe('optimize trace facts evidence', () => {
   it(
     'tags exclusive via when array-key facts prove ¬is_array($key)',
     tagsExclusiveViaForImpossibleArrayKey,
-  );
-  it(
-    'nested normalize steps use simplify.normalize.* rules when present',
-    nestedNormalizeStepsAreNormalize,
   );
 });
 

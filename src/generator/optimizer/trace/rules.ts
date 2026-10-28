@@ -179,6 +179,10 @@ const RULES: Record<OptimizeTraceRuleId, OptimizeTraceRuleInfo> = {
     title: 'Absorb binary ops',
     help: 'Folds expanded comparison forms back to a simpler binary when normalization leaves an equivalent comparison. Sound as the inverse of expand: the compacted form denotes the same boolean as the expanded one.',
   },
+  'simplify.normalize': {
+    title: 'Normalize expression',
+    help: 'One checker-advancing package for the normalize fixpoint (bool fold, identity, De Morgan, double-neg, factor, absorb, dedupe, reorder, etc.). Nested children are the micro-rewrites that produced the net before→after; soundness is the composition of those nested steps.',
+  },
   'simplify.normalize.boolFold': {
     title: 'Fold boolean constant',
     help: 'Applies constant folding under NOT/AND/OR (e.g. !true → false, x && false → false, x || true → true). Sound by the standard truth tables for classical boolean connectives.',

@@ -171,13 +171,12 @@ function commitNormalizeFixpoint(
     return { expr: current, pos };
   }
   const children = flattenReasons(seqReason(normParts));
-  const rule = children[0]?.rule ?? 'simplify.normalize.identity';
   return {
     expr: current,
     pos: commitReason(
       ctx,
       pos,
-      exprStep(rule, beforeNorm, current, children),
+      exprStep('simplify.normalize', beforeNorm, current, children),
     ),
   };
 }

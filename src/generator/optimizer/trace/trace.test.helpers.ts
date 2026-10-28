@@ -1,5 +1,32 @@
+import { parseType } from '../../../parser/index.ts';
+import { buildMany } from '../../pipeline.ts';
+import { optimize } from '../index.ts';
 import { renderTraceSnapshot } from './render.ts';
 import type { TraceReasoning, TraceStep } from './types.ts';
+
+export function optimizeListUnionSteps(): readonly TraceStep[] {
+  const ast = parseType('list<mixed>|list<string>');
+  const { ir: built } = buildMany([ast]);
+  return optimize(built).steps;
+}
+
+export function isNormalizeRule(rule: string): boolean {
+  return (
+    rule === 'simplify.normalize' || rule.startsWith('simplify.normalize.')
+  );
+}
+
+export function stepTouchesNormalize(step: TraceStep): boolean {
+  if (isNormalizeRule(step.reason.rule)) {
+    return true;
+  }
+  for (const child of step.reason.children) {
+    if (child.kind === 'step' && isNormalizeRule(child.rule)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 function nestedRulesFromReason(
   reason: TraceReasoning,
@@ -51,6 +78,7 @@ export function allNestedStepsAreNormalize(
   nested: readonly { readonly rule: string }[],
 ): boolean {
   for (const s of nested) {
+    // Micros under simplify.normalize (or nested further); not the package id itself.
     if (
       !s.rule.startsWith('simplify.normalize.') &&
       !s.rule.startsWith('facts.imply.')
@@ -59,6 +87,59 @@ export function allNestedStepsAreNormalize(
     }
   }
   return true;
+}
+
+export function childStepRules(step: TraceStep): readonly string[] {
+  return step.reason.children
+    .filter((c) => c.kind === 'step')
+    .map((c) => c.rule);
+}
+
+export function normalizePackagesHaveMicroChildren(
+  steps: readonly TraceStep[],
+): boolean {
+  const packages = steps.filter((e) => e.reason.rule === 'simplify.normalize');
+  if (packages.length === 0) {
+    return false;
+  }
+  for (const p of packages) {
+    const micros = childStepRules(p);
+    if (micros.length === 0) {
+      return false;
+    }
+    for (const r of micros) {
+      if (!r.startsWith('simplify.normalize.')) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+export function noTopLevelNormalizeMicros(
+  steps: readonly TraceStep[],
+): boolean {
+  for (const e of steps) {
+    if (e.reason.rule.startsWith('simplify.normalize.')) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export function packagesNestRule(
+  steps: readonly TraceStep[],
+  microRule: string,
+): boolean {
+  for (const e of steps) {
+    if (e.reason.rule !== 'simplify.normalize') {
+      continue;
+    }
+    if (childStepRules(e).includes(microRule)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function reasonHasChildRule(

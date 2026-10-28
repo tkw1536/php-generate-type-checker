@@ -58,6 +58,7 @@ export type OptimizeTraceRuleId =
   | 'facts.normalize.listNonEmptyKey0'
   | 'simplify.expand'
   | 'simplify.absorb'
+  | 'simplify.normalize'
   | 'simplify.normalize.boolFold'
   | 'simplify.normalize.identity'
   | 'simplify.normalize.doubleNeg'
