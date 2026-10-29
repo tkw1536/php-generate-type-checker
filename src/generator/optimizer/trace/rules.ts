@@ -22,6 +22,10 @@ const RULES: Record<OptimizeTraceRuleId, OptimizeTraceRuleInfo> = {
     title: 'Merge same-body ifs',
     help: 'Merges adjacent ifs that share the same body into if (c1 || c2 || …) { body }. Sound because the body executes when any of those conditions succeeds, which is the same as trying each if in sequence when their bodies are identical and there is no intervening side effect in the IR.',
   },
+  'combine.mergeForeach': {
+    title: 'Merge same-iterable foreach',
+    help: 'Merges adjacent foreach loops over the same iterable into one loop whose body is the concatenation of the originals (later binders renamed to the first loop’s). Only when every return in those bodies is return false. Sound because rejecting on any element in either pass is the same as rejecting in a single pass that runs both checks per element; early return true would skip a later loop and must not be merged.',
+  },
   'flatten.fold': {
     title: 'Fold flatten return',
     help: 'Turns if (a) { return b; } return c; into return (a && b) || (!a && c). Sound by case analysis on a: when a is true the value is b; when a is false the value is c—the same returns the original statements produce.',

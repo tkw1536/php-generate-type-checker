@@ -43,7 +43,7 @@ export const LEFT_PASS_BOXES: readonly PassMeta[] = [
     id: 'combine',
     label: 'Combine',
     helpId: 'help-pass-combine',
-    help: 'Merge consecutive ifs that share the same body into one condition.',
+    help: 'Merge consecutive ifs that share the same body into one condition, and consecutive foreach loops over the same iterable (fail-only bodies) into one loop.',
   },
   {
     id: 'flatten',

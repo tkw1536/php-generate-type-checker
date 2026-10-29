@@ -20,6 +20,7 @@ export type OptimizeTraceRuleId =
   | 'dedupe.drop'
   | 'unnest.collapse'
   | 'combine.merge'
+  | 'combine.mergeForeach'
   | 'flatten.fold'
   | 'inline.substitute'
   | 'inline.negate'

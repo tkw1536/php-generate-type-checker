@@ -76,7 +76,7 @@ function argEquals(a: Arg, b: Arg): boolean {
   }
 }
 
-function valueRefEquals(
+export function valueRefEquals(
   a: import('./types.ts').ValueRef,
   b: import('./types.ts').ValueRef,
 ): boolean {

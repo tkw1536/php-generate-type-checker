@@ -184,6 +184,33 @@ function isList0Int1String(mixed $value): bool
 }
 // @gtc-golden-end
 
+// @gtc-golden-begin {"input":"array{x?: string}&array<string, string>","output":"function","sealArrayShapes":true}
+namespace Golden\h6860529dee7c {
+/** @phpstan-assert-if-true array{x?: string}&array<string, string> $value */
+function isArrayXStringArrayStringString(mixed $value): bool
+{
+    if (
+        !is_array($value) ||
+        (
+            array_key_exists('x', $value) &&
+            !is_string($value['x'])
+        )
+    ) {
+        return false;
+    }
+    foreach ($value as $key => $item) {
+        if (
+            $key !== 'x' ||
+            !is_string($item)
+        ) {
+            return false;
+        }
+    }
+    return true;
+}
+}
+// @gtc-golden-end
+
 // @gtc-golden-begin {"input":"array{foo: int, ...}","output":"function","sealArrayShapes":true}
 namespace Golden\ha9db10818031 {
 /** @phpstan-assert-if-true array{foo: int, ...} $value */

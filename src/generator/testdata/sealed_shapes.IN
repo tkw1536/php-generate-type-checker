@@ -29,6 +29,10 @@ array{foo: int, bar?: string}
 # sealArrayShapes: 1
 list{0: int, 1?: string}
 ---
+# --- Sealed shape ∩ general array → one combined foreach ---
+# sealArrayShapes: 1
+array{x?: string}&array<string, string>
+---
 # --- Explicit unsealed rest (seal option must not add rejection) ---
 # sealArrayShapes: 1
 array{foo: int, ...}
