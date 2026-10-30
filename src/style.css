@@ -202,13 +202,6 @@ body {
   font-size: 0.7rem;
 }
 
-.site-help.option-help::after {
-  top: calc(100% + 0.5rem);
-  bottom: auto;
-  left: 0;
-  right: 0;
-}
-
 .workspace {
   flex: 1 1 0;
   display: flex;
@@ -647,17 +640,11 @@ body {
   outline: none;
 }
 
-/* Anchor to the footer so tooltips stay within the panel on narrow viewports. */
-.option-help::after,
-.option-unsound-badge::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  z-index: 20;
-  left: 0.5rem;
-  right: 0.5rem;
-  bottom: calc(100% + 0.35rem);
-  width: auto;
-  max-width: none;
+/* Body-level floating tip (see setupFloatingTooltips). */
+.ui-tooltip {
+  position: fixed;
+  z-index: 200;
+  max-width: 22rem;
   padding: 0.4rem 0.5rem;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -672,17 +659,10 @@ body {
   white-space: normal;
   box-shadow: var(--shadow);
   pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.12s ease, visibility 0.12s ease;
 }
 
-.option-help:hover::after,
-.option-help:focus-visible::after,
-.option-unsound-badge:hover::after,
-.option-unsound-badge:focus-visible::after {
-  opacity: 1;
-  visibility: visible;
+.ui-tooltip[hidden] {
+  display: none;
 }
 
 .panel-footer--spacer {
@@ -843,25 +823,12 @@ body {
   word-break: break-word;
 }
 
-/*
- * Fact-source (?) sits on the left of the detail pane — open the tip
- * rightward so it stays inside the pane (title tips still open leftward).
- */
-.optimize-trace-env-facts .optimize-trace-rule-help::after {
-  left: 0;
-  right: auto;
-}
-
 .optimize-trace-detail {
   display: flex;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  /* visible so rule (?) tooltips are not clipped */
   overflow: visible;
-  /* Size tooltips against this pane (see .optimize-trace-rule-help::after). */
-  container-type: inline-size;
-  container-name: optimize-trace-detail;
 }
 
 .optimize-trace-meta {
@@ -889,31 +856,6 @@ body {
 .optimize-trace-help {
   display: inline-flex;
   align-items: center;
-  position: relative;
-}
-
-.optimize-trace-rule-help {
-  position: relative;
-  z-index: 1;
-}
-
-/*
- * Open leftward from the (?), capped to the detail pane width so titles and
- * meta tips are not clipped on either edge.
- */
-.optimize-trace-rule-help::after {
-  left: auto;
-  right: 0;
-  bottom: auto;
-  top: calc(100% + 0.35rem);
-  width: min(22rem, calc(100cqw - 1.5rem));
-  max-width: min(22rem, calc(100cqw - 1.5rem));
-  white-space: normal;
-  z-index: 30;
-}
-
-.optimize-trace-rule-help:is(:hover, :focus-visible) {
-  z-index: 40;
 }
 
 .optimize-trace-rule-id {

@@ -17,6 +17,7 @@ import {
 } from './ui/outputPanel.ts';
 import { setupOutputTabs } from './ui/outputTabs.ts';
 import { setupSiteFooter } from './ui/siteFooter.ts';
+import { setupFloatingTooltips } from './ui/tooltips.ts';
 
 initTheme();
 setupSiteFooter();
@@ -93,6 +94,7 @@ function setupExamples(): void {
 }
 
 setupHelpTooltips();
+setupFloatingTooltips();
 setupOutputTabs();
 setupExamples();
 initTypeInputFromFragment();
