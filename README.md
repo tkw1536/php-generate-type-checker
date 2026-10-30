@@ -450,7 +450,7 @@ Namespaces are hashed from the case input and options so they stay unique and st
 How they are used:
 
 - **Vitest** regenerates from the same inputs and asserts the output matches the golden body
-- **`yarn check:phpstan`** runs PHPStan on the committed `.golden.php` files as-is (expects a `phpstan/phpstan.phar`).
+- **`yarn check:phpstan`** runs PHPStan on the committed `.golden.php` files as-is (expects a `phpstan/phpstan.phar`; get one with `yarn download:phpstan`).
   This is run by CI after every commit.
 
 | Stem                     | Focus                                                              |
@@ -473,7 +473,8 @@ yarn install
 yarn dev                    # http://localhost:5173
 yarn test
 yarn report:optimizer-stats # aggregate simplify metrics over generator fixtures
-yarn check:phpstan          # analyse committed *.golden.php (CI: phpstan-goldens.yml; needs phpstan/phpstan.phar locally)
+yarn check:phpstan          # analyse committed *.golden.php (CI: phpstan-goldens.yml)
+yarn download:phpstan       # fetch phpstan/phpstan.phar (optional: yarn download:phpstan -- <version>)
 yarn build
 yarn lint                   # Oxlint
 yarn lint:fix

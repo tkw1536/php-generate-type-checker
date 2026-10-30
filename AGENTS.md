@@ -36,7 +36,7 @@ yarn spellcheck
 - When changing generator output behavior, always add a generator golden for the new/changed case unless an equivalent `*.IN` case already exists
 - When changing parser, generator, optimizer, or render behavior described in README **Technical Overview** (type checks, optimizer passes, or pipeline phases), update that section to match
 - Optional: `yarn review_fixtures:generator` (interactive golden review)
-- `yarn check:phpstan` analyses committed `*.golden.php` in place (no disk writes; expects `phpstan/phpstan.phar`). CI workflow `.github/workflows/phpstan-goldens.yml` downloads the phar and runs the same check — bump `PHP_VERSION` / `PHPSTAN_VERSION` at the top of that file
+- `yarn check:phpstan` analyses committed `*.golden.php` in place (no disk writes; expects `phpstan/phpstan.phar`). Download with `yarn download:phpstan` (optional version; default `latest`). CI workflow `.github/workflows/phpstan-goldens.yml` runs `yarn download:phpstan -- $PHPSTAN_VERSION` then the same check — bump `PHP_VERSION` / `PHPSTAN_VERSION` at the top of that file
 - Optimize fixpoints must converge under configured caps on success goldens: `outerFixpointCapped` / `blockFixpointCapped` / `simplifyFixpointCapped` / `exprNormalizeCapped` stay false (same invariants suite)
 - Optimize result is final IR (`OptimizeResult.ir`); explanation is `steps` (UI Trace). Snapshots never store temp names — UI assigns them at render time.
 - Rewriters return value + reason (`ExprRewrite` for exprs; block passes use `blockStep` + `commitReason`); every real modification appears in the step tree (top-level or nested `reason.children`). Identity = `reason: { kind: 'none' }`.

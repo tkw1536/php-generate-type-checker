@@ -8,6 +8,7 @@
  *   yarn check:phpstan
  *
  * Expects a PHPStan phar at phpstan/phpstan.phar (override with --phpstan).
+ * Download with: yarn download:phpstan   (or yarn download:phpstan -- <version>)
  * `php` must already be on PATH — this script never searches for a binary.
  */
 import { spawnSync } from 'node:child_process';
@@ -66,12 +67,14 @@ Analyse committed generator success *.golden.php with PHPStan
 (see phpstan/generated-check.neon). Writes nothing to disk.
 
 Place a PHPStan phar at ${DEFAULT_PHPSTAN_PHAR_REL} (default), or pass --phpstan.
+Download with: yarn download:phpstan  (optional: yarn download:phpstan -- <version>)
 
 Options:
   --phpstan <path>   Path to phpstan.phar (default: ${DEFAULT_PHPSTAN_PHAR_REL})
   -h, --help         Show this help
 
 Example:
+  yarn download:phpstan
   yarn check:phpstan
   node ${script}
 `);
@@ -208,7 +211,8 @@ function main() {
   if (!existsSync(pharPath)) {
     console.error(
       `PHPStan phar not found at ${path.relative(REPO_ROOT, pharPath) || pharPath}.\n` +
-        `Download phpstan.phar into ${DEFAULT_PHPSTAN_PHAR_REL}, or pass --phpstan.\n`,
+        `Run: yarn download:phpstan\n` +
+        `(or yarn download:phpstan -- <version>; or pass --phpstan).\n`,
     );
     process.exit(1);
   }

@@ -35,8 +35,7 @@ jobs:
 
       - name: Download phpstan.phar
         run: |
-          curl -fsSL -o phpstan/phpstan.phar \
-            "https://github.com/phpstan/phpstan/releases/download/${PHPSTAN_VERSION}/phpstan.phar"
+          yarn download:phpstan -- "${PHPSTAN_VERSION}"
           php phpstan/phpstan.phar --version
 
       - name: Analyse golden PHP
