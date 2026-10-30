@@ -159,7 +159,7 @@ Generation runs in four phases, which can be seen in the diagram below:
 
 Generate and Optimize work on abstract checkers (guards, loops, returns) that are not PHP yet; only Render emits actual PHP.
 Examples below show that abstract form as PHP so it is readable.
-The UI Type tab shows the parsed type AST as JSON.
+The UI Type tab lists parsed types; under each, Source shows the alias and type string, and AST shows the parse tree as JSON.
 
 Generated checkers are meant to pass PHPStan at level 10 on bleeding edge; anything else is considered a bug.
 This is checked for the test case output by CI (see Goldens Section below).

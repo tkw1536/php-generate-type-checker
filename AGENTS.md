@@ -114,7 +114,7 @@ Stable surface (see `yarn cli --help` for details):
 `--type` and `--trace` **payload schemas are unstable** (inspection only; same data as the UI Type / Trace tabs).
 Parse / generate errors on STDERR should show location like the UI (snippet + caret), via shared `describeError`.
 
-Shared generate path: `runGeneratePipeline` / `formatTypeAstJson` (UI and CLI); `generateChecker` remains the PHP-only golden helper.
+Shared generate path: `runGeneratePipeline` (UI and CLI); CLI `--type` uses `formatTypeAstJson`; UI Type tab shows per-entry AST via `TypeAstPanel`. `generateChecker` remains the PHP-only golden helper.
 
 ## Code style
 

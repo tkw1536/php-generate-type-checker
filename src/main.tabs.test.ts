@@ -31,9 +31,11 @@ async function switchesOutputTabsAndCopiesActivePanel(): Promise<void> {
   expect(
     document.querySelector<HTMLElement>('#output-panel-php')!.hidden,
   ).toBe(true);
-  expect(typeAstCodeText().length).toBeGreaterThan(0);
-  expect(typeAstCodeText()).toContain('aliasName');
+  expect(document.querySelector('.type-ast-group')?.textContent).toBe(
+    'UserAddress',
+  );
   expect(typeAstCodeText()).toContain('UserAddress');
+  expect(typeAstCodeText()).toMatch(/Alias/u);
 
   const copyBtn = document.querySelector<HTMLButtonElement>('#output-copy')!;
   copyBtn.click();
@@ -45,6 +47,7 @@ async function switchesOutputTabsAndCopiesActivePanel(): Promise<void> {
   const copied = writeText.mock.calls[0][0];
   expect(copied).toContain('"aliasName"');
   expect(copied).toContain('UserAddress');
+  expect(copied).toContain('"typeString"');
   expect(copied).not.toMatch(/^function /mu);
   expect(document.querySelector('#copy-status')!.textContent).toBe(
     'Copied to clipboard',
@@ -128,7 +131,7 @@ function expectFooterAfterTabClicks(panes: FooterPanes): void {
   expect(panes.footer.classList.contains('panel-footer--caution')).toBe(false);
   expect(panes.type.hidden).toBe(false);
   expect(panes.php.hidden).toBe(true);
-  expect(panes.type.textContent).toMatch(/Parsed type AST/u);
+  expect(panes.type.textContent).toMatch(/Parsed types grouped/u);
   expect(panes.type.querySelector('#type-expand-all')).not.toBeNull();
 
   document

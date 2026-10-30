@@ -5,13 +5,8 @@ import {
 } from '../highlight.ts';
 import { describeError } from '../describeError.ts';
 import { renderErrorHtml } from './errorDisplay.ts';
-import {
-  applyExpansionState,
-  collectExpansionState,
-  setJsonTreeExpanded,
-} from './jsonTreeExpand.ts';
-import { parseJsonValue, renderJsonTree } from './jsonTreeView.ts';
 import { OptimizeTracePanel } from './optimizeTracePanel.ts';
+import { TypeAstPanel } from './typeAstPanel.ts';
 
 /** Left → right: Type → Trace → PHP */
 export type OutputTabId = 'type' | 'optimize-trace' | 'php';
@@ -49,27 +44,9 @@ export class OutputPanel {
     this.rawText = text;
     this.bodyEl.classList.remove('panel-body--error');
 
-    const { pre, code } = getPreAndCode(this.bodyEl, this.preId);
+    const { code } = getPreAndCode(this.bodyEl, this.preId);
 
     const language = detectOutputLanguage(text, this.defaultLanguage);
-    if (language === 'json') {
-      const parsed = parseJsonValue(text);
-      if (parsed.ok) {
-        const previous = pre.querySelector('.json-tree');
-        const expansion =
-          previous instanceof HTMLElement
-            ? collectExpansionState(previous)
-            : undefined;
-        const tree = renderJsonTree(parsed.value);
-        if (expansion !== undefined) {
-          applyExpansionState(tree, expansion);
-        }
-        pre.replaceChildren(tree);
-        syncCopyButton();
-        return;
-      }
-    }
-
     code.className = `hljs language-${language}`;
     code.innerHTML = highlightCode(text, language);
     syncCopyButton();
@@ -89,18 +66,21 @@ export type OutputPanelRef = Readonly<OutputPanel>;
 
 export type OptimizeTracePanelRef = Readonly<OptimizeTracePanel>;
 
+export type TypeAstPanelRef = Readonly<TypeAstPanel>;
+
 export type CopyablePanel = {
   readonly tabId: OutputTabId;
   readonly rawText: string;
 };
 
 export type OutputPanelSet = {
-  readonly type: OutputPanelRef;
+  readonly type: TypeAstPanelRef;
   readonly optimizeTrace: OptimizeTracePanelRef;
   readonly php: OutputPanelRef;
 };
 
 const outputPanels: OutputPanel[] = [];
+let typeAstPanel: TypeAstPanel | undefined;
 let optimizeTracePanel: OptimizeTracePanel | undefined;
 let activeOutputTab: OutputTabId = 'php';
 
@@ -110,7 +90,6 @@ const copyStatus = document.querySelector<HTMLElement>('#copy-status');
 let copyStatusTimeoutId: number | undefined;
 
 const OUTPUT_PRE_LABELS: Record<string, string> = {
-  'type-output': 'Type AST output',
   'php-output': 'PHP Code output',
 };
 
@@ -145,6 +124,9 @@ export function setActiveOutputTab(tabId: OutputTabId): void {
 }
 
 export function getActiveOutputPanel(): CopyablePanel {
+  if (activeOutputTab === 'type' && typeAstPanel !== undefined) {
+    return typeAstPanel;
+  }
   if (
     activeOutputTab === 'optimize-trace' &&
     optimizeTracePanel !== undefined
@@ -175,13 +157,15 @@ function setupOutputPanel(
 }
 
 export function setupOutputPanels(): OutputPanelSet {
+  const typeBody = document.querySelector<HTMLElement>('#type-output-body')!;
+  typeAstPanel = new TypeAstPanel(typeBody);
   const traceBody = document.querySelector<HTMLElement>(
     '#optimize-trace-output-body',
   )!;
   optimizeTracePanel = new OptimizeTracePanel(traceBody);
   setupTypeTreeActions();
   return {
-    type: setupOutputPanel('type', 'type-output-body', 'type-output', 'json'),
+    type: typeAstPanel,
     optimizeTrace: optimizeTracePanel,
     php: setupOutputPanel('php', 'php-output-body', 'php-output', 'php'),
   };
@@ -195,21 +179,15 @@ function setupTypeTreeActions(): void {
     '#type-collapse-all',
   );
   expandBtn?.addEventListener('click', () => {
-    setTypeTreeExpanded(true);
+    typeAstPanel?.setJsonTreeExpanded(true);
   });
   collapseBtn?.addEventListener('click', () => {
-    setTypeTreeExpanded(false);
+    typeAstPanel?.setJsonTreeExpanded(false);
   });
-}
-
-function setTypeTreeExpanded(expanded: boolean): void {
-  const tree = document.querySelector<HTMLElement>('#type-output .json-tree');
-  if (tree !== null) {
-    setJsonTreeExpanded(tree, expanded);
-  }
 }
 
 export function refreshAllHighlights(): void {
+  typeAstPanel?.refresh();
   for (const panel of outputPanels) {
     if (
       panel.rawText !== '' &&

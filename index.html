@@ -237,7 +237,7 @@
               hidden
             >
               <div class="output-tab-panel-inner" id="type-output-body">
-                <pre class="output-pre" id="type-output" aria-label="Type AST output"><code class="output-empty">Run generate to see output</code></pre>
+                <p class="type-ast-empty">Run generate to see output</p>
               </div>
             </div>
             <div
@@ -277,8 +277,9 @@
               hidden
             >
               <p class="output-footer-help">
-                Parsed type AST as JSON.
-                Click <code>+/−</code> to toggle; Alt/⌥-click for a whole subtree.
+                Parsed types grouped on the left; select Source (alias + type string) or AST under each.
+                On AST, click <code>+/−</code> to toggle; Alt/⌥-click for a whole subtree.
+                Copy copies the active Source or AST view as plaintext JSON.
               </p>
               <div class="output-footer-actions">
                 <button

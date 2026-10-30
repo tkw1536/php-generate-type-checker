@@ -1,4 +1,3 @@
-import { formatTypeAstJson } from '../generator/typeAstJson.ts';
 import { runGeneratePipeline } from '../generator/runPipeline.ts';
 import {
   hasPhpstanTypeAliases,
@@ -65,7 +64,7 @@ function publishGenerateSuccess(
     resolveAliases: getResolveAliases(),
     emitPhpstanTypeAliases: getEmitPhpstanTypeAliases(),
   });
-  panels.type.setSuccess(formatTypeAstJson(result.entries));
+  panels.type.setEntries(result.entries);
   panels.php.setSuccess(result.php);
   panels.optimizeTrace.setTrace(result.steps, result.optimizeRan);
 }
@@ -84,7 +83,7 @@ export function runGenerate(panels: OutputPanelSet): void {
     publishGenerateSuccess(panels, typeString);
   } catch (err) {
     // Type tab can still show a successful parse when codegen fails.
-    panels.type.setSuccess(formatTypeAstJson(parsed.entries));
+    panels.type.setEntries(parsed.entries);
     panels.optimizeTrace.setError(err, typeString);
     panels.php.setError(err, typeString);
   }
