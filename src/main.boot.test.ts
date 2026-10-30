@@ -148,22 +148,16 @@ async function updatesPhpWhenOptionsChange(): Promise<void> {
   optimize.checked = false;
   optimize.dispatchEvent(new Event('change', { bubbles: true }));
 
-  document.querySelector<HTMLButtonElement>('#output-tab-pipeline')!.click();
+  document.querySelector<HTMLButtonElement>('#output-tab-type')!.click();
   const copyBtn = document.querySelector<HTMLButtonElement>('#output-copy')!;
   copyBtn.click();
   await vi.waitFor(() => {
     expect(copyBtn.textContent).toBe('Copied!');
   });
-  const pipelineJson = writeText.mock.calls.at(-1)?.[0];
-  expect(typeof pipelineJson).toBe('string');
-  expect(pipelineJson).toContain('"Optimize": null');
-
-  const metricsBody = document.querySelector('#ir-metrics-output-body')!;
-  expect(metricsBody.textContent).not.toMatch(/Optimizer skipped/iu);
-  expect(metricsBody.querySelector('.metrics-stages-header')).not.toBeNull();
-  expect(
-    metricsBody.querySelector('.stages-diagram-box--skipped'),
-  ).not.toBeNull();
+  const typeJson = writeText.mock.calls.at(-1)?.[0];
+  expect(typeof typeJson).toBe('string');
+  expect(typeJson).toContain('"aliasName"');
+  expect(typeJson).toContain('UserAddress');
 
   const verbose = document.querySelector<HTMLInputElement>(
     '#generate-verbose-phpdoc',

@@ -80,7 +80,7 @@ function appendCollapseControl(
     'aria-label',
     open ? 'Collapse nested steps' : 'Expand nested steps',
   );
-  // Glyph comes from CSS ::before (+ / −), matching the pipeline JSON tree.
+  // Glyph comes from CSS ::before (+ / −), matching the Type tab JSON tree.
   toggle.addEventListener('click', (ev: Event) => {
     ev.stopPropagation();
     onToggle(node.path);

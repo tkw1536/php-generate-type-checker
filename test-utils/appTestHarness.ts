@@ -132,8 +132,8 @@ export function phpCodeText(): string {
   return document.querySelector('#php-output code')?.textContent ?? '';
 }
 
-export function pipelineCodeText(): string {
-  return document.querySelector('#pipeline-output code')?.textContent ?? '';
+export function typeAstCodeText(): string {
+  return document.querySelector('#type-output')?.textContent ?? '';
 }
 
 export function setInputValue(value: string): void {

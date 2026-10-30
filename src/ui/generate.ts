@@ -3,9 +3,7 @@ import {
   optimize as runOptimize,
   renderChecker,
 } from '../generator/pipeline.ts';
-import type { BuildResult } from '../generator/pipeline.ts';
 import type { CheckerIR } from '../generator/ir/types.ts';
-import type { OptimizerStats } from '../generator/optimizer/stats/types.ts';
 import type { TraceStep } from '../generator/optimizer/trace/types.ts';
 import type { ParsedCheckerEntry } from '../parser/parseInput.ts';
 import {
@@ -25,21 +23,8 @@ import {
   wouldRunOptimizer,
 } from './generateControls.ts';
 import type { OutputPanelSet } from './outputPanel.ts';
-import type { StageTimings } from './stageTimings.ts';
 
 export const INPUT_DEBOUNCE_MS = 250;
-
-function timedMs(run: () => void): number {
-  const start = performance.now();
-  run();
-  return performance.now() - start;
-}
-
-function timedValue<T>(run: () => T): { readonly value: T; readonly ms: number } {
-  const start = performance.now();
-  const value = run();
-  return { value, ms: performance.now() - start };
-}
 
 type ParseOk = {
   readonly ok: true;
@@ -62,105 +47,64 @@ function tryParseEntries(typeString: string): ParseOk | ParseFail {
 
 type OptimizeStage = {
   readonly ir: CheckerIR;
-  readonly ms: number;
   readonly ran: boolean;
-  readonly stats: OptimizerStats | null;
   readonly steps: readonly TraceStep[];
 };
 
 function runOptimizeStage(ir: CheckerIR): OptimizeStage {
   if (!wouldRunOptimizer()) {
-    return { ir, ms: 0, ran: false, stats: null, steps: [] };
+    return { ir, ran: false, steps: [] };
   }
-  const timed = timedValue(() => runOptimize(ir));
+  const optimized = runOptimize(ir);
   return {
-    ir: timed.value.ir,
-    ms: timed.ms,
+    ir: optimized.ir,
     ran: true,
-    stats: timed.value.stats,
-    steps: timed.value.steps,
+    steps: optimized.steps,
   };
 }
 
-type PipelineResult = {
-  readonly built: BuildResult;
-  readonly irForPhp: CheckerIR;
+type GenerateResult = {
   readonly php: string;
-  readonly stageTimings: StageTimings;
-  readonly optimizerStats: OptimizerStats | null;
+  readonly optimizeRan: boolean;
   readonly optimizerSteps: readonly TraceStep[];
 };
 
-function runTimedPipeline(
+function runGeneratePipeline(
   entries: readonly ParsedCheckerEntry[],
   typeString: string,
-): PipelineResult {
+): GenerateResult {
   const genOpts = getGenerateOptions();
-  const buildTimed = timedValue(() =>
-    buildEntries(entries, {
-      ...genOpts,
-      segmentSources: entries.map((e) => e.typeString),
-    }),
-  );
-  const built = buildTimed.value;
+  const built = buildEntries(entries, {
+    ...genOpts,
+    segmentSources: entries.map((e) => e.typeString),
+  });
   const optimizeStage = runOptimizeStage(built.ir);
-  let php = '';
-  const renderMs = timedMs(() => {
-    php = renderChecker(optimizeStage.ir, {
-      ...genOpts,
-      typeString,
-      typesByName: built.typesByName,
-      docStringsByName: built.docStringsByName,
-      emitPhpstanTypeAliases:
-        hasPhpstanTypeAliases(entries) && getEmitPhpstanTypeAliases(),
-      phpstanTypeAliases: built.phpstanTypeAliases,
-    });
+  const php = renderChecker(optimizeStage.ir, {
+    ...genOpts,
+    typeString,
+    typesByName: built.typesByName,
+    docStringsByName: built.docStringsByName,
+    emitPhpstanTypeAliases:
+      hasPhpstanTypeAliases(entries) && getEmitPhpstanTypeAliases(),
+    phpstanTypeAliases: built.phpstanTypeAliases,
   });
   return {
-    built,
-    irForPhp: optimizeStage.ir,
     php,
-    optimizerStats: optimizeStage.stats,
+    optimizeRan: optimizeStage.ran,
     optimizerSteps: optimizeStage.steps,
-    stageTimings: {
-      parseMs: 0,
-      generateMs: buildTimed.ms,
-      optimizeMs: optimizeStage.ms,
-      renderMs,
-      optimizeRan: optimizeStage.ran,
-    },
   };
 }
 
-type ParseStageJson = {
-  readonly aliasName: string | null;
-  readonly typeString: string;
-  readonly functionName: string;
-  readonly ast: ParsedCheckerEntry['ast'];
-};
-
-function parseStageJson(
-  entries: readonly ParsedCheckerEntry[],
-): readonly ParseStageJson[] {
-  return entries.map((entry) => ({
-    aliasName: entry.aliasName,
-    typeString: entry.typeString,
-    functionName: entry.functionName,
-    ast: entry.ast,
-  }));
-}
-
-function pipelineJson(
-  parse: readonly ParseStageJson[] | null,
-  generate: CheckerIR | null,
-  optimize: CheckerIR | null,
-): string {
+function typeAstJson(entries: readonly ParsedCheckerEntry[]): string {
+  if (entries.length === 1 && entries[0].aliasName === null) {
+    return JSON.stringify(entries[0].ast, null, 2);
+  }
   return JSON.stringify(
-    {
-      Parse: parse,
-      Generate: generate,
-      Optimize: optimize,
-    },
+    entries.map(({ aliasName, typeString, ast }) => ({
+      aliasName,
+      typeString,
+      ast,
+    })),
     null,
     2,
   );
@@ -172,55 +116,37 @@ function publishParseError(
   typeString: string,
 ): void {
   syncDocblockOptions(false);
-  panels.pipeline.setError(err, typeString);
-  panels.irMetrics.setError(err, typeString);
+  panels.type.setError(err, typeString);
   panels.optimizeTrace.setError(err, typeString);
   panels.php.setError(err, typeString);
 }
 
-function publishPipelineSuccess(
+function publishGenerateSuccess(
   panels: OutputPanelSet,
   entries: readonly ParsedCheckerEntry[],
-  result: PipelineResult,
-  parseMs: number,
+  result: GenerateResult,
 ): void {
-  panels.pipeline.setSuccess(
-    pipelineJson(
-      parseStageJson(entries),
-      result.built.ir,
-      result.stageTimings.optimizeRan ? result.irForPhp : null,
-    ),
-  );
+  panels.type.setSuccess(typeAstJson(entries));
   panels.php.setSuccess(result.php);
-  panels.irMetrics.setReport(
-    { ...result.stageTimings, parseMs },
-    result.optimizerStats,
-  );
-  panels.optimizeTrace.setTrace(
-    result.optimizerSteps,
-    result.stageTimings.optimizeRan,
-  );
+  panels.optimizeTrace.setTrace(result.optimizerSteps, result.optimizeRan);
 }
 
 export function runGenerate(panels: OutputPanelSet): void {
   const typeString = getTypeInput();
-  const parseTimed = timedValue(() => tryParseEntries(typeString));
-  if (!parseTimed.value.ok) {
-    publishParseError(panels, parseTimed.value.err, typeString);
+  const parsed = tryParseEntries(typeString);
+  if (!parsed.ok) {
+    publishParseError(panels, parsed.err, typeString);
     return;
   }
 
-  const entries = parseTimed.value.entries;
+  const entries = parsed.entries;
   syncDocblockOptions(hasPhpstanTypeAliases(entries));
 
   try {
-    const result = runTimedPipeline(entries, typeString);
-    publishPipelineSuccess(panels, entries, result, parseTimed.ms);
+    const result = runGeneratePipeline(entries, typeString);
+    publishGenerateSuccess(panels, entries, result);
   } catch (err) {
-    panels.pipeline.setSuccess(
-      pipelineJson(parseStageJson(entries), null, null),
-    );
-    panels.irMetrics.setError(err, typeString);
+    panels.type.setSuccess(typeAstJson(entries));
     panels.optimizeTrace.setError(err, typeString);
     panels.php.setError(err, typeString);
   }

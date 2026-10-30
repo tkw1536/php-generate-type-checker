@@ -17,9 +17,9 @@
           class="option-help site-help"
           aria-label="Help: About this tool"
           aria-describedby="help-about-tool"
-          data-tooltip="Left: paste a PHPDoc block with @phpstan-type aliases (one or more comments), or plain PHPStan type expressions for convenience. Each alias or plain type becomes a checker. Options under the input control optimization, alias handling, and PHP shape — hover each ? for details. Right: tabs follow Pipeline → Metrics → PHP Code; output updates as you edit. Some types cannot be checked at runtime (for example callable signatures or unhandled generics) and report a generation error."
+          data-tooltip="Left: paste a PHPDoc block with @phpstan-type aliases (one or more comments), or plain PHPStan type expressions for convenience. Each alias or plain type becomes a checker. Options under the input control optimization, alias handling, and PHP shape — hover each ? for details. Right: tabs follow Type → Trace → PHP Code; output updates as you edit. Some types cannot be checked at runtime (for example callable signatures) and report a generation error."
         >?</button>
-        <span id="help-about-tool" class="visually-hidden">Left: paste a PHPDoc block with @phpstan-type aliases (one or more comments), or plain PHPStan type expressions for convenience. Each alias or plain type becomes a checker. Options under the input control optimization, alias handling, and PHP shape — hover each ? for details. Right: tabs follow Pipeline → Metrics → PHP Code; output updates as you edit. Some types cannot be checked at runtime (for example callable signatures or unhandled generics) and report a generation error.</span>
+        <span id="help-about-tool" class="visually-hidden">Left: paste a PHPDoc block with @phpstan-type aliases (one or more comments), or plain PHPStan type expressions for convenience. Each alias or plain type becomes a checker. Options under the input control optimization, alias handling, and PHP shape — hover each ? for details. Right: tabs follow Type → Trace → PHP Code; output updates as you edit. Some types cannot be checked at runtime (for example callable signatures) and report a generation error.</span>
       </div>
       <button id="theme-toggle" type="button" class="btn btn-theme" aria-label="Switch to dark mode" title="Dark mode">☾</button>
     </header>
@@ -179,30 +179,18 @@
         <section class="panel panel-output" aria-labelledby="output-panel-heading">
           <h2 id="output-panel-heading" class="visually-hidden">Generated output</h2>
           <div class="panel-header output-toolbar">
-            <div class="output-tabs" role="tablist" aria-label="Pipeline output (type to PHP)">
+            <div class="output-tabs" role="tablist" aria-label="Output (type to PHP)">
               <button
                 type="button"
                 role="tab"
-                id="output-tab-pipeline"
+                id="output-tab-type"
                 class="output-tab"
                 aria-selected="false"
-                aria-controls="output-panel-pipeline"
+                aria-controls="output-panel-type"
                 tabindex="-1"
-                data-output-tab="pipeline"
+                data-output-tab="type"
               >
-                Pipeline
-              </button>
-              <button
-                type="button"
-                role="tab"
-                id="output-tab-ir-metrics"
-                class="output-tab"
-                aria-selected="false"
-                aria-controls="output-panel-ir-metrics"
-                tabindex="-1"
-                data-output-tab="ir-metrics"
-              >
-                Metrics
+                Type
               </button>
               <button
                 type="button"
@@ -240,29 +228,16 @@
           </div>
           <div class="panel-body panel-body--output panel-body--tabbed">
             <div
-              id="output-panel-pipeline"
+              id="output-panel-type"
               class="output-tab-panel"
               role="tabpanel"
-              aria-labelledby="output-tab-pipeline"
+              aria-labelledby="output-tab-type"
               tabindex="-1"
-              data-output-panel="pipeline"
+              data-output-panel="type"
               hidden
             >
-              <div class="output-tab-panel-inner" id="pipeline-output-body">
-                <pre class="output-pre" id="pipeline-output" aria-label="Pipeline output"><code class="output-empty">Run generate to see output</code></pre>
-              </div>
-            </div>
-            <div
-              id="output-panel-ir-metrics"
-              class="output-tab-panel"
-              role="tabpanel"
-              aria-labelledby="output-tab-ir-metrics"
-              tabindex="-1"
-              data-output-panel="ir-metrics"
-              hidden
-            >
-              <div class="output-tab-panel-inner" id="ir-metrics-output-body">
-                <p class="ir-metrics-empty">Run generate to see output</p>
+              <div class="output-tab-panel-inner" id="type-output-body">
+                <pre class="output-pre" id="type-output" aria-label="Type AST output"><code class="output-empty">Run generate to see output</code></pre>
               </div>
             </div>
             <div
@@ -298,45 +273,29 @@
           >
             <div
               class="output-footer-pane"
-              data-output-footer="pipeline"
+              data-output-footer="type"
               hidden
             >
               <p class="output-footer-help">
-                Intermediate type AST and checker IR after each stage
-                (<code>null</code> when a stage is skipped).
+                Parsed type AST as JSON.
                 Click <code>+/−</code> to toggle; Alt/⌥-click for a whole subtree.
               </p>
               <div class="output-footer-actions">
                 <button
                   type="button"
-                  id="pipeline-expand-all"
+                  id="type-expand-all"
                   class="btn btn-quiet"
                 >
                   Expand all
                 </button>
                 <button
                   type="button"
-                  id="pipeline-collapse-all"
+                  id="type-collapse-all"
                   class="btn btn-quiet"
                 >
                   Collapse all
                 </button>
               </div>
-            </div>
-            <div
-              class="output-footer-pane"
-              data-output-footer="ir-metrics"
-              hidden
-            >
-              <p class="output-footer-help">
-                Stage timings for
-                <strong>Parse</strong> →
-                <strong>Generate</strong> →
-                <strong>Optimize</strong> →
-                <strong>Render</strong>,
-                plus the Optimize pass diagram when Optimize ran.
-                Hover <code>?</code> for details on each stage and pass.
-              </p>
             </div>
             <div
               class="output-footer-pane"

@@ -55,6 +55,6 @@ export type OptimizeResult = {
   readonly ir: CheckerIR;
   /** Explanation: ordered honest steps (UI Trace). */
   readonly steps: readonly TraceStep[];
-  /** Metrics telemetry (UI Metrics diagram). */
+  /** Optimizer pass telemetry (CLI report / fixpoint caps). */
   readonly stats: OptimizerStats;
 };

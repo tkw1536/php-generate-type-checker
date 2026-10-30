@@ -8,7 +8,7 @@ Parse [PHPDoc types as supported by PHPStan](https://phpstan.org/writing-php-cod
 
 **[Open the live demo](https://check.guys.wtf)** — paste a PHPDoc `@phpstan-type` block (or plain types) and copy the generated PHP.
 
-![Light-theme UI: PHPDoc @phpstan-type UserAddress input on the left with generate options; Pipeline / Metrics / Trace / PHP Code tabs on the right with the generated isUserAddress checker; footer with build time and GitHub credit](docs/ui.png)
+![Light-theme UI: PHPDoc @phpstan-type UserAddress input on the left with generate options; Type / Trace / PHP Code tabs on the right with the generated isUserAddress checker; footer with build time and GitHub credit](docs/ui.png)
 
 ## Features
 
@@ -16,7 +16,7 @@ Parse [PHPDoc types as supported by PHPStan](https://phpstan.org/writing-php-cod
 - Primary input is PHPDoc with `@phpstan-type` aliases (multiple comments allowed); plain type expressions work as a convenience
 - Emit standalone functions or static methods you can drop into your own code
 - Shared helpers for nested types, with readable names like `isPostListResponse` by default
-- UI that runs entirely in your browser — Pipeline / Metrics / PHP tabs, no server-side code or analytics
+- UI that runs entirely in your browser — Type / Trace / PHP tabs, no server-side code or analytics
 
 ## Examples
 
@@ -142,7 +142,7 @@ Generation runs in four phases, which can be seen in the diagram below:
 
 Generate and Optimize work on abstract checkers (guards, loops, returns) that are not PHP yet; only Render emits actual PHP.
 Examples below show that abstract form as PHP so it is readable.
-The UI Pipeline tab exposes the same stages as JSON (`Parse`, `Generate`, `Optimize`; `Optimize` is `null` when skipped).
+The UI Type tab shows the parsed type AST as JSON.
 
 Generated checkers are meant to pass PHPStan at level 10 on bleeding edge; anything else is considered a bug.
 This is checked for the test case output by CI (see Goldens Section below).
@@ -163,7 +163,7 @@ return true;
 ```
 
 The actual implementation represents this checker using a more abstract representation, however for purposes of this document we are showing the equivalent PHP syntax.
-In the UI, the Pipeline tab's `Generate` key is this naïve IR; turn Optimize off to leave `Optimize` as `null` and render from Generate.
+Turn Optimize off in the UI to render this naïve IR as PHP without rewrite passes.
 
 Checkers for other types use functions other than `is_int`.
 They can be seen in the following sections.
@@ -387,7 +387,6 @@ Inside that, each **block** runs **Inline → … → Dead-code elimination** un
 **IR changed?** / **Block changed?** ask whether another round is needed.
 IR `yes` enters the pass body again and `no` goes to **Prune**.
 Block `yes` restarts at Inline and `no` returns to the IR question.
-The UI Metrics tab draws this under the Optimize stage.
 **Yes × N** on each loop is the round count (**IR rounds** / **Block rounds**).
 The UI Trace tab is the ordered list of optimize steps, grouped by checker function (then Prune), with nested proof/reasoning (simplify normalize, fact env construction, prove/absorb implications, inline negation) as indented children.
 Each checker group starts with an Initial checker step (Build IR, shown as full PHP with no Diff).

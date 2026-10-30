@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   bootApp,
-  pipelineCodeText,
+  typeAstCodeText,
 } from '../test-utils/appTestHarness.ts';
 import {
   expectFactDetail,
@@ -19,22 +19,21 @@ function resetDom(): void {
 async function switchesOutputTabsAndCopiesActivePanel(): Promise<void> {
   const { writeText } = await bootApp();
 
-  const pipelineTab = document.querySelector<HTMLButtonElement>(
-    '#output-tab-pipeline',
+  const typeTab = document.querySelector<HTMLButtonElement>(
+    '#output-tab-type',
   )!;
-  pipelineTab.click();
+  typeTab.click();
 
-  expect(pipelineTab.getAttribute('aria-selected')).toBe('true');
+  expect(typeTab.getAttribute('aria-selected')).toBe('true');
   expect(
-    document.querySelector<HTMLElement>('#output-panel-pipeline')!.hidden,
+    document.querySelector<HTMLElement>('#output-panel-type')!.hidden,
   ).toBe(false);
   expect(
     document.querySelector<HTMLElement>('#output-panel-php')!.hidden,
   ).toBe(true);
-  expect(pipelineCodeText().length).toBeGreaterThan(0);
-  expect(pipelineCodeText()).toContain('Parse');
-  expect(pipelineCodeText()).toContain('Generate');
-  expect(pipelineCodeText()).toContain('Optimize');
+  expect(typeAstCodeText().length).toBeGreaterThan(0);
+  expect(typeAstCodeText()).toContain('aliasName');
+  expect(typeAstCodeText()).toContain('UserAddress');
 
   const copyBtn = document.querySelector<HTMLButtonElement>('#output-copy')!;
   copyBtn.click();
@@ -44,9 +43,8 @@ async function switchesOutputTabsAndCopiesActivePanel(): Promise<void> {
 
   expect(writeText).toHaveBeenCalledOnce();
   const copied = writeText.mock.calls[0][0];
-  expect(copied).toContain('"Parse"');
-  expect(copied).toContain('"Generate"');
-  expect(copied).toContain('"Optimize"');
+  expect(copied).toContain('"aliasName"');
+  expect(copied).toContain('UserAddress');
   expect(copied).not.toMatch(/^function /mu);
   expect(document.querySelector('#copy-status')!.textContent).toBe(
     'Copied to clipboard',
@@ -78,44 +76,10 @@ async function copiesPhpFromActiveTab(): Promise<void> {
   );
 }
 
-async function showsMetricsDiagramAndCopiesTsv(): Promise<void> {
-  const { writeText } = await bootApp();
-
-  const metricsTab = document.querySelector<HTMLButtonElement>(
-    '#output-tab-ir-metrics',
-  )!;
-  metricsTab.click();
-
-  expect(metricsTab.getAttribute('aria-selected')).toBe('true');
-  const panel = document.querySelector<HTMLElement>('#output-panel-ir-metrics')!;
-  expect(panel.hidden).toBe(false);
-  expect(panel.querySelector('.metrics-pipeline')).not.toBeNull();
-  expect(panel.querySelector('.metrics-stages-header')).not.toBeNull();
-  expect(panel.querySelector('.optimize-diagram')).not.toBeNull();
-  expect(panel.querySelector('[data-decision="outer"]')).not.toBeNull();
-  expect(panel.querySelector('[data-decision="inner"]')).not.toBeNull();
-  expect(panel.querySelector('[data-pass="inline"]')).not.toBeNull();
-  expect(panel.querySelector('.metrics-help')).not.toBeNull();
-  expect(panel.querySelector('.ir-metrics-table')).toBeNull();
-
-  const copyBtn = document.querySelector<HTMLButtonElement>('#output-copy')!;
-  copyBtn.click();
-  await vi.waitFor(() => {
-    expect(copyBtn.textContent).toBe('Copied!');
-  });
-
-  expect(writeText).toHaveBeenCalledOnce();
-  const copied = writeText.mock.calls[0][0];
-  expect(copied).toContain('Parse\t');
-  expect(copied).toContain('Inline helpers\t');
-  expect(copied).toContain('Block rounds\t');
-}
-
 type FooterPanes = {
   readonly footer: HTMLElement;
   readonly php: HTMLElement;
-  readonly pipeline: HTMLElement;
-  readonly metrics: HTMLElement;
+  readonly type: HTMLElement;
   readonly trace: HTMLElement;
 };
 
@@ -123,11 +87,8 @@ function footerPanes(): FooterPanes {
   return {
     footer: document.querySelector<HTMLElement>('#output-footer')!,
     php: document.querySelector<HTMLElement>('[data-output-footer="php"]')!,
-    pipeline: document.querySelector<HTMLElement>(
-      '[data-output-footer="pipeline"]',
-    )!,
-    metrics: document.querySelector<HTMLElement>(
-      '[data-output-footer="ir-metrics"]',
+    type: document.querySelector<HTMLElement>(
+      '[data-output-footer="type"]',
     )!,
     trace: document.querySelector<HTMLElement>(
       '[data-output-footer="optimize-trace"]',
@@ -139,7 +100,7 @@ function expectDefaultPhpFooter(panes: FooterPanes): void {
   expect(panes.footer.classList.contains('panel-footer--caution')).toBe(true);
   expect(panes.footer.classList.contains('panel-footer--warning')).toBe(false);
   expect(panes.php.hidden).toBe(false);
-  expect(panes.pipeline.hidden).toBe(true);
+  expect(panes.type.hidden).toBe(true);
   expect(panes.php.textContent).toMatch(/Always review generated PHP/u);
 }
 
@@ -161,25 +122,20 @@ function expectUnsafeKeysWarningFooter(panes: FooterPanes): void {
 }
 
 function expectFooterAfterTabClicks(panes: FooterPanes): void {
-  document.querySelector<HTMLButtonElement>('#output-tab-pipeline')!.click();
+  document.querySelector<HTMLButtonElement>('#output-tab-type')!.click();
   expect(panes.footer.classList.contains('panel-footer--info')).toBe(true);
   expect(panes.footer.classList.contains('panel-footer--warning')).toBe(false);
   expect(panes.footer.classList.contains('panel-footer--caution')).toBe(false);
-  expect(panes.pipeline.hidden).toBe(false);
+  expect(panes.type.hidden).toBe(false);
   expect(panes.php.hidden).toBe(true);
-  expect(panes.pipeline.textContent).toMatch(/checker IR/u);
-  expect(panes.pipeline.querySelector('#pipeline-expand-all')).not.toBeNull();
-
-  document.querySelector<HTMLButtonElement>('#output-tab-ir-metrics')!.click();
-  expect(panes.metrics.hidden).toBe(false);
-  expect(panes.pipeline.hidden).toBe(true);
-  expect(panes.metrics.textContent).toMatch(/Render/u);
+  expect(panes.type.textContent).toMatch(/Parsed type AST/u);
+  expect(panes.type.querySelector('#type-expand-all')).not.toBeNull();
 
   document
     .querySelector<HTMLButtonElement>('#output-tab-optimize-trace')!
     .click();
   expect(panes.trace.hidden).toBe(false);
-  expect(panes.metrics.hidden).toBe(true);
+  expect(panes.type.hidden).toBe(true);
   expect(panes.trace.textContent).toMatch(/Initial checker/u);
 }
 
@@ -236,8 +192,8 @@ async function movesFocusAcrossTabsWithKeyboard(): Promise<void> {
   await bootApp();
 
   const phpTab = document.querySelector<HTMLButtonElement>('#output-tab-php')!;
-  const pipelineTab = document.querySelector<HTMLButtonElement>(
-    '#output-tab-pipeline',
+  const typeTab = document.querySelector<HTMLButtonElement>(
+    '#output-tab-type',
   )!;
   phpTab.focus();
 
@@ -249,9 +205,9 @@ async function movesFocusAcrossTabsWithKeyboard(): Promise<void> {
       cancelable: true,
     }),
   );
-  expect(document.activeElement).toBe(pipelineTab);
+  expect(document.activeElement).toBe(typeTab);
 
-  pipelineTab.dispatchEvent(
+  typeTab.dispatchEvent(
     new KeyboardEvent('keydown', {
       key: 'Enter',
       bubbles: true,
@@ -259,9 +215,9 @@ async function movesFocusAcrossTabsWithKeyboard(): Promise<void> {
     }),
   );
 
-  expect(pipelineTab.getAttribute('aria-selected')).toBe('true');
+  expect(typeTab.getAttribute('aria-selected')).toBe('true');
   expect(
-    document.querySelector<HTMLElement>('#output-panel-pipeline')!.hidden,
+    document.querySelector<HTMLElement>('#output-panel-type')!.hidden,
   ).toBe(false);
 }
 
@@ -280,10 +236,6 @@ describe('app UI output tabs', () => {
   it(
     'moves focus across output tabs with ArrowRight and activates with Enter',
     movesFocusAcrossTabsWithKeyboard,
-  );
-  it(
-    'shows Metrics optimizer diagram and copies TSV',
-    showsMetricsDiagramAndCopiesTsv,
   );
   it(
     'shows Optimize Trace list and copies selected PHP',

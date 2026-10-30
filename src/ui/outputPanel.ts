@@ -4,7 +4,6 @@ import {
   type HighlightLanguage,
 } from '../highlight.ts';
 import { describeError, renderErrorHtml } from './errorDisplay.ts';
-import { IrMetricsPanel } from './irMetricsPanel.ts';
 import {
   applyExpansionState,
   collectExpansionState,
@@ -13,12 +12,11 @@ import {
 import { parseJsonValue, renderJsonTree } from './jsonTreeView.ts';
 import { OptimizeTracePanel } from './optimizeTracePanel.ts';
 
-/** Left → right: Pipeline → Metrics → Trace → PHP */
-export type OutputTabId = 'pipeline' | 'ir-metrics' | 'optimize-trace' | 'php';
+/** Left → right: Type → Trace → PHP */
+export type OutputTabId = 'type' | 'optimize-trace' | 'php';
 
 const OUTPUT_TAB_IDS: ReadonlySet<string> = new Set([
-  'pipeline',
-  'ir-metrics',
+  'type',
   'optimize-trace',
   'php',
 ]);
@@ -88,7 +86,6 @@ export class OutputPanel {
 /** Parameter view of {@link OutputPanel} for prefer-readonly-parameter-types. */
 export type OutputPanelRef = Readonly<OutputPanel>;
 
-export type IrMetricsPanelRef = Readonly<IrMetricsPanel>;
 export type OptimizeTracePanelRef = Readonly<OptimizeTracePanel>;
 
 export type CopyablePanel = {
@@ -97,14 +94,12 @@ export type CopyablePanel = {
 };
 
 export type OutputPanelSet = {
-  readonly pipeline: OutputPanelRef;
-  readonly irMetrics: IrMetricsPanelRef;
+  readonly type: OutputPanelRef;
   readonly optimizeTrace: OptimizeTracePanelRef;
   readonly php: OutputPanelRef;
 };
 
 const outputPanels: OutputPanel[] = [];
-let irMetricsPanel: IrMetricsPanel | undefined;
 let optimizeTracePanel: OptimizeTracePanel | undefined;
 let activeOutputTab: OutputTabId = 'php';
 
@@ -113,7 +108,7 @@ const copyStatus = document.querySelector<HTMLElement>('#copy-status');
 let copyStatusTimeoutId: ReturnType<typeof setTimeout> | undefined;
 
 const OUTPUT_PRE_LABELS: Record<string, string> = {
-  'pipeline-output': 'Pipeline output',
+  'type-output': 'Type AST output',
   'php-output': 'PHP Code output',
 };
 
@@ -148,9 +143,6 @@ export function setActiveOutputTab(tabId: OutputTabId): void {
 }
 
 export function getActiveOutputPanel(): CopyablePanel {
-  if (activeOutputTab === 'ir-metrics' && irMetricsPanel !== undefined) {
-    return irMetricsPanel;
-  }
   if (
     activeOutputTab === 'optimize-trace' &&
     optimizeTracePanel !== undefined
@@ -181,45 +173,35 @@ function setupOutputPanel(
 }
 
 export function setupOutputPanels(): OutputPanelSet {
-  const metricsBody = document.querySelector<HTMLElement>(
-    '#ir-metrics-output-body',
-  )!;
-  irMetricsPanel = new IrMetricsPanel(metricsBody);
   const traceBody = document.querySelector<HTMLElement>(
     '#optimize-trace-output-body',
   )!;
   optimizeTracePanel = new OptimizeTracePanel(traceBody);
-  setupPipelineTreeActions();
+  setupTypeTreeActions();
   return {
-    pipeline: setupOutputPanel(
-      'pipeline',
-      'pipeline-output-body',
-      'pipeline-output',
-      'json',
-    ),
-    irMetrics: irMetricsPanel,
+    type: setupOutputPanel('type', 'type-output-body', 'type-output', 'json'),
     optimizeTrace: optimizeTracePanel,
     php: setupOutputPanel('php', 'php-output-body', 'php-output', 'php'),
   };
 }
 
-function setupPipelineTreeActions(): void {
+function setupTypeTreeActions(): void {
   const expandBtn = document.querySelector<HTMLButtonElement>(
-    '#pipeline-expand-all',
+    '#type-expand-all',
   );
   const collapseBtn = document.querySelector<HTMLButtonElement>(
-    '#pipeline-collapse-all',
+    '#type-collapse-all',
   );
   expandBtn?.addEventListener('click', () => {
-    setPipelineTreeExpanded(true);
+    setTypeTreeExpanded(true);
   });
   collapseBtn?.addEventListener('click', () => {
-    setPipelineTreeExpanded(false);
+    setTypeTreeExpanded(false);
   });
 }
 
-function setPipelineTreeExpanded(expanded: boolean): void {
-  const tree = document.querySelector<HTMLElement>('#pipeline-output .json-tree');
+function setTypeTreeExpanded(expanded: boolean): void {
+  const tree = document.querySelector<HTMLElement>('#type-output .json-tree');
   if (tree !== null) {
     setJsonTreeExpanded(tree, expanded);
   }
