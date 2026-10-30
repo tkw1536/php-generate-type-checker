@@ -3,13 +3,13 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { generateChecker } from './index.ts';
 import { GenerationError } from './errors.ts';
-import errorsCases from './testdata/errors.json';
 import {
   SUCCESS_GOLDEN_STEMS,
   type GoldenCase,
   type GoldenCaseMeta,
 } from './testdata/goldenCase.ts';
 import { parseGoldenPhp } from './testdata/goldenPhp.ts';
+import { readInSources } from './testdata/readInSources.ts';
 import type { CheckerOutputMode } from './options.ts';
 
 interface GeneratorFixture {
@@ -23,8 +23,6 @@ interface GeneratorFixture {
   readonly sealArrayShapes?: boolean;
 }
 
-type ErrorCase = { readonly input: string };
-
 const TESTDATA_DIR = path.join(import.meta.dirname, 'testdata');
 
 const MODE_STEMS = new Set([
@@ -33,22 +31,6 @@ const MODE_STEMS = new Set([
   'protected_static',
   'private_static',
 ]);
-
-function isErrorCase(value: unknown): value is ErrorCase {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'input' in value &&
-    typeof value.input === 'string'
-  );
-}
-
-function readErrorCases(data: unknown): ErrorCase[] {
-  if (!Array.isArray(data) || !data.every((item) => isErrorCase(item))) {
-    throw new Error('invalid error fixture JSON');
-  }
-  return data;
-}
 
 function fixtureName(
   stem: string,
@@ -100,8 +82,8 @@ function loadGoldenSuite(stem: string): GeneratorFixture[] {
   );
 }
 
-function errorsToFixtures(cases: readonly ErrorCase[]): GeneratorFixture[] {
-  return cases.map(({ input }) => ({
+function errorsToFixtures(inputs: readonly string[]): GeneratorFixture[] {
+  return inputs.map((input) => ({
     name: `error: ${input}`,
     input,
     output: 'function' as const,
@@ -110,11 +92,11 @@ function errorsToFixtures(cases: readonly ErrorCase[]): GeneratorFixture[] {
   }));
 }
 
-/** All generator golden fixtures from `testdata/*.golden.php` (+ `errors.json`). */
+/** All generator fixtures from `testdata/*.golden.php` and `errors.IN`. */
 export function loadFixtures(): GeneratorFixture[] {
   return [
     ...SUCCESS_GOLDEN_STEMS.flatMap((stem) => loadGoldenSuite(stem)),
-    ...errorsToFixtures(readErrorCases(errorsCases)),
+    ...errorsToFixtures(readInSources(path.join(TESTDATA_DIR, 'errors.IN'))),
   ].toSorted((a, b) => a.name.localeCompare(b.name));
 }
 

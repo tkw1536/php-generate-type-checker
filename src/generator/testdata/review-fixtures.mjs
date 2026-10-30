@@ -21,10 +21,6 @@ import { parseGoldenPhp } from './goldenPhp.ts';
  * }} ReviewState
  */
 
-/**
- * @typedef {{ readonly input: string }} ErrorFixtureJson
- */
-
 const dir = import.meta.dirname;
 const statePath = path.join(dir, 'review-state.json');
 
@@ -45,19 +41,6 @@ function parseJson(text) {
 
 /**
  * @param {unknown} value
- * @returns {value is ErrorFixtureJson}
- */
-function isErrorFixtureJson(value) {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'input' in value &&
-    typeof value.input === 'string'
-  );
-}
-
-/**
- * @param {unknown} value
  * @returns {value is ReviewState}
  */
 function isReviewState(value) {
@@ -74,15 +57,14 @@ function isReviewState(value) {
 }
 
 /**
- * @param {string} file
- * @returns {ErrorFixtureJson[]}
+ * @param {string} inPath
+ * @returns {string[]}
  */
-function readErrorFixtures(file) {
-  const data = parseJson(readFileSync(file, 'utf8'));
-  if (!Array.isArray(data) || !data.every((item) => isErrorFixtureJson(item))) {
-    throw new Error(`invalid error fixtures: ${file}`);
-  }
-  return data;
+function readInSources(inPath) {
+  return readFileSync(inPath, 'utf8')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith('#'));
 }
 
 /**
@@ -138,9 +120,9 @@ function loadFixtures() {
       });
     }
   }
-  const errorsFile = path.join(dir, 'errors.json');
-  if (existsSync(errorsFile)) {
-    for (const { input } of readErrorFixtures(errorsFile)) {
+  const errorsIn = path.join(dir, 'errors.IN');
+  if (existsSync(errorsIn)) {
+    for (const input of readInSources(errorsIn)) {
       fixtures.push({
         name: `error: ${input}`,
         input,

@@ -31,7 +31,8 @@ yarn spellcheck
 - Unit/integration: `*.test.ts` next to modules under `src/`
 - Whole-UI: `src/main.*.test.ts` (happy-dom)
 - Parser fixtures: edit `src/parser/testdata/*.IN` → `yarn update_fixtures:parser` → commit matching `*.json`
-- Generator success fixtures: edit `src/generator/testdata/*.IN` → `yarn update_fixtures:generator` → commit matching `*.golden.php` (errors stay `errors.json`; see **Generator golden PHP format** below)
+- Generator success fixtures: edit `src/generator/testdata/*.IN` → `yarn update_fixtures:generator` → commit matching `*.golden.php` (see **Generator golden PHP format** below)
+- Generator error fixtures: edit `src/generator/testdata/errors.IN` only; Vitest asserts each line throws (no JSON / no PHP)
 - When changing generator output behavior, always add a generator golden for the new/changed case unless an equivalent `*.IN` case already exists
 - When changing parser, generator, optimizer, or render behavior described in README **Technical Overview** (type checks, optimizer passes, or pipeline phases), update that section to match
 - Optional: `yarn review_fixtures:generator` (interactive golden review)
@@ -52,7 +53,7 @@ yarn spellcheck
 
 Success goldens are valid PHP 8+ files named `<stem>.golden.php` next to `<stem>.IN` (grep/glob: `*.golden.php`).
 The `.golden.php` suffix makes them easy to find; the stem matches the input list (`function.IN` → `function.golden.php`).
-Error cases stay in `errors.json` (no PHP to emit).
+Error cases live in `errors.IN` only (Vitest reads them directly; no regenerate artifact).
 Parser goldens remain JSON (`source` / `ast`).
 
 Case identity / namespace hashing lives in [`src/generator/testdata/goldenCase.ts`](src/generator/testdata/goldenCase.ts); encode/decode in [`src/generator/testdata/goldenPhp.ts`](src/generator/testdata/goldenPhp.ts).
@@ -139,9 +140,10 @@ Keep Markdown tables column-aligned in the source (pad cells so `|` separators l
 - Never invent `package.json` scripts; only use scripts that exist.
 - Keep URL fragment state backwards compatible (`src/ui/fragmentState.ts`).
 - The UI must never invent alternate payloads or special-case shapes for display. Each output tab shows real data from the corresponding stage (Type = parse entries / AST; Trace = optimizer `steps`; PHP = rendered checker). Presentation (JSON tree, PHP rendering of IR snapshots, expand defaults) is fine; changing the root shape or omitting fields based on input kind is not.
-- Do not hand-edit generator `*.golden.php` or parser golden `*.json`; regenerate from `*.IN` (parser errors JSON is hand-maintained).
+- Do not hand-edit generator `*.golden.php` or parser golden `*.json`; regenerate from `*.IN` (parser errors JSON is hand-maintained; generator errors are `errors.IN` only).
 - Do not edit generator golden `*.golden.php` when fixing optimize-trace honesty; keep emitted IR/PHP identical and fix the tracer instead.
-- Do not treat this as a published library API. There is **no** library-consumer backwards compatibility — rename/remove internal exports freely; update all in-repo call sites instead of leaving compatibility shims.
+- This package is not published for external use; the only consumers live in this repository. Prefer deleting or reshaping internals over compatibility shims or leftover files. There is **no** library-consumer backwards compatibility — rename/remove internal exports freely; update all in-repo call sites instead of leaving compatibility shims.
+- Do not keep code just to keep tests green. If something exists only so old tests still pass, either remove the test (when it only covered dead behavior), move helpers into test-only code (`*.test.ts` / `test-utils/` / `testdata/`), or redesign the tests around the real API. Do not retain production exports, fixtures, or regenerate artifacts solely as test glue.
 - Always keep existing CI checks passing.
 - Generated PHP must be nicely formatted and pass PHPStan at level 10 (max / strictest). Anything else is a bug.
 

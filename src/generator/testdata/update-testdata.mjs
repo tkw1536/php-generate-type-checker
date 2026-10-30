@@ -1,8 +1,9 @@
 /**
- * Regenerates generator success `*.golden.php` (and `errors.json`) from `.IN` lists.
+ * Regenerates generator success `*.golden.php` from `.IN` lists.
  * Run from repo root: yarn update_fixtures:generator
  *
  * Do not hand-edit `*.golden.php`; edit the matching `.IN` and regenerate.
+ * Error cases live in `errors.IN` only (no regenerate step).
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -125,14 +126,6 @@ function parseMultilineCase(block) {
     verbosePhpdoc,
     sealArrayShapes,
   };
-}
-
-/**
- * @param {string} input
- * @returns {{ input: string }}
- */
-function toErrorCase(input) {
-  return { input };
 }
 
 /**
@@ -261,11 +254,3 @@ for (const { name, emitPhpstanTypeAliases: defaultEmit } of DOCBlock_FIXTURES) {
   writeGoldenPhp(name, out);
 }
 
-const errorsIn = path.join(testdataDir, 'errors.IN');
-if (existsSync(errorsIn)) {
-  const sources = readSources(errorsIn);
-  const out = sources.map((input) => toErrorCase(input));
-  const fixturePath = path.resolve(testdataDir, 'errors.json');
-  writeFileSync(fixturePath, `${JSON.stringify(out, null, 2)}\n`);
-  console.log(`Wrote ${out.length} cases to ${fixturePath}`);
-}

@@ -442,7 +442,7 @@ Generator success fixtures are the expected PHP checkers for each input type (or
 
 - **Sources:** edit `src/generator/testdata/<stem>.IN`
 - **Goldens:** regenerated as `<stem>.golden.php` next to that file (`yarn update_fixtures:generator`)
-- **Errors:** cases that must fail generation live in `errors.json` (no PHP output)
+- **Errors:** cases that must fail generation live in `errors.IN` (Vitest asserts each line throws; no PHP / no JSON)
 
 Each `.golden.php` file is real PHP with one namespaced checker per case.
 Namespaces are hashed from the case input and options so they stay unique and stable when the generated body changes.
@@ -463,7 +463,7 @@ How they are used:
 | `multi_comment`          | Multiple PHPDoc comments in one input                              |
 | `verbose_phpdoc`         | Multi-line Drupal-style PHPDoc on checkers                         |
 | `sealed_shapes`          | Sealed array/list shapes (`sealArrayShapes`)                       |
-| `errors`                 | Inputs that must throw at generation time (`errors.json` only)     |
+| `errors`                 | Inputs that must throw at generation time (`errors.IN` only)       |
 
 ## Develop locally
 
