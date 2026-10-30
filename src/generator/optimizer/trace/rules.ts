@@ -38,13 +38,21 @@ const RULES: Record<OptimizeTraceRuleId, OptimizeTraceRuleInfo> = {
     title: 'Negate inlined body',
     help: 'Flips return polarity when inlining under NOT (return E becomes return !E, recursively through if/foreach bodies). Sound because the meaning of !f(x) is the negation of f(x)’s result.',
   },
-  'facts.env.extend': {
-    title: 'Extend fact environment',
-    help: 'Records facts assumed or derived on a control-flow path (if-true body, if-false fallthrough, foreach key, AND conjunct). Nested steps show each add. Does not change checker IR by itself.',
+  'facts.env.assumed.ifTrue': {
+    title: 'Assume if-true',
+    help: 'Seeds a fact as true inside this if body (the condition held on this path).',
   },
-  'facts.env.assumed': {
-    title: 'Assume fact',
-    help: 'Seeds a fact directly from the path (if condition held/failed, or foreach array key shape).',
+  'facts.env.assumed.ifFalse': {
+    title: 'Assume if-false',
+    help: 'Seeds a fact as false after an early-returning if (later code only runs when the condition failed).',
+  },
+  'facts.env.assumed.arrayKey': {
+    title: 'Assume foreach key',
+    help: 'Seeds a fact about a foreach array key (keys are int or non-decimal-int-string).',
+  },
+  'facts.env.assumed.andConjunct': {
+    title: 'Assume AND conjunct',
+    help: 'Seeds a conjunct as true after earlier AND operands on the same expression (left-to-right).',
   },
   'facts.env.andSplit': {
     title: 'Split AND fact',
@@ -177,7 +185,7 @@ const RULES: Record<OptimizeTraceRuleId, OptimizeTraceRuleInfo> = {
   },
   'simplify.expand': {
     title: 'Expand binary ops',
-    help: 'Rewrites selected comparisons into equivalent call/boolean forms (for example so later passes can share structure with is_* checks). Sound because each expansion is an identity on PHP values for the operators we emit.',
+    help: 'Rewrites selected comparisons into equivalent call/boolean forms (for example so later passes can share structure with is_* checks). Sound because each expansion denotes the same boolean on PHP values for the operators we emit.',
   },
   'simplify.absorb': {
     title: 'Absorb binary ops',
@@ -185,27 +193,31 @@ const RULES: Record<OptimizeTraceRuleId, OptimizeTraceRuleInfo> = {
   },
   'simplify.normalize': {
     title: 'Normalize expression',
-    help: 'One checker-advancing package for the normalize fixpoint (bool fold, identity, De Morgan, double-neg, factor, absorb, dedupe, reorder, etc.). Nested children are the micro-rewrites that produced the net before→after; soundness is the composition of those nested steps.',
+    help: 'One checker-advancing package for the normalize fixpoint (bool fold, identity, flatten, De Morgan, double-neg, factor, absorb, dedupe, reorder, etc.). Nested children are the micro-rewrites for the net before→after; together they justify that the package is sound.',
   },
   'simplify.normalize.boolFold': {
     title: 'Fold boolean constant',
-    help: 'Applies constant folding under NOT/AND/OR (e.g. !true → false, x && false → false, x || true → true). Sound by the standard truth tables for classical boolean connectives.',
+    help: 'Applies constant folding under NOT/AND/OR (e.g. !true → false, x && false → false, x || true → true, or a junction of only units folding to true/false). Sound by the standard truth tables for classical boolean connectives.',
   },
   'simplify.normalize.identity': {
     title: 'Drop boolean identity',
     help: 'Removes true from AND and false from OR (x && true → x, false || x → x), unwrapping the junction when one operand remains. Sound because true is the unit of AND and false is the unit of OR.',
   },
+  'simplify.normalize.flatten': {
+    title: 'Flatten junction',
+    help: 'Pulls nested same-junction operands up (associativity) and unwraps a singleton junction to its only operand. Sound because ∧/∨ are associative and a one-operand junction denotes that operand.',
+  },
   'simplify.normalize.doubleNeg': {
     title: 'Remove double negation',
-    help: 'Rewrites !!x into normalize(x) as one step. Nested cleanup from that normalize (if any) is listed under the rewrite. Sound because boolean negation is an involution: applying it twice yields the original truth value.',
+    help: 'Rewrites !!x into normalize(x) as one step. Nested children justify any follow-on normalize cleanup. Sound because boolean negation is an involution: applying it twice yields the original truth value.',
   },
   'simplify.normalize.deMorgan': {
     title: 'Apply De Morgan',
-    help: 'Pushes negation through a junction and normalizes the result in one step (e.g. !(!a && !b) → a || b). Nested cleanup from that normalize (double-neg, identity, etc.) is listed under the rewrite when present. Sound by De Morgan’s laws plus the soundness of the nested normalize.',
+    help: 'Pushes negation through a junction and normalizes the result in one step (e.g. !(!a && !b) → a || b). Nested children justify any follow-on normalize cleanup. Sound by De Morgan’s laws.',
   },
   'simplify.normalize.factor': {
     title: 'Factor common operands',
-    help: 'Factors a shared conjunct out of an OR-of-ANDs (or dually for AND-of-ORs) and normalizes the factored form in one step. Nested cleanup from that normalize is listed under the rewrite when present. Sound by distributivity: (a && b) || (a && c) ≡ a && (b || c).',
+    help: 'Factors a shared conjunct out of an OR-of-ANDs (or dually for AND-of-ORs) and normalizes the factored form in one step. Nested children justify any follow-on normalize cleanup. Sound by distributivity: (a && b) || (a && c) ≡ a && (b || c).',
   },
   'simplify.normalize.absorb': {
     title: 'Absorb implied operands',

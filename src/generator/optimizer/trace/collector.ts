@@ -33,21 +33,14 @@ export class TraceCollector {
 
   /**
    * Commit a rewrite. `checker.before` is the current head; advances head to
-   * `after`. Ghosts (before equals after) are skipped except `facts.env.extend`
-   * (env-only bookkeeping). Consecutive `facts.env.extend` on the same program
-   * are merged into one step (children appended).
+   * `after`. Ghosts (before equals after) are skipped.
    */
   commit(meta: TraceMeta, input: CommitInput): boolean {
     const before = this.head.get(meta.program);
     if (before === undefined) {
       throw new Error(`trace head missing for ${meta.program}`);
     }
-    const ghost = scopeSnapEquals(before, input.after);
-    if (ghost && input.reason.rule === 'facts.env.extend') {
-      if (this.mergeEnvExtend(meta.program, input)) {
-        return true;
-      }
-    } else if (ghost) {
+    if (scopeSnapEquals(before, input.after)) {
       return false;
     }
     this.steps.push({
@@ -61,35 +54,6 @@ export class TraceCollector {
     });
     this.head.set(meta.program, input.after);
     return true;
-  }
-
-  /**
-   * Append children onto the previous same-program `facts.env.extend`, if that
-   * program’s latest step is still an env extend (ignores other programs).
-   */
-  private mergeEnvExtend(program: string, input: CommitInput): boolean {
-    for (let i = this.steps.length - 1; i >= 0; i--) {
-      const last = this.steps.at(i);
-      if (last === undefined || last.program !== program) {
-        continue;
-      }
-      if (last.reason.rule !== 'facts.env.extend') {
-        return false;
-      }
-      this.steps[i] = {
-        ...last,
-        scope: {
-          before: last.scope.before,
-          after: input.scope.after,
-        },
-        reason: {
-          ...last.reason,
-          children: [...last.reason.children, ...input.reason.children],
-        },
-      };
-      return true;
-    }
-    return false;
   }
 
   snapshot(): readonly TraceStep[] {

@@ -44,35 +44,6 @@ export function commitReason(
   return current;
 }
 
-/**
- * Record a zero-diff `facts.env.extend` parent with env micro-step children.
- * Checker IR is unchanged.
- */
-export function commitEnvExtend(
-  ctx: Readonly<OptimizeContext>,
-  pos: TracePos,
-  children: readonly TraceReasoning[],
-): void {
-  if (children.length === 0) {
-    return;
-  }
-  const snap = blockSnap(pos.checker);
-  const scope = blockSnap(pos.scope);
-  ctx.trace.commit(ctx.meta(), {
-    reason: {
-      kind: 'step',
-      rule: 'facts.env.extend',
-      focus: {
-        before: { kind: 'block', block: pos.scope },
-        after: { kind: 'block', block: pos.scope },
-      },
-      children,
-    },
-    scope: { before: scope, after: scope },
-    after: snap,
-  });
-}
-
 function commitStep(
   ctx: Readonly<OptimizeContext>,
   pos: TracePos,

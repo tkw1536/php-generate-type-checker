@@ -6,50 +6,34 @@ import type {
 import { highlightCode } from '../highlight.ts';
 import { renderTraceRuleHelp } from './metricsHelp.ts';
 import { renderEvidenceBlocks } from './optimizeTraceDetailBlocks.ts';
-import { isEnvTraceRule } from './optimizeTraceEnvDetail.ts';
-import { wrapTraceFold } from './optimizeTraceFold.ts';
-import { programGroupLabel } from './optimizeTraceList.ts';
 import {
-  renderEventSnapshot,
-  stepTempNames,
-} from './optimizeTraceRenderPhp.ts';
+  isEnvTraceRule,
+  isProofRelationRule,
+} from './optimizeTraceEnvDetail.ts';
+import { programGroupLabel } from './optimizeTraceList.ts';
+import { renderProofCompareView } from './optimizeTraceProofDetail.ts';
 import { type PhpDiffLine, type PhpDiffResult } from './phpDiff.ts';
 
 export type TraceDetailView = 'before' | 'after' | 'diff';
 
-function focusPhp(
-  reason: TraceStepReason,
-  step: TraceStep,
-): {
+export type TraceViewTabLabels = {
   readonly before: string;
   readonly after: string;
-} {
-  const temps = stepTempNames(step);
-  return {
-    before: renderEventSnapshot(reason.focus.before, temps).replaceAll(
-      '\n',
-      ' ',
-    ),
-    after: renderEventSnapshot(reason.focus.after, temps).replaceAll('\n', ' '),
-  };
-}
+  readonly diff: string;
+};
 
-function appendMetaLine(parent: HTMLElement, label: string, body: string): void {
-  const line = document.createElement('div');
-  line.className = 'optimize-trace-meta-line';
-  const labelEl = document.createElement('span');
-  labelEl.className = 'optimize-trace-meta-label';
-  labelEl.textContent = label;
-  const bodyEl = document.createElement('span');
-  bodyEl.className = 'optimize-trace-meta-body';
-  bodyEl.textContent = body;
-  line.append(labelEl, bodyEl);
-  parent.append(line);
-}
+export const REWRITE_TAB_LABELS: TraceViewTabLabels = {
+  before: 'Before',
+  after: 'After',
+  diff: 'Diff',
+};
 
 function rewriteKindLabel(reason: TraceStepReason): string {
   if (isEnvTraceRule(reason.rule)) {
     return 'Facts';
+  }
+  if (isProofRelationRule(reason.rule)) {
+    return 'Proof';
   }
   switch (reason.focus.before.kind) {
     case 'expr':
@@ -61,37 +45,6 @@ function rewriteKindLabel(reason: TraceStepReason): string {
     default:
       throw new Error('never reached');
   }
-}
-
-function modifiedFocusTitle(reason: TraceStepReason): string {
-  switch (reason.focus.before.kind) {
-    case 'expr':
-      return 'Modified Expression';
-    case 'block':
-      return 'Modified Block';
-    case 'ir':
-      return 'Modified IR';
-    default:
-      throw new Error('never reached');
-  }
-}
-
-function renderFocusBlock(
-  step: TraceStep,
-  reason: TraceStepReason,
-): HTMLElement {
-  const { before, after } = focusPhp(reason, step);
-  return wrapTraceFold(
-    modifiedFocusTitle(reason),
-    null,
-    'optimize-trace-focus',
-    (body) => {
-      appendMetaLine(body, 'Before', before);
-      if (before !== after) {
-        appendMetaLine(body, 'After', after);
-      }
-    },
-  );
 }
 
 function gutter(kind: PhpDiffLine['kind']): string {
@@ -133,8 +86,6 @@ export function renderPhpPreview(php: string, ariaLabel: string): HTMLElement {
 
 function renderDiffView(diff: PhpDiffResult, phpWhenEmpty: string): HTMLElement {
   if (diff.hunks.length === 0) {
-    // Env-only steps (facts.env.extend) have identical checker PHP — still
-    // expose the Diff pane chrome so the UI stays consistent.
     const empty = renderPhpPreview(phpWhenEmpty, 'Checker PHP (no textual diff)');
     empty.classList.add('optimize-trace-diff');
     return empty;
@@ -194,12 +145,6 @@ export function renderDetailHeader(
 
   wrap.append(meta, titleRow);
   if (reason.rule !== 'trace.initial' && !isEnvTraceRule(reason.rule)) {
-    // Nested selections use the Before/After/Diff pane for focus; keep the
-    // collapsed fold only as a compact summary on top-level IR rewrites.
-    // Env-only steps show added facts in the detail pane instead.
-    if (topLevel) {
-      wrap.append(renderFocusBlock(step, reason));
-    }
     appendOptional(wrap, renderEvidenceBlocks(step, reason));
   }
   return wrap;
@@ -209,6 +154,7 @@ export function renderViewTabs(
   active: TraceDetailView,
   onSelect: (view: TraceDetailView) => void,
   ariaLabel = 'Checker PHP view',
+  tabLabels: TraceViewTabLabels = REWRITE_TAB_LABELS,
 ): HTMLElement {
   const tabs = document.createElement('div');
   tabs.className = 'optimize-trace-view-tabs';
@@ -219,9 +165,9 @@ export function renderViewTabs(
     readonly id: TraceDetailView;
     readonly label: string;
   }[] = [
-    { id: 'before', label: 'Before' },
-    { id: 'after', label: 'After' },
-    { id: 'diff', label: 'Diff' },
+    { id: 'before', label: tabLabels.before },
+    { id: 'after', label: tabLabels.after },
+    { id: 'diff', label: tabLabels.diff },
   ];
   for (const view of views) {
     const btn = document.createElement('button');
@@ -257,6 +203,24 @@ export function copyTextForView(
   }
 }
 
+/** Copy text for proof-relation Compare (no unified-diff chrome). */
+export function copyTextForProofRelationView(
+  view: TraceDetailView,
+  premisePhp: string,
+  conclusionPhp: string,
+): string {
+  switch (view) {
+    case 'before':
+      return premisePhp;
+    case 'after':
+      return conclusionPhp;
+    case 'diff':
+      return `Premise:\n${premisePhp}\n\nConclusion:\n${conclusionPhp}`;
+    default:
+      throw new Error('never reached');
+  }
+}
+
 export function renderViewBody(
   view: TraceDetailView,
   beforePhp: string,
@@ -274,6 +238,23 @@ export function renderViewBody(
       return renderPhpPreview(afterPhp, labels.after);
     case 'diff':
       return renderDiffView(diff, afterPhp);
+    default:
+      throw new Error('never reached');
+  }
+}
+
+export function renderProofRelationViewBody(
+  view: TraceDetailView,
+  premisePhp: string,
+  conclusionPhp: string,
+): HTMLElement {
+  switch (view) {
+    case 'before':
+      return renderPhpPreview(premisePhp, 'Premise PHP');
+    case 'after':
+      return renderPhpPreview(conclusionPhp, 'Conclusion PHP');
+    case 'diff':
+      return renderProofCompareView(premisePhp, conclusionPhp);
     default:
       throw new Error('never reached');
   }

@@ -7,7 +7,6 @@ import { andExpr, binExpr, notExpr } from '../../../ir/index.ts';
 import { consequencesFromTrue } from '../../theory/consequences.ts';
 import type { FactMutators, Flags } from './env.mutators.ts';
 import type {
-  EnvTraceSink,
   FactEntry,
   FactEnv,
   FactOriginId,
@@ -23,7 +22,6 @@ function deriveTheoryConsequences(
   expr: Expr,
   origin: FactOriginId,
   from: FactEntry,
-  sink: EnvTraceSink | undefined,
   m: FactMutators,
 ): FactEnv {
   let next = env;
@@ -38,7 +36,6 @@ function deriveTheoryConsequences(
       origin,
       c.ruleId,
       undefined,
-      sink,
       from,
       'true',
     );
@@ -51,7 +48,6 @@ function deriveTrueAnd(
   expr: Extract<Expr, { kind: 'and' }>,
   origin: FactOriginId,
   from: FactEntry,
-  sink: EnvTraceSink | undefined,
   m: FactMutators,
 ): FactEnv {
   let next = env;
@@ -62,7 +58,6 @@ function deriveTrueAnd(
       origin,
       'andSplit',
       undefined,
-      sink,
       from,
       'true',
     );
@@ -76,7 +71,6 @@ function deriveTrueOr(
   origin: FactOriginId,
   from: FactEntry,
   flags: Flags | undefined,
-  sink: EnvTraceSink | undefined,
   m: FactMutators,
 ): FactEnv {
   if (flags?.skipDeMorgan === true) {
@@ -88,7 +82,6 @@ function deriveTrueOr(
     origin,
     'deMorgan',
     { skipDeMorgan: true },
-    sink,
     from,
     'true',
   );
@@ -99,24 +92,15 @@ function deriveTrueBin(
   expr: Extract<Expr, { kind: 'bin' }>,
   origin: FactOriginId,
   from: FactEntry,
-  sink: EnvTraceSink | undefined,
   m: FactMutators,
 ): FactEnv {
-  const withTheory = deriveTheoryConsequences(
-    env,
-    expr,
-    origin,
-    from,
-    sink,
-    m,
-  );
+  const withTheory = deriveTheoryConsequences(env, expr, origin, from, m);
   return m.withTrue(
     withTheory,
     binExpr(expr.op, expr.right, expr.left),
     origin,
     'commute',
     undefined,
-    sink,
     from,
     'true',
   );
@@ -128,14 +112,13 @@ export function deriveTrueFacts(
   origin: FactOriginId,
   from: FactEntry,
   flags: Flags | undefined,
-  sink: EnvTraceSink | undefined,
   m: FactMutators,
 ): FactEnv {
   switch (expr.kind) {
     case 'and':
-      return deriveTrueAnd(env, expr, origin, from, sink, m);
+      return deriveTrueAnd(env, expr, origin, from, m);
     case 'bin':
-      return deriveTrueBin(env, expr, origin, from, sink, m);
+      return deriveTrueBin(env, expr, origin, from, m);
     case 'not':
       return m.withFalse(
         env,
@@ -143,15 +126,14 @@ export function deriveTrueFacts(
         origin,
         'notFlip',
         undefined,
-        sink,
         from,
         'true',
       );
     case 'or':
-      return deriveTrueOr(env, expr, origin, from, flags, sink, m);
+      return deriveTrueOr(env, expr, origin, from, flags, m);
     case 'instanceof':
     case 'call':
-      return deriveTheoryConsequences(env, expr, origin, from, sink, m);
+      return deriveTheoryConsequences(env, expr, origin, from, m);
     case 'bool':
     case 'call_checker':
       return env;

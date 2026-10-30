@@ -161,7 +161,7 @@ function bottomsOutAtAssumed(reason: TraceReasoning): boolean {
   if (reason.kind !== 'step') {
     return false;
   }
-  if (reason.rule === 'facts.env.assumed') {
+  if (reason.rule.startsWith('facts.env.assumed')) {
     return true;
   }
   return reason.children.some(bottomsOutAtAssumed);
@@ -187,9 +187,6 @@ export function stepExplainsFactsRule(step: TraceStep): boolean {
           r.startsWith('facts.env.'),
       ) && bottomsOutAtAssumed(step.reason)
     );
-  }
-  if (step.reason.rule === 'facts.env.extend') {
-    return reasonHasChildRule(step.reason, (r) => r.startsWith('facts.env.'));
   }
   return true;
 }

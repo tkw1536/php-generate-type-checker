@@ -2,41 +2,18 @@ import type { Expr } from '../../../ir/types.ts';
 import { andExpr, boolLit, orExpr } from '../../../ir/index.ts';
 import { equals } from '../../../ir/equals.ts';
 import type { OptimizeContext } from '../../context.ts';
-import {
-  envEventsToChildren,
-  proveProofToChildren,
-} from '../../proof/toTrace.ts';
-import { commitEnvExtend, commitReason } from '../../trace/commit.ts';
+import { proveProofToChildren } from '../../proof/toTrace.ts';
+import { commitReason } from '../../trace/commit.ts';
 import { exprRewrite } from '../../trace/rewrite.ts';
 import type { TracePos } from '../../trace/types.ts';
 import { withTrueFact } from './env.ts';
-import {
-  type EnvTraceSink,
-  type FactEnv,
-  EnvTraceSink as EnvSink,
-  envOrigin,
-} from './env.types.ts';
+import { type FactEnv } from './env.types.ts';
 import {
   absorbOperandsModuloFacts,
   HostCursor,
 } from './substitute.absorb.ts';
 import { applyFactRewrites } from '../../theory/rewrite.ts';
 import { proveFalseProof, proveTrueProof } from './substitute.prove.ts';
-
-function flushEnv(
-  ctx: Readonly<OptimizeContext> | undefined,
-  pos: TracePos,
-  sink: EnvTraceSink | undefined,
-): void {
-  if (ctx === undefined || sink === undefined) {
-    return;
-  }
-  const events = sink.take();
-  if (events.length === 0) {
-    return;
-  }
-  commitEnvExtend(ctx, pos, envEventsToChildren(events));
-}
 
 function commitProve(
   ctx: Readonly<OptimizeContext> | undefined,
@@ -50,7 +27,7 @@ function commitProve(
   if (ctx === undefined || equals(before, after)) {
     return pos;
   }
-  const children = proveProofToChildren(before, after, proof);
+  const children = proveProofToChildren(after, proof);
   const rewrite = exprRewrite(rule, before, after, children);
   const next = commitReason(ctx, pos, rewrite.reason, host.current);
   host.apply(before, after);
@@ -62,11 +39,10 @@ export function substituteFacts(
   env: FactEnv,
   ctx?: Readonly<OptimizeContext>,
   pos?: TracePos,
-  sink?: EnvTraceSink,
 ): { readonly expr: Expr; readonly pos: TracePos } {
   const host = new HostCursor(expr);
   const startPos = pos ?? { checker: [], scope: [] };
-  return substituteFactsInner(expr, env, ctx, startPos, host, sink);
+  return substituteFactsInner(expr, env, ctx, startPos, host);
 }
 
 function tryNormalizeFacts(
@@ -85,7 +61,6 @@ function substituteFactsInner(
   ctx: Readonly<OptimizeContext> | undefined,
   pos: TracePos,
   host: HostCursor,
-  sink: EnvTraceSink | undefined,
 ): { readonly expr: Expr; readonly pos: TracePos } {
   if (expr.kind === 'bool') {
     return { expr, pos };
@@ -118,7 +93,7 @@ function substituteFactsInner(
   if (normalized !== null) {
     return normalized;
   }
-  return substituteFactsShallow(expr, env, ctx, pos, host, sink);
+  return substituteFactsShallow(expr, env, ctx, pos, host);
 }
 
 function seedAndConjunct(
@@ -127,18 +102,9 @@ function seedAndConjunct(
   ctx: Readonly<OptimizeContext> | undefined,
   pos: TracePos,
   host: HostCursor,
-  sink: EnvTraceSink | undefined,
 ): { readonly expr: Expr; readonly env: FactEnv; readonly pos: TracePos } {
-  const next = substituteFactsInner(conjunct, env, ctx, pos, host, sink);
-  const seeded = withTrueFact(
-    env,
-    conjunct,
-    envOrigin(env),
-    'assumed',
-    undefined,
-    sink,
-  );
-  flushEnv(ctx, next.pos, sink);
+  const next = substituteFactsInner(conjunct, env, ctx, pos, host);
+  const seeded = withTrueFact(env, conjunct, 'andConjunct');
   return { expr: next.expr, env: seeded, pos: next.pos };
 }
 
@@ -148,14 +114,12 @@ function substituteFactsAnd(
   ctx: Readonly<OptimizeContext> | undefined,
   pos: TracePos,
   host: HostCursor,
-  sink: EnvTraceSink | undefined,
 ): { readonly expr: Expr; readonly pos: TracePos } {
   let currentPos = pos;
   let currentEnv = env;
   let changed = false;
-  const localSink = ctx === undefined ? sink : (sink ?? new EnvSink());
   let exprs = expr.exprs.map((e) => {
-    const next = seedAndConjunct(currentEnv, e, ctx, currentPos, host, localSink);
+    const next = seedAndConjunct(currentEnv, e, ctx, currentPos, host);
     changed = changed || next.expr !== e;
     currentPos = next.pos;
     currentEnv = next.env;
@@ -183,12 +147,11 @@ function substituteFactsOr(
   ctx: Readonly<OptimizeContext> | undefined,
   pos: TracePos,
   host: HostCursor,
-  sink: EnvTraceSink | undefined,
 ): { readonly expr: Expr; readonly pos: TracePos } {
   let currentPos = pos;
   let changed = false;
   let exprs = expr.exprs.map((e) => {
-    const next = substituteFactsInner(e, env, ctx, currentPos, host, sink);
+    const next = substituteFactsInner(e, env, ctx, currentPos, host);
     if (next.expr !== e) {
       changed = true;
     }
@@ -219,9 +182,8 @@ function substituteFactsNot(
   ctx: Readonly<OptimizeContext> | undefined,
   pos: TracePos,
   host: HostCursor,
-  sink: EnvTraceSink | undefined,
 ): { readonly expr: Expr; readonly pos: TracePos } {
-  const inner = substituteFactsInner(expr.expr, env, ctx, pos, host, sink);
+  const inner = substituteFactsInner(expr.expr, env, ctx, pos, host);
   if (inner.expr.kind !== 'bool') {
     return {
       expr: inner.expr === expr.expr ? expr : { kind: 'not', expr: inner.expr },
@@ -249,7 +211,6 @@ function substituteFactsShallow(
   ctx: Readonly<OptimizeContext> | undefined,
   pos: TracePos,
   host: HostCursor,
-  sink: EnvTraceSink | undefined,
 ): { readonly expr: Expr; readonly pos: TracePos } {
   switch (expr.kind) {
     case 'bool':
@@ -259,11 +220,11 @@ function substituteFactsShallow(
     case 'call_checker':
       return { expr, pos };
     case 'not':
-      return substituteFactsNot(expr, env, ctx, pos, host, sink);
+      return substituteFactsNot(expr, env, ctx, pos, host);
     case 'and':
-      return substituteFactsAnd(expr, env, ctx, pos, host, sink);
+      return substituteFactsAnd(expr, env, ctx, pos, host);
     case 'or':
-      return substituteFactsOr(expr, env, ctx, pos, host, sink);
+      return substituteFactsOr(expr, env, ctx, pos, host);
     default:
       throw new Error('never reached');
   }

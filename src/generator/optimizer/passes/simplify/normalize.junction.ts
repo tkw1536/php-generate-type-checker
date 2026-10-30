@@ -132,8 +132,7 @@ export function finishJunction(
   liveIn: Expr,
 ): Expr {
   const absorbed = absorbAndDedupe(mode, flatIn, quiet, liveIn);
-  let flat = absorbed.flat;
-  let live = absorbed.live;
+  const flat = absorbed.flat;
   const contradictory =
     mode === 'and' ? hasContradiction(flat) : hasTautology(flat);
   if (contradictory) {
@@ -146,9 +145,5 @@ export function finishJunction(
     );
     return next;
   }
-  const result = junctionFrom(mode, flat);
-  if (!equals(live, result)) {
-    noteNormalize(quiet, 'simplify.normalize.identity', live, result);
-  }
-  return result;
+  return junctionFrom(mode, flat);
 }

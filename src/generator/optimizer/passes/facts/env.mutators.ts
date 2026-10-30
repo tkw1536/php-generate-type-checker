@@ -1,7 +1,6 @@
 import type { Expr } from '../../../ir/types.ts';
 import type {
   EnvLeafId,
-  EnvTraceSink,
   FactEntry,
   FactEnv,
   FactOriginId,
@@ -18,7 +17,6 @@ export type FactMutators = {
     origin: FactOriginId,
     reason?: EnvLeafId,
     flags?: Flags,
-    sink?: EnvTraceSink,
     from?: FactEntry | null,
     fromKnown?: 'true' | 'false',
   ) => FactEnv;
@@ -28,7 +26,6 @@ export type FactMutators = {
     origin: FactOriginId,
     reason?: EnvLeafId,
     flags?: Flags,
-    sink?: EnvTraceSink,
     from?: FactEntry | null,
     fromKnown?: 'true' | 'false',
   ) => FactEnv;

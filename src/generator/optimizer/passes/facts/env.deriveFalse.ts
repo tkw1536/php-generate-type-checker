@@ -2,7 +2,6 @@ import type { Expr } from '../../../ir/types.ts';
 import { binExpr, notExpr, orExpr } from '../../../ir/index.ts';
 import type { FactMutators, Flags } from './env.mutators.ts';
 import type {
-  EnvTraceSink,
   FactEntry,
   FactEnv,
   FactOriginId,
@@ -13,7 +12,6 @@ function deriveFalseOr(
   canon: Extract<Expr, { kind: 'or' }>,
   origin: FactOriginId,
   from: FactEntry,
-  sink: EnvTraceSink | undefined,
   m: FactMutators,
 ): FactEnv {
   let next = env;
@@ -24,7 +22,6 @@ function deriveFalseOr(
       origin,
       'orSplit',
       undefined,
-      sink,
       from,
       'false',
     );
@@ -38,7 +35,6 @@ function deriveFalseAnd(
   origin: FactOriginId,
   from: FactEntry,
   flags: Flags | undefined,
-  sink: EnvTraceSink | undefined,
   m: FactMutators,
 ): FactEnv {
   if (flags?.skipDeMorgan === true) {
@@ -50,7 +46,6 @@ function deriveFalseAnd(
     origin,
     'deMorgan',
     { skipDeMorgan: true },
-    sink,
     from,
     'false',
   );
@@ -62,12 +57,11 @@ export function deriveFalseFacts(
   origin: FactOriginId,
   from: FactEntry,
   flags: Flags | undefined,
-  sink: EnvTraceSink | undefined,
   m: FactMutators,
 ): FactEnv {
   switch (canon.kind) {
     case 'or':
-      return deriveFalseOr(env, canon, origin, from, sink, m);
+      return deriveFalseOr(env, canon, origin, from, m);
     case 'bin':
       return m.withFalse(
         env,
@@ -75,7 +69,6 @@ export function deriveFalseFacts(
         origin,
         'commute',
         undefined,
-        sink,
         from,
         'false',
       );
@@ -86,12 +79,11 @@ export function deriveFalseFacts(
         origin,
         'notFlip',
         undefined,
-        sink,
         from,
         'false',
       );
     case 'and':
-      return deriveFalseAnd(env, canon, origin, from, flags, sink, m);
+      return deriveFalseAnd(env, canon, origin, from, flags, m);
     case 'bool':
     case 'call':
     case 'call_checker':

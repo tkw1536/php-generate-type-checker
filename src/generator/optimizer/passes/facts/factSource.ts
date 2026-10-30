@@ -18,6 +18,10 @@ const ORIGIN_INFO: Record<FactOriginId, FactSourceInfo> = {
     short: 'array key',
     help: 'Foreach over an array: keys are int or non-decimal-int-string.',
   },
+  andConjunct: {
+    short: 'and',
+    help: 'Assumed true after an earlier AND conjunct on the same expression (left-to-right).',
+  },
 };
 
 const REASON_INFO: Record<EnvLeafId, FactSourceInfo> = {

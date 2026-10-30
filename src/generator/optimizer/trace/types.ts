@@ -24,8 +24,8 @@ export type OptimizeTraceRuleId =
   | 'flatten.fold'
   | 'inline.substitute'
   | 'inline.negate'
-  | 'facts.env.extend'
-  | `facts.env.${EnvLeafId}`
+  | `facts.env.assumed.${FactOriginId}`
+  | `facts.env.${Exclude<EnvLeafId, 'assumed'>}`
   | 'facts.proveTrue'
   | 'facts.proveFalse'
   | 'facts.prove.equals'
@@ -41,6 +41,7 @@ export type OptimizeTraceRuleId =
   | 'simplify.normalize'
   | 'simplify.normalize.boolFold'
   | 'simplify.normalize.identity'
+  | 'simplify.normalize.flatten'
   | 'simplify.normalize.doubleNeg'
   | 'simplify.normalize.deMorgan'
   | 'simplify.normalize.factor'

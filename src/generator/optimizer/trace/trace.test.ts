@@ -20,7 +20,6 @@ const FACT_RULES = new Set([
   'facts.proveTrue',
   'facts.proveFalse',
   'facts.absorb',
-  'facts.env.extend',
 ]);
 
 function ruleOf(step: TraceStep): string {

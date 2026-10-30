@@ -1,15 +1,15 @@
 import type { Expr } from '../../ir/types.ts';
 import { boolLit } from '../../ir/index.ts';
 import type {
-  EnvAddEvent,
   EnvFact,
   EnvHow,
-  EnvLeafId,
   FactEntry,
+  FactOriginId,
 } from '../passes/facts/env.types.ts';
 import { entryReason } from '../passes/facts/env.types.ts';
 import { exprStep } from '../trace/rewrite.ts';
 import type {
+  OptimizeTraceRuleId,
   TraceEvidence,
   TraceReasoning,
   TraceStepReason,
@@ -22,12 +22,19 @@ import type {
   ProveProof,
 } from './types.ts';
 
-function envTrace(leaf: EnvLeafId): `facts.env.${EnvLeafId}` {
-  return `facts.env.${leaf}`;
+function assumedTrace(origin: FactOriginId): `facts.env.assumed.${FactOriginId}` {
+  return `facts.env.assumed.${origin}`;
 }
 
 function implyTrace(leaf: ImplyLeafId): `facts.imply.${ImplyLeafId}` {
   return `facts.imply.${leaf}`;
+}
+
+function envFactRule(fact: EnvFact): OptimizeTraceRuleId {
+  if (fact.how.kind === 'assumed') {
+    return assumedTrace(fact.how.origin);
+  }
+  return `facts.env.${fact.how.rule}`;
 }
 
 function howChildren(how: EnvHow): readonly TraceReasoning[] {
@@ -63,35 +70,12 @@ function envFactStep(fact: EnvFact): TraceStepReason {
     how: fact.how,
   };
   return exprStep(
-    envTrace(entryReason(fact.how)),
+    envFactRule(fact),
     fact.expr,
     after,
     howChildren(fact.how),
     envFactEvidence(entry, fact.known),
   );
-}
-
-/** Micro-steps for a flushed env batch. */
-export function envEventsToChildren(
-  events: readonly EnvAddEvent[],
-): readonly TraceStepReason[] {
-  return events.map((e) => {
-    const after =
-      e.known === 'true'
-        ? e.entry.expr
-        : { kind: 'not' as const, expr: e.entry.expr };
-    const premiseFocus =
-      e.from === null
-        ? e.entry.expr
-        : e.from.expr;
-    return exprStep(
-      envTrace(entryReason(e.entry.how)),
-      premiseFocus,
-      after,
-      howChildren(e.entry.how),
-      envFactEvidence(e.entry, e.known),
-    );
-  });
 }
 
 export function implyProofToChildren(
@@ -163,7 +147,6 @@ function envHowToChildren(fact: EnvFact): readonly TraceReasoning[] {
 
 /** Nested proof under facts.proveTrue / proveFalse. */
 export function proveProofToChildren(
-  before: Expr,
   after: Expr,
   proof: ProveProof,
 ): readonly TraceReasoning[] {
@@ -187,7 +170,6 @@ export function proveProofToChildren(
         proof.conclusion,
         proof.bridge,
       ),
-      exprStep('facts.prove.entails', before, after, []),
     );
   }
   return kids;
@@ -202,10 +184,6 @@ export function absorbDropToChildren(
     ]);
   }
   return exprStep('facts.absorb.implies', drop.from, drop.to, [
-    ...proveProofToChildren(
-      drop.from,
-      boolLit(true),
-      drop.how.prove,
-    ),
+    ...proveProofToChildren(boolLit(true), drop.how.prove),
   ]);
 }

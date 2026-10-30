@@ -77,12 +77,10 @@ function assertProgramTraceHonesty(
   ).toBe(true);
 
   assertCheckerChain(name, steps);
-  assertNoConsecutiveEnvExtend(name, steps);
 
   for (const step of steps) {
     expect(
       step.reason.rule === 'trace.initial' ||
-        step.reason.rule === 'facts.env.extend' ||
         !scopeSnapEquals(step.checker.before, step.checker.after),
       `${name}: ghost rewrite ${step.reason.rule}`,
     ).toBe(true);
@@ -95,21 +93,6 @@ function assertCheckerChain(name: string, steps: readonly TraceStep[]): void {
     expect(
       scopeSnapEquals(steps[i].checker.after, steps[i + 1].checker.before),
       `${name}: checker.after[${i}] (${steps[i].reason.rule}) must equal checker.before[${i + 1}] (${steps[i + 1].reason.rule})`,
-    ).toBe(true);
-  }
-}
-
-function assertNoConsecutiveEnvExtend(
-  name: string,
-  steps: readonly TraceStep[],
-): void {
-  for (let i = 0; i < steps.length - 1; i++) {
-    expect(
-      !(
-        steps[i].reason.rule === 'facts.env.extend' &&
-        steps[i + 1].reason.rule === 'facts.env.extend'
-      ),
-      `${name}: consecutive facts.env.extend must be merged`,
     ).toBe(true);
   }
 }
@@ -137,10 +120,14 @@ function childRules(reason: TraceStepReason): readonly string[] {
   return out;
 }
 
+function isAssumedEnvRule(rule: string): boolean {
+  return rule.startsWith('facts.env.assumed');
+}
+
 function bottomsOutAtAssumed(reason: TraceStepReason): boolean {
   return (
-    childRules(reason).includes('facts.env.assumed') ||
-    reason.rule === 'facts.env.assumed'
+    childRules(reason).some((r) => isAssumedEnvRule(r)) ||
+    isAssumedEnvRule(reason.rule)
   );
 }
 
@@ -171,13 +158,6 @@ function assertAssumedNormalize(
 
 function assertFactsStepHasProof(name: string, reason: TraceStepReason): void {
   const rule = reason.rule;
-  if (rule === 'facts.env.extend') {
-    expect(reason.children.length).toBeGreaterThan(0);
-    expect(childRules(reason).some((r) => r.startsWith('facts.env.'))).toBe(
-      true,
-    );
-    return;
-  }
   if (rule === 'facts.absorb') {
     expect(
       childRules(reason).some(

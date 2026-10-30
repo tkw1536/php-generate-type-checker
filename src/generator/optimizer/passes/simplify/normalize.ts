@@ -1,4 +1,5 @@
 import type { Expr } from '../../../ir/types.ts';
+import { equals } from '../../../ir/equals.ts';
 import { andExpr, boolLit, notExpr, orExpr } from '../../../ir/index.ts';
 import type { ExprRewrite } from '../../trace/types.ts';
 import {
@@ -132,26 +133,47 @@ function factorJunction(
   );
 }
 
+/**
+ * After child normalize + associative flatten: note flatten if the junction
+ * shape changed, then continue with live synced to the flattened form.
+ */
+function afterFlatten(
+  mode: 'and' | 'or',
+  expr: Expr,
+  flat: readonly Expr[],
+  quiet: QuietStepSink,
+): { readonly flat: Expr[]; readonly live: Expr; readonly before: Expr } {
+  const flattened = junctionFrom(mode, flat);
+  const live = equals(expr, flattened)
+    ? flattened
+    : noteNormalize(quiet, 'simplify.normalize.flatten', expr, flattened);
+  return { flat: [...flat], live, before: flattened };
+}
+
 function normalizeAnd(
   expr: Extract<Expr, { kind: 'and' }>,
   quiet: QuietStepSink,
 ): Expr {
-  const live: Expr = expr;
   const flat = flattenAnd(expr.exprs.map((e) => normalizeExprInner(e, quiet)));
-  const before = junctionFrom('and', flat);
-  const factored = factorAndOfOrs(flat);
+  const synced = afterFlatten('and', expr, flat, quiet);
+  const factored = factorAndOfOrs(synced.flat);
   if (factored !== null) {
     return factorJunction(
-      before,
+      synced.before,
       { kind: 'or', exprs: factored.exprs },
       quiet,
     );
   }
-  if (flat.some((e) => e.kind === 'bool' && !e.value)) {
+  if (synced.flat.some((e) => e.kind === 'bool' && !e.value)) {
     const next = boolLit(false);
-    return noteNormalize(quiet, 'simplify.normalize.boolFold', before, next);
+    return noteNormalize(
+      quiet,
+      'simplify.normalize.boolFold',
+      synced.before,
+      next,
+    );
   }
-  const dropped = dropIdentityUnits('and', flat, quiet, live);
+  const dropped = dropIdentityUnits('and', synced.flat, quiet, synced.live);
   if (dropped.done !== undefined) {
     return dropped.done;
   }
@@ -162,22 +184,26 @@ function normalizeOr(
   expr: Extract<Expr, { kind: 'or' }>,
   quiet: QuietStepSink,
 ): Expr {
-  const live: Expr = expr;
   const flat = flattenOr(expr.exprs.map((e) => normalizeExprInner(e, quiet)));
-  const before = junctionFrom('or', flat);
-  const factored = factorOrOfAnds(flat);
+  const synced = afterFlatten('or', expr, flat, quiet);
+  const factored = factorOrOfAnds(synced.flat);
   if (factored !== null) {
     return factorJunction(
-      before,
+      synced.before,
       { kind: 'and', exprs: factored.exprs },
       quiet,
     );
   }
-  if (flat.some((e) => e.kind === 'bool' && e.value)) {
+  if (synced.flat.some((e) => e.kind === 'bool' && e.value)) {
     const next = boolLit(true);
-    return noteNormalize(quiet, 'simplify.normalize.boolFold', before, next);
+    return noteNormalize(
+      quiet,
+      'simplify.normalize.boolFold',
+      synced.before,
+      next,
+    );
   }
-  const dropped = dropIdentityUnits('or', flat, quiet, live);
+  const dropped = dropIdentityUnits('or', synced.flat, quiet, synced.live);
   if (dropped.done !== undefined) {
     return dropped.done;
   }

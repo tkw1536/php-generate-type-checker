@@ -7,7 +7,6 @@ import type { FactMutators, Flags } from './env.mutators.ts';
 import {
   type EnvHow,
   type EnvLeafId,
-  type EnvTraceSink,
   type FactEntry,
   type FactEnv,
   type FactOriginId,
@@ -27,15 +26,6 @@ function hasTrue(env: FactEnv, expr: Expr): boolean {
 
 function hasFalse(env: FactEnv, expr: Expr): boolean {
   return env.falseFacts.some((f) => equals(f.expr, expr));
-}
-
-function noteAdd(
-  sink: EnvTraceSink | undefined,
-  entry: FactEntry,
-  known: 'true' | 'false',
-  from: FactEntry | null,
-): void {
-  sink?.push({ entry, known, from });
 }
 
 function makeHow(
@@ -65,7 +55,6 @@ export function withTrueFact(
   origin: FactOriginId,
   reason: EnvLeafId = 'assumed',
   flags?: Flags,
-  sink?: EnvTraceSink,
   from?: FactEntry | null,
   fromKnown: 'true' | 'false' = 'true',
 ): FactEnv {
@@ -83,12 +72,11 @@ export function withTrueFact(
     origin,
     how,
   };
-  noteAdd(sink, entry, 'true', premise);
   const next: FactEnv = {
     ...env,
     trueFacts: [...env.trueFacts, entry],
   };
-  return deriveTrueFacts(next, canon, origin, entry, flags, sink, mutators);
+  return deriveTrueFacts(next, canon, origin, entry, flags, mutators);
 }
 
 export function withFalseFact(
@@ -97,7 +85,6 @@ export function withFalseFact(
   origin: FactOriginId,
   reason: EnvLeafId = 'assumed',
   flags?: Flags,
-  sink?: EnvTraceSink,
   from?: FactEntry | null,
   fromKnown: 'true' | 'false' = 'false',
 ): FactEnv {
@@ -115,10 +102,9 @@ export function withFalseFact(
     origin,
     how,
   };
-  noteAdd(sink, entry, 'false', premise);
   const next: FactEnv = {
     ...env,
     falseFacts: [...env.falseFacts, entry],
   };
-  return deriveFalseFacts(next, canon, origin, entry, flags, sink, mutators);
+  return deriveFalseFacts(next, canon, origin, entry, flags, mutators);
 }

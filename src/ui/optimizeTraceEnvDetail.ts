@@ -14,7 +14,20 @@ import {
 
 /** Env construction / derivation — does not rewrite checker IR. */
 export function isEnvTraceRule(rule: OptimizeTraceRuleId): boolean {
-  return rule === 'facts.env.extend' || rule.startsWith('facts.env.');
+  return rule.startsWith('facts.env.');
+}
+
+/**
+ * Nested proof micro-steps whose focus is premise → conclusion (not a
+ * checker rewrite). UI uses Premise / Conclusion / Compare, not Before / After / Diff.
+ */
+export function isProofRelationRule(rule: OptimizeTraceRuleId): boolean {
+  return (
+    rule === 'facts.prove.entails' ||
+    rule === 'facts.prove.equals' ||
+    rule === 'facts.absorb.implies' ||
+    rule.startsWith('facts.imply.')
+  );
 }
 
 /** Every nested step starts collapsed in the step tree. */
@@ -91,7 +104,7 @@ function factCopyLine(
   return `${use.known}: ${title}: ${php}`;
 }
 
-/** Detail body for env-only steps: list newly added facts (no Before/After/Diff). */
+/** Detail body for nested env fact steps (provenance under prove/absorb). */
 export function renderEnvFactsPane(
   step: TraceStep,
   reason: TraceStepReason,
@@ -99,29 +112,13 @@ export function renderEnvFactsPane(
   const temps = stepTempNames(step);
   const pane = document.createElement('div');
   pane.className = 'optimize-trace-env-facts';
-  pane.setAttribute('aria-label', 'Facts added to environment');
+  pane.setAttribute('aria-label', 'Fact provenance');
 
   const heading = document.createElement('div');
   heading.className = 'optimize-trace-env-facts-heading';
-  heading.textContent =
-    reason.rule === 'facts.env.extend' ? 'Facts added' : 'Fact';
+  heading.textContent = 'Fact';
   pane.append(heading);
 
-  const lines: string[] = [];
-  if (reason.rule === 'facts.env.extend') {
-    let i = 0;
-    for (const child of reason.children) {
-      if (child.kind !== 'step') {
-        continue;
-      }
-      appendFactLine(pane, child, temps, `optimize-trace-env-${step.index}-${i}`);
-      lines.push(factCopyLine(child, temps));
-      i++;
-    }
-  } else {
-    appendFactLine(pane, reason, temps, `optimize-trace-env-${step.index}-self`);
-    lines.push(factCopyLine(reason, temps));
-  }
-
-  return { el: pane, copyText: lines.join('\n') };
+  appendFactLine(pane, reason, temps, `optimize-trace-env-${step.index}-self`);
+  return { el: pane, copyText: factCopyLine(reason, temps) };
 }

@@ -14,10 +14,7 @@ import {
 } from './trace.test.helpers.ts';
 
 function isNonEnvGhost(step: TraceStep): boolean {
-  if (
-    step.reason.rule === 'facts.env.extend' ||
-    step.reason.rule === 'trace.initial'
-  ) {
+  if (step.reason.rule === 'trace.initial') {
     return false;
   }
   return (
@@ -63,6 +60,16 @@ function nestedNormalizeStepsAreNormalize(): void {
   expect(allNestedStepsAreNormalize(nested)).toBe(true);
 }
 
+function flattenNotMislabelledAsIdentity(): void {
+  const ast = parseType('array<non-decimal-int-string,string>');
+  const { ir: built } = buildMany([ast]);
+  const { steps } = optimize(built);
+  const nested = nestedStepsUnderRule(steps, 'simplify.normalize');
+  expect(nested.some((s) => s.rule === 'simplify.normalize.flatten')).toBe(
+    true,
+  );
+}
+
 describe('optimize trace De Morgan collapse', () => {
   it(
     'records one collapse without ghost doubleNeg on temps',
@@ -78,5 +85,12 @@ describe('optimize trace normalize package', () => {
   it(
     'nested normalize steps use simplify.normalize.* rules when present',
     nestedNormalizeStepsAreNormalize,
+  );
+});
+
+describe('optimize trace flatten vs identity', () => {
+  it(
+    'attributes associative rebuild to flatten, not identity',
+    flattenNotMislabelledAsIdentity,
   );
 });

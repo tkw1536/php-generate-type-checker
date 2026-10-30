@@ -4,18 +4,25 @@ import { renderErrorHtml } from './errorDisplay.ts';
 import {
   isCollapsedByDefault,
   isEnvTraceRule,
+  isProofRelationRule,
   renderEnvFactsPane,
 } from './optimizeTraceEnvDetail.ts';
 import { renderEventList } from './optimizeTraceList.ts';
 import { checkerPhpForStep, focusPhpForReason } from './optimizeTracePhp.ts';
 import {
   type TraceDetailView,
+  copyTextForProofRelationView,
   copyTextForView,
   renderDetailHeader,
   renderPhpPreview,
+  renderProofRelationViewBody,
   renderViewBody,
   renderViewTabs,
 } from './optimizeTraceRender.ts';
+import {
+  PROOF_RELATION_TAB_LABELS,
+  PROVE_EQUALS_TAB_LABELS,
+} from './optimizeTraceProofDetail.ts';
 import {
   defaultCollapsedKeys,
   findTreeNode,
@@ -60,6 +67,28 @@ function appendRewriteViews(
   return copyTextForView(detailView, php.beforePhp, php.afterPhp, php.diff);
 }
 
+function appendProofRelationViews(
+  detail: HTMLElement,
+  selected: TraceTreeNode,
+  detailView: TraceDetailView,
+  onView: (view: TraceDetailView) => void,
+): string {
+  const php = focusPhpForReason(selected.step, selected.reason);
+  const tabLabels =
+    selected.reason.rule === 'facts.prove.equals'
+      ? PROVE_EQUALS_TAB_LABELS
+      : PROOF_RELATION_TAB_LABELS;
+  detail.append(
+    renderViewTabs(detailView, onView, 'Proof relation view', tabLabels),
+    renderProofRelationViewBody(detailView, php.beforePhp, php.afterPhp),
+  );
+  return copyTextForProofRelationView(
+    detailView,
+    php.beforePhp,
+    php.afterPhp,
+  );
+}
+
 function appendInitialCheckerView(
   detail: HTMLElement,
   selected: TraceTreeNode,
@@ -82,6 +111,9 @@ function appendDetailViews(
     const pane = renderEnvFactsPane(selected.step, selected.reason);
     detail.append(pane.el);
     return pane.copyText;
+  }
+  if (isProofRelationRule(selected.reason.rule)) {
+    return appendProofRelationViews(detail, selected, detailView, onView);
   }
   return appendRewriteViews(detail, selected, detailView, onView);
 }
@@ -175,6 +207,7 @@ export class OptimizeTracePanel {
       renderEventList(this.steps, selected.path, this.collapsed, {
         onSelect: (path) => {
           this.selectedPath = path;
+          // Diff for rewrites; Compare for proof relations (same view id).
           this.detailView = 'diff';
           this.render();
         },

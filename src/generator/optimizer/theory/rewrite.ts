@@ -115,8 +115,8 @@ export function applyFactRewrites(
     if (ctx === undefined) {
       return { expr: after, pos };
     }
-    const children = required.proofs.flatMap(({ expr: req, proof }) =>
-      proveProofToChildren(req, boolLit(true), proof),
+    const children = required.proofs.flatMap(({ proof }) =>
+      proveProofToChildren(boolLit(true), proof),
     );
     const rewrite = exprRewrite(rule.id, expr, after, children);
     const nextPos = commitReason(ctx, pos, rewrite.reason, host.current);

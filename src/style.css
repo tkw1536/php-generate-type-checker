@@ -1090,6 +1090,11 @@ body {
   word-break: break-word;
 }
 
+.optimize-trace-diff-line--no-gutter {
+  grid-template-columns: minmax(0, 1fr);
+  padding-left: 0.75rem;
+}
+
 .optimize-trace-diff-gutter {
   user-select: none;
   color: var(--muted);
