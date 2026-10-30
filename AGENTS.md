@@ -2,7 +2,7 @@
 
 ## Project overview
 
-Parse PHPStan PHPDoc types and emit PHP 8+ runtime checkers (`@phpstan-assert-if-true`); Vite UI in this repo.
+Parse PHPStan PHPDoc types and emit PHP 8+ runtime checkers (`@phpstan-assert-if-true`); Vite UI and Node CLI in this repo.
 
 ## Setup commands
 
@@ -10,6 +10,7 @@ Parse PHPStan PHPDoc types and emit PHP 8+ runtime checkers (`@phpstan-assert-if
 corepack enable
 yarn install
 yarn dev      # local UI (prefer https://check.guys.wtf to try)
+yarn cli --help  # or: php-generate-type-checker --help (package bin)
 yarn build    # tsc + Vite production bundle
 yarn preview
 yarn lint
@@ -29,6 +30,7 @@ yarn spellcheck
 ```
 
 - Unit/integration: `*.test.ts` next to modules under `src/`
+- CLI: `src/cli/*.test.ts`
 - Whole-UI: `src/main.*.test.ts` (happy-dom)
 - Parser fixtures: edit `src/parser/testdata/*.IN` → `yarn update_fixtures:parser` → commit matching `*.json`
 - Generator success fixtures: edit `src/generator/testdata/*.IN` → `yarn update_fixtures:generator` → commit matching `*.golden.php` (see **Generator golden PHP format** below)
@@ -97,6 +99,23 @@ Identical case keys in one suite are deduped; true collisions fail the update sc
 It analyses every success `*.golden.php` path in one invocation and builds line ranges in memory from the begin/end markers so raw `file:line:` hits can be annotated `[golden=…]`.
 Exit non-zero if and only if analysis reported errors (setup failures before analyse also exit non-zero).
 
+## CLI
+
+The CLI option interface is **stable**.
+Do not rename or remove flags lightly; add new ones carefully and document them in `--help` / README / this file.
+Package stays private; `package.json` `bin` (`php-generate-type-checker`) is for local / workspace use only (no npm publish).
+
+Stable surface (see `yarn cli --help` for details):
+
+- Input: positional types **or** `--file` / `-f` (`-` = STDIN)
+- Generate: `--emit`, `--optimize` / `--no-optimize`, `--verbose-phpdoc`, `--emit-aliases`, `--resolve-aliases`, `--seal-array-shapes`, `--unsafe-string-array-keys`
+- Output: default PHP on STDOUT; `--type` or `--trace` (mutually exclusive)
+
+`--type` and `--trace` **payload schemas are unstable** (inspection only; same data as the UI Type / Trace tabs).
+Parse / generate errors on STDERR should show location like the UI (snippet + caret), via shared `describeError`.
+
+Shared generate path: `runGeneratePipeline` / `formatTypeAstJson` (UI and CLI); `generateChecker` remains the PHP-only golden helper.
+
 ## Code style
 
 ```ts
@@ -112,6 +131,15 @@ For switch exhaustiveness (or other “impossible” paths), do **not** use `con
 default:
   throw new Error('never reached');
 ```
+
+## Code comments
+
+Comments must not duplicate the code (verbatim or restated).
+Prefer **why**, plus non-obvious pre/post-conditions.
+Use Inline comments sparingly; prefer clearer code when something is unclear.
+Most functions / classes / methods should have a comment; omit only when names and code are obvious.
+Same as README prose: **one sentence per line; no hard-wrapping** long sentences across lines.
+Prefer shorter phrasing where possible.
 
 ## Git workflow
 
@@ -130,6 +158,7 @@ yarn spellcheck
 In `README.md`, prefer one sentence per line.
 Do not hard-wrap long sentences across multiple lines.
 Keep Markdown tables column-aligned in the source (pad cells so `|` separators line up).
+The same one-sentence-per-line / no hard-wrap rule applies to code comments (see **Code comments**).
 
 ## Warnings
 

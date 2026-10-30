@@ -3,7 +3,8 @@ import {
   highlightCode,
   type HighlightLanguage,
 } from '../highlight.ts';
-import { describeError, renderErrorHtml } from './errorDisplay.ts';
+import { describeError } from '../describeError.ts';
+import { renderErrorHtml } from './errorDisplay.ts';
 import {
   applyExpansionState,
   collectExpansionState,
@@ -105,7 +106,8 @@ let activeOutputTab: OutputTabId = 'php';
 
 const copyBtn = document.querySelector<HTMLButtonElement>('#output-copy')!;
 const copyStatus = document.querySelector<HTMLElement>('#copy-status');
-let copyStatusTimeoutId: ReturnType<typeof setTimeout> | undefined;
+// Browser timer id (DOM `number`); avoid NodeJS.Timeout when @types/node is loaded.
+let copyStatusTimeoutId: number | undefined;
 
 const OUTPUT_PRE_LABELS: Record<string, string> = {
   'type-output': 'Type AST output',
@@ -232,7 +234,7 @@ export function setupCopyButton(): void {
         copyStatus.textContent = 'Copied to clipboard';
       }
       if (copyStatusTimeoutId !== undefined) {
-        clearTimeout(copyStatusTimeoutId);
+        window.clearTimeout(copyStatusTimeoutId);
       }
       copyStatusTimeoutId = window.setTimeout(() => {
         copyStatusTimeoutId = undefined;

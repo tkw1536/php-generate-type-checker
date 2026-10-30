@@ -1,5 +1,6 @@
 import type { TraceStep } from '../generator/optimizer/trace/types.ts';
-import { describeError, renderErrorHtml } from './errorDisplay.ts';
+import { describeError } from '../describeError.ts';
+import { renderErrorHtml } from './errorDisplay.ts';
 import {
   isCollapsedByDefault,
   isEnvTraceRule,

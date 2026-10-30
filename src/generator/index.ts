@@ -1,10 +1,5 @@
-import {
-  buildEntries,
-  optimize,
-  renderChecker,
-} from './pipeline.ts';
 import type { GenerateCheckerOptions } from './options.ts';
-import { parseCheckerInput } from "../parser/parseInput.ts";
+import { runGeneratePipeline } from './runPipeline.ts';
 
 export type GenerateCheckerOptionsWithAliases = GenerateCheckerOptions & {
   readonly emitPhpstanTypeAliases?: boolean;
@@ -12,33 +7,13 @@ export type GenerateCheckerOptionsWithAliases = GenerateCheckerOptions & {
   readonly resolveAliases?: boolean;
 };
 
-/** Composed pipeline; used by fixture tests and the UI. */
+/**
+ * PHP-only convenience for goldens and callers that do not need Trace.
+ * Live UI/CLI use {@link runGeneratePipeline} so steps are retained.
+ */
 export function generateChecker(
   typeString: string,
   options?: GenerateCheckerOptionsWithAliases,
 ): string {
-  const entries = parseCheckerInput(typeString, {
-    resolveAliases: options?.resolveAliases,
-  });
-  const {
-    ir: built,
-    typesByName,
-    docStringsByName,
-    phpstanTypeAliases,
-  } = buildEntries(entries, {
-    ...options,
-    segmentSources: entries.map((e) => e.typeString),
-  });
-  const ir =
-    options?.prioritizeReadabilityOverCompactness === true
-      ? built
-      : optimize(built).ir;
-  return renderChecker(ir, {
-    ...options,
-    typeString: typeString.trim(),
-    typesByName,
-    docStringsByName,
-    phpstanTypeAliases,
-    emitPhpstanTypeAliases: options?.emitPhpstanTypeAliases,
-  });
+  return runGeneratePipeline(typeString, options).php;
 }

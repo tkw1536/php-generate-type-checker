@@ -17,6 +17,7 @@ Parse [PHPDoc types as supported by PHPStan](https://phpstan.org/writing-php-cod
 - Emit standalone functions or static methods you can drop into your own code
 - Shared helpers for nested types, with readable names like `isPostListResponse` by default
 - UI that runs entirely in your browser — Type / Trace / PHP tabs, no server-side code or analytics
+- CLI with the same generate options (`yarn cli` / `php-generate-type-checker`)
 
 ## Examples
 
@@ -110,6 +111,22 @@ function isArrayFooIntBarString(mixed $value): bool
     );
 }
 ```
+
+## Command line
+
+After `yarn install` you can also generate checkers from the terminal:
+
+```bash
+yarn cli 'array{foo: int}'
+yarn cli --file types.phpdoc
+echo 'int|string' | yarn cli --file -
+php-generate-type-checker --help
+```
+
+Flags mirror the UI (optimize, emit mode, aliases, sealed shapes, and so on).
+Default output is PHP on STDOUT — redirect if you want a file.
+`--type` and `--trace` print the Type / Trace JSON for inspection; those JSON shapes are not a stable contract.
+See `yarn cli --help` for the full option list.
 
 ## Technical Overview
 
@@ -471,6 +488,7 @@ How they are used:
 corepack enable             # once per machine, if Yarn is not available
 yarn install
 yarn dev                    # http://localhost:5173
+yarn cli --help             # or: php-generate-type-checker --help
 yarn test
 yarn report:optimizer-stats # aggregate simplify metrics over generator fixtures
 yarn check:phpstan          # analyse committed *.golden.php (CI: phpstan-goldens.yml)

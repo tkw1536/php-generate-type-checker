@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { describeError } from '../describeError.ts';
 import { ParseError } from '../parser/parseError.ts';
-import { describeError, renderErrorHtml } from './errorDisplay.ts';
+import { renderErrorHtml } from './errorDisplay.ts';
 
 function showsCaretAtParseErrorPosition(): void {
   const html = renderErrorHtml(

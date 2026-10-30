@@ -3,10 +3,14 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "bin": {
+    "php-generate-type-checker": "./src/cli/main.ts"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "cli": "node ./src/cli/main.ts",
     "test": "vitest run",
     "report:optimizer-stats": "node ./src/generator/testdata/report-optimizer-stats.mjs",
     "download:phpstan": "node ./phpstan/download-phpstan.mjs",
@@ -20,6 +24,7 @@
     "lint:fix": "oxlint --fix"
   },
   "devDependencies": {
+    "@types/node": "^26.6.6",
     "cspell": "^10.4.0",
     "happy-dom": "^21.0.4",
     "oxlint": "^1.89.0",
