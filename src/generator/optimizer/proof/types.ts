@@ -2,7 +2,7 @@ import type { Expr } from '../../ir/types.ts';
 import type { EnvFact } from '../passes/facts/env.types.ts';
 import type { TheoryRuleId } from '../theory/types.ts';
 
-/** Structural imply combinators (not theory Horn rules). */
+/** Structural imply combinator ids (not theory Horn rules). */
 export type ImplyStructuralId =
   | 'refl'
   | 'andConjunct'

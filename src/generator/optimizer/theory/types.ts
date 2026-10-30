@@ -77,7 +77,7 @@ export type RewriteRule = {
   readonly id: RewriteRuleId;
   readonly match: ExprPattern;
   readonly replace: ExprPattern;
-  /** Instantiated patterns that must be proveable true in the fact env. */
+  /** Instantiated patterns that must be provable true in the fact env. */
   readonly require?: readonly ExprPattern[];
   readonly guard?: (subst: Subst) => boolean;
 };
