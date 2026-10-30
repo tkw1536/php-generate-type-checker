@@ -1,0 +1,4 @@
+# Settings for validating generated `*.examples.golden.php` harnesses.
+# check-phpstan.mjs only scores phpstan.dumpType (Dumped type: true per example).
+includes:
+	- shared.neon

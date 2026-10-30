@@ -1,3 +1,4 @@
+import { exampleExpressions } from '../examples/pack.ts';
 import {
   formatTypeAstAstJson,
   formatTypeAstSourceJson,
@@ -11,14 +12,23 @@ import {
   setJsonTreeExpanded,
 } from './jsonTreeExpand.ts';
 import { renderJsonTree } from './jsonTreeView.ts';
+import { renderExamplesDetail } from './typeAstExamples.ts';
 
 /** Selectable leaf under a parsed type group. */
-export type TypeAstLeaf = 'source' | 'ast';
+export type TypeAstLeaf = 'source' | 'ast' | 'examples';
 
 export type TypeAstSelection = {
   readonly entryIndex: number;
   readonly leaf: TypeAstLeaf;
 };
+
+/** Source / AST always; Examples only when the type has at least one. */
+function leavesForEntry(entry: ParsedCheckerEntry): readonly TypeAstLeaf[] {
+  if (exampleExpressions(entry.ast).length === 0) {
+    return ['source', 'ast'];
+  }
+  return ['source', 'ast', 'examples'];
+}
 
 /** List label: alias name when present, otherwise the source type string. */
 export function typeListLabel(entry: ParsedCheckerEntry): string {
@@ -31,6 +41,8 @@ function leafLabel(leaf: TypeAstLeaf): string {
       return 'Source';
     case 'ast':
       return 'AST';
+    case 'examples':
+      return 'Examples';
     default:
       throw new Error('never reached');
   }
@@ -86,7 +98,7 @@ function renderTypeList(
     heading.textContent = typeListLabel(entry);
     root.append(heading);
 
-    for (const leaf of ['source', 'ast'] as const) {
+    for (const leaf of leavesForEntry(entry)) {
       const row = document.createElement('div');
       row.className = 'type-ast-item-row type-ast-item-row--nested';
       appendCollapseSpacer(row);
@@ -139,11 +151,7 @@ function renderSourceDetail(entry: ParsedCheckerEntry): HTMLElement {
   body.className = 'type-ast-source';
   body.id = 'type-output';
   body.setAttribute('aria-label', 'Parsed type source');
-  appendSourceField(
-    body,
-    'Alias',
-    entry.aliasName ?? '(none)',
-  );
+  appendSourceField(body, 'Alias', entry.aliasName ?? '(none)');
   appendSourceField(body, 'Type string', entry.typeString);
   return body;
 }
@@ -219,15 +227,29 @@ export class TypeAstPanel {
     }
   }
 
+  private clampSelection(): void {
+    if (this.selected.entryIndex >= this.entries.length) {
+      this.selected = { entryIndex: 0, leaf: 'source' };
+      return;
+    }
+    const entry = this.entries[this.selected.entryIndex];
+    if (
+      this.selected.leaf === 'examples' &&
+      exampleExpressions(entry.ast).length === 0
+    ) {
+      this.selected = {
+        entryIndex: this.selected.entryIndex,
+        leaf: 'source',
+      };
+    }
+  }
+
   private render(options?: { readonly preserveExpansion?: boolean }): void {
+    this.clampSelection();
     const entry = this.entries[this.selected.entryIndex];
     if (entry === undefined) {
       return;
     }
-    this.rawText =
-      this.selected.leaf === 'source'
-        ? formatTypeAstSourceJson(entry)
-        : formatTypeAstAstJson(entry);
     const previousTree =
       options?.preserveExpansion === true && this.selected.leaf === 'ast'
         ? this.bodyEl.querySelector<HTMLElement>('#type-output .json-tree')
@@ -238,9 +260,15 @@ export class TypeAstPanel {
     detail.className = 'type-ast-detail';
     detail.append(renderDetailHeader(entry, this.selected.leaf));
     if (this.selected.leaf === 'source') {
+      this.rawText = formatTypeAstSourceJson(entry);
       detail.append(renderSourceDetail(entry));
-    } else {
+    } else if (this.selected.leaf === 'ast') {
+      this.rawText = formatTypeAstAstJson(entry);
       detail.append(renderAstDetail(entry, previousTree));
+    } else {
+      const examples = renderExamplesDetail(entry);
+      this.rawText = examples.copyText;
+      detail.append(examples.el);
     }
     root.append(
       renderTypeList(this.entries, this.selected, (selection) => {

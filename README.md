@@ -159,7 +159,7 @@ Generation runs in four phases, which can be seen in the diagram below:
 
 Generate and Optimize work on abstract checkers (guards, loops, returns) that are not PHP yet; only Render emits actual PHP.
 Examples below show that abstract form as PHP so it is readable.
-The UI Type tab lists parsed types; under each, Source shows the alias and type string, and AST shows the parse tree as JSON.
+The UI Type tab lists parsed types; under each, Source shows the alias and type string, AST shows the parse tree as JSON, and Examples shows PHP value expressions you can copy (or “No examples”).
 
 Generated checkers are meant to pass PHPStan at level 10 on bleeding edge; anything else is considered a bug.
 This is checked for the test case output by CI (see Goldens Section below).
@@ -458,16 +458,20 @@ For example, `list<mixed>|list<string>` becomes `is_array($value) && array_is_li
 Generator success fixtures are the expected PHP checkers for each input type (or docblock).
 
 - **Sources:** edit `src/generator/testdata/<stem>.IN`
-- **Goldens:** regenerated as `<stem>.golden.php` next to that file (`yarn update_fixtures:generator`)
+- **Goldens:** regenerated as `<stem>.checker.golden.php` and `<stem>.examples.golden.php` next to that file (`yarn update_fixtures:generator`)
 - **Errors:** cases that must fail generation live in `errors.IN` (Vitest asserts each line throws; no PHP / no JSON)
 
-Each `.golden.php` file is real PHP with one namespaced checker per case.
+Each `.checker.golden.php` file is real PHP with one namespaced checker per case.
+Each `.examples.golden.php` file packs a PHPStan dumpType harness (or `// no examples`).
+Inputs that need unresolved classes (`# RequireClass:` / named types) are omitted from the examples golden entirely.
+The stub intentionally lies (`die('example')`); a conditional `@return ($value is T ? true : false)` is what PHPStan trusts.
 Namespaces are hashed from the case input and options so they stay unique and stable when the generated body changes.
 
 How they are used:
 
 - **Vitest** regenerates from the same inputs and asserts the output matches the golden body
-- **`yarn check:phpstan`** runs PHPStan on the committed `.golden.php` files as-is (expects a `phpstan/phpstan.phar`; get one with `yarn download:phpstan`).
+- **`yarn check:phpstan`** runs PHPStan on committed `.checker.golden.php` then `.examples.golden.php` (expects a `phpstan/phpstan.phar`; get one with `yarn download:phpstan`).
+  For examples, only `phpstan.dumpType` findings count: every `\PHPStan\dumpType(example(…))` must dump `true` (failures name the golden and example expression).
   This is run by CI after every commit.
 
 | Stem                     | Focus                                                              |
@@ -491,7 +495,7 @@ yarn dev                    # http://localhost:5173
 yarn cli --help             # or: php-generate-type-checker --help
 yarn test
 yarn report:optimizer-stats # aggregate simplify metrics over generator fixtures
-yarn check:phpstan          # analyse committed *.golden.php (CI: phpstan-goldens.yml)
+yarn check:phpstan          # analyse checker + examples goldens (CI: phpstan-goldens.yml)
 yarn download:phpstan       # fetch phpstan/phpstan.phar (optional: yarn download:phpstan -- <version>)
 yarn build
 yarn lint                   # Oxlint

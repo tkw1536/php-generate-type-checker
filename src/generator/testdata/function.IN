@@ -33,7 +33,7 @@ TRue
 STRING
 non-FALSY-string
 ARRAY<string>
-class-STRING<SomeClass>
+class-STRING<SomeClass>  # RequireClass: SomeClass
 
 # --- Built-in type aliases ---
 positive-int
@@ -42,20 +42,20 @@ non-positive-int
 non-negative-int
 non-zero-int
 class-string
-class-string<MyClass>
-class-string<\Foo\Bar>
-class-string<A|B>
-class-string<A&B>
-class-string<(A|B)&C>
-class-string<IAmValid>|class-string
-class-string|class-string<IAmValid>
+class-string<MyClass>  # RequireClass: MyClass
+class-string<\Foo\Bar>  # RequireClass: \Foo\Bar
+class-string<A|B>  # RequireClass: A, B
+class-string<A&B>  # RequireClass: A, B
+class-string<(A|B)&C>  # RequireClass: A, B, C
+class-string<IAmValid>|class-string  # RequireClass: IAmValid
+class-string|class-string<IAmValid>  # RequireClass: IAmValid
 interface-string
-interface-string<MyInterface>
-interface-string<A|B>
+interface-string<MyInterface>  # RequireClass: MyInterface
+interface-string<A|B>  # RequireClass: A, B
 trait-string
 enum-string
-enum-string<MyEnum>
-enum-string<A|B>
+enum-string<MyEnum>  # RequireClass: MyEnum
+enum-string<A|B>  # RequireClass: A, B
 
 numeric-string
 callable-string
@@ -71,11 +71,11 @@ non-empty-uppercase-string
 non-empty-mixed
 
 # --- Class names ---
-Foo
-Bar
+Foo  # RequireClass: Foo
+Bar  # RequireClass: Bar
 DateTimeInterface
-\Foo\Bar
-\Fully\Qualified\ClassName
+\Foo\Bar  # RequireClass: \Foo\Bar
+\Fully\Qualified\ClassName  # RequireClass: \Fully\Qualified\ClassName
 
 # --- Numeric and string literals ---
 42
@@ -104,7 +104,7 @@ array<never>
 array<int>
 array<string, int>
 array<string, array<int, bool>>
-array<int, Foo>
+array<int, Foo>  # RequireClass: Foo
 array<int|string, mixed>
 array<int|string|bool, mixed>
 array<array-key, mixed>
@@ -194,13 +194,15 @@ array&array{}
 int&0
 0&int
 string&''
-Foo&Bar
+Foo&Bar  # RequireClass: Foo, Bar
+\stdClass&object
+object&\stdClass
 \stdClass&object{a: int}
 object{a: int}&\stdClass
-A&B&C
-A&B|C
-(array<string, int|null>|null)&Foo
-(int|string)&Foo
+A&B&C  # RequireClass: A, B, C
+A&B|C  # RequireClass: A, B, C
+(array<string, int|null>|null)&Foo  # RequireClass: Foo
+(int|string)&Foo  # RequireClass: Foo
 
 # --- Exclusive / impossible intersections ---
 int&string
@@ -234,7 +236,7 @@ array<mixed>
 array<never>
 array<string, string>
 array<string>|array<int>
-callable-array
-callable-object
+callable-array  # RequireClass: callable-array
+callable-object  # RequireClass: callable-object
 list<mixed>|list<string>
 list<string>|array<mixed>

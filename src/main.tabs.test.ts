@@ -16,8 +16,11 @@ function resetDom(): void {
   window.location.hash = '';
 }
 
-async function switchesOutputTabsAndCopiesActivePanel(): Promise<void> {
-  const { writeText } = await bootApp();
+async function switchesOutputTabsAndHidesCopyOffPhp(): Promise<void> {
+  await bootApp();
+
+  const copyBtn = document.querySelector<HTMLButtonElement>('#output-copy')!;
+  expect(copyBtn.hidden).toBe(false);
 
   const typeTab = document.querySelector<HTMLButtonElement>(
     '#output-tab-type',
@@ -36,22 +39,7 @@ async function switchesOutputTabsAndCopiesActivePanel(): Promise<void> {
   );
   expect(typeAstCodeText()).toContain('UserAddress');
   expect(typeAstCodeText()).toMatch(/Alias/u);
-
-  const copyBtn = document.querySelector<HTMLButtonElement>('#output-copy')!;
-  copyBtn.click();
-  await vi.waitFor(() => {
-    expect(copyBtn.textContent).toBe('Copied!');
-  });
-
-  expect(writeText).toHaveBeenCalledOnce();
-  const copied = writeText.mock.calls[0][0];
-  expect(copied).toContain('"aliasName"');
-  expect(copied).toContain('UserAddress');
-  expect(copied).toContain('"typeString"');
-  expect(copied).not.toMatch(/^function /mu);
-  expect(document.querySelector('#copy-status')!.textContent).toBe(
-    'Copied to clipboard',
-  );
+  expect(copyBtn.hidden).toBe(true);
 
   const phpTab = document.querySelector<HTMLButtonElement>('#output-tab-php')!;
   phpTab.click();
@@ -59,6 +47,7 @@ async function switchesOutputTabsAndCopiesActivePanel(): Promise<void> {
   expect(
     document.querySelector<HTMLElement>('#output-panel-php')!.hidden,
   ).toBe(false);
+  expect(copyBtn.hidden).toBe(false);
 }
 
 async function copiesPhpFromActiveTab(): Promise<void> {
@@ -131,7 +120,7 @@ function expectFooterAfterTabClicks(panes: FooterPanes): void {
   expect(panes.footer.classList.contains('panel-footer--caution')).toBe(false);
   expect(panes.type.hidden).toBe(false);
   expect(panes.php.hidden).toBe(true);
-  expect(panes.type.textContent).toMatch(/Parsed types grouped/u);
+  expect(panes.type.textContent).toMatch(/Select Source, AST, or Examples/u);
   expect(panes.type.querySelector('#type-expand-all')).not.toBeNull();
 
   document
@@ -140,6 +129,7 @@ function expectFooterAfterTabClicks(panes: FooterPanes): void {
   expect(panes.trace.hidden).toBe(false);
   expect(panes.type.hidden).toBe(true);
   expect(panes.trace.textContent).toMatch(/Initial checker/u);
+  expect(panes.trace.textContent).toMatch(/Before, After, and Diff/u);
 }
 
 async function swapsFooterHelpByTab(): Promise<void> {
@@ -164,8 +154,8 @@ function listUnionTraceHash(): string {
   })}`;
 }
 
-async function showsOptimizeTraceListAndCopiesPhp(): Promise<void> {
-  const { writeText } = await bootApp({ hash: listUnionTraceHash() });
+async function showsOptimizeTraceListAndHidesToolbarCopy(): Promise<void> {
+  await bootApp({ hash: listUnionTraceHash() });
 
   const traceTab = document.querySelector<HTMLButtonElement>(
     '#output-tab-optimize-trace',
@@ -179,16 +169,9 @@ async function showsOptimizeTraceListAndCopiesPhp(): Promise<void> {
   expectOptimizeTraceChrome(panel);
   expect(panel.textContent).not.toMatch(/^\s*#\d+\s+\w+\./mu);
   expectFactDetail(panel);
-
-  const copyBtn = document.querySelector<HTMLButtonElement>('#output-copy')!;
-  copyBtn.click();
-  await vi.waitFor(() => {
-    expect(copyBtn.textContent).toBe('Copied!');
-  });
-  expect(writeText).toHaveBeenCalledOnce();
-  const copied = writeText.mock.calls[0][0];
-  expect(typeof copied).toBe('string');
-  expect(copied.length).toBeGreaterThan(0);
+  expect(
+    document.querySelector<HTMLButtonElement>('#output-copy')!.hidden,
+  ).toBe(true);
 }
 
 async function movesFocusAcrossTabsWithKeyboard(): Promise<void> {
@@ -228,8 +211,8 @@ describe('app UI output tabs', () => {
   afterEach(resetDom);
 
   it(
-    'switches output tabs and copies the active panel text',
-    switchesOutputTabsAndCopiesActivePanel,
+    'switches output tabs and hides toolbar Copy off the PHP tab',
+    switchesOutputTabsAndHidesCopyOffPhp,
   );
   it(
     'copies PHP from the active tab and announces status',
@@ -241,7 +224,7 @@ describe('app UI output tabs', () => {
     movesFocusAcrossTabsWithKeyboard,
   );
   it(
-    'shows Optimize Trace list and copies selected PHP',
-    showsOptimizeTraceListAndCopiesPhp,
+    'shows Optimize Trace list and hides toolbar Copy',
+    showsOptimizeTraceListAndHidesToolbarCopy,
   );
 });

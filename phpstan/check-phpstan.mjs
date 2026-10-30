@@ -1,5 +1,5 @@
 /**
- * Analyse committed generator success `*.golden.php` with PHPStan.
+ * Analyse committed checker + examples goldens with PHPStan.
  *
  * Does not write any files to disk. Source-map remapping is built in memory
  * from the parseable golden markers.
@@ -15,13 +15,20 @@ import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import {
+  loadExpectedDumpSites,
+  parseDumpTypeResults,
+  reportDumpTypeFailures,
+} from './check-phpstan.examples.mjs';
+import {
+  listExamplesGoldenPaths,
   listSuccessGoldenPaths,
+  loadExamplesLineRanges,
   loadGoldenLineRanges,
 } from './check-phpstan.fixtures.mjs';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..');
-// Config + default phar live beside this script so phpstan/ is self-contained.
-const NEON_PATH = path.join(import.meta.dirname, 'generated-check.neon');
+const CHECKER_NEON = path.join(import.meta.dirname, 'generated-check.neon');
+const EXAMPLES_NEON = path.join(import.meta.dirname, 'examples-check.neon');
 const DEFAULT_PHPSTAN_PHAR = path.join(import.meta.dirname, 'phpstan.phar');
 const DEFAULT_PHPSTAN_PHAR_REL = path.relative(REPO_ROOT, DEFAULT_PHPSTAN_PHAR);
 
@@ -34,7 +41,6 @@ function parsePhpstanPhar(argv) {
   let i = 0;
   while (i < argv.length) {
     const arg = argv[i];
-    // Yarn forwards a lone `--` after `yarn run … -- …`; ignore it.
     if (arg === '--') {
       i += 1;
       continue;
@@ -63,8 +69,8 @@ function printUsage() {
   yarn check:phpstan
   yarn check:phpstan -- --phpstan <phar>
 
-Analyse committed generator success *.golden.php with PHPStan
-(see phpstan/generated-check.neon). Writes nothing to disk.
+Analyse committed *.checker.golden.php (generated-check.neon) then
+*.examples.golden.php (examples-check.neon; dumpType-only). Writes nothing to disk.
 
 Place a PHPStan phar at ${DEFAULT_PHPSTAN_PHAR_REL} (default), or pass --phpstan.
 Download with: yarn download:phpstan  (optional: yarn download:phpstan -- <version>)
@@ -104,32 +110,39 @@ function goldenNameForLine(ranges, basename, lineNo) {
 }
 
 /**
- * Raw PHPStan lines look like `/abs/path/stem.golden.php:12:message`.
- * Strip the testdata directory prefix when present; always remap by basename.
- *
- * @param {string} testdataPrefix
+ * @param {string} prefix
  * @param {readonly GoldenLineRange[]} ranges
  * @param {string} stdout
  * @returns {number} number of analysis error lines printed
  */
-function printPhpstanStdout(testdataPrefix, ranges, stdout) {
+function printPhpstanStdout(prefix, ranges, stdout) {
   let errorCount = 0;
   for (const rawLine of stdout.split('\n')) {
     if (rawLine.length === 0) {
       continue;
     }
-    const line = rawLine.startsWith(testdataPrefix)
-      ? rawLine.slice(testdataPrefix.length)
+    const line = rawLine.startsWith(prefix)
+      ? rawLine.slice(prefix.length)
       : rawLine;
-    const match = /^(.+\.golden\.php):(\d+):(.*)$/u.exec(line);
+    const match = /^(.+\.(?:checker|examples)\.golden\.php):(\d+):(.*)$/u.exec(
+      line,
+    );
     if (match === null) {
       console.log(line);
       continue;
     }
     errorCount += 1;
-    const filePart = match[1] ?? '';
-    const lineNo = Number(match[2]);
-    const rest = match[3] ?? '';
+    const filePart = match[1];
+    const lineStr = match[2];
+    const rest = match[3];
+    if (
+      filePart === undefined ||
+      lineStr === undefined ||
+      rest === undefined
+    ) {
+      continue;
+    }
+    const lineNo = Number(lineStr);
     const basename = path.basename(filePart);
     const display = filePart.startsWith('/')
       ? basename
@@ -147,20 +160,12 @@ function printPhpstanStdout(testdataPrefix, ranges, stdout) {
 }
 
 /**
+ * @param {string} neonPath
  * @param {readonly string[]} phpPaths
- * @param {readonly GoldenLineRange[]} ranges
  * @param {string} pharAbs
- * @returns {number} 0 iff no analysis errors
+ * @returns {{ status: number | null; stdout: string }}
  */
-function runPhpstan(phpPaths, ranges, pharAbs) {
-  const testdataDir = path.resolve(
-    import.meta.dirname,
-    '../src/generator/testdata',
-  );
-  const testdataPrefix = `${testdataDir}${path.sep}`;
-
-  // Invoke `php` by name only — never resolve or search for a binary.
-  // Raw only appends [identifier=…] when verbose (or under an AI agent).
+function spawnPhpstan(neonPath, phpPaths, pharAbs) {
   const result = spawnSync(
     'php',
     [
@@ -170,7 +175,7 @@ function runPhpstan(phpPaths, ranges, pharAbs) {
       '-v',
       '--error-format=raw',
       '-c',
-      NEON_PATH,
+      neonPath,
       ...phpPaths,
     ],
     {
@@ -181,20 +186,59 @@ function runPhpstan(phpPaths, ranges, pharAbs) {
   if (result.error !== undefined) {
     throw result.error;
   }
-  if (result.status === null) {
+  return { status: result.status, stdout: result.stdout ?? '' };
+}
+
+function testdataPrefix() {
+  const testdataDir = path.resolve(
+    import.meta.dirname,
+    '../src/generator/testdata',
+  );
+  return `${testdataDir}${path.sep}`;
+}
+
+/**
+ * Checker goldens: every PHPStan finding is a failure.
+ *
+ * @param {string} neonPath
+ * @param {readonly string[]} phpPaths
+ * @param {readonly GoldenLineRange[]} ranges
+ * @param {string} pharAbs
+ * @returns {number} 0 iff no analysis errors
+ */
+function runCheckerPhpstan(neonPath, phpPaths, ranges, pharAbs) {
+  const { status, stdout } = spawnPhpstan(neonPath, phpPaths, pharAbs);
+  if (status === null) {
     console.error('PHPStan was killed by a signal');
     return 1;
   }
-  const errorCount = printPhpstanStdout(
-    testdataPrefix,
-    ranges,
-    result.stdout ?? '',
-  );
-  // Non-zero iff analysis errors; also fail on PHPStan crash/config with no lines.
+  const errorCount = printPhpstanStdout(testdataPrefix(), ranges, stdout);
   if (errorCount > 0) {
     return 1;
   }
-  return result.status === 0 ? 0 : 1;
+  return status === 0 ? 0 : 1;
+}
+
+/**
+ * Examples goldens: only phpstan.dumpType matters; each site must dump true.
+ *
+ * @param {string} neonPath
+ * @param {readonly string[]} phpPaths
+ * @param {readonly GoldenLineRange[]} ranges
+ * @param {string} pharAbs
+ * @returns {number} 0 iff every expected dump is true
+ */
+function runExamplesPhpstan(neonPath, phpPaths, ranges, pharAbs) {
+  const expected = loadExpectedDumpSites(phpPaths, ranges);
+  console.error(`expecting ${expected.size} dumpType(example(…)) sites`);
+  const { status, stdout } = spawnPhpstan(neonPath, phpPaths, pharAbs);
+  if (status === null) {
+    console.error('PHPStan was killed by a signal');
+    return 1;
+  }
+  const actual = parseDumpTypeResults(testdataPrefix(), stdout);
+  const failures = reportDumpTypeFailures(expected, actual);
+  return failures === 0 ? 0 : 1;
 }
 
 function main() {
@@ -217,14 +261,35 @@ function main() {
     process.exit(1);
   }
 
-  const phpPaths = listSuccessGoldenPaths();
-  const ranges = loadGoldenLineRanges();
-  console.error(
-    `analysing ${phpPaths.length} golden files (${ranges.length} cases)`,
-  );
+  const pharAbs = path.resolve(pharPath);
 
-  const status = runPhpstan(phpPaths, ranges, path.resolve(pharPath));
-  process.exit(status);
+  const checkerPaths = listSuccessGoldenPaths();
+  const checkerRanges = loadGoldenLineRanges();
+  console.error(
+    `analysing ${checkerPaths.length} checker golden files (${checkerRanges.length} cases)`,
+  );
+  const checkerStatus = runCheckerPhpstan(
+    CHECKER_NEON,
+    checkerPaths,
+    checkerRanges,
+    pharAbs,
+  );
+  if (checkerStatus !== 0) {
+    process.exit(checkerStatus);
+  }
+
+  const examplesPaths = listExamplesGoldenPaths();
+  const examplesRanges = loadExamplesLineRanges();
+  console.error(
+    `analysing ${examplesPaths.length} examples golden files (${examplesRanges.length} cases)`,
+  );
+  const examplesStatus = runExamplesPhpstan(
+    EXAMPLES_NEON,
+    examplesPaths,
+    examplesRanges,
+    pharAbs,
+  );
+  process.exit(examplesStatus);
 }
 
 main();

@@ -140,7 +140,7 @@ async function debouncesInputThenUpdatesPhpAndHash(): Promise<void> {
 }
 
 async function updatesPhpWhenOptionsChange(): Promise<void> {
-  const { writeText } = await bootApp();
+  await bootApp();
 
   const optimize = document.querySelector<HTMLInputElement>(
     '#generate-prioritize-readability',
@@ -149,15 +149,17 @@ async function updatesPhpWhenOptionsChange(): Promise<void> {
   optimize.dispatchEvent(new Event('change', { bubbles: true }));
 
   document.querySelector<HTMLButtonElement>('#output-tab-type')!.click();
-  const copyBtn = document.querySelector<HTMLButtonElement>('#output-copy')!;
-  copyBtn.click();
-  await vi.waitFor(() => {
-    expect(copyBtn.textContent).toBe('Copied!');
-  });
-  const typeJson = writeText.mock.calls.at(-1)?.[0];
-  expect(typeof typeJson).toBe('string');
-  expect(typeJson).toContain('"aliasName"');
-  expect(typeJson).toContain('UserAddress');
+  expect(
+    document.querySelector<HTMLButtonElement>('#output-copy')!.hidden,
+  ).toBe(true);
+  expect(document.querySelector('.type-ast-group')?.textContent).toBe(
+    'UserAddress',
+  );
+
+  document.querySelector<HTMLButtonElement>('#output-tab-php')!.click();
+  expect(
+    document.querySelector<HTMLButtonElement>('#output-copy')!.hidden,
+  ).toBe(false);
 
   const verbose = document.querySelector<HTMLInputElement>(
     '#generate-verbose-phpdoc',

@@ -21,44 +21,78 @@ describe('typeListLabel', () => {
   });
 });
 
-describe('TypeAstPanel', () => {
-  it('groups types with Source and AST leaves', () => {
-    const body = document.createElement('div');
-    const panel = new TypeAstPanel(body);
-    const entries = parseCheckerInput(`/**
+const TWO_ALIASES = `/**
  * @phpstan-type UserId positive-int
  */
 /**
  * @phpstan-type Slug non-empty-string
- */`);
+ */`;
+
+describe('TypeAstPanel', () => {
+  it('groups types with Source and AST leaves', () => {
+    const body = document.createElement('div');
+    const panel = new TypeAstPanel(body);
+    const entries = parseCheckerInput(TWO_ALIASES);
     panel.setEntries(entries);
 
-    const groups = [...body.querySelectorAll('.type-ast-group')];
-    expect(groups.map((el) => el.textContent)).toEqual(['UserId', 'Slug']);
-
+    expect(
+      [...body.querySelectorAll('.type-ast-group')].map((el) => el.textContent),
+    ).toEqual(['UserId', 'Slug']);
     const items = [
       ...body.querySelectorAll<HTMLButtonElement>('.type-ast-item'),
     ];
     expect(items.map((el) => el.textContent)).toEqual([
       'Source',
       'AST',
+      'Examples',
       'Source',
       'AST',
+      'Examples',
     ]);
     expect(items[0].getAttribute('aria-selected')).toBe('true');
     expect(panel.rawText).toBe(formatTypeAstSourceJson(entries[0]));
     expect(body.querySelector('.type-ast-source')).not.toBeNull();
     expect(body.querySelector('#type-output .json-tree')).toBeNull();
+  });
 
-    items[1].click();
+  it('shows highlighted Examples with Copy, then switches groups', () => {
+    const body = document.createElement('div');
+    const panel = new TypeAstPanel(body);
+    const entries = parseCheckerInput(TWO_ALIASES);
+    panel.setEntries(entries);
+
+    body.querySelectorAll<HTMLButtonElement>('.type-ast-item')[1].click();
     expect(panel.rawText).toBe(formatTypeAstAstJson(entries[0]));
     expect(body.querySelector('#type-output .json-tree')).not.toBeNull();
 
-    const afterAst = [
-      ...body.querySelectorAll<HTMLButtonElement>('.type-ast-item'),
-    ];
-    afterAst[2].click();
+    body.querySelectorAll<HTMLButtonElement>('.type-ast-item')[2].click();
+    expect(body.querySelector('.type-ast-examples')).not.toBeNull();
+    expect(panel.rawText.length).toBeGreaterThan(0);
+    expect(body.querySelector('.type-ast-examples-expr.hljs')).not.toBeNull();
+    expect(
+      body.querySelectorAll('.type-ast-examples-copy').length,
+    ).toBeGreaterThan(0);
+
+    body.querySelectorAll<HTMLButtonElement>('.type-ast-item')[3].click();
     expect(panel.rawText).toBe(formatTypeAstSourceJson(entries[1]));
     expect(panel.rawText).toContain('Slug');
+  });
+
+  it('omits Examples when empty and falls back from Examples to Source', () => {
+    const body = document.createElement('div');
+    const panel = new TypeAstPanel(body);
+    panel.setEntries(parseCheckerInput('int'));
+    body.querySelectorAll<HTMLButtonElement>('.type-ast-item')[2].click();
+    expect(body.querySelector('.type-ast-examples')).not.toBeNull();
+
+    panel.setEntries(parseCheckerInput('never'));
+    const items = [
+      ...body.querySelectorAll<HTMLButtonElement>('.type-ast-item'),
+    ];
+    expect(items.map((el) => el.textContent)).toEqual(['Source', 'AST']);
+    expect(panel.rawText).toBe(
+      formatTypeAstSourceJson(parseCheckerInput('never')[0]),
+    );
+    expect(body.querySelector('.type-ast-examples')).toBeNull();
   });
 });

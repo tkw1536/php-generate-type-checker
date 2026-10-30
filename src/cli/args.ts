@@ -25,6 +25,7 @@ export type CliArgs = {
   readonly unsafeStringArrayKeys: boolean;
   readonly printType: boolean;
   readonly printTrace: boolean;
+  readonly printExamples: boolean;
 };
 
 export class CliUsageError extends Error {
@@ -61,6 +62,7 @@ Generate options (defaults match the UI):
 Output (mutually exclusive; default is PHP on STDOUT):
   --type                 Print type AST JSON (unstable schema)
   --trace                Print optimizer trace JSON (unstable schema)
+  --examples             Print PHPStan example harness PHP (unstable)
 
 Other:
   -h, --help             Show this help
@@ -94,6 +96,7 @@ function runParseArgs(argv: readonly string[]) {
         // Option name `type` breaks parseArgs generics; read via property descriptor below.
         type: { type: 'boolean', default: false },
         trace: { type: 'boolean', default: false },
+        examples: { type: 'boolean', default: false },
       },
       allowNegative: true,
       allowPositionals: true,
@@ -116,8 +119,11 @@ function buildCliArgs(values: object, positionals: readonly string[]): CliArgs {
 
   const printType = readBool(values, 'type');
   const printTrace = readBool(values, 'trace');
-  if (printType && printTrace) {
-    throw new CliUsageError('Use only one of --type or --trace');
+  const printExamples = readBool(values, 'examples');
+  const exclusive =
+    Number(printType) + Number(printTrace) + Number(printExamples);
+  if (exclusive > 1) {
+    throw new CliUsageError('Use only one of --type, --trace, or --examples');
   }
 
   const file = readString(values, 'file');
@@ -139,6 +145,7 @@ function buildCliArgs(values: object, positionals: readonly string[]): CliArgs {
     unsafeStringArrayKeys: readBool(values, 'unsafe-string-array-keys'),
     printType,
     printTrace,
+    printExamples,
   };
 }
 

@@ -3,7 +3,8 @@
   "useGitignore": true,
   "ignorePaths": [
     "src/**/testdata/*.json",
-    "src/**/testdata/*.golden.php"
+    "src/**/testdata/*.checker.golden.php",
+    "src/**/testdata/*.examples.golden.php"
   ],
   "words": [
     "alnum",

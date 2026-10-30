@@ -277,9 +277,8 @@
               hidden
             >
               <p class="output-footer-help">
-                Parsed types grouped on the left; select Source (alias + type string) or AST under each.
+                Select Source, AST, or Examples for each type on the left.
                 On AST, click <code>+/−</code> to toggle; Alt/⌥-click for a whole subtree.
-                Copy copies the active Source or AST view as plaintext JSON.
               </p>
               <div class="output-footer-actions">
                 <button
@@ -304,10 +303,8 @@
               hidden
             >
               <p class="output-footer-help">
-                Optimize rewrites grouped by checker function (then Prune).
-                Each group starts with the unoptimized Initial checker (full PHP, no Diff).
-                Later steps use Before / After / Diff on the full checker.
-                Copy copies the active view as plaintext.
+                One group per checker, then Prune.
+                Each group opens with the Initial checker; later steps show Before, After, and Diff.
               </p>
             </div>
             <div

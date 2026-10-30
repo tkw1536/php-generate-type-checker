@@ -106,7 +106,7 @@ function loadFixtures() {
     if (!MODE_STEMS.has(stem)) {
       continue;
     }
-    const file = path.join(dir, `${stem}.golden.php`);
+    const file = path.join(dir, `${stem}.checker.golden.php`);
     if (!existsSync(file)) {
       continue;
     }

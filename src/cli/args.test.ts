@@ -13,6 +13,7 @@ describe('parseCliArgs', () => {
     expect(args.unsafeStringArrayKeys).toBe(false);
     expect(args.printType).toBe(false);
     expect(args.printTrace).toBe(false);
+    expect(args.printExamples).toBe(false);
     expect(args.types).toEqual(['int']);
   });
 
@@ -31,6 +32,12 @@ describe('parseCliArgs', () => {
 
   it('rejects --type together with --trace', () => {
     expect(() => parseCliArgs(['--type', '--trace', 'int'])).toThrow(
+      CliUsageError,
+    );
+  });
+
+  it('rejects --examples together with --type', () => {
+    expect(() => parseCliArgs(['--type', '--examples', 'int'])).toThrow(
       CliUsageError,
     );
   });

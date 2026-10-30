@@ -140,6 +140,12 @@ export function getActiveOutputPanel(): CopyablePanel {
 }
 
 export function syncCopyButton(): void {
+  const onPhp = activeOutputTab === 'php';
+  copyBtn.hidden = !onPhp;
+  if (!onPhp) {
+    copyBtn.disabled = true;
+    return;
+  }
   const panel = getActiveOutputPanel();
   copyBtn.disabled = panel.rawText.length === 0;
 }
@@ -201,6 +207,9 @@ export function refreshAllHighlights(): void {
 export function setupCopyButton(): void {
   copyBtn.addEventListener('click', () => {
     void (async () => {
+      if (activeOutputTab !== 'php') {
+        return;
+      }
       const panel = getActiveOutputPanel();
       if (panel.rawText === '') {
         return;

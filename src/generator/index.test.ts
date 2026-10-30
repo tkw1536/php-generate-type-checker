@@ -75,7 +75,7 @@ function caseToFixture(
 }
 
 function loadGoldenSuite(stem: string): GeneratorFixture[] {
-  const filePath = path.join(TESTDATA_DIR, `${stem}.golden.php`);
+  const filePath = path.join(TESTDATA_DIR, `${stem}.checker.golden.php`);
   const cases = parseGoldenPhp(readFileSync(filePath, 'utf8'));
   return cases.map((item, index) =>
     caseToFixture(stem, item, index, cases.length),
@@ -92,7 +92,7 @@ function errorsToFixtures(inputs: readonly string[]): GeneratorFixture[] {
   }));
 }
 
-/** All generator fixtures from `testdata/*.golden.php` and `errors.IN`. */
+/** All generator fixtures from `testdata/*.checker.golden.php` and `errors.IN`. */
 export function loadFixtures(): GeneratorFixture[] {
   return [
     ...SUCCESS_GOLDEN_STEMS.flatMap((stem) => loadGoldenSuite(stem)),

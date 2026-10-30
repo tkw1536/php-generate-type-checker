@@ -58,7 +58,7 @@ export function namespaceIdForCase(meta: GoldenCaseMeta): string {
   return `h${hex}`;
 }
 
-/** Suite stems that map 1:1 from `.IN` → `.golden.php` (success only). */
+/** Suite stems that map 1:1 from `.IN` → `.checker.golden.php` (success only). */
 export const SUCCESS_GOLDEN_STEMS: readonly string[] = [
   'function',
   'public_static',

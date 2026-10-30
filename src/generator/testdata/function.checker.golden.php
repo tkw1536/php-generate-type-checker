@@ -2154,6 +2154,26 @@ function isFooBar(mixed $value): bool
 }
 // @gtc-golden-end
 
+// @gtc-golden-begin {"input":"\\stdClass&object","output":"function"}
+namespace Golden\h78d27cf3146c {
+/** @phpstan-assert-if-true \stdClass&object $value */
+function isStdClassObject(mixed $value): bool
+{
+    return $value instanceof \stdClass;
+}
+}
+// @gtc-golden-end
+
+// @gtc-golden-begin {"input":"object&\\stdClass","output":"function"}
+namespace Golden\hcdb22b32069a {
+/** @phpstan-assert-if-true object&\stdClass $value */
+function isObjectStdClass(mixed $value): bool
+{
+    return $value instanceof \stdClass;
+}
+}
+// @gtc-golden-end
+
 // @gtc-golden-begin {"input":"\\stdClass&object{a: int}","output":"function"}
 namespace Golden\hc4bb75d07c34 {
 /** @phpstan-assert-if-true \stdClass&object{a: int} $value */

@@ -1,8 +1,9 @@
 /**
- * Regenerates generator success `*.golden.php` from `.IN` lists.
+ * Regenerates generator success `*.checker.golden.php` and `*.examples.golden.php`
+ * from `.IN` lists.
  * Run from repo root: yarn update_fixtures:generator
  *
- * Do not hand-edit `*.golden.php`; edit the matching `.IN` and regenerate.
+ * Do not hand-edit goldens; edit the matching `.IN` and regenerate.
  * Error cases live in `errors.IN` only (no regenerate step).
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -10,6 +11,12 @@ import path from 'node:path';
 import { generateChecker } from '../index.ts';
 import { namespaceIdForCase } from './goldenCase.ts';
 import { formatGoldenPhp } from './goldenPhp.ts';
+import { parseInSourceLine } from './readInSources.ts';
+import {
+  buildExamplesCase,
+  writeExamplesFromSources,
+  writeExamplesGoldenPhp,
+} from './update-testdata.examples.mjs';
 
 const testdataDir = import.meta.dirname;
 
@@ -19,22 +26,6 @@ const OUTPUT_MODES = [
   'public_static',
   'protected_static',
 ];
-
-/**
- * @param {string} line
- * @returns {string}
- */
-function trimLine(line) {
-  return line.trim();
-}
-
-/**
- * @param {string} line
- * @returns {boolean}
- */
-function isSourceLine(line) {
-  return line.length > 0 && !line.startsWith('#');
-}
 
 /**
  * @param {string} block
@@ -54,13 +45,18 @@ function isNonEmptyBlock(block) {
 
 /**
  * @param {string} inPath
- * @returns {string[]}
+ * @returns {import('./readInSources.ts').InSourceLine[]}
  */
 function readSources(inPath) {
-  return readFileSync(inPath, 'utf8')
-    .split('\n')
-    .map((line) => trimLine(line))
-    .filter((line) => isSourceLine(line));
+  /** @type {import('./readInSources.ts').InSourceLine[]} */
+  const out = [];
+  for (const line of readFileSync(inPath, 'utf8').split('\n')) {
+    const parsed = parseInSourceLine(line);
+    if (parsed !== null) {
+      out.push(parsed);
+    }
+  }
+  return out;
 }
 
 /**
@@ -70,6 +66,7 @@ function readSources(inPath) {
  *   readonly emitPhpstanTypeAliases: boolean;
  *   readonly verbosePhpdoc: boolean;
  *   readonly sealArrayShapes: boolean;
+ *   readonly requireClass: readonly string[];
  * }} MultilineCase
  */
 
@@ -95,6 +92,8 @@ function parseMultilineCase(block) {
   let emitPhpstanTypeAliases = false;
   let verbosePhpdoc = false;
   let sealArrayShapes = false;
+  /** @type {string[]} */
+  let requireClass = [];
   let start = 0;
 
   while (start < lines.length && lines[start].startsWith('#')) {
@@ -103,17 +102,21 @@ function parseMultilineCase(block) {
     if (outputMatch) {
       output = outputMatch[1];
     }
-    const emitMatch = /^#\s*emitAliases:\s*1/u.exec(line);
-    if (emitMatch) {
+    if (/^#\s*emitAliases:\s*1/u.test(line)) {
       emitPhpstanTypeAliases = true;
     }
-    const verboseMatch = /^#\s*verbosePhpdoc:\s*1/u.exec(line);
-    if (verboseMatch) {
+    if (/^#\s*verbosePhpdoc:\s*1/u.test(line)) {
       verbosePhpdoc = true;
     }
-    const sealMatch = /^#\s*sealArrayShapes:\s*1/u.exec(line);
-    if (sealMatch) {
+    if (/^#\s*sealArrayShapes:\s*1/u.test(line)) {
       sealArrayShapes = true;
+    }
+    const requireMatch = /^#\s*RequireClass:\s*(.*)$/u.exec(line);
+    if (requireMatch) {
+      requireClass = requireMatch[1]
+        .split(',')
+        .map((part) => part.trim())
+        .filter((part) => part.length > 0);
     }
     start++;
   }
@@ -125,6 +128,7 @@ function parseMultilineCase(block) {
     emitPhpstanTypeAliases,
     verbosePhpdoc,
     sealArrayShapes,
+    requireClass,
   };
 }
 
@@ -148,11 +152,10 @@ function sparseMeta(meta) {
 const globalNamespaces = new Map();
 
 /**
- * @param {import('./goldenCase.ts').GoldenCaseMeta} meta
+ * @param {string} id
  * @param {string} label
  */
-function registerNamespace(meta, label) {
-  const id = namespaceIdForCase(meta);
+function registerNamespaceId(id, label) {
   const prev = globalNamespaces.get(id);
   if (prev !== undefined && prev !== label) {
     throw new Error(
@@ -165,21 +168,29 @@ function registerNamespace(meta, label) {
 }
 
 /**
+ * @param {import('./goldenCase.ts').GoldenCaseMeta} meta
+ * @param {string} label
+ */
+function registerNamespace(meta, label) {
+  registerNamespaceId(namespaceIdForCase(meta), label);
+}
+
+/**
  * @param {string} stem
  * @param {readonly { readonly meta: import('./goldenCase.ts').GoldenCaseMeta; readonly expected: string }[]} cases
  */
-function writeGoldenPhp(stem, cases) {
+function writeCheckerGoldenPhp(stem, cases) {
   for (const item of cases) {
     registerNamespace(
       item.meta,
       `${stem}: ${JSON.stringify(item.meta.input)}`,
     );
   }
-  const fixturePath = path.resolve(testdataDir, `${stem}.golden.php`);
+  const fixturePath = path.resolve(testdataDir, `${stem}.checker.golden.php`);
   const source = formatGoldenPhp(stem, cases);
   writeFileSync(fixturePath, source);
   const written = (source.match(/^\/\/ @gtc-golden-begin /gmu) ?? []).length;
-  console.log(`Wrote ${written} cases to ${fixturePath}`);
+  console.log(`Wrote ${written} checker cases to ${fixturePath}`);
 }
 
 for (const output of OUTPUT_MODES) {
@@ -190,7 +201,7 @@ for (const output of OUTPUT_MODES) {
   const sources = readSources(inPath);
   /** @type {{ meta: import('./goldenCase.ts').GoldenCaseMeta; expected: string }[]} */
   const out = [];
-  for (const input of sources) {
+  for (const { input } of sources) {
     try {
       const expected = generateChecker(input, { output });
       out.push({
@@ -202,7 +213,15 @@ for (const output of OUTPUT_MODES) {
       console.warn('skip', output, JSON.stringify(input), message);
     }
   }
-  writeGoldenPhp(output, out);
+  writeCheckerGoldenPhp(output, out);
+  if (output === 'function') {
+    writeExamplesFromSources(
+      testdataDir,
+      registerNamespaceId,
+      output,
+      sources,
+    );
+  }
 }
 
 const DOCBlock_FIXTURES = [
@@ -221,28 +240,25 @@ for (const { name, emitPhpstanTypeAliases: defaultEmit } of DOCBlock_FIXTURES) {
   const cases = readMultilineCases(inPath);
   /** @type {{ meta: import('./goldenCase.ts').GoldenCaseMeta; expected: string }[]} */
   const out = [];
-  for (const {
-    input,
-    output,
-    emitPhpstanTypeAliases,
-    verbosePhpdoc,
-    sealArrayShapes,
-  } of cases) {
-    const emit = emitPhpstanTypeAliases || defaultEmit;
+  /** @type {{ meta: import('./examplesGolden.ts').ExamplesGoldenMeta; expected: string }[]} */
+  const examplesOut = [];
+  const examplesSeen = new Set();
+  for (const caseItem of cases) {
+    const emit = caseItem.emitPhpstanTypeAliases || defaultEmit;
     try {
-      const expected = generateChecker(input, {
-        output,
+      const expected = generateChecker(caseItem.input, {
+        output: caseItem.output,
         emitPhpstanTypeAliases: emit,
-        verbosePhpdoc,
-        sealArrayShapes,
+        verbosePhpdoc: caseItem.verbosePhpdoc,
+        sealArrayShapes: caseItem.sealArrayShapes,
       });
       out.push({
         meta: sparseMeta({
-          input,
-          output,
+          input: caseItem.input,
+          output: caseItem.output,
           ...(emit ? { emitPhpstanTypeAliases: true } : {}),
-          ...(verbosePhpdoc ? { verbosePhpdoc: true } : {}),
-          ...(sealArrayShapes ? { sealArrayShapes: true } : {}),
+          ...(caseItem.verbosePhpdoc ? { verbosePhpdoc: true } : {}),
+          ...(caseItem.sealArrayShapes ? { sealArrayShapes: true } : {}),
         }),
         expected,
       });
@@ -250,7 +266,23 @@ for (const { name, emitPhpstanTypeAliases: defaultEmit } of DOCBlock_FIXTURES) {
       const message = err instanceof Error ? err.message : String(err);
       console.warn('skip', name, message);
     }
+    if (!examplesSeen.has(caseItem.input)) {
+      examplesSeen.add(caseItem.input);
+      const item = buildExamplesCase(
+        name,
+        caseItem.input,
+        caseItem.requireClass,
+      );
+      if (item !== null) {
+        examplesOut.push(item);
+      }
+    }
   }
-  writeGoldenPhp(name, out);
+  writeCheckerGoldenPhp(name, out);
+  writeExamplesGoldenPhp(
+    testdataDir,
+    registerNamespaceId,
+    name,
+    examplesOut,
+  );
 }
-

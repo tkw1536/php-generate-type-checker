@@ -33,19 +33,20 @@ yarn spellcheck
 - CLI: `src/cli/*.test.ts`
 - Whole-UI: `src/main.*.test.ts` (happy-dom)
 - Parser fixtures: edit `src/parser/testdata/*.IN` → `yarn update_fixtures:parser` → commit matching `*.json`
-- Generator success fixtures: edit `src/generator/testdata/*.IN` → `yarn update_fixtures:generator` → commit matching `*.golden.php` (see **Generator golden PHP format** below)
+- Generator success fixtures: edit `src/generator/testdata/*.IN` → `yarn update_fixtures:generator` → commit matching `*.checker.golden.php` and `*.examples.golden.php` (see **Generator golden PHP format** below)
+- Trailing `# RequireClass: Foo, Bar` on a type line (or `# RequireClass:` in multiline `.IN` headers) marks classes needed for examples PHPStan; until mocks exist those inputs are omitted from `*.examples.golden.php`
 - Generator error fixtures: edit `src/generator/testdata/errors.IN` only; Vitest asserts each line throws (no JSON / no PHP)
 - When changing generator output behavior, always add a generator golden for the new/changed case unless an equivalent `*.IN` case already exists
 - When changing parser, generator, optimizer, or render behavior described in README **Technical Overview** (type checks, optimizer passes, or pipeline phases), update that section to match
 - Optional: `yarn review_fixtures:generator` (interactive golden review)
-- `yarn check:phpstan` analyses committed `*.golden.php` in place (no disk writes; expects `phpstan/phpstan.phar`). Download with `yarn download:phpstan` (optional version; default `latest`). CI workflow `.github/workflows/phpstan-goldens.yml` runs `yarn download:phpstan -- $PHPSTAN_VERSION` then the same check — bump `PHP_VERSION` / `PHPSTAN_VERSION` at the top of that file
+- `yarn check:phpstan` analyses committed `*.checker.golden.php` then `*.examples.golden.php` in place (no disk writes; expects `phpstan/phpstan.phar`). Neon: `phpstan/shared.neon` included by `generated-check.neon` / `examples-check.neon`. Download with `yarn download:phpstan` (optional version; default `latest`). CI workflow `.github/workflows/phpstan-goldens.yml` runs `yarn download:phpstan -- $PHPSTAN_VERSION` then the same check — bump `PHP_VERSION` / `PHPSTAN_VERSION` at the top of that file
 - Optimize fixpoints must converge under configured caps on success goldens: `outerFixpointCapped` / `blockFixpointCapped` / `simplifyFixpointCapped` / `exprNormalizeCapped` stay false (same invariants suite)
 - Optimize result is final IR (`OptimizeResult.ir`); explanation is `steps` (UI Trace). Snapshots never store temp names — UI assigns them at render time.
 - Rewriters return value + reason (`ExprRewrite` for exprs; block passes use `blockStep` + `commitReason`); every real modification appears in the step tree (top-level or nested `reason.children`). Identity = `reason: { kind: 'none' }`.
 - Optimize trace must stay honest: enforced by `src/generator/optimizer/trace/invariants.test.ts` over generator success fixtures (annotated `checker` IR, not rendered PHP). Rewrite that test freely when step types change; keep the semantics.
 - Per checker program: first top-level step is always `trace.initial` (Build IR; `checker.before` = builder body); last top-level `checker.after` = optimized body when that program still exists after prune; consecutive `checker.after[i]` = `checker.before[i+1]`; no zero-diff top-level rewrites except `trace.initial`
 - Prune steps: last prune `checker.after` = final optimized IR; same chain and no-ghost rules
-- Trace-only fixes must not change optimizer/PHP output or edit generator golden `*.golden.php`
+- Trace-only fixes must not change optimizer/PHP output or edit generator golden `*.checker.golden.php`
 - When changing trace recording, keep those invariants green — do not weaken or skip the invariant test
 - Fact proofs: env provenance (`facts.env.*` from `EnvHow`) appears only under the rewrite that uses the fact (`proveTrue` / `proveFalse` / `facts.absorb` / `facts.normalize.*` / `simplify.normalize.absorb`); unused path seeds are not traced. Assumed leaves use `facts.env.assumed.<origin>` (`ifTrue` / `ifFalse` / `arrayKey` / `andConjunct`). Prefer assumed, then equals over entails. No bare boolean success on decision paths — use `implyProof` / `prove*Proof` / `EnvHow`
 - Composed simplify may nest normalize micro-steps under one checker-advancing parent `simplify.normalize` (`reason.children`) — still one top-level head advance for that package
@@ -53,8 +54,9 @@ yarn spellcheck
 
 ## Generator golden PHP format
 
-Success goldens are valid PHP 8+ files named `<stem>.golden.php` next to `<stem>.IN` (grep/glob: `*.golden.php`).
-The `.golden.php` suffix makes them easy to find; the stem matches the input list (`function.IN` → `function.golden.php`).
+Success checker goldens are valid PHP 8+ files named `<stem>.checker.golden.php` next to `<stem>.IN` (grep/glob: `*.checker.golden.php`).
+Examples goldens are `<stem>.examples.golden.php` (same markers; namespace leaf `e` + hash; see [`src/generator/testdata/examplesGolden.ts`](src/generator/testdata/examplesGolden.ts)).
+The stem matches the input list (`function.IN` → `function.checker.golden.php` / `function.examples.golden.php`).
 Error cases live in `errors.IN` only (Vitest reads them directly; no regenerate artifact).
 Parser goldens remain JSON (`source` / `ast`).
 
@@ -96,8 +98,11 @@ Options belong in the key because the same input text can appear with different 
 Identical case keys in one suite are deduped; true collisions fail the update script.
 
 **PHPStan source map:** `check-phpstan.mjs` must not write files.
-It analyses every success `*.golden.php` path in one invocation and builds line ranges in memory from the begin/end markers so raw `file:line:` hits can be annotated `[golden=…]`.
+It analyses checker goldens then examples goldens (two PHPStan invocations) and builds line ranges in memory from the begin/end markers so raw `file:line:` hits can be annotated `[golden=…]`.
 Exit non-zero if and only if analysis reported errors (setup failures before analyse also exit non-zero).
+Examples harnesses emit a lying stub (`die('example')`) with `@return ($value is T ? true : false)` and `\PHPStan\dumpType(example(…))` per value.
+The examples pass keeps only `phpstan.dumpType` (raw `-v`); each site must dump `true`, joined by line internally and reported by golden + example expression.
+**Omitting examples is fine; emitting a failing example is not.** If PHPStan would dump `false` or `bool` for a candidate value, generate nothing for that type (do not pack a dumpType that cannot prove `true`).
 
 ## CLI
 
@@ -109,12 +114,13 @@ Stable surface (see `yarn cli --help` for details):
 
 - Input: positional types **or** `--file` / `-f` (`-` = STDIN)
 - Generate: `--emit`, `--optimize` / `--no-optimize`, `--verbose-phpdoc`, `--emit-aliases`, `--resolve-aliases`, `--seal-array-shapes`, `--unsafe-string-array-keys`
-- Output: default PHP on STDOUT; `--type` or `--trace` (mutually exclusive)
+- Output: default PHP on STDOUT; `--type`, `--trace`, or `--examples` (mutually exclusive)
 
-`--type` and `--trace` **payload schemas are unstable** (inspection only; same data as the UI Type / Trace tabs).
+`--type`, `--trace`, and `--examples` **payload schemas are unstable** (inspection only; Type / Trace / Examples).
 Parse / generate errors on STDERR should show location like the UI (snippet + caret), via shared `describeError`.
 
-Shared generate path: `runGeneratePipeline` (UI and CLI); CLI `--type` uses `formatTypeAstJson`; UI Type tab shows per-entry AST via `TypeAstPanel`. `generateChecker` remains the PHP-only golden helper.
+Shared generate path: `runGeneratePipeline` (UI and CLI); CLI `--type` uses `formatTypeAstJson`; CLI `--examples` uses `packExamplesPhp`; UI Type tab shows Source / AST / Examples via `TypeAstPanel`. `generateChecker` remains the PHP-only golden helper.
+Example generation lives under [`src/examples/`](src/examples/).
 
 ## Code style
 
@@ -169,8 +175,8 @@ The same one-sentence-per-line / no hard-wrap rule applies to code comments (see
 - Never invent `package.json` scripts; only use scripts that exist.
 - Keep URL fragment state backwards compatible (`src/ui/fragmentState.ts`).
 - The UI must never invent alternate payloads or special-case shapes for display. Each output tab shows real data from the corresponding stage (Type = parse entries / AST; Trace = optimizer `steps`; PHP = rendered checker). Presentation (JSON tree, PHP rendering of IR snapshots, expand defaults) is fine; changing the root shape or omitting fields based on input kind is not.
-- Do not hand-edit generator `*.golden.php` or parser golden `*.json`; regenerate from `*.IN` (parser errors JSON is hand-maintained; generator errors are `errors.IN` only).
-- Do not edit generator golden `*.golden.php` when fixing optimize-trace honesty; keep emitted IR/PHP identical and fix the tracer instead.
+- Do not hand-edit generator `*.checker.golden.php` / `*.examples.golden.php` or parser golden `*.json`; regenerate from `*.IN` (parser errors JSON is hand-maintained; generator errors are `errors.IN` only).
+- Do not edit generator golden `*.checker.golden.php` when fixing optimize-trace honesty; keep emitted IR/PHP identical and fix the tracer instead.
 - This package is not published for external use; the only consumers live in this repository. Prefer deleting or reshaping internals over compatibility shims or leftover files. There is **no** library-consumer backwards compatibility — rename/remove internal exports freely; update all in-repo call sites instead of leaving compatibility shims.
 - Do not keep code just to keep tests green. If something exists only so old tests still pass, either remove the test (when it only covered dead behavior), move helpers into test-only code (`*.test.ts` / `test-utils/` / `testdata/`), or redesign the tests around the real API. Do not retain production exports, fixtures, or regenerate artifacts solely as test glue.
 - Always keep existing CI checks passing.

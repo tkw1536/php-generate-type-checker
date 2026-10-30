@@ -31,6 +31,15 @@ describe('runCli', () => {
     expect(json.length).toBeGreaterThan(2);
   });
 
+  it('prints an examples harness for --examples', () => {
+    const args = parseCliArgs(['--examples', 'int']);
+    const out = runCli('int', args);
+    expect(out).toContain(
+      "function example(mixed $value): bool { die('example'); }",
+    );
+    expect(out).toContain('\\PHPStan\\dumpType(example(0));');
+  });
+
   it('honors --resolve-aliases for --type output', () => {
     const source = `/**
  * @phpstan-type A int

@@ -224,7 +224,7 @@ function parseOneCase(
 }
 
 /**
- * Parse a suite `*.golden.php` source into cases with 1-based line ranges.
+ * Parse a suite `*.checker.golden.php` source into cases with 1-based line ranges.
  */
 export function parseGoldenPhp(source: string): GoldenCase[] {
   const lines = source.split('\n');
