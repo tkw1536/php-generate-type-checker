@@ -40,8 +40,8 @@ function emptyContainersHaveNoToggleOrEllipsis(): void {
 }
 
 function togglesLiveInLeftGutterWithoutTextNodes(): void {
-  const root = renderJsonTree({ a: { b: 1 } });
-  const nested = root.querySelector('.json-tree-property .json-tree-node')!;
+  const root = renderJsonTree({ a: { b: { c: 1 } } });
+  const nested = pathNode(root, ['a', 'b']);
   const summary = nested.querySelector(':scope > .json-tree-line')!;
   const gutter = summary.querySelector(':scope > .json-tree-gutter')!;
   const content = summary.querySelector(':scope > .json-tree-content')!;
@@ -55,8 +55,8 @@ function togglesLiveInLeftGutterWithoutTextNodes(): void {
   );
 }
 
-function topLevelStartsExpanded(): void {
-  const root = renderJsonTree({ a: { b: 1 }, c: [2] });
+function firstTwoLevelsStartExpanded(): void {
+  const root = renderJsonTree({ a: { b: { c: 1 } }, d: [2] });
   const top = root.querySelector(':scope > .json-tree-node')!;
   expect(top.classList.contains('json-tree-node--expanded')).toBe(true);
   expect(top.querySelector('.json-tree-toggle')?.getAttribute('aria-expanded')).toBe(
@@ -68,14 +68,20 @@ function topLevelStartsExpanded(): void {
     ),
   ).toBe(false);
 
-  const nested = [...root.querySelectorAll('.json-tree-property .json-tree-node')];
-  expect(nested.length).toBeGreaterThan(0);
-  for (const node of nested) {
-    expect(node.classList.contains('json-tree-node--expanded')).toBe(false);
-    expect(node.querySelector('.json-tree-toggle')?.getAttribute('aria-expanded')).toBe(
-      'false',
-    );
-  }
+  expect(pathNode(root, ['a']).classList.contains('json-tree-node--expanded')).toBe(
+    true,
+  );
+  expect(pathNode(root, ['d']).classList.contains('json-tree-node--expanded')).toBe(
+    true,
+  );
+  expect(
+    pathNode(root, ['a', 'b']).classList.contains('json-tree-node--expanded'),
+  ).toBe(false);
+  expect(
+    pathNode(root, ['a', 'b'])
+      .querySelector('.json-tree-toggle')
+      ?.getAttribute('aria-expanded'),
+  ).toBe('false');
 }
 
 function toggleExpandsAndCollapses(): void {
@@ -88,16 +94,17 @@ function toggleExpandsAndCollapses(): void {
   const children = node.querySelector('.json-tree-children')!;
 
   expect(children.classList.contains('json-tree-children--collapsed')).toBe(
-    true,
+    false,
   );
-
-  toggle.click();
-  expect(toggle.getAttribute('aria-expanded')).toBe('true');
   expect(node.classList.contains('json-tree-node--expanded')).toBe(true);
 
   toggle.click();
   expect(toggle.getAttribute('aria-expanded')).toBe('false');
   expect(node.classList.contains('json-tree-node--expanded')).toBe(false);
+
+  toggle.click();
+  expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  expect(node.classList.contains('json-tree-node--expanded')).toBe(true);
 
   root.remove();
 }
@@ -109,17 +116,20 @@ function altClickTogglesSubtree(): void {
   const inner = outer.querySelector('.json-tree-property .json-tree-node')!;
   const toggle = outer.querySelector<HTMLButtonElement>('.json-tree-toggle')!;
 
-  toggle.dispatchEvent(
-    new MouseEvent('click', { bubbles: true, cancelable: true, altKey: true }),
-  );
   expect(outer.classList.contains('json-tree-node--expanded')).toBe(true);
-  expect(inner.classList.contains('json-tree-node--expanded')).toBe(true);
+  expect(inner.classList.contains('json-tree-node--expanded')).toBe(false);
 
   toggle.dispatchEvent(
     new MouseEvent('click', { bubbles: true, cancelable: true, altKey: true }),
   );
   expect(outer.classList.contains('json-tree-node--expanded')).toBe(false);
   expect(inner.classList.contains('json-tree-node--expanded')).toBe(false);
+
+  toggle.dispatchEvent(
+    new MouseEvent('click', { bubbles: true, cancelable: true, altKey: true }),
+  );
+  expect(outer.classList.contains('json-tree-node--expanded')).toBe(true);
+  expect(inner.classList.contains('json-tree-node--expanded')).toBe(true);
 
   root.remove();
 }
@@ -212,7 +222,7 @@ describe('jsonTreeView', () => {
     'places empty toggles in the left gutter',
     togglesLiveInLeftGutterWithoutTextNodes,
   );
-  it('expands the top level by default', topLevelStartsExpanded);
+  it('expands the first two levels by default', firstTwoLevelsStartExpanded);
   it('toggles expand and collapse', toggleExpandsAndCollapses);
   it('Alt-click toggles the whole subtree', altClickTogglesSubtree);
   it('expands and collapses all nodes', expandAndCollapseAll);

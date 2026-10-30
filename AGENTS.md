@@ -138,6 +138,7 @@ Keep Markdown tables column-aligned in the source (pad cells so `|` separators l
 - NEVER run `git checkout`, `git restore`, `git reset`, or any other command that discards or overwrites working-tree changes unless the user explicitly requests that exact recovery/discard operation.
 - Never invent `package.json` scripts; only use scripts that exist.
 - Keep URL fragment state backwards compatible (`src/ui/fragmentState.ts`).
+- The UI must never invent alternate payloads or special-case shapes for display. Each output tab shows real data from the corresponding stage (Type = parse entries / AST; Trace = optimizer `steps`; PHP = rendered checker). Presentation (JSON tree, PHP rendering of IR snapshots, expand defaults) is fine; changing the root shape or omitting fields based on input kind is not.
 - Do not hand-edit generator `*.golden.php` or parser golden `*.json`; regenerate from `*.IN` (parser errors JSON is hand-maintained).
 - Do not edit generator golden `*.golden.php` when fixing optimize-trace honesty; keep emitted IR/PHP identical and fix the tracer instead.
 - Do not treat this as a published library API. There is **no** library-consumer backwards compatibility — rename/remove internal exports freely; update all in-repo call sites instead of leaving compatibility shims.

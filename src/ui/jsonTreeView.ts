@@ -22,7 +22,7 @@ export function parseJsonValue(source: string): JsonParseResult {
   }
 }
 
-/** Collapsible JSON tree using highlight.js token classes. Top level starts expanded. */
+/** Collapsible JSON tree using highlight.js token classes. Depth 0 and 1 start expanded. */
 export function renderJsonTree(value: unknown): HTMLElement {
   const root = document.createElement('code');
   root.className = 'hljs language-json json-tree';
@@ -196,7 +196,7 @@ function buildCollapsibleNode(
   const node = document.createElement('div');
   node.className = 'json-tree-node';
   node.dataset.jsonPath = encodeJsonPath(path);
-  const startExpanded = depth === 0;
+  const startExpanded = depth <= 1;
   const inlineClose = document.createElement('span');
   inlineClose.className = 'json-tree-inline-close';
   inlineClose.append(brace(close));

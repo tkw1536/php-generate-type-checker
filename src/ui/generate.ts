@@ -96,9 +96,6 @@ function runGeneratePipeline(
 }
 
 function typeAstJson(entries: readonly ParsedCheckerEntry[]): string {
-  if (entries.length === 1 && entries[0].aliasName === null) {
-    return JSON.stringify(entries[0].ast, null, 2);
-  }
   return JSON.stringify(
     entries.map(({ aliasName, typeString, ast }) => ({
       aliasName,
