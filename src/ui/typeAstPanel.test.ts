@@ -28,7 +28,7 @@ const TWO_ALIASES = `/**
  * @phpstan-type Slug non-empty-string
  */`;
 
-describe('TypeAstPanel', () => {
+describe('TypeAstPanel groups', () => {
   it('groups types with Source and AST leaves', () => {
     const body = document.createElement('div');
     const panel = new TypeAstPanel(body);
@@ -54,7 +54,9 @@ describe('TypeAstPanel', () => {
     expect(body.querySelector('.type-ast-source')).not.toBeNull();
     expect(body.querySelector('#type-output .json-tree')).toBeNull();
   });
+});
 
+describe('TypeAstPanel navigation', () => {
   it('shows highlighted Examples with Copy, then switches groups', () => {
     const body = document.createElement('div');
     const panel = new TypeAstPanel(body);

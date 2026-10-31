@@ -8,7 +8,7 @@ function exprs(type: string): readonly string[] {
   return generateExamples(parseType(type)).map((v) => renderPhpValue(v));
 }
 
-describe('generateExamples', () => {
+describe('generateExamples scalars', () => {
   it('returns multiple ints for int', () => {
     const out = exprs('int');
     expect(out.length).toBeGreaterThan(1);
@@ -36,7 +36,9 @@ describe('generateExamples', () => {
     const out = exprs('int|string');
     expect(out).toEqual(expect.arrayContaining(['0', "'a'"]));
   });
+});
 
+describe('generateExamples shapes', () => {
   it('builds list and shape examples', () => {
     const list = exprs('list<int>');
     expect(list).toContain('[]');

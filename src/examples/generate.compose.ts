@@ -64,6 +64,17 @@ export function examplesForMapLike(
   return out;
 }
 
+/** Empty array / (object)[] when a non-empty keyword does not forbid it. */
+function emptyShapeFallback(
+  asObject: boolean,
+  nonEmptyKeyword: boolean,
+): readonly PhpValue[] {
+  if (nonEmptyKeyword) {
+    return [];
+  }
+  return asObject ? [phpObjectCast()] : [EMPTY_ARRAY];
+}
+
 /** Array/list/object shape examples. */
 export function examplesForShape(
   ast: Extract<TypeNode, { readonly kind: 'shape' }>,
@@ -81,17 +92,14 @@ export function examplesForShape(
     ast.fields.length === 0 &&
     ast.rest === undefined
   ) {
-    if (nonEmptyKeyword) {
-      return [];
-    }
-    return asObject ? [phpObjectCast()] : [EMPTY_ARRAY];
+    return emptyShapeFallback(asObject, nonEmptyKeyword);
   }
 
   const fieldsToFill =
     required.length > 0 ? required : ast.fields.slice(0, 1);
 
   if (fieldsToFill.length === 0 && !nonEmptyKeyword) {
-    return asObject ? [phpObjectCast()] : [EMPTY_ARRAY];
+    return emptyShapeFallback(asObject, false);
   }
 
   const fieldExamples = collectFieldExamples(fieldsToFill, generateRaw);
@@ -99,10 +107,7 @@ export function examplesForShape(
     return [];
   }
   if (fieldExamples.length === 0) {
-    if (nonEmptyKeyword) {
-      return [];
-    }
-    return asObject ? [phpObjectCast()] : [EMPTY_ARRAY];
+    return emptyShapeFallback(asObject, nonEmptyKeyword);
   }
 
   const combos = buildShapeCombos(ast.keyword, fieldsToFill, fieldExamples);
