@@ -17,7 +17,7 @@ yarn lint
 yarn lint:fix
 ```
 
-Stack: TypeScript ^7, Vite ^8, Vitest ^5, Oxlint + oxlint-tsgolint (type-aware), Yarn 4.18.0 (Corepack), Node latest (CI). PHP is generated output only.
+Stack: TypeScript ^7, Vite ^8, Vitest ^5, Oxlint + oxlint-tsgolint (type-aware), Yarn 4.18.0 (Corepack), Node LTS (CI). PHP is generated output only.
 
 ## Testing
 
