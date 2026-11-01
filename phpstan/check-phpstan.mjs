@@ -90,6 +90,8 @@ function goldenNameForLine(ranges, basename, lineNo) {
 }
 
 /**
+ * Remap raw `file:line:` findings; ignore PHPStan chatter (Turbo, timing).
+ *
  * @param {string} prefix
  * @param {readonly GoldenLineRange[]} ranges
  * @param {string} stdout
@@ -108,7 +110,6 @@ function printPhpstanStdout(prefix, ranges, stdout) {
       line,
     );
     if (match === null) {
-      console.log(line);
       continue;
     }
     errorCount += 1;
@@ -139,11 +140,19 @@ function printPhpstanStdout(prefix, ranges, stdout) {
   return errorCount;
 }
 
+/** @param {string} stderr */
+function printPhpstanStderr(stderr) {
+  const trimmed = stderr.trimEnd();
+  if (trimmed.length > 0) {
+    console.error(trimmed);
+  }
+}
+
 /**
  * @param {string} neonPath
  * @param {readonly string[]} phpPaths
  * @param {string} pharAbs
- * @returns {{ status: number | null; stdout: string }}
+ * @returns {{ status: number | null; stdout: string; stderr: string }}
  */
 function spawnPhpstan(neonPath, phpPaths, pharAbs) {
   const result = spawnSync(
@@ -167,11 +176,11 @@ function spawnPhpstan(neonPath, phpPaths, pharAbs) {
   if (result.error !== undefined) {
     throw result.error;
   }
-  const stderr = result.stderr ?? '';
-  if (stderr.length > 0 && result.status !== 0) {
-    console.error(stderr.trimEnd());
-  }
-  return { status: result.status, stdout: result.stdout ?? '' };
+  return {
+    status: result.status,
+    stdout: result.stdout ?? '',
+    stderr: result.stderr ?? '',
+  };
 }
 
 function testdataPrefix() {
@@ -192,16 +201,22 @@ function testdataPrefix() {
  * @returns {number} 0 iff no analysis errors
  */
 function runCheckerPhpstan(neonPath, phpPaths, ranges, pharAbs) {
-  const { status, stdout } = spawnPhpstan(neonPath, phpPaths, pharAbs);
+  const { status, stdout, stderr } = spawnPhpstan(neonPath, phpPaths, pharAbs);
   if (status === null) {
+    printPhpstanStderr(stderr);
     console.error('PHPStan was killed by a signal');
     return 1;
   }
   const errorCount = printPhpstanStdout(testdataPrefix(), ranges, stdout);
   if (errorCount > 0) {
+    printPhpstanStderr(stderr);
     return 1;
   }
-  return status === 0 ? 0 : 1;
+  if (status !== 0) {
+    printPhpstanStderr(stderr);
+    return 1;
+  }
+  return 0;
 }
 
 /**
@@ -215,21 +230,26 @@ function runCheckerPhpstan(neonPath, phpPaths, ranges, pharAbs) {
  */
 function runExamplesPhpstan(neonPath, phpPaths, ranges, pharAbs) {
   const expected = loadExpectedDumpSites(phpPaths, ranges);
-  console.error(`expecting ${expected.size} dumpType(example(…)) sites`);
-  const { status, stdout } = spawnPhpstan(neonPath, phpPaths, pharAbs);
+  const { status, stdout, stderr } = spawnPhpstan(neonPath, phpPaths, pharAbs);
   if (status === null) {
+    printPhpstanStderr(stderr);
     console.error('PHPStan was killed by a signal');
     return 1;
   }
   const actual = parseDumpTypeResults(testdataPrefix(), stdout);
   if (actual.size === 0 && expected.size > 0) {
+    printPhpstanStderr(stderr);
     console.error(
       `PHPStan reported no dumpType results (exit ${String(status)}); analysis likely failed`,
     );
     return 1;
   }
   const failures = reportDumpTypeFailures(expected, actual);
-  return failures === 0 ? 0 : 1;
+  if (failures !== 0) {
+    printPhpstanStderr(stderr);
+    return 1;
+  }
+  return 0;
 }
 
 function main() {

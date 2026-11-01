@@ -15,6 +15,7 @@
     "report:optimizer-stats": "node ./src/generator/testdata/report-optimizer-stats.mjs",
     "download:phpstan": "node ./phpstan/download-phpstan.mjs",
     "check:phpstan": "node ./phpstan/check-phpstan.mjs",
+    "check:runtime": "node ./src/generator/testdata/check-runtime.mjs",
     "update_fixtures:generator": "node ./src/generator/testdata/update-testdata.mjs",
     "review_fixtures:generator": "node ./src/generator/testdata/review-fixtures.mjs",
     "update_fixtures:parser": "node ./src/parser/testdata/update-testdata.mjs",

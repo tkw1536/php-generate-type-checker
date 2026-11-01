@@ -618,8 +618,6 @@ function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example('stdClass'));
 \PHPStan\dumpType(example('Exception'));
-\PHPStan\dumpType(example('Throwable'));
-\PHPStan\dumpType(example('DateTimeInterface'));
 \PHPStan\dumpType(!example('a'));
 \PHPStan\dumpType(!example(''));
 \PHPStan\dumpType(!example(null));
@@ -636,8 +634,8 @@ namespace Golden\e1bfe1032ede5 {
 /** @return ($value is interface-string ? true : false) */
 function example(mixed $value): bool { die('example'); }
 
-\PHPStan\dumpType(example('Throwable'));
-\PHPStan\dumpType(example('DateTimeInterface'));
+\PHPStan\dumpType(example('stdClass'));
+\PHPStan\dumpType(example('Exception'));
 \PHPStan\dumpType(!example('a'));
 \PHPStan\dumpType(!example(''));
 \PHPStan\dumpType(!example(null));
@@ -654,14 +652,16 @@ namespace Golden\efb0a996a803a {
 /** @return ($value is trait-string ? true : false) */
 function example(mixed $value): bool { die('example'); }
 
+\PHPStan\dumpType(example('stdClass'));
+\PHPStan\dumpType(example('Exception'));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example(''));
 \PHPStan\dumpType(!example(null));
 \PHPStan\dumpType(!example(true));
 \PHPStan\dumpType(!example(false));
 \PHPStan\dumpType(!example(0));
 \PHPStan\dumpType(!example(1));
 \PHPStan\dumpType(!example(1.5));
-\PHPStan\dumpType(!example([]));
-\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -1386,9 +1386,6 @@ namespace Golden\ed082f838b5b7 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example([]));
-\PHPStan\dumpType(example(['0' => 1]));
-\PHPStan\dumpType(example(['42' => 'a']));
-\PHPStan\dumpType(example(['-1' => true]));
 \PHPStan\dumpType(!example(null));
 \PHPStan\dumpType(!example(true));
 \PHPStan\dumpType(!example(false));

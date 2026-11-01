@@ -67,12 +67,9 @@ const KEYWORD_EXAMPLES: {
   'non-decimal-int-string': [phpString('0x10'), phpString('0b10')],
   'callable-string': CALLABLE_STRING_POOL,
   'class-string': BUILTIN_CLASS_STRING_POOL,
-  'interface-string': [
-    phpString('Throwable'),
-    phpString('DateTimeInterface'),
-  ],
-  // No stable built-in trait names for PHPStan dumpType proofs.
-  'trait-string': EMPTY,
+  // interface-string / trait-string are aliases for class-string.
+  'interface-string': BUILTIN_CLASS_STRING_POOL,
+  'trait-string': BUILTIN_CLASS_STRING_POOL,
   // PHPStan does not prove bare class-name strings as enum-string.
   'enum-string': EMPTY,
   bool: BOOL_POOL,

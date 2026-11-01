@@ -103,15 +103,16 @@ function examplesForGeneric(
   typeArgs: readonly TypeNode[],
 ): readonly PhpValue[] {
   const lower = name.toLowerCase();
-  if (lower === 'class-string' || lower === 'interface-string') {
+  // interface-string / trait-string are aliases for class-string.
+  if (
+    lower === 'class-string' ||
+    lower === 'interface-string' ||
+    lower === 'trait-string'
+  ) {
     return typeArgs.length === 0 ? BUILTIN_CLASS_STRING_POOL : [];
   }
-  if (
-    lower === 'trait-string' ||
-    lower === 'enum-string' ||
-    lower === 'callable-string'
-  ) {
-    // Keyword path handles bare callable-string; generics / enum / trait → none.
+  if (lower === 'enum-string' || lower === 'callable-string') {
+    // Keyword path handles bare callable-string; enum-string generics → none.
     return [];
   }
   return [];

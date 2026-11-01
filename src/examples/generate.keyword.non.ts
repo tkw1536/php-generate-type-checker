@@ -122,10 +122,10 @@ const KEYWORD_NON_EXAMPLES: {
     ...withoutRendered(STRING_POOL, CALLABLE_STRING_POOL),
     ...NON_STRING,
   ],
+  // interface-string / trait-string are aliases for class-string.
   'class-string': [phpString('a'), phpString(''), ...NON_STRING],
-  // Class names like 'stdClass' still satisfy interface-string under dumpType.
   'interface-string': [phpString('a'), phpString(''), ...NON_STRING],
-  'trait-string': NON_STRING,
+  'trait-string': [phpString('a'), phpString(''), ...NON_STRING],
   // Bare strings stay bool for enum-string; only wrong-kind proves false.
   'enum-string': NON_STRING,
   bool: NON_BOOL,

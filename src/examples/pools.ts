@@ -40,12 +40,10 @@ export const STRING_POOL: readonly PhpValue[] = [
 
 export const BOOL_POOL: readonly PhpValue[] = [phpBool(true), phpBool(false)];
 
-/** Built-in class names that exist during PHPStan analyse. */
+/** Built-in class names for bare `class-string` (and its aliases `interface-string` / `trait-string`). */
 export const BUILTIN_CLASS_STRING_POOL: readonly PhpValue[] = [
   phpString('stdClass'),
   phpString('Exception'),
-  phpString('Throwable'),
-  phpString('DateTimeInterface'),
 ];
 
 /** Strings PHPStan accepts as `callable-string` literals. */

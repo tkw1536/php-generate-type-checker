@@ -35,11 +35,13 @@ yarn spellcheck
 - Parser fixtures: edit `src/parser/testdata/*.IN` → `yarn update_fixtures:parser` → commit matching `*.json`
 - Generator success fixtures: edit `src/generator/testdata/*.IN` → `yarn update_fixtures:generator` → commit matching `*.checker.golden.php` and `*.examples.golden.php` (see **Generator golden PHP format** below)
 - Trailing `# RequireClass: Foo, Bar` on a type line (or `# RequireClass:` in multiline `.IN` headers) marks classes needed for examples PHPStan; until mocks exist those inputs are omitted from `*.examples.golden.php`
+- PHPStan: `interface-string` and `trait-string` are aliases for `class-string` (same accept set; generic `interface-string<T>` works; PHPStan does not support `trait-string<T>`).
 - Generator error fixtures: edit `src/generator/testdata/errors.IN` only; Vitest asserts each line throws (no JSON / no PHP)
 - When changing generator output behavior, always add a generator golden for the new/changed case unless an equivalent `*.IN` case already exists
 - When changing parser, generator, optimizer, or render behavior described in README **Technical Overview** (type checks, optimizer passes, or pipeline phases), update that section to match
 - Optional: `yarn review_fixtures:generator` (interactive golden review)
 - `yarn check:phpstan` analyses committed `*.checker.golden.php` then `*.examples.golden.php` in place (no disk writes; expects `phpstan/phpstan.phar`). Neon: `phpstan/shared.neon` included by `generated-check.neon` / `examples-check.neon`. Download with `yarn download:phpstan` (optional version; default `latest`). CI workflow `.github/workflows/phpstan-goldens.yml` runs `yarn download:phpstan -- $PHPSTAN_VERSION` then the same check — bump `PHP_VERSION` / `PHPSTAN_VERSION` at the top of that file
+- `yarn check:runtime` regenerates checkers for examples-eligible `.IN` cases, pipes a harness (examples expect `true`, counterexamples expect `false`) to `php` on STDIN (no disk writes; continues after failures). Override binary with `--php`. Skips RequireClass / unresolved named types / empty example lists (same omit rules as examples goldens)
 - Optimize fixpoints must converge under configured caps on success goldens: `outerFixpointCapped` / `blockFixpointCapped` / `simplifyFixpointCapped` / `exprNormalizeCapped` stay false (same invariants suite)
 - Optimize result is final IR (`OptimizeResult.ir`); explanation is `steps` (UI Trace). Snapshots never store temp names — UI assigns them at render time.
 - Rewriters return value + reason (`ExprRewrite` for exprs; block passes use `blockStep` + `commitReason`); every real modification appears in the step tree (top-level or nested `reason.children`). Identity = `reason: { kind: 'none' }`.

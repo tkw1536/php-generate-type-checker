@@ -67,6 +67,31 @@ describe('generateNonExamples scalars', () => {
   });
 });
 
+describe('generateExamples maps', () => {
+  it('omits non-empty maps when all keys cast to int (decimal-int-string)', () => {
+    expect(exprs('array<decimal-int-string, mixed>')).toEqual(['[]']);
+  });
+
+  it('keeps non-empty maps for non-decimal-int-string keys', () => {
+    const out = exprs('array<non-decimal-int-string, mixed>');
+    expect(out).toContain('[]');
+    expect(out).toEqual(
+      expect.arrayContaining([expect.stringMatching(/=>/u)]),
+    );
+  });
+
+  it('keeps int-keyed maps for int|decimal-int-string keys', () => {
+    const out = exprs('array<int|decimal-int-string, string>');
+    expect(out).toContain('[]');
+    expect(out).toEqual(
+      expect.arrayContaining([expect.stringMatching(/^\[\d+\s*=>/u)]),
+    );
+    const joined = out.join('\n');
+    expect(joined).not.toMatch(/'0'\s*=>/u);
+    expect(joined).not.toMatch(/'42'\s*=>/u);
+  });
+});
+
 describe('generateExamples shapes', () => {
   it('builds list and shape examples', () => {
     const list = exprs('list<int>');

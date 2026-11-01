@@ -473,6 +473,7 @@ How they are used:
 - **`yarn check:phpstan`** runs PHPStan on committed `.checker.golden.php` then `.examples.golden.php` (expects a `phpstan/phpstan.phar`; get one with `yarn download:phpstan`).
   For examples, only `phpstan.dumpType` findings count: every `\PHPStan\dumpType(example(…))` and `\PHPStan\dumpType(!example(…))` must dump `true` (failures name the golden and example/counterexample expression).
   This is run by CI after every commit.
+- **`yarn check:runtime`** regenerates checkers for the same examples-eligible `.IN` cases and runs each example / counterexample through `php` on STDIN (expect `true` / `false`; continues after failures; no disk writes).
 
 | Stem                     | Focus                                                              |
 | ------------------------ | ------------------------------------------------------------------ |
@@ -496,6 +497,7 @@ yarn cli --help             # or: php-generate-type-checker --help
 yarn test
 yarn report:optimizer-stats # aggregate simplify metrics over generator fixtures
 yarn check:phpstan          # analyse checker + examples goldens (CI: phpstan-goldens.yml)
+yarn check:runtime          # run checkers against examples/counterexamples via php STDIN
 yarn download:phpstan       # fetch phpstan/phpstan.phar (optional: yarn download:phpstan -- <version>)
 yarn build
 yarn lint                   # Oxlint

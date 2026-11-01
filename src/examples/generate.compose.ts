@@ -1,4 +1,5 @@
 import type { ShapeField, TypeNode } from '../parser/ast.ts';
+import { phpCastsStringKeyToInt } from '../generator/phpArrayKey.ts';
 import { EMPTY_ARRAY } from './pools.ts';
 import {
   phpInt,
@@ -39,6 +40,17 @@ export function examplesForListLike(
   return out;
 }
 
+/**
+ * True when this value can be used as a PHP array key without PHP rewriting it
+ * (decimal-int-strings become ints on insert).
+ */
+function survivesPhpArrayKey(key: PhpValue): boolean {
+  if (key.kind === 'string') {
+    return !phpCastsStringKeyToInt(key.value);
+  }
+  return key.kind === 'int';
+}
+
 /** array<K,V> examples. */
 export function examplesForMapLike(
   key: TypeNode,
@@ -46,12 +58,21 @@ export function examplesForMapLike(
   nonEmpty: boolean,
   generateRaw: (ast: TypeNode) => readonly PhpValue[],
 ): readonly PhpValue[] {
-  const keys = generateRaw(key);
+  const rawKeys = generateRaw(key);
   const values = generateRaw(value);
   // Empty map when value has no examples (e.g. never) — do not emit `[]`
   // as `array<K, never>` (PHPStan dumpType stays bool).
-  if (keys.length === 0 || values.length === 0) {
+  if (values.length === 0) {
     return [];
+  }
+  // No key examples at all (e.g. resource) — no positives.
+  if (rawKeys.length === 0) {
+    return [];
+  }
+  // Drop keys PHP would cast away on insert (e.g. decimal-int-string → int).
+  const keys = rawKeys.filter((candidate) => survivesPhpArrayKey(candidate));
+  if (keys.length === 0) {
+    return nonEmpty ? [] : [EMPTY_ARRAY];
   }
   const out: PhpValue[] = [];
   if (!nonEmpty) {

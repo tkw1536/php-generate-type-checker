@@ -11,7 +11,7 @@ env:
 
 jobs:
   check-phpstan:
-    name: check:phpstan
+    name: check:php
     runs-on: ubuntu-latest
 
     steps:
@@ -40,3 +40,6 @@ jobs:
 
       - name: Analyse golden PHP
         run: yarn check:phpstan
+      
+      - name: Run generated checkers
+        run: yarn check:runtime
