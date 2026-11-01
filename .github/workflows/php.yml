@@ -1,4 +1,4 @@
-name: PHPStan goldens
+name: PHPStan and PHP Runtime Checks
 
 on:
   push:
@@ -10,8 +10,7 @@ env:
   PHPSTAN_VERSION: '2.3.2'
 
 jobs:
-  check-phpstan:
-    name: check:php
+  check:
     runs-on: ubuntu-latest
 
     steps:

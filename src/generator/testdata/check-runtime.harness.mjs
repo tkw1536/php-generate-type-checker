@@ -1,6 +1,10 @@
 /**
- * Build a PHP STDIN harness for one runtime case.
+ * Build a batched PHP STDIN harness for runtime cases.
+ *
+ * Each case lives in `namespace Runtime\r…` with a `run()`; global `main()`
+ * invokes every run and exits with the failed-case count.
  */
+import { createHash } from 'node:crypto';
 import { astsWithAliasesInlined } from '../../examples/inlineAliases.ts';
 import { unresolvedNamedTypes } from '../../examples/named.ts';
 import {
@@ -18,6 +22,14 @@ import { generateChecker } from '../index.ts';
  *   readonly examples: readonly string[];
  *   readonly counterexamples: readonly string[];
  * }} EntryChecks
+ */
+
+/**
+ * @typedef {{
+ *   readonly namespaceId: string;
+ *   readonly assertCount: number;
+ *   readonly fragmentPhp: string;
+ * }} CaseFragment
  */
 
 /**
@@ -46,6 +58,38 @@ function shortInput(input) {
  */
 export function caseLabel(item) {
   return `${item.stem}: ${shortInput(item.input)}`;
+}
+
+/**
+ * Stable case-identity key; never includes the generated PHP body.
+ *
+ * @param {RuntimeCase} item
+ * @returns {string}
+ */
+function canonicalRuntimeCaseKey(item) {
+  return JSON.stringify({
+    kind: 'runtime',
+    stem: item.stem,
+    input: item.input,
+    output: item.output,
+    emitPhpstanTypeAliases: item.emitPhpstanTypeAliases,
+    verbosePhpdoc: item.verbosePhpdoc,
+    sealArrayShapes: item.sealArrayShapes,
+  });
+}
+
+/**
+ * PHP-safe namespace leaf: `r` + first 12 hex chars (distinct from golden `h` / `e`).
+ *
+ * @param {RuntimeCase} item
+ * @returns {string}
+ */
+export function namespaceIdForRuntimeCase(item) {
+  const hex = createHash('sha256')
+    .update(canonicalRuntimeCaseKey(item), 'utf8')
+    .digest('hex')
+    .slice(0, 12);
+  return `r${hex}`;
 }
 
 /**
@@ -78,6 +122,22 @@ function collectChecks(item) {
 
 /**
  * @param {string} label
+ * @param {string} call
+ * @param {boolean} expected
+ * @returns {string[]}
+ */
+function assertIfLines(label, call, expected) {
+  const kind = expected ? 'example' : 'counterexample';
+  const expectedLit = expected ? 'true' : 'false';
+  return [
+    `    if (!\\gtc_check(${phpSingleQuoted(`${label} ${kind} ${call}`)}, ${call}, ${expectedLit})) {`,
+    `        $failures++;`,
+    `    }`,
+  ];
+}
+
+/**
+ * @param {string} label
  * @param {string} output
  * @param {readonly EntryChecks[]} checks
  * @returns {{ lines: string[]; assertCount: number }}
@@ -92,17 +152,11 @@ function buildAssertLines(label, output, checks) {
         ? `TypeChecker::${check.functionName}(${expr})`
         : `${check.functionName}(${expr})`;
     for (const expr of check.examples) {
-      const call = callOf(expr);
-      lines.push(
-        `gtc_check(${phpSingleQuoted(`${label} example ${call}`)}, ${call}, true);`,
-      );
+      lines.push(...assertIfLines(label, callOf(expr), true));
       assertCount += 1;
     }
     for (const expr of check.counterexamples) {
-      const call = callOf(expr);
-      lines.push(
-        `gtc_check(${phpSingleQuoted(`${label} counterexample ${call}`)}, ${call}, false);`,
-      );
+      lines.push(...assertIfLines(label, callOf(expr), false));
       assertCount += 1;
     }
   }
@@ -110,35 +164,12 @@ function buildAssertLines(label, output, checks) {
 }
 
 /**
- * @param {string} checkerPhp
- * @param {readonly string[]} assertLines
- * @returns {string}
- */
-function assembleHarnessPhp(checkerPhp, assertLines) {
-  return `<?php
-declare(strict_types=1);
-
-${checkerPhp}
-$failures = 0;
-function gtc_check(string $label, mixed $got, bool $expected): void
-{
-    global $failures;
-    if ($got !== $expected) {
-        fwrite(STDERR, 'FAIL ' . $label . ': expected ' . ($expected ? 'true' : 'false') . ', got ' . var_export($got, true) . "\\n");
-        $failures++;
-    }
-}
-
-${assertLines.join('\n')}
-exit($failures === 0 ? 0 : 1);
-`;
-}
-
-/**
+ * Build one namespaced case fragment, or null when the case should be skipped.
+ *
  * @param {RuntimeCase} item
- * @returns {{ harness: string; assertCount: number } | null}
+ * @returns {CaseFragment | null}
  */
-export function buildHarness(item) {
+export function tryBuildCaseFragment(item) {
   if (item.requireClass.length > 0) {
     return null;
   }
@@ -163,8 +194,88 @@ export function buildHarness(item) {
     item.output,
     checks,
   );
-  return {
-    harness: assembleHarnessPhp(checkerPhp, lines),
-    assertCount,
-  };
+  const namespaceId = namespaceIdForRuntimeCase(item);
+  const fragmentPhp = `namespace Runtime\\${namespaceId} {
+${checkerPhp}
+function run(): int
+{
+    $failures = 0;
+${lines.join('\n')}
+    return $failures;
+}
+}`;
+  return { namespaceId, assertCount, fragmentPhp };
+}
+
+/**
+ * @param {readonly CaseFragment[]} fragments
+ */
+function assertUniqueNamespaceIds(fragments) {
+  /** @type {Set<string>} */
+  const seen = new Set();
+  for (const fragment of fragments) {
+    if (seen.has(fragment.namespaceId)) {
+      throw new Error(
+        `duplicate runtime namespace id Runtime\\${fragment.namespaceId}`,
+      );
+    }
+    seen.add(fragment.namespaceId);
+  }
+}
+
+/**
+ * @param {readonly CaseFragment[]} fragments
+ * @returns {string}
+ */
+function buildMainPhp(fragments) {
+  const mainCalls = fragments
+    .map(
+      (f) =>
+        `    if (\\Runtime\\${f.namespaceId}\\run() > 0) {\n        $failedCases++;\n    }`,
+    )
+    .join('\n');
+  return `namespace {
+function main(): int
+{
+    $failedCases = 0;
+${mainCalls}
+    return $failedCases;
+}
+
+exit(main());
+}`;
+}
+
+const GTC_CHECK_PHP = `namespace {
+function gtc_check(string $label, mixed $got, bool $expected): bool
+{
+    if ($got !== $expected) {
+        fwrite(STDERR, 'FAIL ' . $label . ': expected ' . ($expected ? 'true' : 'false') . ', got ' . var_export($got, true) . "\\n");
+        return false;
+    }
+    return true;
+}
+}`;
+
+/**
+ * Assemble one PHP program for all runnable case fragments.
+ *
+ * @param {readonly CaseFragment[]} fragments
+ * @returns {string}
+ */
+export function assembleBatchPhp(fragments) {
+  if (fragments.length === 0) {
+    throw new Error('assembleBatchPhp requires at least one fragment');
+  }
+  assertUniqueNamespaceIds(fragments);
+  const caseBlocks = fragments.map((f) => f.fragmentPhp).join('\n\n');
+  return `<?php
+declare(strict_types=1);
+
+${GTC_CHECK_PHP}
+
+${caseBlocks}
+
+${buildMainPhp(fragments)}
+`;
 }

@@ -1,7 +1,9 @@
 /**
  * Run generated checkers against examples / counterexamples via `php` STDIN.
  *
- * Does not write goldens or temp files. Continues after each failing case.
+ * Builds one batched PHP program (namespaced cases + main()); does not write
+ * goldens or temp files. Continues after generate failures; PHP still runs the
+ * remaining cases.
  *
  * Run from repo root:
  *   yarn check:runtime
@@ -11,7 +13,11 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { collectRuntimeCases } from './check-runtime.cases.mjs';
-import { buildHarness, caseLabel } from './check-runtime.harness.mjs';
+import {
+  assembleBatchPhp,
+  caseLabel,
+  tryBuildCaseFragment,
+} from './check-runtime.harness.mjs';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '../../..');
 
@@ -50,8 +56,8 @@ function printUsage() {
   const script = path.relative(REPO_ROOT, import.meta.filename);
   console.error(`Usage: yarn check:runtime [-- --php <bin>]
 
-Generate checkers for examples-eligible .IN cases and run each example /
-counterexample through php on STDIN (no disk writes).
+Generate checkers for examples-eligible .IN cases and run them as one
+batched php STDIN program (namespaced cases + main(); no disk writes).
 Default binary: php on PATH.
 Example: yarn check:runtime && node ${script}
 `);
@@ -68,7 +74,6 @@ function runPhp(phpBin, harness) {
     encoding: 'utf8',
     stdio: ['pipe', 'pipe', 'pipe'],
   });
-  /** @type {{ status: number | null; signal: NodeJS.Signals | null; stdout: string; stderr: string; error?: Error }} */
   const out = {
     status: result.status,
     signal: result.signal,
@@ -81,9 +86,7 @@ function runPhp(phpBin, harness) {
   return { ...out, error: result.error };
 }
 
-/**
- * @param {string} phpBin
- */
+/** @param {string} phpBin */
 function ensurePhp(phpBin) {
   const result = spawnSync(phpBin, ['-v'], {
     encoding: 'utf8',
@@ -101,88 +104,154 @@ function ensurePhp(phpBin) {
   );
 }
 
-/**
- * @param {string} phpBin
- * @param {import('./check-runtime.cases.mjs').RuntimeCase} item
- * @returns {{ failed: boolean; skipped: boolean; assertFails: number }}
- */
-function checkOneCase(phpBin, item) {
-  let built;
-  try {
-    built = buildHarness(item);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`FAIL ${caseLabel(item)}: generate error: ${message}`);
-    return { failed: true, skipped: false, assertFails: 0 };
+/** @param {string} stderr @returns {number} */
+function countFailLines(stderr) {
+  let n = 0;
+  for (const line of stderr.split('\n')) {
+    if (line.startsWith('FAIL ')) {
+      n += 1;
+    }
   }
-  if (built === null) {
-    return { failed: false, skipped: true, assertFails: 0 };
-  }
+  return n;
+}
 
-  const result = runPhp(phpBin, built.harness);
-  if (result.error !== undefined) {
-    console.error(
-      `FAIL ${caseLabel(item)}: php spawn error: ${result.error.message}`,
-    );
-    return { failed: true, skipped: false, assertFails: 0 };
+/**
+ * @typedef {{
+ *   readonly fragments: readonly import('./check-runtime.harness.mjs').CaseFragment[];
+ *   readonly skipped: number;
+ *   readonly generateFails: number;
+ *   readonly totalAsserts: number;
+ * }} BuiltBatch
+ */
+
+/** @param {string} phpBin @returns {BuiltBatch} */
+function buildFragments(phpBin) {
+  const cases = collectRuntimeCases();
+  /** @type {import('./check-runtime.harness.mjs').CaseFragment[]} */
+  const fragments = [];
+  let skipped = 0;
+  let generateFails = 0;
+  let totalAsserts = 0;
+  console.error(`checking ${cases.length} .IN case(s) with ${phpBin}`);
+  for (const item of cases) {
+    let fragment;
+    try {
+      fragment = tryBuildCaseFragment(item);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`FAIL ${caseLabel(item)}: generate error: ${message}`);
+      generateFails += 1;
+      continue;
+    }
+    if (fragment === null) {
+      skipped += 1;
+      continue;
+    }
+    fragments.push(fragment);
+    totalAsserts += fragment.assertCount;
   }
-  if (result.signal !== null) {
-    console.error(
-      `FAIL ${caseLabel(item)}: php killed by signal ${result.signal}`,
-    );
-    return { failed: true, skipped: false, assertFails: 0 };
-  }
+  return { fragments, skipped, generateFails, totalAsserts };
+}
+
+/**
+ * @param {string} message
+ * @param {number} checked
+ * @param {number} skipped
+ * @param {number} failedCases
+ */
+function printHardFail(message, checked, skipped, failedCases) {
+  console.error(message);
+  console.error(
+    `done: ${checked} checked, ${skipped} skipped, ${failedCases} case failure(s), 0 assert failure(s)`,
+  );
+}
+
+/**
+ * @param {{ readonly status: number | null; readonly stdout: string; readonly stderr: string }} result
+ * @param {number} totalAsserts
+ * @param {number} caseCount
+ * @returns {{ phpCaseFails: number; assertFails: number }}
+ */
+function interpretBatchResult(result, totalAsserts, caseCount) {
   if (result.stdout.length > 0) {
     process.stdout.write(result.stdout);
   }
   let assertFails = 0;
   if (result.stderr.length > 0) {
     process.stderr.write(result.stderr);
-    for (const line of result.stderr.split('\n')) {
-      if (line.startsWith('FAIL ')) {
-        assertFails += 1;
-      }
-    }
+    assertFails = countFailLines(result.stderr);
   }
-  if (result.status === 0) {
-    return { failed: false, skipped: false, assertFails };
+  const status = result.status ?? 1;
+  if (status === 0) {
+    return { phpCaseFails: 0, assertFails };
   }
-  if (!result.stderr.includes('FAIL ')) {
-    console.error(
-      `FAIL ${caseLabel(item)}: php exited ${String(result.status)} (no FAIL lines; ${built.assertCount} assert(s))`,
-    );
+  if (assertFails > 0 && status > 0) {
+    return { phpCaseFails: status, assertFails };
   }
-  return { failed: true, skipped: false, assertFails };
+  console.error(
+    `FAIL batch: php exited ${String(status)} (no FAIL lines; ${totalAsserts} assert(s) across ${caseCount} case(s))`,
+  );
+  return { phpCaseFails: 1, assertFails };
 }
 
 /**
  * @param {string} phpBin
- * @returns {number} failed case count
+ * @param {BuiltBatch} batch
+ * @returns {{ phpCaseFails: number; assertFails: number } | null}
  */
-function runAllCases(phpBin) {
-  const cases = collectRuntimeCases();
-  let checked = 0;
-  let skipped = 0;
-  let failedCases = 0;
-  let failedAsserts = 0;
-
-  console.error(`checking ${cases.length} .IN case(s) with ${phpBin}`);
-
-  for (const item of cases) {
-    const outcome = checkOneCase(phpBin, item);
-    if (outcome.skipped) {
-      skipped += 1;
-      continue;
-    }
-    checked += 1;
-    failedAsserts += outcome.assertFails;
-    if (outcome.failed) {
-      failedCases += 1;
-    }
+function runBatchPhp(phpBin, batch) {
+  const { fragments, skipped, generateFails, totalAsserts } = batch;
+  let harness;
+  try {
+    harness = assembleBatchPhp(fragments);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    printHardFail(
+      `FAIL batch assemble: ${message}`,
+      0,
+      skipped,
+      generateFails + 1,
+    );
+    return null;
   }
+  const result = runPhp(phpBin, harness);
+  if (result.error !== undefined) {
+    printHardFail(
+      `FAIL batch: php spawn error: ${result.error.message}`,
+      fragments.length,
+      skipped,
+      generateFails + 1,
+    );
+    return null;
+  }
+  if (result.signal !== null) {
+    printHardFail(
+      `FAIL batch: php killed by signal ${result.signal}`,
+      fragments.length,
+      skipped,
+      generateFails + 1,
+    );
+    return null;
+  }
+  return interpretBatchResult(result, totalAsserts, fragments.length);
+}
 
+/** @param {string} phpBin @returns {number} */
+function runAllCases(phpBin) {
+  const batch = buildFragments(phpBin);
+  let phpCaseFails = 0;
+  let assertFails = 0;
+  if (batch.fragments.length > 0) {
+    const outcome = runBatchPhp(phpBin, batch);
+    if (outcome === null) {
+      return batch.generateFails + 1;
+    }
+    phpCaseFails = outcome.phpCaseFails;
+    assertFails = outcome.assertFails;
+  }
+  const failedCases = batch.generateFails + phpCaseFails;
   console.error(
-    `done: ${checked} checked, ${skipped} skipped, ${failedCases} case failure(s), ${failedAsserts} assert failure(s)`,
+    `done: ${batch.fragments.length} checked, ${batch.skipped} skipped, ${failedCases} case failure(s), ${assertFails} assert failure(s)`,
   );
   return failedCases;
 }
@@ -197,7 +266,6 @@ function main() {
     printUsage();
     process.exit(1);
   }
-
   try {
     ensurePhp(phpBin);
   } catch (err) {
@@ -205,7 +273,6 @@ function main() {
     console.error(message);
     process.exit(1);
   }
-
   process.exit(runAllCases(phpBin) === 0 ? 0 : 1);
 }
 

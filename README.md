@@ -15,9 +15,19 @@ Parse [PHPDoc types as supported by PHPStan](https://phpstan.org/writing-php-cod
 - Parse the PHPDoc types PHPStan supports (primitives, unions, shapes, generics, int ranges, aliases, and more)
 - Primary input is PHPDoc with `@phpstan-type` aliases (multiple comments allowed); plain type expressions work as a convenience
 - Emit standalone functions or static methods you can drop into your own code
+- Emit examples and counter-examples for each type
 - Shared helpers for nested types, with readable names like `isPostListResponse` by default
 - UI that runs entirely in your browser — Type / Trace / PHP tabs, no server-side code or analytics
 - CLI with the same generate options (`yarn cli` / `php-generate-type-checker`)
+
+The consistency of the generated code is checked for a large set of examples ("goldens") in CI. 
+
+In particular, it is checked that:
+- each generated snippet passes phpstan level 10
+- the checker function correctly returns true for each example and false for each counter-example
+- for each example and counter-example phpstan itself infers the given type
+
+Together, these ensure the highest possible consistency and correctness for the code; nonetheless it is recommended to double-check each snippet manually before using it in production code. 
 
 ## Examples
 
@@ -473,7 +483,7 @@ How they are used:
 - **`yarn check:phpstan`** runs PHPStan on committed `.checker.golden.php` then `.examples.golden.php` (expects a `phpstan/phpstan.phar`; get one with `yarn download:phpstan`).
   For examples, only `phpstan.dumpType` findings count: every `\PHPStan\dumpType(example(…))` and `\PHPStan\dumpType(!example(…))` must dump `true` (failures name the golden and example/counterexample expression).
   This is run by CI after every commit.
-- **`yarn check:runtime`** regenerates checkers for the same examples-eligible `.IN` cases and runs each example / counterexample through `php` on STDIN (expect `true` / `false`; continues after failures; no disk writes).
+- **`yarn check:runtime`** regenerates checkers for the same examples-eligible `.IN` cases and runs them as one batched `php` STDIN program (each case in `namespace Runtime\r…` with `run()`; global `main()`; expect `true` / `false`; continues after generate failures; no disk writes).
 
 | Stem                     | Focus                                                              |
 | ------------------------ | ------------------------------------------------------------------ |
@@ -496,8 +506,8 @@ yarn dev                    # http://localhost:5173
 yarn cli --help             # or: php-generate-type-checker --help
 yarn test
 yarn report:optimizer-stats # aggregate simplify metrics over generator fixtures
-yarn check:phpstan          # analyse checker + examples goldens (CI: phpstan-goldens.yml)
-yarn check:runtime          # run checkers against examples/counterexamples via php STDIN
+yarn check:phpstan          # validate goldens hold up against actual phpstan
+yarn check:runtime          # validate generated checkers actually produce correct results in php
 yarn download:phpstan       # fetch phpstan/phpstan.phar (optional: yarn download:phpstan -- <version>)
 yarn build
 yarn lint                   # Oxlint
