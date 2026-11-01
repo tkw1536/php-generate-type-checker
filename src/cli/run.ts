@@ -42,18 +42,15 @@ export function runCli(source: string, args: CliArgs): string {
 
 function formatExamplesCli(source: string, resolveAliases: boolean): string {
   const entries = parseCheckerInput(source, { resolveAliases });
-  if (entries.length === 0) {
-    return '// no examples\n';
-  }
   const packed: string[] = [];
   for (const entry of entries) {
     const body = packExamplesPhp(entry.ast);
-    if (body !== null) {
+    if (body !== null && body !== '') {
       packed.push(body);
     }
   }
   if (packed.length === 0) {
-    return '// no examples\n';
+    return '';
   }
   if (packed.length === 1) {
     const only = packed[0];

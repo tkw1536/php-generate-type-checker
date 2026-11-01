@@ -21,17 +21,18 @@ import {
  */
 export function buildExamplesBody(input, requireClass) {
   try {
-    return packExamplesPhp(parseType(input), { requireClass });
+    const body = packExamplesPhp(parseType(input), { requireClass });
+    if (body === null || body === '') {
+      return null;
+    }
+    return body;
   } catch {
     const entries = parseCheckerInput(input);
-    if (entries.length === 0) {
-      return '// no examples\n';
-    }
     /** @type {string[]} */
     const packed = [];
     for (const entry of entries) {
       const body = packExamplesPhp(entry.ast, { requireClass });
-      if (body !== null) {
+      if (body !== null && body !== '') {
         packed.push(body);
       }
     }

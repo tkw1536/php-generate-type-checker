@@ -15,6 +15,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['foo' => -1]));
 \PHPStan\dumpType(example(['foo' => 42]));
 \PHPStan\dumpType(example(['foo' => -42]));
+\PHPStan\dumpType(!example(['foo' => null]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -31,6 +36,13 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['foo' => 0, 'bar' => 'ABC']));
 \PHPStan\dumpType(example(['foo' => 1, 'bar' => 'abc']));
 \PHPStan\dumpType(example(['foo' => -1, 'bar' => 'Hello']));
+\PHPStan\dumpType(!example(['foo' => null, 'bar' => '']));
+\PHPStan\dumpType(!example(['foo' => 0, 'bar' => null]));
+\PHPStan\dumpType(!example(['bar' => '']));
+\PHPStan\dumpType(!example(['foo' => 0]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -47,6 +59,13 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0, 'ABC']));
 \PHPStan\dumpType(example([1, 'abc']));
 \PHPStan\dumpType(example([-1, 'Hello']));
+\PHPStan\dumpType(!example([null, '']));
+\PHPStan\dumpType(!example([0, null]));
+\PHPStan\dumpType(!example(['']));
+\PHPStan\dumpType(!example([0]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -63,6 +82,13 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0, 'ABC']));
 \PHPStan\dumpType(example([1, 'abc']));
 \PHPStan\dumpType(example([-1, 'Hello']));
+\PHPStan\dumpType(!example([null, '']));
+\PHPStan\dumpType(!example([0, null]));
+\PHPStan\dumpType(!example(['']));
+\PHPStan\dumpType(!example([0]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -76,6 +102,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['foo' => -1]));
 \PHPStan\dumpType(example(['foo' => 42]));
 \PHPStan\dumpType(example(['foo' => -42]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(['foo' => null]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -92,6 +123,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0, 'ABC']));
 \PHPStan\dumpType(example([1, 'abc']));
 \PHPStan\dumpType(example([-1, 'Hello']));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example([null, '']));
+\PHPStan\dumpType(!example([0, null]));
+\PHPStan\dumpType(!example(['']));
+\PHPStan\dumpType(!example([0]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -105,6 +144,10 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['age' => -1]));
 \PHPStan\dumpType(example(['age' => 42]));
 \PHPStan\dumpType(example(['age' => -42]));
+\PHPStan\dumpType(!example(['age' => null]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -118,6 +161,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['foo' => -1]));
 \PHPStan\dumpType(example(['foo' => 42]));
 \PHPStan\dumpType(example(['foo' => -42]));
+\PHPStan\dumpType(!example(['foo' => null]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -131,12 +179,27 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0 => -1]));
 \PHPStan\dumpType(example([0 => 42]));
 \PHPStan\dumpType(example([0 => -42]));
+\PHPStan\dumpType(!example([0 => null]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"array{x?: string}&array<string, string>"}
 namespace Golden\e66f381416e0a {
-// no examples
+/** @return ($value is array{x?: string}&array<string, string> ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(['x' => null]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
 }
 // @gtc-golden-end
 
@@ -150,6 +213,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['foo' => -1]));
 \PHPStan\dumpType(example(['foo' => 42]));
 \PHPStan\dumpType(example(['foo' => -42]));
+\PHPStan\dumpType(!example(['foo' => null]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -163,6 +231,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['foo' => -1]));
 \PHPStan\dumpType(example(['foo' => 42]));
 \PHPStan\dumpType(example(['foo' => -42]));
+\PHPStan\dumpType(!example(['foo' => null]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -176,6 +249,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['foo' => -1]));
 \PHPStan\dumpType(example(['foo' => 42]));
 \PHPStan\dumpType(example(['foo' => -42]));
+\PHPStan\dumpType(!example(['foo' => null]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -192,6 +270,13 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0, 'ABC']));
 \PHPStan\dumpType(example([1, 'abc']));
 \PHPStan\dumpType(example([-1, 'Hello']));
+\PHPStan\dumpType(!example([null, '']));
+\PHPStan\dumpType(!example([0, null]));
+\PHPStan\dumpType(!example(['']));
+\PHPStan\dumpType(!example([0]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -208,6 +293,13 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0, 'ABC']));
 \PHPStan\dumpType(example([1, 'abc']));
 \PHPStan\dumpType(example([-1, 'Hello']));
+\PHPStan\dumpType(!example([null, '']));
+\PHPStan\dumpType(!example([0, null]));
+\PHPStan\dumpType(!example(['']));
+\PHPStan\dumpType(!example([0]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -217,6 +309,9 @@ namespace Golden\e3d17767a4c9d {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -226,6 +321,9 @@ namespace Golden\eafd9b225f4b6 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -235,6 +333,9 @@ namespace Golden\ebe4c795ef655 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -244,6 +345,9 @@ namespace Golden\e65697b82932c {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -253,12 +357,21 @@ namespace Golden\e02114adb1597 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"non-empty-array{}"}
 namespace Golden\efee2f3985f3b {
-// no examples
+/** @return ($value is non-empty-array{} ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -275,6 +388,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['outer' => ['inner' => 'ABC']]));
 \PHPStan\dumpType(example(['outer' => ['inner' => 'abc']]));
 \PHPStan\dumpType(example(['outer' => ['inner' => 'Hello']]));
+\PHPStan\dumpType(!example(['outer' => ['inner' => null]]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -291,6 +409,13 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['123' => 0, '08' => 'ABC']));
 \PHPStan\dumpType(example(['123' => 1, '08' => 'abc']));
 \PHPStan\dumpType(example(['123' => -1, '08' => 'Hello']));
+\PHPStan\dumpType(!example(['123' => null, '08' => '']));
+\PHPStan\dumpType(!example(['123' => 0, '08' => null]));
+\PHPStan\dumpType(!example(['08' => '']));
+\PHPStan\dumpType(!example(['123' => 0]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -304,5 +429,10 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example((object)['foo' => -1]));
 \PHPStan\dumpType(example((object)['foo' => 42]));
 \PHPStan\dumpType(example((object)['foo' => -42]));
+\PHPStan\dumpType(!example((object)['foo' => null]));
+\PHPStan\dumpType(!example((object)[]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end

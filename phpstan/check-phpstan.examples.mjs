@@ -2,7 +2,7 @@
  * Examples-golden dumpType bookkeeping for `check-phpstan.mjs`.
  *
  * Line numbers join PHPStan raw output to call sites; failure messages name
- * the example expression and golden, not the line.
+ * the example / counterexample expression and golden, not the line.
  */
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -18,11 +18,12 @@ import path from 'node:path';
  *   readonly line: number;
  *   readonly goldenName: string;
  *   readonly exampleExpr: string;
+ *   readonly polarity: 'example' | 'counterexample';
  * }} ExpectedDumpSite
  */
 
 const DUMP_CALL_RE =
-  /^\\PHPStan\\dumpType\(example\d*\((.*)\)\);$/u;
+  /^\\PHPStan\\dumpType\((!)?example\d*\((.*)\)\);$/u;
 const RAW_DUMP_RE =
   /^(.+\.examples\.golden\.php):(\d+):Dumped type: (.+) \[identifier=phpstan\.dumpType\]$/u;
 
@@ -63,7 +64,8 @@ export function loadExpectedDumpSites(phpPaths, ranges) {
         continue;
       }
       const line = i + 1;
-      const exampleExpr = match[1];
+      const negated = match[1] === '!';
+      const exampleExpr = match[2];
       if (exampleExpr === undefined) {
         continue;
       }
@@ -76,6 +78,7 @@ export function loadExpectedDumpSites(phpPaths, ranges) {
         line,
         goldenName,
         exampleExpr,
+        polarity: negated ? 'counterexample' : 'example',
       });
     }
   }
@@ -129,16 +132,18 @@ export function reportDumpTypeFailures(expected, actual) {
   let failures = 0;
   for (const site of expected.values()) {
     const dumped = actual.get(site.key);
+    const label =
+      site.polarity === 'counterexample' ? 'counterexample' : 'example';
     if (dumped === undefined) {
       console.log(
-        `${site.goldenName}: missing dumpType for example ${site.exampleExpr}`,
+        `${site.goldenName}: missing dumpType for ${label} ${site.exampleExpr}`,
       );
       failures += 1;
       continue;
     }
     if (dumped !== 'true') {
       console.log(
-        `${site.goldenName}: example ${site.exampleExpr} dumped ${dumped} (expected true)`,
+        `${site.goldenName}: ${label} ${site.exampleExpr} dumped ${dumped} (expected true)`,
       );
       failures += 1;
     }

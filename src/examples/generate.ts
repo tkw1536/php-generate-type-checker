@@ -6,13 +6,13 @@ import {
 } from './generate.compose.ts';
 import { examplesForKeyword } from './generate.keyword.ts';
 import { BUILTIN_CLASS_STRING_POOL, INT_POOL } from './pools.ts';
+import { takeUnique } from './generate.util.ts';
 import {
   phpFloat,
   phpInt,
   phpString,
   type PhpValue,
 } from './phpValue.ts';
-import { renderPhpValue } from './render.ts';
 
 /** Soft cap after dedupe per type. */
 const MAX_EXAMPLES = 8;
@@ -193,24 +193,4 @@ function examplesForCollection(
     return examplesForListLike(ast.value, nonEmpty, generateRaw);
   }
   return examplesForMapLike(ast.key, ast.value, nonEmpty, generateRaw);
-}
-
-function takeUnique(
-  values: readonly PhpValue[],
-  limit: number,
-): readonly PhpValue[] {
-  const seen = new Set<string>();
-  const out: PhpValue[] = [];
-  for (const value of values) {
-    const key = renderPhpValue(value);
-    if (seen.has(key)) {
-      continue;
-    }
-    seen.add(key);
-    out.push(value);
-    if (out.length >= limit) {
-      break;
-    }
-  }
-  return out;
 }

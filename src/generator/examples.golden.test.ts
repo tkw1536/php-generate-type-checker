@@ -32,7 +32,7 @@ function packPlainOrThrow(
   requireClass: readonly string[],
 ): string {
   const body = packExamplesPhp(parseType(meta.input), { requireClass });
-  if (body === null) {
+  if (body === null || body === '') {
     throw new Error('golden case was omitted but still present in file');
   }
   return body;
@@ -43,13 +43,10 @@ function packEntriesOrThrow(
   requireClass: readonly string[],
 ): string {
   const entries = parseCheckerInput(meta.input);
-  if (entries.length === 0) {
-    return '// no examples\n';
-  }
   const packed: string[] = [];
   for (const entry of entries) {
     const body = packExamplesPhp(entry.ast, { requireClass });
-    if (body !== null) {
+    if (body !== null && body !== '') {
       packed.push(body);
     }
   }

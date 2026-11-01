@@ -13,6 +13,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([]));
 \PHPStan\dumpType(example(['' => true]));
 \PHPStan\dumpType(example(['a' => false]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -29,6 +37,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example('ABC'));
 \PHPStan\dumpType(example('abc'));
 \PHPStan\dumpType(example('Hello'));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -42,6 +58,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(-1));
 \PHPStan\dumpType(example(42));
 \PHPStan\dumpType(example(-42));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -58,5 +82,12 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['id' => 0, 'title' => 'ABC']));
 \PHPStan\dumpType(example(['id' => 1, 'title' => 'abc']));
 \PHPStan\dumpType(example(['id' => -1, 'title' => 'Hello']));
+\PHPStan\dumpType(!example(['id' => null, 'title' => '']));
+\PHPStan\dumpType(!example(['id' => 0, 'title' => null]));
+\PHPStan\dumpType(!example(['title' => '']));
+\PHPStan\dumpType(!example(['id' => 0]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end

@@ -15,6 +15,14 @@ function example0(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example0(-1));
 \PHPStan\dumpType(example0(42));
 \PHPStan\dumpType(example0(-42));
+\PHPStan\dumpType(!example0(null));
+\PHPStan\dumpType(!example0(true));
+\PHPStan\dumpType(!example0(false));
+\PHPStan\dumpType(!example0(1.5));
+\PHPStan\dumpType(!example0(''));
+\PHPStan\dumpType(!example0('a'));
+\PHPStan\dumpType(!example0([]));
+\PHPStan\dumpType(!example0((object)[]));
 
 /** @return ($value is non-empty-string ? true : false) */
 function example1(mixed $value): bool { die('example'); }
@@ -25,6 +33,14 @@ function example1(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example1('ABC'));
 \PHPStan\dumpType(example1('abc'));
 \PHPStan\dumpType(example1('Hello'));
+\PHPStan\dumpType(!example1(''));
+\PHPStan\dumpType(!example1(null));
+\PHPStan\dumpType(!example1(true));
+\PHPStan\dumpType(!example1(false));
+\PHPStan\dumpType(!example1(0));
+\PHPStan\dumpType(!example1(1));
+\PHPStan\dumpType(!example1(1.5));
+\PHPStan\dumpType(!example1([]));
 }
 // @gtc-golden-end
 
@@ -38,6 +54,14 @@ function example0(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example0(-1));
 \PHPStan\dumpType(example0(42));
 \PHPStan\dumpType(example0(-42));
+\PHPStan\dumpType(!example0(null));
+\PHPStan\dumpType(!example0(true));
+\PHPStan\dumpType(!example0(false));
+\PHPStan\dumpType(!example0(1.5));
+\PHPStan\dumpType(!example0(''));
+\PHPStan\dumpType(!example0('a'));
+\PHPStan\dumpType(!example0([]));
+\PHPStan\dumpType(!example0((object)[]));
 
 /** @return ($value is string ? true : false) */
 function example1(mixed $value): bool { die('example'); }
@@ -50,6 +74,14 @@ function example1(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example1('ABC'));
 \PHPStan\dumpType(example1('abc'));
 \PHPStan\dumpType(example1('Hello'));
+\PHPStan\dumpType(!example1(null));
+\PHPStan\dumpType(!example1(true));
+\PHPStan\dumpType(!example1(false));
+\PHPStan\dumpType(!example1(0));
+\PHPStan\dumpType(!example1(1));
+\PHPStan\dumpType(!example1(1.5));
+\PHPStan\dumpType(!example1([]));
+\PHPStan\dumpType(!example1((object)[]));
 
 /** @return ($value is string ? true : false) */
 function example2(mixed $value): bool { die('example'); }
@@ -62,5 +94,13 @@ function example2(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example2('ABC'));
 \PHPStan\dumpType(example2('abc'));
 \PHPStan\dumpType(example2('Hello'));
+\PHPStan\dumpType(!example2(null));
+\PHPStan\dumpType(!example2(true));
+\PHPStan\dumpType(!example2(false));
+\PHPStan\dumpType(!example2(0));
+\PHPStan\dumpType(!example2(1));
+\PHPStan\dumpType(!example2(1.5));
+\PHPStan\dumpType(!example2([]));
+\PHPStan\dumpType(!example2((object)[]));
 }
 // @gtc-golden-end

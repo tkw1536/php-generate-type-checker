@@ -1,6 +1,7 @@
 import type { TypeNode } from '../parser/ast.ts';
-import { exampleExpressions } from './pack.ts';
 import {
+  counterexampleExpressions,
+  exampleExpressions,
   packExamplesPhp,
   type PackExamplesOptions,
 } from './pack.ts';
@@ -10,7 +11,15 @@ export function renderExamples(ast: TypeNode): readonly string[] {
   return exampleExpressions(ast);
 }
 
-/** Pack a single-type PHPStan harness, or `null` to omit (unresolved / RequireClass). */
+/** Convenience: generate + render counterexample expressions for a type AST. */
+export function renderCounterexamples(ast: TypeNode): readonly string[] {
+  return counterexampleExpressions(ast);
+}
+
+/**
+ * Pack a single-type PHPStan harness.
+ * `null` omits (unresolved / RequireClass); `''` means no values to emit.
+ */
 export function formatExamplesHarness(
   ast: TypeNode,
   options: PackExamplesOptions,

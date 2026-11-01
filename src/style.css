@@ -838,10 +838,20 @@ body {
   padding: 0.65rem 0.75rem 1rem;
 }
 
-.type-ast-examples-empty {
-  margin: 0;
+.type-ast-examples-group + .type-ast-examples-group {
+  margin-top: 1rem;
+}
+
+.type-ast-examples-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 0.5rem;
   color: var(--muted);
-  font-size: 0.875rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .type-ast-examples-list {

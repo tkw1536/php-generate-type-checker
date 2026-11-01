@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { parseType } from '../parser/index.ts';
 import { generateExamples } from './generate.ts';
+import { generateNonExamples } from './generate.non.ts';
 import { renderPhpValue } from './render.ts';
-import { packExamplesPhp } from './pack.ts';
+import { packExamplesPhp, renameExampleHarness } from './pack.ts';
 
 function exprs(type: string): readonly string[] {
   return generateExamples(parseType(type)).map((v) => renderPhpValue(v));
+}
+
+function nonExprs(type: string): readonly string[] {
+  return generateNonExamples(parseType(type)).map((v) => renderPhpValue(v));
 }
 
 describe('generateExamples scalars', () => {
@@ -35,6 +40,30 @@ describe('generateExamples scalars', () => {
   it('unions concatenate arm examples', () => {
     const out = exprs('int|string');
     expect(out).toEqual(expect.arrayContaining(['0', "'a'"]));
+  });
+});
+
+describe('generateNonExamples scalars', () => {
+  it('rejects ints outside positive-int', () => {
+    const out = nonExprs('positive-int');
+    expect(out).toEqual(expect.arrayContaining(['0', '-1']));
+    expect(out).not.toContain('1');
+  });
+
+  it('returns empty counterexamples for mixed', () => {
+    expect(nonExprs('mixed')).toEqual([]);
+  });
+
+  it('union counterexamples must fail every arm', () => {
+    const out = nonExprs('int|string');
+    expect(out).not.toContain('0');
+    expect(out).not.toContain("'a'");
+    expect(out).toEqual(expect.arrayContaining(['null', 'true', '[]']));
+  });
+
+  it('packs counterexamples for never', () => {
+    expect(exprs('never')).toEqual([]);
+    expect(nonExprs('never').length).toBeGreaterThan(0);
   });
 });
 
@@ -79,19 +108,26 @@ describe('generateExamples shapes', () => {
   });
 });
 
-describe('packExamplesPhp', () => {
-  it('emits dumpType harness for int', () => {
-    const body = packExamplesPhp(parseType('int'));
-    expect(body).toContain(
-      "function example(mixed $value): bool { die('example'); }",
+describe('generateNonExamples shapes', () => {
+  it('emits wrong-typed and missing members for array shapes', () => {
+    const out = nonExprs('array{foo: int}');
+    expect(out).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/'foo'\s*=>/u),
+        '[]',
+      ]),
     );
-    expect(body).toContain(
-      '/** @return ($value is int ? true : false) */',
-    );
-    expect(body).toContain('\\PHPStan\\dumpType(example(0));');
-    expect(body).not.toContain('assert(');
+    expect(out).toContain("['foo' => null]");
   });
 
+  it('emits wrong-typed and missing members for object shapes', () => {
+    const out = nonExprs('object{foo: int}');
+    expect(out).toContain('(object)[]');
+    expect(out).toContain("(object)['foo' => null]");
+  });
+});
+
+describe('packExamplesPhp omit', () => {
   it('returns null when RequireClass is set', () => {
     expect(
       packExamplesPhp(parseType('Foo'), { requireClass: ['Foo'] }),
@@ -101,8 +137,46 @@ describe('packExamplesPhp', () => {
   it('returns null for unresolved named types', () => {
     expect(packExamplesPhp(parseType('Foo|int'))).toBeNull();
   });
+});
 
-  it('emits no examples comment when empty', () => {
-    expect(packExamplesPhp(parseType('never'))).toBe('// no examples\n');
+describe('packExamplesPhp harness', () => {
+  it('emits dumpType harness for int with counterexamples', () => {
+    const body = packExamplesPhp(parseType('int'));
+    expect(body).toContain(
+      "function example(mixed $value): bool { die('example'); }",
+    );
+    expect(body).toContain(
+      '/** @return ($value is int ? true : false) */',
+    );
+    expect(body).toContain('\\PHPStan\\dumpType(example(0));');
+    expect(body).toContain('\\PHPStan\\dumpType(!example(null));');
+    expect(body).not.toContain('assert(');
+  });
+
+  it('omits counterexamples for mixed', () => {
+    const body = packExamplesPhp(parseType('mixed'));
+    expect(body).toContain('dumpType(example(');
+    expect(body).not.toContain('!example(');
+  });
+
+  it('packs counterexamples-only harness for never', () => {
+    const body = packExamplesPhp(parseType('never'));
+    expect(body).toEqual(expect.any(String));
+    expect(body).not.toBe('');
+    expect(body).toContain('!example(');
+    expect(body).not.toMatch(/dumpType\(example\(/u);
+  });
+});
+
+describe('renameExampleHarness', () => {
+  it('renames !example call sites', () => {
+    const body = packExamplesPhp(parseType('int'));
+    expect(body).toEqual(expect.stringContaining('!example('));
+    const renamed = renameExampleHarness(String(body), 3);
+    expect(renamed).toContain('function example3(');
+    expect(renamed).toContain('dumpType(example3(');
+    expect(renamed).toContain('dumpType(!example3(');
+    expect(renamed).not.toContain('dumpType(example(');
+    expect(renamed).not.toContain('dumpType(!example(');
   });
 });

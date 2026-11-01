@@ -1,4 +1,3 @@
-import { exampleExpressions } from '../examples/pack.ts';
 import {
   formatTypeAstAstJson,
   formatTypeAstSourceJson,
@@ -12,7 +11,10 @@ import {
   setJsonTreeExpanded,
 } from './jsonTreeExpand.ts';
 import { renderJsonTree } from './jsonTreeView.ts';
-import { renderExamplesDetail } from './typeAstExamples.ts';
+import {
+  entryHasExampleValues,
+  renderExamplesDetail,
+} from './typeAstExamples.ts';
 
 /** Selectable leaf under a parsed type group. */
 export type TypeAstLeaf = 'source' | 'ast' | 'examples';
@@ -22,9 +24,9 @@ export type TypeAstSelection = {
   readonly leaf: TypeAstLeaf;
 };
 
-/** Source / AST always; Examples only when the type has at least one. */
+/** Source / AST always; Examples when any examples or counterexamples exist. */
 function leavesForEntry(entry: ParsedCheckerEntry): readonly TypeAstLeaf[] {
-  if (exampleExpressions(entry.ast).length === 0) {
+  if (!entryHasExampleValues(entry)) {
     return ['source', 'ast'];
   }
   return ['source', 'ast', 'examples'];
@@ -235,7 +237,7 @@ export class TypeAstPanel {
     const entry = this.entries[this.selected.entryIndex];
     if (
       this.selected.leaf === 'examples' &&
-      exampleExpressions(entry.ast).length === 0
+      !entryHasExampleValues(entry)
     ) {
       this.selected = {
         entryIndex: this.selected.entryIndex,

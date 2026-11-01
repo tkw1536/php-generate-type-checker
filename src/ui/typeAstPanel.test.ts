@@ -56,8 +56,8 @@ describe('TypeAstPanel groups', () => {
   });
 });
 
-describe('TypeAstPanel navigation', () => {
-  it('shows highlighted Examples with Copy, then switches groups', () => {
+describe('TypeAstPanel leaf switching', () => {
+  it('switches from Source to AST', () => {
     const body = document.createElement('div');
     const panel = new TypeAstPanel(body);
     const entries = parseCheckerInput(TWO_ALIASES);
@@ -66,6 +66,25 @@ describe('TypeAstPanel navigation', () => {
     body.querySelectorAll<HTMLButtonElement>('.type-ast-item')[1].click();
     expect(panel.rawText).toBe(formatTypeAstAstJson(entries[0]));
     expect(body.querySelector('#type-output .json-tree')).not.toBeNull();
+  });
+
+  it('switches groups after selecting Examples', () => {
+    const body = document.createElement('div');
+    const panel = new TypeAstPanel(body);
+    const entries = parseCheckerInput(TWO_ALIASES);
+    panel.setEntries(entries);
+    body.querySelectorAll<HTMLButtonElement>('.type-ast-item')[2].click();
+    body.querySelectorAll<HTMLButtonElement>('.type-ast-item')[3].click();
+    expect(panel.rawText).toBe(formatTypeAstSourceJson(entries[1]));
+    expect(panel.rawText).toContain('Slug');
+  });
+});
+
+describe('TypeAstPanel examples detail', () => {
+  it('shows Examples and Counterexamples with help and Copy', () => {
+    const body = document.createElement('div');
+    const panel = new TypeAstPanel(body);
+    panel.setEntries(parseCheckerInput(TWO_ALIASES));
 
     body.querySelectorAll<HTMLButtonElement>('.type-ast-item')[2].click();
     expect(body.querySelector('.type-ast-examples')).not.toBeNull();
@@ -74,27 +93,38 @@ describe('TypeAstPanel navigation', () => {
     expect(
       body.querySelectorAll('.type-ast-examples-copy').length,
     ).toBeGreaterThan(0);
-
-    body.querySelectorAll<HTMLButtonElement>('.type-ast-item')[3].click();
-    expect(panel.rawText).toBe(formatTypeAstSourceJson(entries[1]));
-    expect(panel.rawText).toContain('Slug');
+    expect(
+      [...body.querySelectorAll('.type-ast-examples-heading')].map(
+        (el) => el.textContent,
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('Examples'),
+        expect.stringContaining('Counterexamples'),
+      ]),
+    );
+    expect(body.querySelectorAll('.type-ast-examples-help').length).toBe(2);
   });
 
-  it('omits Examples when empty and falls back from Examples to Source', () => {
+  it('keeps Examples for counterexamples-only types like never', () => {
     const body = document.createElement('div');
     const panel = new TypeAstPanel(body);
-    panel.setEntries(parseCheckerInput('int'));
-    body.querySelectorAll<HTMLButtonElement>('.type-ast-item')[2].click();
-    expect(body.querySelector('.type-ast-examples')).not.toBeNull();
-
     panel.setEntries(parseCheckerInput('never'));
     const items = [
       ...body.querySelectorAll<HTMLButtonElement>('.type-ast-item'),
     ];
-    expect(items.map((el) => el.textContent)).toEqual(['Source', 'AST']);
-    expect(panel.rawText).toBe(
-      formatTypeAstSourceJson(parseCheckerInput('never')[0]),
-    );
-    expect(body.querySelector('.type-ast-examples')).toBeNull();
+    expect(items.map((el) => el.textContent)).toEqual([
+      'Source',
+      'AST',
+      'Examples',
+    ]);
+    items[2].click();
+    expect(body.querySelector('.type-ast-examples')).not.toBeNull();
+    expect(
+      [...body.querySelectorAll('.type-ast-examples-heading')].map(
+        (el) => el.textContent,
+      ),
+    ).toEqual([expect.stringContaining('Counterexamples')]);
+    expect(body.querySelector('.type-ast-examples-help')).not.toBeNull();
   });
 });

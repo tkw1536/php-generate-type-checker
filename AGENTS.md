@@ -100,9 +100,10 @@ Identical case keys in one suite are deduped; true collisions fail the update sc
 **PHPStan source map:** `check-phpstan.mjs` must not write files.
 It analyses checker goldens then examples goldens (two PHPStan invocations) and builds line ranges in memory from the begin/end markers so raw `file:line:` hits can be annotated `[golden=…]`.
 Exit non-zero if and only if analysis reported errors (setup failures before analyse also exit non-zero).
-Examples harnesses emit a lying stub (`die('example')`) with `@return ($value is T ? true : false)` and `\PHPStan\dumpType(example(…))` per value.
-The examples pass keeps only `phpstan.dumpType` (raw `-v`); each site must dump `true`, joined by line internally and reported by golden + example expression.
-**Omitting examples is fine; emitting a failing example is not.** If PHPStan would dump `false` or `bool` for a candidate value, generate nothing for that type (do not pack a dumpType that cannot prove `true`).
+Examples harnesses emit a lying stub (`die('example')`) with `@return ($value is T ? true : false)`, `\PHPStan\dumpType(example(…))` per example, and `\PHPStan\dumpType(!example(…))` per counterexample.
+The examples pass keeps only `phpstan.dumpType` (raw `-v`); each site must dump `true`, joined by line internally and reported by golden + example/counterexample expression.
+Empty example and counterexample lists are fine (pack returns `''` and the golden case is omitted).
+**Emitting a failing dump is not.** If PHPStan would dump `false` or `bool` for a candidate value, do not pack that dumpType site.
 
 ## CLI
 
@@ -119,8 +120,8 @@ Stable surface (see `yarn cli --help` for details):
 `--type`, `--trace`, and `--examples` **payload schemas are unstable** (inspection only; Type / Trace / Examples).
 Parse / generate errors on STDERR should show location like the UI (snippet + caret), via shared `describeError`.
 
-Shared generate path: `runGeneratePipeline` (UI and CLI); CLI `--type` uses `formatTypeAstJson`; CLI `--examples` uses `packExamplesPhp`; UI Type tab shows Source / AST / Examples via `TypeAstPanel`. `generateChecker` remains the PHP-only golden helper.
-Example generation lives under [`src/examples/`](src/examples/).
+Shared generate path: `runGeneratePipeline` (UI and CLI); CLI `--type` uses `formatTypeAstJson`; CLI `--examples` uses `packExamplesPhp`; UI Type tab shows Source / AST / Examples (with Counterexamples) via `TypeAstPanel`. `generateChecker` remains the PHP-only golden helper.
+Example / counterexample generation lives under [`src/examples/`](src/examples/).
 
 ## Code style
 

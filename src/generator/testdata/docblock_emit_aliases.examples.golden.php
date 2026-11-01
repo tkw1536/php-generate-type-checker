@@ -18,6 +18,14 @@ function example0(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example0(['id' => 42, 'slug' => 'Hello', 'title' => 'ABC']));
 \PHPStan\dumpType(example0(['id' => 1, 'slug' => 'a', 'title' => 'abc']));
 \PHPStan\dumpType(example0(['id' => 42, 'slug' => 'hello', 'title' => 'Hello']));
+\PHPStan\dumpType(!example0(['id' => 0, 'slug' => 'a', 'title' => '']));
+\PHPStan\dumpType(!example0(['id' => 1, 'slug' => '', 'title' => '']));
+\PHPStan\dumpType(!example0(['id' => 1, 'slug' => 'a', 'title' => null]));
+\PHPStan\dumpType(!example0(['slug' => 'a', 'title' => '']));
+\PHPStan\dumpType(!example0(['id' => 1, 'title' => '']));
+\PHPStan\dumpType(!example0(['id' => 1, 'slug' => 'a']));
+\PHPStan\dumpType(!example0(null));
+\PHPStan\dumpType(!example0(true));
 
 /** @return ($value is array{page: positive-int, perPage: positive-int, total: int} ? true : false) */
 function example1(mixed $value): bool { die('example'); }
@@ -27,5 +35,13 @@ function example1(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example1(['page' => 1, 'perPage' => 1, 'total' => -1]));
 \PHPStan\dumpType(example1(['page' => 42, 'perPage' => 42, 'total' => 42]));
 \PHPStan\dumpType(example1(['page' => 1, 'perPage' => 1, 'total' => -42]));
+\PHPStan\dumpType(!example1(['page' => 0, 'perPage' => 1, 'total' => 0]));
+\PHPStan\dumpType(!example1(['page' => 1, 'perPage' => 0, 'total' => 0]));
+\PHPStan\dumpType(!example1(['page' => 1, 'perPage' => 1, 'total' => null]));
+\PHPStan\dumpType(!example1(['perPage' => 1, 'total' => 0]));
+\PHPStan\dumpType(!example1(['page' => 1, 'total' => 0]));
+\PHPStan\dumpType(!example1(['page' => 1, 'perPage' => 1]));
+\PHPStan\dumpType(!example1(null));
+\PHPStan\dumpType(!example1(true));
 }
 // @gtc-golden-end

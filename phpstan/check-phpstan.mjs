@@ -65,37 +65,17 @@ function parsePhpstanPhar(argv) {
 
 function printUsage() {
   const script = path.relative(REPO_ROOT, import.meta.filename);
-  console.error(`Usage:
-  yarn check:phpstan
-  yarn check:phpstan -- --phpstan <phar>
+  console.error(`Usage: yarn check:phpstan [-- --phpstan <phar>]
 
-Analyse committed *.checker.golden.php (generated-check.neon) then
-*.examples.golden.php (examples-check.neon; dumpType-only). Writes nothing to disk.
-
-Place a PHPStan phar at ${DEFAULT_PHPSTAN_PHAR_REL} (default), or pass --phpstan.
-Download with: yarn download:phpstan  (optional: yarn download:phpstan -- <version>)
-
-Options:
-  --phpstan <path>   Path to phpstan.phar (default: ${DEFAULT_PHPSTAN_PHAR_REL})
-  -h, --help         Show this help
-
-Example:
-  yarn download:phpstan
-  yarn check:phpstan
-  node ${script}
+Analyse committed *.checker.golden.php then *.examples.golden.php (dumpType-only).
+Default phar: ${DEFAULT_PHPSTAN_PHAR_REL} (yarn download:phpstan).
+Example: yarn download:phpstan && yarn check:phpstan && node ${script}
 `);
 }
 
-/**
- * @typedef {import('./check-phpstan.fixtures.mjs').GoldenLineRange} GoldenLineRange
- */
+/** @typedef {import('./check-phpstan.fixtures.mjs').GoldenLineRange} GoldenLineRange */
 
-/**
- * @param {readonly GoldenLineRange[]} ranges
- * @param {string} basename
- * @param {number} lineNo
- * @returns {string | null}
- */
+/** @param {readonly GoldenLineRange[]} ranges @param {string} basename @param {number} lineNo */
 function goldenNameForLine(ranges, basename, lineNo) {
   for (const range of ranges) {
     if (
@@ -174,17 +154,22 @@ function spawnPhpstan(neonPath, phpPaths, pharAbs) {
       '--no-progress',
       '-v',
       '--error-format=raw',
+      '--memory-limit=1G',
       '-c',
       neonPath,
       ...phpPaths,
     ],
     {
       encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
+      stdio: ['ignore', 'pipe', 'pipe'],
     },
   );
   if (result.error !== undefined) {
     throw result.error;
+  }
+  const stderr = result.stderr ?? '';
+  if (stderr.length > 0 && result.status !== 0) {
+    console.error(stderr.trimEnd());
   }
   return { status: result.status, stdout: result.stdout ?? '' };
 }
@@ -237,6 +222,12 @@ function runExamplesPhpstan(neonPath, phpPaths, ranges, pharAbs) {
     return 1;
   }
   const actual = parseDumpTypeResults(testdataPrefix(), stdout);
+  if (actual.size === 0 && expected.size > 0) {
+    console.error(
+      `PHPStan reported no dumpType results (exit ${String(status)}); analysis likely failed`,
+    );
+    return 1;
+  }
   const failures = reportDumpTypeFailures(expected, actual);
   return failures === 0 ? 0 : 1;
 }

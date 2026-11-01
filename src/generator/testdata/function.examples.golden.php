@@ -15,6 +15,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(-1));
 \PHPStan\dumpType(example(42));
 \PHPStan\dumpType(example(-42));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -28,6 +36,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(-1));
 \PHPStan\dumpType(example(42));
 \PHPStan\dumpType(example(-42));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -44,6 +60,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example('ABC'));
 \PHPStan\dumpType(example('abc'));
 \PHPStan\dumpType(example('Hello'));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -56,6 +80,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(1.5));
 \PHPStan\dumpType(example(-2.5));
 \PHPStan\dumpType(example(3.14));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
 }
 // @gtc-golden-end
 
@@ -68,6 +100,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(1.5));
 \PHPStan\dumpType(example(-2.5));
 \PHPStan\dumpType(example(3.14));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
 }
 // @gtc-golden-end
 
@@ -84,6 +124,13 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(0.0));
 \PHPStan\dumpType(example(1.5));
 \PHPStan\dumpType(example(-2.5));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -100,6 +147,13 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(0.0));
 \PHPStan\dumpType(example(1.5));
 \PHPStan\dumpType(example(-2.5));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -110,6 +164,14 @@ function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(true));
 \PHPStan\dumpType(example(false));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -120,6 +182,14 @@ function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(true));
 \PHPStan\dumpType(example(false));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -131,6 +201,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([]));
 \PHPStan\dumpType(example([1]));
 \PHPStan\dumpType(example(['a']));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -140,12 +218,30 @@ namespace Golden\e2eb96de8dafd {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example((object)[]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"callable"}
 namespace Golden\efead9a4f126a {
-// no examples
+/** @return ($value is callable ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -157,6 +253,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([]));
 \PHPStan\dumpType(example([1]));
 \PHPStan\dumpType(example(['a']));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -179,24 +283,62 @@ namespace Golden\ee0399303e494 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"resource"}
 namespace Golden\e6c31f7293a66 {
-// no examples
+/** @return ($value is resource ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"never"}
 namespace Golden\e03857636d6b3 {
-// no examples
+/** @return ($value is never ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"noreturn"}
 namespace Golden\e14f68193981e {
-// no examples
+/** @return ($value is noreturn ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -210,6 +352,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(0));
 \PHPStan\dumpType(example(false));
 \PHPStan\dumpType(example(null));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example([0]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -225,6 +372,9 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example('a'));
 \PHPStan\dumpType(example(true));
 \PHPStan\dumpType(example(false));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -240,6 +390,12 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(-42));
 \PHPStan\dumpType(example('a'));
 \PHPStan\dumpType(example('0'));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -249,6 +405,14 @@ namespace Golden\eeebf0d15df52 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
 }
 // @gtc-golden-end
 
@@ -258,6 +422,14 @@ namespace Golden\e80908a66167b {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(false));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
 }
 // @gtc-golden-end
 
@@ -267,6 +439,14 @@ namespace Golden\e296d244535b2 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
 }
 // @gtc-golden-end
 
@@ -283,6 +463,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example('ABC'));
 \PHPStan\dumpType(example('abc'));
 \PHPStan\dumpType(example('Hello'));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -297,6 +485,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example('ABC'));
 \PHPStan\dumpType(example('abc'));
 \PHPStan\dumpType(example('Hello'));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('0'));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
 }
 // @gtc-golden-end
 
@@ -310,6 +506,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['a']));
 \PHPStan\dumpType(example(['hello']));
 \PHPStan\dumpType(example(['', 'a']));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -320,6 +524,14 @@ function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(1));
 \PHPStan\dumpType(example(42));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(-1));
+\PHPStan\dumpType(!example(-42));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
 }
 // @gtc-golden-end
 
@@ -330,6 +542,14 @@ function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(-1));
 \PHPStan\dumpType(example(-42));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(42));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
 }
 // @gtc-golden-end
 
@@ -341,6 +561,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(0));
 \PHPStan\dumpType(example(-1));
 \PHPStan\dumpType(example(-42));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(42));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -352,6 +580,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(0));
 \PHPStan\dumpType(example(1));
 \PHPStan\dumpType(example(42));
+\PHPStan\dumpType(!example(-1));
+\PHPStan\dumpType(!example(-42));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -364,6 +600,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(-1));
 \PHPStan\dumpType(example(42));
 \PHPStan\dumpType(example(-42));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
 }
 // @gtc-golden-end
 
@@ -376,6 +620,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example('Exception'));
 \PHPStan\dumpType(example('Throwable'));
 \PHPStan\dumpType(example('DateTimeInterface'));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
 }
 // @gtc-golden-end
 
@@ -386,18 +638,46 @@ function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example('Throwable'));
 \PHPStan\dumpType(example('DateTimeInterface'));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"trait-string"}
 namespace Golden\efb0a996a803a {
-// no examples
+/** @return ($value is trait-string ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"enum-string"}
 namespace Golden\eea894816623b {
-// no examples
+/** @return ($value is enum-string ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -409,6 +689,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example('0'));
 \PHPStan\dumpType(example('42'));
 \PHPStan\dumpType(example('-1'));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example('hello'));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
 }
 // @gtc-golden-end
 
@@ -421,6 +709,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example('is_string'));
 \PHPStan\dumpType(example('is_int'));
 \PHPStan\dumpType(example('array_key_exists'));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example('hello'));
+\PHPStan\dumpType(!example('0'));
+\PHPStan\dumpType(!example('42'));
+\PHPStan\dumpType(!example('ABC'));
+\PHPStan\dumpType(!example('abc'));
+\PHPStan\dumpType(!example('Hello'));
 }
 // @gtc-golden-end
 
@@ -435,6 +731,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example('0'));
 \PHPStan\dumpType(example('42'));
 \PHPStan\dumpType(example('abc'));
+\PHPStan\dumpType(!example('ABC'));
+\PHPStan\dumpType(!example('Hello'));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
 }
 // @gtc-golden-end
 
@@ -447,6 +751,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example('0'));
 \PHPStan\dumpType(example('42'));
 \PHPStan\dumpType(example('ABC'));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example('hello'));
+\PHPStan\dumpType(!example('abc'));
+\PHPStan\dumpType(!example('Hello'));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
 }
 // @gtc-golden-end
 
@@ -461,6 +773,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example('ABC'));
 \PHPStan\dumpType(example('abc'));
 \PHPStan\dumpType(example('Hello'));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('0'));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
 }
 // @gtc-golden-end
 
@@ -475,6 +795,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example('ABC'));
 \PHPStan\dumpType(example('abc'));
 \PHPStan\dumpType(example('Hello'));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('0'));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
 }
 // @gtc-golden-end
 
@@ -486,6 +814,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example('0'));
 \PHPStan\dumpType(example('42'));
 \PHPStan\dumpType(example('-1'));
+\PHPStan\dumpType(!example('0x10'));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
 }
 // @gtc-golden-end
 
@@ -496,6 +832,14 @@ function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example('0x10'));
 \PHPStan\dumpType(example('0b10'));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -510,6 +854,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example('ABC'));
 \PHPStan\dumpType(example('abc'));
 \PHPStan\dumpType(example('Hello'));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example([]));
 }
 // @gtc-golden-end
 
@@ -523,6 +875,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example('0'));
 \PHPStan\dumpType(example('42'));
 \PHPStan\dumpType(example('abc'));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('ABC'));
+\PHPStan\dumpType(!example('Hello'));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
 }
 // @gtc-golden-end
 
@@ -534,6 +894,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example('0'));
 \PHPStan\dumpType(example('42'));
 \PHPStan\dumpType(example('ABC'));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example('hello'));
+\PHPStan\dumpType(!example('abc'));
+\PHPStan\dumpType(!example('Hello'));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -546,12 +914,27 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example('a'));
 \PHPStan\dumpType(example(true));
 \PHPStan\dumpType(example([0]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example([]));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"DateTimeInterface"}
 namespace Golden\ebccf5ec55d9e {
-// no examples
+/** @return ($value is DateTimeInterface ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -561,6 +944,14 @@ namespace Golden\e15646f349b22 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(42));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -570,6 +961,14 @@ namespace Golden\e24d2faee115b {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(0));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
 }
 // @gtc-golden-end
 
@@ -579,6 +978,14 @@ namespace Golden\e16abf2aa1af9 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(-1));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -588,6 +995,14 @@ namespace Golden\e2c6551a1c6a6 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(69));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -597,6 +1012,14 @@ namespace Golden\e7469c6df7340 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(69.0));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -606,6 +1029,14 @@ namespace Golden\eeba2bc89c3b8 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(69.42));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -615,6 +1046,14 @@ namespace Golden\e1ec90b1c91b6 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(69.42));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -624,6 +1063,14 @@ namespace Golden\e6547a9077122 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example('foo'));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -633,6 +1080,14 @@ namespace Golden\e37b6e0085240 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example('bar'));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -642,6 +1097,14 @@ namespace Golden\e1e9598af64c2 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example('baz'));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -651,6 +1114,14 @@ namespace Golden\e74d25e01db37 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example('hello world'));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -661,6 +1132,14 @@ function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example('foo'));
 \PHPStan\dumpType(example('bar'));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -672,6 +1151,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(42));
 \PHPStan\dumpType(example('foo'));
 \PHPStan\dumpType(example(true));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
 }
 // @gtc-golden-end
 
@@ -738,7 +1225,17 @@ function example(mixed $value): bool { die('example'); }
 
 // @gtc-golden-begin {"input":"array<never>"}
 namespace Golden\ef0e687d06fdd {
-// no examples
+/** @return ($value is array<never> ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -752,6 +1249,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([1]));
 \PHPStan\dumpType(example([-1]));
 \PHPStan\dumpType(example([0, 1]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -764,6 +1269,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['' => 0]));
 \PHPStan\dumpType(example(['a' => 1]));
 \PHPStan\dumpType(example(['hello' => -1]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -776,6 +1289,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['' => []]));
 \PHPStan\dumpType(example(['a' => [0 => true]]));
 \PHPStan\dumpType(example(['hello' => [1 => false]]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -788,6 +1309,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0 => 1]));
 \PHPStan\dumpType(example([1 => 'a']));
 \PHPStan\dumpType(example([-1 => true]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -800,6 +1329,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0 => 1]));
 \PHPStan\dumpType(example([1 => 'a']));
 \PHPStan\dumpType(example([-1 => true]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -812,6 +1349,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0 => 1]));
 \PHPStan\dumpType(example([1 => 'a']));
 \PHPStan\dumpType(example([-1 => true]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -824,6 +1369,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0 => '']));
 \PHPStan\dumpType(example([1 => 'a']));
 \PHPStan\dumpType(example([-1 => 'hello']));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -836,12 +1389,30 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['0' => 1]));
 \PHPStan\dumpType(example(['42' => 'a']));
 \PHPStan\dumpType(example(['-1' => true]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"array<resource, mixed>"}
 namespace Golden\e10068c1c7858 {
-// no examples
+/** @return ($value is array<resource, mixed> ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -853,6 +1424,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([]));
 \PHPStan\dumpType(example(['0x10' => 1]));
 \PHPStan\dumpType(example(['0b10' => 'a']));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -863,6 +1442,14 @@ function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example([1]));
 \PHPStan\dumpType(example(['a']));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
 }
 // @gtc-golden-end
 
@@ -875,6 +1462,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['a']));
 \PHPStan\dumpType(example(['hello']));
 \PHPStan\dumpType(example(['', 'a']));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -886,6 +1481,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([]));
 \PHPStan\dumpType(example([1]));
 \PHPStan\dumpType(example(['a']));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -899,6 +1502,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([1]));
 \PHPStan\dumpType(example([-1]));
 \PHPStan\dumpType(example([0, 1]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -909,6 +1520,14 @@ function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example([1]));
 \PHPStan\dumpType(example(['a']));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
 }
 // @gtc-golden-end
 
@@ -921,6 +1540,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['a']));
 \PHPStan\dumpType(example(['hello']));
 \PHPStan\dumpType(example(['', 'a']));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -934,6 +1561,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['a']));
 \PHPStan\dumpType(example(['hello']));
 \PHPStan\dumpType(example(['', 'a']));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -947,6 +1582,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([['']]));
 \PHPStan\dumpType(example([['a']]));
 \PHPStan\dumpType(example([[], ['']]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -960,6 +1603,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([[0]]));
 \PHPStan\dumpType(example([[1]]));
 \PHPStan\dumpType(example([[], [0]]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -973,6 +1624,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([1]));
 \PHPStan\dumpType(example([-1]));
 \PHPStan\dumpType(example([0, 1]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -982,6 +1641,9 @@ namespace Golden\e80513e182a79 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -991,6 +1653,9 @@ namespace Golden\e10a0548c8a19 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1001,6 +1666,11 @@ function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(['count' => 1]));
 \PHPStan\dumpType(example(['count' => 42]));
+\PHPStan\dumpType(!example(['count' => 0]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1017,6 +1687,13 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['foo' => 0, 'bar' => 'ABC']));
 \PHPStan\dumpType(example(['foo' => 1, 'bar' => 'abc']));
 \PHPStan\dumpType(example(['foo' => -1, 'bar' => 'Hello']));
+\PHPStan\dumpType(!example(['foo' => null, 'bar' => '']));
+\PHPStan\dumpType(!example(['foo' => 0, 'bar' => null]));
+\PHPStan\dumpType(!example(['bar' => '']));
+\PHPStan\dumpType(!example(['foo' => 0]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1030,6 +1707,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['foo' => -1]));
 \PHPStan\dumpType(example(['foo' => 42]));
 \PHPStan\dumpType(example(['foo' => -42]));
+\PHPStan\dumpType(!example(['foo' => null]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1043,6 +1725,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['foo' => -1]));
 \PHPStan\dumpType(example(['foo' => 42]));
 \PHPStan\dumpType(example(['foo' => -42]));
+\PHPStan\dumpType(!example(['foo' => null]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1056,6 +1743,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['foo' => -1]));
 \PHPStan\dumpType(example(['foo' => 42]));
 \PHPStan\dumpType(example(['foo' => -42]));
+\PHPStan\dumpType(!example(['foo' => null]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1069,6 +1761,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['foo' => -1]));
 \PHPStan\dumpType(example(['foo' => 42]));
 \PHPStan\dumpType(example(['foo' => -42]));
+\PHPStan\dumpType(!example(['foo' => null]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1082,6 +1779,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0 => -1]));
 \PHPStan\dumpType(example([0 => 42]));
 \PHPStan\dumpType(example([0 => -42]));
+\PHPStan\dumpType(!example([0 => null]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1098,6 +1800,13 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['123' => 0, '08' => 'ABC']));
 \PHPStan\dumpType(example(['123' => 1, '08' => 'abc']));
 \PHPStan\dumpType(example(['123' => -1, '08' => 'Hello']));
+\PHPStan\dumpType(!example(['123' => null, '08' => '']));
+\PHPStan\dumpType(!example(['123' => 0, '08' => null]));
+\PHPStan\dumpType(!example(['08' => '']));
+\PHPStan\dumpType(!example(['123' => 0]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1111,6 +1820,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['field-one' => -1]));
 \PHPStan\dumpType(example(['field-one' => 42]));
 \PHPStan\dumpType(example(['field-one' => -42]));
+\PHPStan\dumpType(!example(['field-one' => null]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1124,6 +1838,10 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['field-one' => -1]));
 \PHPStan\dumpType(example(['field-one' => 42]));
 \PHPStan\dumpType(example(['field-one' => -42]));
+\PHPStan\dumpType(!example(['field-one' => null]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1134,6 +1852,10 @@ function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(['timeout' => 1]));
 \PHPStan\dumpType(example(['timeout' => 42]));
+\PHPStan\dumpType(!example(['timeout' => 0]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1150,6 +1872,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['outer' => ['inner' => 'ABC']]));
 \PHPStan\dumpType(example(['outer' => ['inner' => 'abc']]));
 \PHPStan\dumpType(example(['outer' => ['inner' => 'Hello']]));
+\PHPStan\dumpType(!example(['outer' => ['inner' => null]]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1163,6 +1890,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([-1]));
 \PHPStan\dumpType(example([42]));
 \PHPStan\dumpType(example([-42]));
+\PHPStan\dumpType(!example([null]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1176,6 +1908,12 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([-1, -1]));
 \PHPStan\dumpType(example([42, 42]));
 \PHPStan\dumpType(example([-42, -42]));
+\PHPStan\dumpType(!example([null, 0]));
+\PHPStan\dumpType(!example([0, null]));
+\PHPStan\dumpType(!example([0]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1185,6 +1923,9 @@ namespace Golden\ed4de89a2b38f {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1198,6 +1939,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['foo' => -1]));
 \PHPStan\dumpType(example(['foo' => 42]));
 \PHPStan\dumpType(example(['foo' => -42]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(['foo' => null]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1211,6 +1957,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['foo' => -1]));
 \PHPStan\dumpType(example(['foo' => 42]));
 \PHPStan\dumpType(example(['foo' => -42]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(['foo' => null]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1224,6 +1975,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['foo' => -1]));
 \PHPStan\dumpType(example(['foo' => 42]));
 \PHPStan\dumpType(example(['foo' => -42]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(['foo' => null]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1237,12 +1993,23 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['foo' => -1]));
 \PHPStan\dumpType(example(['foo' => 42]));
 \PHPStan\dumpType(example(['foo' => -42]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(['foo' => null]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"non-empty-array{}"}
 namespace Golden\ec56e00ac1deb {
-// no examples
+/** @return ($value is non-empty-array{} ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1252,6 +2019,9 @@ namespace Golden\e6d06606b1437 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1261,6 +2031,9 @@ namespace Golden\ea9d395fc0643 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1274,6 +2047,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([-1]));
 \PHPStan\dumpType(example([42]));
 \PHPStan\dumpType(example([-42]));
+\PHPStan\dumpType(!example([null]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1290,6 +2068,13 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0, 'ABC']));
 \PHPStan\dumpType(example([1, 'abc']));
 \PHPStan\dumpType(example([-1, 'Hello']));
+\PHPStan\dumpType(!example([null, '']));
+\PHPStan\dumpType(!example([0, null]));
+\PHPStan\dumpType(!example(['']));
+\PHPStan\dumpType(!example([0]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1306,6 +2091,13 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['ABC', 'ABC', 'ABC']));
 \PHPStan\dumpType(example(['abc', 'abc', 'abc']));
 \PHPStan\dumpType(example(['Hello', 'Hello', 'Hello']));
+\PHPStan\dumpType(!example([null, '', '']));
+\PHPStan\dumpType(!example(['', null, '']));
+\PHPStan\dumpType(!example(['', '', null]));
+\PHPStan\dumpType(!example(['', '']));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1319,6 +2111,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0 => -1]));
 \PHPStan\dumpType(example([0 => 42]));
 \PHPStan\dumpType(example([0 => -42]));
+\PHPStan\dumpType(!example([0 => null]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1335,6 +2132,13 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0, 'ABC']));
 \PHPStan\dumpType(example([1, 'abc']));
 \PHPStan\dumpType(example([-1, 'Hello']));
+\PHPStan\dumpType(!example([null, '']));
+\PHPStan\dumpType(!example([0, null]));
+\PHPStan\dumpType(!example(['']));
+\PHPStan\dumpType(!example([0]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1351,6 +2155,13 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0, 'ABC']));
 \PHPStan\dumpType(example([1, 'abc']));
 \PHPStan\dumpType(example([-1, 'Hello']));
+\PHPStan\dumpType(!example([null, '']));
+\PHPStan\dumpType(!example([0, null]));
+\PHPStan\dumpType(!example(['']));
+\PHPStan\dumpType(!example([0]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1367,6 +2178,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0, 'ABC']));
 \PHPStan\dumpType(example([1, 'abc']));
 \PHPStan\dumpType(example([-1, 'Hello']));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example([null, '']));
+\PHPStan\dumpType(!example([0, null]));
+\PHPStan\dumpType(!example(['']));
+\PHPStan\dumpType(!example([0]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1383,6 +2202,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['ABC', 'ABC', 'ABC']));
 \PHPStan\dumpType(example(['abc', 'abc', 'abc']));
 \PHPStan\dumpType(example(['Hello', 'Hello', 'Hello']));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example([null, '', '']));
+\PHPStan\dumpType(!example(['', null, '']));
+\PHPStan\dumpType(!example(['', '', null]));
+\PHPStan\dumpType(!example(['', '']));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1399,6 +2226,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0, 'ABC']));
 \PHPStan\dumpType(example([1, 'abc']));
 \PHPStan\dumpType(example([-1, 'Hello']));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example([null, '']));
+\PHPStan\dumpType(!example([0, null]));
+\PHPStan\dumpType(!example(['']));
+\PHPStan\dumpType(!example([0]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1408,6 +2243,9 @@ namespace Golden\e9e7845d1ac9d {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example((object)[]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1421,6 +2259,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example((object)['foo' => -1]));
 \PHPStan\dumpType(example((object)['foo' => 42]));
 \PHPStan\dumpType(example((object)['foo' => -42]));
+\PHPStan\dumpType(!example((object)['foo' => null]));
+\PHPStan\dumpType(!example((object)[]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1434,6 +2277,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example((object)['a-minus' => -1]));
 \PHPStan\dumpType(example((object)['a-minus' => 42]));
 \PHPStan\dumpType(example((object)['a-minus' => -42]));
+\PHPStan\dumpType(!example((object)['a-minus' => null]));
+\PHPStan\dumpType(!example((object)[]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1450,6 +2298,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example((object)['outer' => (object)['inner' => 'ABC']]));
 \PHPStan\dumpType(example((object)['outer' => (object)['inner' => 'abc']]));
 \PHPStan\dumpType(example((object)['outer' => (object)['inner' => 'Hello']]));
+\PHPStan\dumpType(!example((object)['outer' => (object)['inner' => null]]));
+\PHPStan\dumpType(!example((object)[]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1466,6 +2319,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['outer' => (object)['inner' => 'ABC']]));
 \PHPStan\dumpType(example(['outer' => (object)['inner' => 'abc']]));
 \PHPStan\dumpType(example(['outer' => (object)['inner' => 'Hello']]));
+\PHPStan\dumpType(!example(['outer' => (object)['inner' => null]]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1482,6 +2340,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example((object)['outer' => ['inner' => 'ABC']]));
 \PHPStan\dumpType(example((object)['outer' => ['inner' => 'abc']]));
 \PHPStan\dumpType(example((object)['outer' => ['inner' => 'Hello']]));
+\PHPStan\dumpType(!example((object)['outer' => ['inner' => null]]));
+\PHPStan\dumpType(!example((object)[]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1495,6 +2358,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(-1));
 \PHPStan\dumpType(example(42));
 \PHPStan\dumpType(example(-42));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -1508,6 +2379,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(-1));
 \PHPStan\dumpType(example(42));
 \PHPStan\dumpType(example(-42));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -1521,6 +2400,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(-1));
 \PHPStan\dumpType(example(42));
 \PHPStan\dumpType(example(-42));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -1537,6 +2424,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example('ABC'));
 \PHPStan\dumpType(example('abc'));
 \PHPStan\dumpType(example('Hello'));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -1548,6 +2443,9 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([]));
 \PHPStan\dumpType(example([1]));
 \PHPStan\dumpType(example(['a']));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1558,6 +2456,14 @@ function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(true));
 \PHPStan\dumpType(example(false));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -1568,6 +2474,14 @@ function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(true));
 \PHPStan\dumpType(example(false));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -1578,6 +2492,14 @@ function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(false));
 \PHPStan\dumpType(example(true));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -1590,6 +2512,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(1.5));
 \PHPStan\dumpType(example(-2.5));
 \PHPStan\dumpType(example(3.14));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
 }
 // @gtc-golden-end
 
@@ -1602,6 +2532,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(1.5));
 \PHPStan\dumpType(example(-2.5));
 \PHPStan\dumpType(example(3.14));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
 }
 // @gtc-golden-end
 
@@ -1618,6 +2556,12 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(''));
 \PHPStan\dumpType(example('a'));
 \PHPStan\dumpType(example('hello'));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -1634,6 +2578,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(''));
 \PHPStan\dumpType(example('a'));
 \PHPStan\dumpType(example('hello'));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -1650,6 +2599,13 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([]));
 \PHPStan\dumpType(example(['' => true]));
 \PHPStan\dumpType(example(['a' => false]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -1660,6 +2616,14 @@ function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(false));
 \PHPStan\dumpType(example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -1670,30 +2634,78 @@ function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example(true));
 \PHPStan\dumpType(example(false));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"array&array{}"}
 namespace Golden\ea14e8f2173ba {
-// no examples
+/** @return ($value is array&array{} ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"int&0"}
 namespace Golden\e29ca88b9339c {
-// no examples
+/** @return ($value is int&0 ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"0&int"}
 namespace Golden\e7d6c058b76b8 {
-// no examples
+/** @return ($value is 0&int ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"string&''"}
 namespace Golden\e74f4f57ca494 {
-// no examples
+/** @return ($value is string&'' ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -1703,6 +2715,14 @@ namespace Golden\ed127b2a94627 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example((object)[]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -1712,6 +2732,14 @@ namespace Golden\e1cf77882d4cc {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example((object)[]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -1725,6 +2753,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example((object)['a' => -1]));
 \PHPStan\dumpType(example((object)['a' => 42]));
 \PHPStan\dumpType(example((object)['a' => -42]));
+\PHPStan\dumpType(!example((object)['a' => null]));
+\PHPStan\dumpType(!example((object)[]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1738,78 +2771,203 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example((object)['a' => -1]));
 \PHPStan\dumpType(example((object)['a' => 42]));
 \PHPStan\dumpType(example((object)['a' => -42]));
+\PHPStan\dumpType(!example((object)['a' => null]));
+\PHPStan\dumpType(!example((object)[]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"int&string"}
 namespace Golden\e7d4746f92ef8 {
-// no examples
+/** @return ($value is int&string ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"string&int"}
 namespace Golden\ec96b285b194c {
-// no examples
+/** @return ($value is string&int ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"int&bool"}
 namespace Golden\ea369d583eaa3 {
-// no examples
+/** @return ($value is int&bool ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"bool&string"}
 namespace Golden\e1eb3a2e98b45 {
-// no examples
+/** @return ($value is bool&string ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"float&int"}
 namespace Golden\e2101330d7b36 {
-// no examples
+/** @return ($value is float&int ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"null&int"}
 namespace Golden\ee054111409d2 {
-// no examples
+/** @return ($value is NULL&int ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example([]));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"string&null"}
 namespace Golden\ed07158ee0129 {
-// no examples
+/** @return ($value is string&NULL ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"array&object"}
 namespace Golden\e6221393b032e {
-// no examples
+/** @return ($value is array&object ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"object&array"}
 namespace Golden\e3143c08b40d1 {
-// no examples
+/** @return ($value is object&array ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"resource&string"}
 namespace Golden\eb039436c7bdd {
-// no examples
+/** @return ($value is resource&string ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"non-empty-string&int"}
 namespace Golden\e36a5808d1361 {
-// no examples
+/** @return ($value is non-empty-string&int ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example([]));
 }
 // @gtc-golden-end
 
 // @gtc-golden-begin {"input":"non-empty-array&array{}"}
 namespace Golden\ef8397c12028e {
-// no examples
+/** @return ($value is non-empty-array&array{} ? true : false) */
+function example(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
 }
 // @gtc-golden-end
 
@@ -1822,6 +2980,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['' => 1]));
 \PHPStan\dumpType(example(['a' => 'a']));
 \PHPStan\dumpType(example(['hello' => true]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -1835,6 +3001,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['a' => 'a']));
 \PHPStan\dumpType(example(['hello' => true]));
 \PHPStan\dumpType(example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
+\PHPStan\dumpType(!example((object)[]));
 }
 // @gtc-golden-end
 
@@ -1851,6 +3025,13 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['hello:world' => 'ABC', 'hello.world' => 'ABC']));
 \PHPStan\dumpType(example(['hello:world' => 'abc', 'hello.world' => 'abc']));
 \PHPStan\dumpType(example(['hello:world' => 'Hello', 'hello.world' => 'Hello']));
+\PHPStan\dumpType(!example(['hello:world' => null, 'hello.world' => '']));
+\PHPStan\dumpType(!example(['hello:world' => '', 'hello.world' => null]));
+\PHPStan\dumpType(!example(['hello.world' => '']));
+\PHPStan\dumpType(!example(['hello:world' => '']));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1867,6 +3048,13 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['hello' => 'ABC', 'world' => []]));
 \PHPStan\dumpType(example(['hello' => 'abc', 'world' => ['']]));
 \PHPStan\dumpType(example(['hello' => 'Hello', 'world' => ['a']]));
+\PHPStan\dumpType(!example(['hello' => null, 'world' => []]));
+\PHPStan\dumpType(!example(['hello' => '', 'world' => null]));
+\PHPStan\dumpType(!example(['world' => []]));
+\PHPStan\dumpType(!example(['hello' => '']));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1880,6 +3068,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['a' => -1, 'b' => ['a'], 'c' => -1]));
 \PHPStan\dumpType(example(['a' => 42, 'b' => ['hello'], 'c' => 42]));
 \PHPStan\dumpType(example(['a' => -42, 'b' => ['', 'a'], 'c' => -42]));
+\PHPStan\dumpType(!example(['a' => null, 'b' => [], 'c' => 0]));
+\PHPStan\dumpType(!example(['a' => 0, 'b' => null, 'c' => 0]));
+\PHPStan\dumpType(!example(['a' => 0, 'b' => [], 'c' => null]));
+\PHPStan\dumpType(!example(['b' => [], 'c' => 0]));
+\PHPStan\dumpType(!example(['a' => 0, 'c' => 0]));
+\PHPStan\dumpType(!example(['a' => 0, 'b' => []]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
 }
 // @gtc-golden-end
 
@@ -1893,6 +3089,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['world' => ['a']]));
 \PHPStan\dumpType(example(['world' => ['hello']]));
 \PHPStan\dumpType(example(['world' => ['', 'a']]));
+\PHPStan\dumpType(!example(['world' => null]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1909,6 +3110,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['hello' => 'ABC']));
 \PHPStan\dumpType(example(['hello' => 'abc']));
 \PHPStan\dumpType(example(['hello' => 'Hello']));
+\PHPStan\dumpType(!example(['hello' => null]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1918,6 +3124,9 @@ namespace Golden\e4b7e4bb31520 {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1929,6 +3138,11 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['x' => ['' => '']]));
 \PHPStan\dumpType(example(['x' => ['a' => 'a']]));
 \PHPStan\dumpType(example(['x' => ['hello' => 'hello']]));
+\PHPStan\dumpType(!example(['x' => null]));
+\PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
 }
 // @gtc-golden-end
 
@@ -1938,6 +3152,14 @@ namespace Golden\ec75b781c007b {
 function example(mixed $value): bool { die('example'); }
 
 \PHPStan\dumpType(example([]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -1951,6 +3173,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([['']]));
 \PHPStan\dumpType(example([['a']]));
 \PHPStan\dumpType(example([[], ['']]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -1964,6 +3194,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([[[]]]));
 \PHPStan\dumpType(example([[[[]]]]));
 \PHPStan\dumpType(example([[], [[]]]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -1977,6 +3215,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([1]));
 \PHPStan\dumpType(example([-1]));
 \PHPStan\dumpType(example([0, 1]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -1990,6 +3236,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['a']));
 \PHPStan\dumpType(example([true]));
 \PHPStan\dumpType(example([1, 'a']));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -2002,6 +3256,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['' => '']));
 \PHPStan\dumpType(example(['a' => 'a']));
 \PHPStan\dumpType(example(['hello' => 'hello']));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -2018,6 +3280,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0]));
 \PHPStan\dumpType(example([1]));
 \PHPStan\dumpType(example([-1]));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -2034,6 +3304,14 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['']));
 \PHPStan\dumpType(example(['hello']));
 \PHPStan\dumpType(example(['', 'a']));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end
 
@@ -2050,5 +3328,13 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([1]));
 \PHPStan\dumpType(example([true]));
 \PHPStan\dumpType(example([1, 'a']));
+\PHPStan\dumpType(!example(null));
+\PHPStan\dumpType(!example(true));
+\PHPStan\dumpType(!example(false));
+\PHPStan\dumpType(!example(0));
+\PHPStan\dumpType(!example(1));
+\PHPStan\dumpType(!example(1.5));
+\PHPStan\dumpType(!example(''));
+\PHPStan\dumpType(!example('a'));
 }
 // @gtc-golden-end

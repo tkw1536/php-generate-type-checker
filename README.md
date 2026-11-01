@@ -159,7 +159,7 @@ Generation runs in four phases, which can be seen in the diagram below:
 
 Generate and Optimize work on abstract checkers (guards, loops, returns) that are not PHP yet; only Render emits actual PHP.
 Examples below show that abstract form as PHP so it is readable.
-The UI Type tab lists parsed types; under each, Source shows the alias and type string, AST shows the parse tree as JSON, and Examples shows PHP value expressions you can copy (or “No examples”).
+The UI Type tab lists parsed types; under each, Source shows the alias and type string, AST shows the parse tree as JSON, and Examples shows PHP value expressions that should match plus Counterexamples that should not (each with a short help tip).
 
 Generated checkers are meant to pass PHPStan at level 10 on bleeding edge; anything else is considered a bug.
 This is checked for the test case output by CI (see Goldens Section below).
@@ -462,7 +462,7 @@ Generator success fixtures are the expected PHP checkers for each input type (or
 - **Errors:** cases that must fail generation live in `errors.IN` (Vitest asserts each line throws; no PHP / no JSON)
 
 Each `.checker.golden.php` file is real PHP with one namespaced checker per case.
-Each `.examples.golden.php` file packs a PHPStan dumpType harness (or `// no examples`).
+Each `.examples.golden.php` file packs a PHPStan dumpType harness for examples and counterexamples when either side is non-empty (otherwise the case is omitted).
 Inputs that need unresolved classes (`# RequireClass:` / named types) are omitted from the examples golden entirely.
 The stub intentionally lies (`die('example')`); a conditional `@return ($value is T ? true : false)` is what PHPStan trusts.
 Namespaces are hashed from the case input and options so they stay unique and stable when the generated body changes.
@@ -471,7 +471,7 @@ How they are used:
 
 - **Vitest** regenerates from the same inputs and asserts the output matches the golden body
 - **`yarn check:phpstan`** runs PHPStan on committed `.checker.golden.php` then `.examples.golden.php` (expects a `phpstan/phpstan.phar`; get one with `yarn download:phpstan`).
-  For examples, only `phpstan.dumpType` findings count: every `\PHPStan\dumpType(example(…))` must dump `true` (failures name the golden and example expression).
+  For examples, only `phpstan.dumpType` findings count: every `\PHPStan\dumpType(example(…))` and `\PHPStan\dumpType(!example(…))` must dump `true` (failures name the golden and example/counterexample expression).
   This is run by CI after every commit.
 
 | Stem                     | Focus                                                              |

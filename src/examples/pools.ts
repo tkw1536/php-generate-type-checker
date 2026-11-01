@@ -4,6 +4,7 @@ import {
   phpInt,
   phpList,
   phpNull,
+  phpObjectCast,
   phpString,
   type PhpValue,
 } from './phpValue.ts';
@@ -58,3 +59,20 @@ export const CALLABLE_STRING_POOL: readonly PhpValue[] = [
 export const EMPTY_ARRAY: PhpValue = phpList([]);
 
 export const NULL_POOL: readonly PhpValue[] = [phpNull()];
+
+/**
+ * Cross-type values used as type-mismatched counterexamples.
+ * Callers filter out kinds that still match the target type.
+ */
+export const WRONG_KIND_POOL: readonly PhpValue[] = [
+  phpNull(),
+  phpBool(true),
+  phpBool(false),
+  phpInt(0),
+  phpInt(1),
+  phpFloat(1.5),
+  phpString(''),
+  phpString('a'),
+  EMPTY_ARRAY,
+  phpObjectCast(),
+];
