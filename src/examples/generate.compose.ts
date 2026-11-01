@@ -131,7 +131,12 @@ export function examplesForShape(
     return emptyShapeFallback(asObject, nonEmptyKeyword);
   }
 
-  const combos = buildShapeCombos(ast.keyword, fieldsToFill, fieldExamples);
+  const combos = withFullOptionalShape(
+    ast,
+    fieldsToFill,
+    buildShapeCombos(ast.keyword, fieldsToFill, fieldExamples),
+    generateRaw,
+  );
   if (!asObject) {
     return combos;
   }
@@ -141,6 +146,33 @@ export function examplesForShape(
     }
     return phpObjectFromArray(value);
   });
+}
+
+/**
+ * Soft-cap keeps early values: prepend one example with every named field
+ * when optionals exist beyond the required-only / first-optional fill set.
+ */
+function withFullOptionalShape(
+  ast: Extract<TypeNode, { readonly kind: 'shape' }>,
+  fieldsToFill: readonly ShapeField[],
+  combos: readonly PhpValue[],
+  generateRaw: (ast: TypeNode) => readonly PhpValue[],
+): readonly PhpValue[] {
+  const hasExtraOptionals =
+    ast.fields.some((f) => f.optional) &&
+    ast.fields.length > fieldsToFill.length;
+  if (!hasExtraOptionals) {
+    return combos;
+  }
+  const allFieldExamples = collectFieldExamples(ast.fields, generateRaw);
+  if (allFieldExamples === null || allFieldExamples.length === 0) {
+    return combos;
+  }
+  const listShape =
+    ast.keyword === 'list' ||
+    ast.keyword === 'non-empty-list' ||
+    ast.fields.every((f) => f.key === null);
+  return [oneShapeExample(listShape, allFieldExamples, 0), ...combos];
 }
 
 function collectFieldExamples(

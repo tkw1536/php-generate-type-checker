@@ -1699,6 +1699,7 @@ namespace Golden\eac0faea9664e {
 /** @return ($value is array{foo: int, bar?: string} ? true : false) */
 function example(mixed $value): bool { die('example'); }
 
+\PHPStan\dumpType(example(['foo' => 0, 'bar' => '']));
 \PHPStan\dumpType(example(['foo' => 0]));
 \PHPStan\dumpType(example(['foo' => 1]));
 \PHPStan\dumpType(example(['foo' => -1]));
@@ -1706,6 +1707,7 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example(['foo' => -42]));
 \PHPStan\dumpType(!example(['foo' => null]));
 \PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example(['foo' => 0, 'bar' => null]));
 \PHPStan\dumpType(!example(null));
 \PHPStan\dumpType(!example(true));
 \PHPStan\dumpType(!example(false));
@@ -1771,6 +1773,7 @@ namespace Golden\e8694feffb43c {
 /** @return ($value is array{0: int, 1?: string} ? true : false) */
 function example(mixed $value): bool { die('example'); }
 
+\PHPStan\dumpType(example([0 => 0, 1 => '']));
 \PHPStan\dumpType(example([0 => 0]));
 \PHPStan\dumpType(example([0 => 1]));
 \PHPStan\dumpType(example([0 => -1]));
@@ -1778,6 +1781,7 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0 => -42]));
 \PHPStan\dumpType(!example([0 => null]));
 \PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example([0 => 0, 1 => null]));
 \PHPStan\dumpType(!example(null));
 \PHPStan\dumpType(!example(true));
 \PHPStan\dumpType(!example(false));
@@ -2103,6 +2107,7 @@ namespace Golden\e2bac52fdadfa {
 /** @return ($value is list{0: int, 1?: string} ? true : false) */
 function example(mixed $value): bool { die('example'); }
 
+\PHPStan\dumpType(example([0 => 0, 1 => '']));
 \PHPStan\dumpType(example([0 => 0]));
 \PHPStan\dumpType(example([0 => 1]));
 \PHPStan\dumpType(example([0 => -1]));
@@ -2110,6 +2115,7 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example([0 => -42]));
 \PHPStan\dumpType(!example([0 => null]));
 \PHPStan\dumpType(!example([]));
+\PHPStan\dumpType(!example([0 => 0, 1 => null]));
 \PHPStan\dumpType(!example(null));
 \PHPStan\dumpType(!example(true));
 \PHPStan\dumpType(!example(false));
@@ -2251,6 +2257,7 @@ namespace Golden\e0b8e6578d6d2 {
 /** @return ($value is object{foo: int, bar?: string} ? true : false) */
 function example(mixed $value): bool { die('example'); }
 
+\PHPStan\dumpType(example((object)['foo' => 0, 'bar' => '']));
 \PHPStan\dumpType(example((object)['foo' => 0]));
 \PHPStan\dumpType(example((object)['foo' => 1]));
 \PHPStan\dumpType(example((object)['foo' => -1]));
@@ -2258,6 +2265,7 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example((object)['foo' => -42]));
 \PHPStan\dumpType(!example((object)['foo' => null]));
 \PHPStan\dumpType(!example((object)[]));
+\PHPStan\dumpType(!example((object)['foo' => 0, 'bar' => null]));
 \PHPStan\dumpType(!example(null));
 \PHPStan\dumpType(!example(true));
 \PHPStan\dumpType(!example(false));
@@ -2269,6 +2277,7 @@ namespace Golden\e56053bc05a80 {
 /** @return ($value is object{'a-minus': int, 'b-minus'?: string} ? true : false) */
 function example(mixed $value): bool { die('example'); }
 
+\PHPStan\dumpType(example((object)['a-minus' => 0, 'b-minus' => '']));
 \PHPStan\dumpType(example((object)['a-minus' => 0]));
 \PHPStan\dumpType(example((object)['a-minus' => 1]));
 \PHPStan\dumpType(example((object)['a-minus' => -1]));
@@ -2276,6 +2285,7 @@ function example(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(example((object)['a-minus' => -42]));
 \PHPStan\dumpType(!example((object)['a-minus' => null]));
 \PHPStan\dumpType(!example((object)[]));
+\PHPStan\dumpType(!example((object)['a-minus' => 0, 'b-minus' => null]));
 \PHPStan\dumpType(!example(null));
 \PHPStan\dumpType(!example(true));
 \PHPStan\dumpType(!example(false));

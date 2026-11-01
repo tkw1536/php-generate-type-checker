@@ -58,6 +58,7 @@ export function nonExamplesForShape(
     out.push(asObject ? phpObjectCast() : EMPTY_ARRAY);
   }
 
+  const optional = ast.fields.filter((f) => f.optional);
   const fieldsToFill =
     required.length > 0 ? required : ast.fields.slice(0, 1);
   if (fieldsToFill.length > 0) {
@@ -69,6 +70,16 @@ export function nonExamplesForShape(
       if (required.length > 0) {
         out.push(...missingRequiredShapes(ast, required, positives));
       }
+    }
+  }
+
+  // Wrong-typed optional keys (omitting an optional is valid — never a counterexample).
+  if (optional.length > 0 && ast.fields.length > fieldsToFill.length) {
+    const allPositives = collectFieldValues(ast.fields, generatePositive);
+    if (allPositives !== null) {
+      out.push(
+        ...wrongMemberShapes(ast, optional, allPositives, generateNegative),
+      );
     }
   }
 
@@ -101,17 +112,17 @@ function collectFieldValues(
 
 function wrongMemberShapes(
   ast: Extract<TypeNode, { readonly kind: 'shape' }>,
-  fieldsToFill: readonly ShapeField[],
+  targets: readonly ShapeField[],
   positives: readonly { readonly field: ShapeField; readonly value: PhpValue }[],
   generateNegative: (ast: TypeNode) => readonly PhpValue[],
 ): readonly PhpValue[] {
   const out: PhpValue[] = [];
-  for (let i = 0; i < fieldsToFill.length; i++) {
-    const target = fieldsToFill[i];
+  for (const target of targets) {
     const bad =
       generateNegative(target.value)[0] ?? fallbackWrongScalar();
-    const elements = positives.map((entry, index) =>
-      index === i
+    // Match by field identity so optional targets work against all-field positives.
+    const elements = positives.map((entry) =>
+      entry.field === target
         ? { field: entry.field, value: bad }
         : entry,
     );

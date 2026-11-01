@@ -133,6 +133,27 @@ describe('generateExamples shapes', () => {
   });
 });
 
+describe('generateExamples shape optionals', () => {
+  it('includes optional keys in at least one positive', () => {
+    const shape = exprs('array{foo: int, bar?: string}');
+    expect(shape).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/'foo'\s*=>/u),
+        expect.stringMatching(/'bar'\s*=>/u),
+        expect.stringMatching(/^\['foo'\s*=>/u),
+      ]),
+    );
+  });
+
+  it('fills every optional in one positive when several exist', () => {
+    expect(exprs('array{a: int, b?: string, c?: int}')).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/'b'\s*=>.*'c'\s*=>/u),
+      ]),
+    );
+  });
+});
+
 describe('generateNonExamples shapes', () => {
   it('emits wrong-typed and missing members for array shapes', () => {
     const out = nonExprs('array{foo: int}');
@@ -143,6 +164,11 @@ describe('generateNonExamples shapes', () => {
       ]),
     );
     expect(out).toContain("['foo' => null]");
+  });
+
+  it('emits wrong-typed optional members for array shapes', () => {
+    const out = nonExprs('array{foo: int, bar?: string}');
+    expect(out).toContain("['foo' => 0, 'bar' => null]");
   });
 
   it('emits wrong-typed and missing members for object shapes', () => {

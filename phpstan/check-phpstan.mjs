@@ -158,20 +158,10 @@ function spawnPhpstan(neonPath, phpPaths, pharAbs) {
   const result = spawnSync(
     'php',
     [
-      pharAbs,
-      'analyse',
-      '--no-progress',
-      '-v',
-      '--error-format=raw',
-      '--memory-limit=1G',
-      '-c',
-      neonPath,
-      ...phpPaths,
+      pharAbs, 'analyse', '--no-progress', '-v', '--error-format=raw',
+      '--memory-limit=1G', '-c', neonPath, ...phpPaths,
     ],
-    {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    },
+    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
   );
   if (result.error !== undefined) {
     throw result.error;
@@ -184,11 +174,7 @@ function spawnPhpstan(neonPath, phpPaths, pharAbs) {
 }
 
 function testdataPrefix() {
-  const testdataDir = path.resolve(
-    import.meta.dirname,
-    '../src/generator/testdata',
-  );
-  return `${testdataDir}${path.sep}`;
+  return `${path.resolve(import.meta.dirname, '../src/generator/testdata')}${path.sep}`;
 }
 
 /**
@@ -280,10 +266,7 @@ function main() {
     `analysing ${checkerPaths.length} checker golden files (${checkerRanges.length} cases)`,
   );
   const checkerStatus = runCheckerPhpstan(
-    CHECKER_NEON,
-    checkerPaths,
-    checkerRanges,
-    pharAbs,
+    CHECKER_NEON, checkerPaths, checkerRanges, pharAbs,
   );
   if (checkerStatus !== 0) {
     process.exit(checkerStatus);
@@ -294,13 +277,9 @@ function main() {
   console.error(
     `analysing ${examplesPaths.length} examples golden files (${examplesRanges.length} cases)`,
   );
-  const examplesStatus = runExamplesPhpstan(
-    EXAMPLES_NEON,
-    examplesPaths,
-    examplesRanges,
-    pharAbs,
+  process.exit(
+    runExamplesPhpstan(EXAMPLES_NEON, examplesPaths, examplesRanges, pharAbs),
   );
-  process.exit(examplesStatus);
 }
 
 main();

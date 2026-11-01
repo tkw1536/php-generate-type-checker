@@ -6,9 +6,9 @@ import { highlightCode } from '../highlight.ts';
 import type { ParsedCheckerEntry } from '../parser/parseInput.ts';
 
 const EXAMPLES_HELP =
-  'PHP values that should satisfy this type (PHPStan proves the checker returns true).';
+  'PHP values that should satisfy this type.';
 const COUNTEREXAMPLES_HELP =
-  'PHP values that should not satisfy this type (PHPStan proves the checker returns false).';
+  'PHP values that should not satisfy this type.';
 
 function bindExampleCopyButton(
   button: HTMLButtonElement,
