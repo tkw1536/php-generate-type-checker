@@ -3,6 +3,7 @@
  */
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { astsWithAliasesInlined } from '../../examples/inlineAliases.ts';
 import {
   packExamplesPhp,
   renameExampleHarness,
@@ -28,10 +29,11 @@ export function buildExamplesBody(input, requireClass) {
     return body;
   } catch {
     const entries = parseCheckerInput(input);
+    const asts = astsWithAliasesInlined(entries);
     /** @type {string[]} */
     const packed = [];
-    for (const entry of entries) {
-      const body = packExamplesPhp(entry.ast, { requireClass });
+    for (const ast of asts) {
+      const body = packExamplesPhp(ast, { requireClass });
       if (body !== null && body !== '') {
         packed.push(body);
       }

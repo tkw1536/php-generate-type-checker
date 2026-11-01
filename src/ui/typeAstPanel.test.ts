@@ -128,3 +128,38 @@ describe('TypeAstPanel examples detail', () => {
     expect(body.querySelector('.type-ast-examples-help')).not.toBeNull();
   });
 });
+
+describe('TypeAstPanel alias example inlining', () => {
+  it('shows Examples for alias types that reference sibling aliases', () => {
+    const source = `/**
+ * @phpstan-type PostSummary array{id: positive-int, title: string}
+ * @phpstan-type PostListResponse array{posts: list<PostSummary>}
+ */`;
+    const body = document.createElement('div');
+    const panel = new TypeAstPanel(body);
+    const entries = parseCheckerInput(source);
+    expect(entries[1].aliasName).toBe('PostListResponse');
+    panel.setEntries(entries);
+
+    const groups = [...body.querySelectorAll('.type-ast-group')].map(
+      (el) => el.textContent,
+    );
+    expect(groups).toEqual(['PostSummary', 'PostListResponse']);
+    const items = [
+      ...body.querySelectorAll<HTMLButtonElement>('.type-ast-item'),
+    ];
+    expect(items.map((el) => el.textContent)).toEqual([
+      'Source',
+      'AST',
+      'Examples',
+      'Source',
+      'AST',
+      'Examples',
+    ]);
+    items[5].click();
+    expect(body.querySelector('.type-ast-examples')).not.toBeNull();
+    expect(panel.rawText.length).toBeGreaterThan(0);
+    expect(panel.rawText).toContain('posts');
+  });
+});
+

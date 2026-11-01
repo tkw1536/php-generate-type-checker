@@ -43,5 +43,21 @@ function example1(mixed $value): bool { die('example'); }
 \PHPStan\dumpType(!example1(['page' => 1, 'perPage' => 1]));
 \PHPStan\dumpType(!example1(null));
 \PHPStan\dumpType(!example1(true));
+
+/** @return ($value is array{posts: list<array{id: positive-int, slug: non-empty-string, title: string}>, meta: array{page: positive-int, perPage: positive-int, total: int}} ? true : false) */
+function example2(mixed $value): bool { die('example'); }
+
+\PHPStan\dumpType(example2(['posts' => [], 'meta' => ['page' => 1, 'perPage' => 1, 'total' => 0]]));
+\PHPStan\dumpType(example2(['posts' => [['id' => 1, 'slug' => 'a', 'title' => '']], 'meta' => ['page' => 42, 'perPage' => 42, 'total' => 1]]));
+\PHPStan\dumpType(example2(['posts' => [['id' => 42, 'slug' => 'hello', 'title' => 'a']], 'meta' => ['page' => 1, 'perPage' => 1, 'total' => -1]]));
+\PHPStan\dumpType(example2(['posts' => [['id' => 1, 'slug' => '42', 'title' => 'hello']], 'meta' => ['page' => 42, 'perPage' => 42, 'total' => 42]]));
+\PHPStan\dumpType(example2(['posts' => [['id' => 1, 'slug' => 'a', 'title' => ''], ['id' => 42, 'slug' => 'hello', 'title' => 'a']], 'meta' => ['page' => 1, 'perPage' => 1, 'total' => -42]]));
+\PHPStan\dumpType(!example2(['posts' => null, 'meta' => ['page' => 1, 'perPage' => 1, 'total' => 0]]));
+\PHPStan\dumpType(!example2(['posts' => [], 'meta' => ['page' => 0, 'perPage' => 1, 'total' => 0]]));
+\PHPStan\dumpType(!example2(['meta' => ['page' => 1, 'perPage' => 1, 'total' => 0]]));
+\PHPStan\dumpType(!example2(['posts' => []]));
+\PHPStan\dumpType(!example2(null));
+\PHPStan\dumpType(!example2(true));
+\PHPStan\dumpType(!example2(false));
 }
 // @gtc-golden-end

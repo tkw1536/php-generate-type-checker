@@ -1,3 +1,4 @@
+import { astsWithAliasesInlined } from '../examples/inlineAliases.ts';
 import {
   packExamplesPhp,
   renameExampleHarness,
@@ -20,7 +21,7 @@ export function runCli(source: string, args: CliArgs): string {
   }
 
   if (args.printExamples) {
-    return formatExamplesCli(source, args.resolveAliases);
+    return formatExamplesCli(source);
   }
 
   const result = runGeneratePipeline(source, {
@@ -40,11 +41,13 @@ export function runCli(source: string, args: CliArgs): string {
   return result.php;
 }
 
-function formatExamplesCli(source: string, resolveAliases: boolean): string {
-  const entries = parseCheckerInput(source, { resolveAliases });
+/** Pack examples with sibling aliases inlined (ignores checker resolveAliases). */
+function formatExamplesCli(source: string): string {
+  const entries = parseCheckerInput(source);
+  const asts = astsWithAliasesInlined(entries);
   const packed: string[] = [];
-  for (const entry of entries) {
-    const body = packExamplesPhp(entry.ast);
+  for (const ast of asts) {
+    const body = packExamplesPhp(ast);
     if (body !== null && body !== '') {
       packed.push(body);
     }

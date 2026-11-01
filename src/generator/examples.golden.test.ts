@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { astsWithAliasesInlined } from '../examples/inlineAliases.ts';
 import {
   packExamplesPhp,
   renameExampleHarness,
@@ -43,9 +44,10 @@ function packEntriesOrThrow(
   requireClass: readonly string[],
 ): string {
   const entries = parseCheckerInput(meta.input);
+  const asts = astsWithAliasesInlined(entries);
   const packed: string[] = [];
-  for (const entry of entries) {
-    const body = packExamplesPhp(entry.ast, { requireClass });
+  for (const ast of asts) {
+    const body = packExamplesPhp(ast, { requireClass });
     if (body !== null && body !== '') {
       packed.push(body);
     }

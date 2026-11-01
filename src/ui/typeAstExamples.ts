@@ -3,7 +3,7 @@ import {
   exampleExpressions,
 } from '../examples/pack.ts';
 import { highlightCode } from '../highlight.ts';
-import type { ParsedCheckerEntry } from '../parser/parseInput.ts';
+import type { TypeNode } from '../parser/ast.ts';
 
 const EXAMPLES_HELP =
   'PHP values that should satisfy this type.';
@@ -108,12 +108,12 @@ function renderGroup(
 }
 
 /** Highlighted example / counterexample expressions with Copy per row. */
-export function renderExamplesDetail(entry: ParsedCheckerEntry): {
+export function renderExamplesDetail(ast: TypeNode): {
   readonly el: HTMLElement;
   readonly copyText: string;
 } {
-  const examples = exampleExpressions(entry.ast);
-  const counterexamples = counterexampleExpressions(entry.ast);
+  const examples = exampleExpressions(ast);
+  const counterexamples = counterexampleExpressions(ast);
   const body = document.createElement('div');
   body.className = 'type-ast-examples';
   body.id = 'type-output';
@@ -150,10 +150,10 @@ export function renderExamplesDetail(entry: ParsedCheckerEntry): {
   };
 }
 
-/** True when the Examples leaf should be shown for this entry. */
-export function entryHasExampleValues(entry: ParsedCheckerEntry): boolean {
+/** True when the Examples leaf should be shown for this type AST. */
+export function astHasExampleValues(ast: TypeNode): boolean {
   return (
-    exampleExpressions(entry.ast).length > 0 ||
-    counterexampleExpressions(entry.ast).length > 0
+    exampleExpressions(ast).length > 0 ||
+    counterexampleExpressions(ast).length > 0
   );
 }

@@ -1,6 +1,7 @@
 /**
  * Build a PHP STDIN harness for one runtime case.
  */
+import { astsWithAliasesInlined } from '../../examples/inlineAliases.ts';
 import { unresolvedNamedTypes } from '../../examples/named.ts';
 import {
   counterexampleExpressions,
@@ -54,12 +55,15 @@ export function caseLabel(item) {
 function collectChecks(item) {
   /** @type {EntryChecks[]} */
   const checks = [];
-  for (const entry of parseCheckerInput(item.input)) {
-    if (unresolvedNamedTypes(entry.ast, item.requireClass).length > 0) {
+  const entries = parseCheckerInput(item.input);
+  const asts = astsWithAliasesInlined(entries);
+  for (const [index, entry] of entries.entries()) {
+    const ast = asts[index];
+    if (unresolvedNamedTypes(ast, item.requireClass).length > 0) {
       continue;
     }
-    const examples = exampleExpressions(entry.ast);
-    const counterexamples = counterexampleExpressions(entry.ast);
+    const examples = exampleExpressions(ast);
+    const counterexamples = counterexampleExpressions(ast);
     if (examples.length === 0 && counterexamples.length === 0) {
       continue;
     }

@@ -1,7 +1,9 @@
+import { astsWithAliasesInlined } from '../examples/inlineAliases.ts';
 import {
   formatTypeAstAstJson,
   formatTypeAstSourceJson,
 } from '../generator/typeAstJson.ts';
+import type { TypeNode } from '../parser/ast.ts';
 import type { ParsedCheckerEntry } from '../parser/parseInput.ts';
 import { describeError } from '../describeError.ts';
 import { renderErrorHtml } from './errorDisplay.ts';
@@ -12,7 +14,7 @@ import {
 } from './jsonTreeExpand.ts';
 import { renderJsonTree } from './jsonTreeView.ts';
 import {
-  entryHasExampleValues,
+  astHasExampleValues,
   renderExamplesDetail,
 } from './typeAstExamples.ts';
 
@@ -25,8 +27,8 @@ export type TypeAstSelection = {
 };
 
 /** Source / AST always; Examples when any examples or counterexamples exist. */
-function leavesForEntry(entry: ParsedCheckerEntry): readonly TypeAstLeaf[] {
-  if (!entryHasExampleValues(entry)) {
+function leavesForEntry(examplesAst: TypeNode): readonly TypeAstLeaf[] {
+  if (!astHasExampleValues(examplesAst)) {
     return ['source', 'ast'];
   }
   return ['source', 'ast', 'examples'];
@@ -86,6 +88,7 @@ function appendLeafButton(
 
 function renderTypeList(
   entries: readonly ParsedCheckerEntry[],
+  examplesAsts: readonly TypeNode[],
   selected: TypeAstSelection,
   onSelect: (selection: TypeAstSelection) => void,
 ): HTMLElement {
@@ -100,7 +103,7 @@ function renderTypeList(
     heading.textContent = typeListLabel(entry);
     root.append(heading);
 
-    for (const leaf of leavesForEntry(entry)) {
+    for (const leaf of leavesForEntry(examplesAsts[entryIndex])) {
       const row = document.createElement('div');
       row.className = 'type-ast-item-row type-ast-item-row--nested';
       appendCollapseSpacer(row);
@@ -180,6 +183,8 @@ export class TypeAstPanel {
   readonly bodyEl: HTMLElement;
   rawText = '';
   private entries: readonly ParsedCheckerEntry[] = [];
+  /** Sibling aliases inlined for Examples only (Source / AST stay raw). */
+  private examplesAsts: readonly TypeNode[] = [];
   private selected: TypeAstSelection = { entryIndex: 0, leaf: 'source' };
 
   constructor(bodyEl: HTMLElement) {
@@ -189,6 +194,7 @@ export class TypeAstPanel {
   setEntries(entries: readonly ParsedCheckerEntry[]): void {
     this.bodyEl.classList.remove('panel-body--error');
     this.entries = entries;
+    this.examplesAsts = astsWithAliasesInlined(entries);
     if (entries.length === 0) {
       this.rawText = '';
       this.selected = { entryIndex: 0, leaf: 'source' };
@@ -206,6 +212,7 @@ export class TypeAstPanel {
     const described = describeError(err);
     this.rawText = described.message;
     this.entries = [];
+    this.examplesAsts = [];
     this.selected = { entryIndex: 0, leaf: 'source' };
     this.bodyEl.classList.add('panel-body--error');
     this.bodyEl.innerHTML = renderErrorHtml(described, sourceText);
@@ -234,10 +241,10 @@ export class TypeAstPanel {
       this.selected = { entryIndex: 0, leaf: 'source' };
       return;
     }
-    const entry = this.entries[this.selected.entryIndex];
+    const examplesAst = this.examplesAsts[this.selected.entryIndex];
     if (
       this.selected.leaf === 'examples' &&
-      !entryHasExampleValues(entry)
+      (examplesAst === undefined || !astHasExampleValues(examplesAst))
     ) {
       this.selected = {
         entryIndex: this.selected.entryIndex,
@@ -268,15 +275,22 @@ export class TypeAstPanel {
       this.rawText = formatTypeAstAstJson(entry);
       detail.append(renderAstDetail(entry, previousTree));
     } else {
-      const examples = renderExamplesDetail(entry);
+      const examples = renderExamplesDetail(
+        this.examplesAsts[this.selected.entryIndex],
+      );
       this.rawText = examples.copyText;
       detail.append(examples.el);
     }
     root.append(
-      renderTypeList(this.entries, this.selected, (selection) => {
-        this.selected = selection;
-        this.render();
-      }),
+      renderTypeList(
+        this.entries,
+        this.examplesAsts,
+        this.selected,
+        (selection) => {
+          this.selected = selection;
+          this.render();
+        },
+      ),
       detail,
     );
     this.bodyEl.replaceChildren(root);
