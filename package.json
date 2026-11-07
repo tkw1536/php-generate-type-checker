@@ -3,9 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "bin": {
-    "php-generate-type-checker": "./src/cli/main.ts"
-  },
+  "bin": "./src/cli/main.ts",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -28,11 +26,11 @@
     "@types/node": "^26.6.6",
     "cspell": "^10.4.0",
     "happy-dom": "^21.0.4",
-    "oxlint": "^1.89.0",
-    "oxlint-tsgolint": "^7.0.2005",
+    "oxlint": "^1.92.0",
+    "oxlint-tsgolint": "^7.0.2006",
     "typescript": "^7.0.2",
-    "vite": "^8.3.5",
-    "vitest": "^5.0.5"
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
   },
   "dependencies": {
     "highlight.js": "^11.12.0"
